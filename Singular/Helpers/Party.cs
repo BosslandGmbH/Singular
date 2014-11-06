@@ -30,7 +30,7 @@ namespace Singular.Helpers
         Stats = 1,  // Mark of the Wild, Legacy of the Emperor, Blessing of Kings, Embrace of the Shale Spider
         Stamina= 1 << 1,    // PW:Fortitude, Imp: Blood Pact, Commanding Shout, Qiraji Fortitude
         AttackPower = 1 << 2,    // Horn of Winter, Trueshot Aura, Battle Shout
-        SpellPower = 1 << 3, // Arcane Brilliance, Dalaran Brilliance, Burning Wrath, Dark Intent, Still Water
+        SpellPower = 1 << 3, // Arcane Brilliance, Dalaran Brilliance, Dark Intent, Still Water
         Haste = 1 << 4,  // Unholy Aura, Swiftblade's Cunning, Unleashed Rage, Crackling Howl, Serpent's Swiftness
         SpellHaste = 1 << 5, // Moonkin Aura, Shadowform, Elemental Oath, Mind Quickening
         Crit = 1 << 6,   // Leader of the Pack, Arcane Brilliance, Dalaran Brilliance, Legacy of the White Tiger, Bellowing Roar, Furious Howl, Terrifying Roar, Fearless Roar, Still Water
@@ -58,7 +58,6 @@ namespace Singular.Helpers
 
             { "Arcane Brilliance",                  PartyBuffType.SpellPower | PartyBuffType.Crit},
             { "Dalaran Brilliance",                 PartyBuffType.SpellPower | PartyBuffType.Crit},
-            { "Burning Wrath",                      PartyBuffType.SpellPower},
             { "Dark Intent",                        PartyBuffType.SpellPower | PartyBuffType.Stamina },
             { "Still Water",                        PartyBuffType.SpellPower |PartyBuffType.Crit},
 

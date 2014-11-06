@@ -111,13 +111,13 @@ namespace Singular.Managers
             if (args.EventName == "PLAYER_LEVEL_UP")
             {
                 RebuildNeeded = true;
-                Logger.Write(Color.White, "TalentManager: Your character has leveled up! Now level {0}", args.Args[0]);
+                Logger.Write( LogColor.Hilite, "TalentManager: Your character has leveled up! Now level {0}", args.Args[0]);
             }
 
             if (CurrentSpec != oldSpec)
             {
                 RebuildNeeded = true;
-                Logger.Write( Color.White, "TalentManager: Your spec has been changed.");
+                Logger.Write( LogColor.Hilite, "TalentManager: Your spec has been changed.");
             }
 
             int i;
@@ -126,7 +126,7 @@ namespace Singular.Managers
                 if (oldTalent[i] != TalentId[i])
                 {
                     RebuildNeeded = true;
-                    Logger.Write(Color.White, "TalentManager: Your talents have changed.");
+                    Logger.Write( LogColor.Hilite, "TalentManager: Your talents have changed.");
                     break;
                 }
             }
@@ -136,7 +136,7 @@ namespace Singular.Managers
                 if (oldGlyph[i] != GlyphId[i])
                 {
                     RebuildNeeded = true;
-                    Logger.Write(Color.White, "TalentManager: Your glyphs have changed.");
+                    Logger.Write( LogColor.Hilite, "TalentManager: Your glyphs have changed.");
                     break;
                 }
             }
@@ -201,14 +201,14 @@ namespace Singular.Managers
                 {
                     CurrentSpec = StyxWoW.Me.Specialization;
                     RebuildNeeded = true;
-                    Logger.Write(Color.White, "TalentManager: Your character changed specializations to {0}", CurrentSpec.ToString().CamelToSpaced());
+                    Logger.Write( LogColor.Hilite, "TalentManager: Your character changed specializations to {0}", CurrentSpec.ToString().CamelToSpaced());
                 }
             }
 
             if (RebuildNeeded && EventRebuildTimer.IsFinished)
             {
                 RebuildNeeded = false;
-                Logger.Write(Color.White, "TalentManager: Rebuilding behaviors due to changes detected.");
+                Logger.Write( LogColor.Hilite, "TalentManager: Rebuilding behaviors due to changes detected.");
                 Update();   // reload talents just in case
                 SingularRoutine.DescribeContext();
                 SingularRoutine.Instance.RebuildBehaviors();

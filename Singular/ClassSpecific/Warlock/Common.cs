@@ -50,7 +50,7 @@ namespace Singular.ClassSpecific.Warlock
                 new Decorator(
                     ret => TalentManager.CurrentSpec == WoWSpec.WarlockDemonology && Me.HasAura("Metamorphosis") && Demonology.demonFormRestTimer.IsFinished,
                     new Sequence(
-                        new Action(ret => Logger.Write(Color.White, "^Cancel Metamorphosis at Rest")),
+                        new Action(ret => Logger.Write( LogColor.Hilite, "^Cancel Metamorphosis at Rest")),
                         new Action(ret => Me.CancelAura("Metamorphosis")),
                         new WaitContinue(TimeSpan.FromMilliseconds(450), canRun => !Me.HasAura("Metamorphosis"), new ActionAlwaysSucceed())
                         )
@@ -59,7 +59,7 @@ namespace Singular.ClassSpecific.Warlock
                 new Decorator(
                     ret => TalentManager.CurrentSpec == WoWSpec.WarlockAffliction && Me.HasAura("Soulburn"),
                     new Sequence(
-                        new Action(ret => Logger.Write(Color.White, "^Cancel Soulburn at Rest")),
+                        new Action(ret => Logger.Write( LogColor.Hilite, "^Cancel Soulburn at Rest")),
                         new Action(ret => Me.CancelAura("Soulburn")),
                         new WaitContinue(TimeSpan.FromMilliseconds(450), canRun => !Me.HasAura("Soulburn"), new ActionAlwaysSucceed())
                         )
@@ -115,8 +115,8 @@ namespace Singular.ClassSpecific.Warlock
                                 ),
                             new Action(r => Logger.WriteDebug("Soulwell: make sure not casting")),
                             new WaitContinue(2, ctx => !Spell.IsCastingOrChannelling(LagTolerance.No), new ActionAlwaysSucceed()),
-                            new Action(ctx => Logger.Write(Color.White, "^Create Soulwell")),
-                            new Action(ctx => SpellManager.Cast("Create Soulwell")),
+                            new Action(ctx => Logger.Write( LogColor.Hilite, "^Create Soulwell")),
+                            new Action(ctx => Spell.CastPrimative("Create Soulwell")),
                             new Action(r => Logger.WriteDebug("Soulwell: wait until it shows we are casting")),
                             new WaitContinue(2, ctx => Spell.IsCastingOrChannelling(), new ActionAlwaysSucceed()),
                             new Action(r => Logger.WriteDebug("Soulwell: now wait for it to stop casting")),
@@ -135,7 +135,7 @@ namespace Singular.ClassSpecific.Warlock
                                             WoWGameObject obj = r as WoWGameObject;
                                             const int StrafeTime = 250;
                                             WoWMovement.MovementDirection strafe = (((int)DateTime.Now.Second) & 1) == 0 ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
-                                            Logger.Write( Color.White, "Soulwell {0} for {1} ms since too close to Soulwell @ {2:F2} yds", strafe, StrafeTime, obj.Distance);
+                                            Logger.Write( LogColor.Hilite, "Soulwell {0} for {1} ms since too close to Soulwell @ {2:F2} yds", strafe, StrafeTime, obj.Distance);
                                             WoWMovement.Move(strafe, TimeSpan.FromMilliseconds(StrafeTime));
                                         })
                                         )
@@ -495,19 +495,19 @@ namespace Singular.ClassSpecific.Warlock
                             new PrioritySelector(
                                 new Decorator(
                                     ret => TalentManager.CurrentSpec == WoWSpec.WarlockDemonology && Me.HasAura("Demonic Rebirth"),
-                                    new Action(r => Logger.Write(Color.White, "^Instant Summon Pet: Demonic Rebirth active!"))
+                                    new Action(r => Logger.Write( LogColor.Hilite, "^Instant Summon Pet: Demonic Rebirth active!"))
                                     ),
                                 new Decorator(
                                     // need to check that no live pet here as FoX will only summon last living, so worthless if live pet (even if wrong one)
                                     ret => TalentManager.CurrentSpec == WoWSpec.WarlockDestruction && !Me.GotAlivePet && Spell.CanCastHack("Flames of Xoroth", Me) && Warlock.Destruction.CurrentBurningEmbers >= 10,
                                     new Sequence(
-                                        new Action(r => Logger.Write(Color.White, "^Instant Summon Pet: Flames of Xoroth!")),
+                                        new Action(r => Logger.Write( LogColor.Hilite, "^Instant Summon Pet: Flames of Xoroth!")),
                                         Spell.BuffSelf("Flames of Xoroth")
                                         )
                                     ),
                                 new Decorator(
                                     req => StyxWoW.Me.HasAura( "Soulburn"),
-                                    new Action( r => Logger.Write(Color.White, "^Instant Summon Pet: Soulburn already active - should work!"))
+                                    new Action( r => Logger.Write( LogColor.Hilite, "^Instant Summon Pet: Soulburn already active - should work!"))
                                     ),
                                 CreateCastSoulburn(ret => {
                                     if (TalentManager.CurrentSpec == WoWSpec.WarlockAffliction)
@@ -520,7 +520,7 @@ namespace Singular.ClassSpecific.Warlock
                                             Logger.WriteDebug("soulburn not available, shards={0}", Me.CurrentSoulShards);
                                         else
                                         {
-                                            Logger.Write(Color.White, "^Instant Summon Pet: Soulburn - hope it works!");
+                                            Logger.Write( LogColor.Hilite, "^Instant Summon Pet: Soulburn - hope it works!");
                                             return true;
                                         }
                                     }

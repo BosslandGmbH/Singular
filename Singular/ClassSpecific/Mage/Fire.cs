@@ -93,7 +93,7 @@ namespace Singular.ClassSpecific.Mage
                             && SpellManager.HasSpell("Inferno Blast"),
                         new Action(r =>
                         {
-                            Logger.Write("/cancel Fireball for Heating Up proc");
+                            Logger.Write( LogColor.Cancel, "/cancel Fireball for Heating Up proc");
                             SpellManager.StopCasting();
                         })
                         )
@@ -134,7 +134,8 @@ namespace Singular.ClassSpecific.Mage
                             ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
                                 // Movement.CreateEnsureMovementStoppedBehavior(5f),
-                                Spell.Cast("Inferno Blast", ret => TalentManager.HasGlyph("Inferno Blast") && Me.CurrentTarget.HasAnyAura("Pyroblast", "Ignite", "Combustion")),
+                                Spell.Cast("Blast Wave"),
+                                Spell.Cast("Inferno Blast", ret => Me.CurrentTarget.HasAnyAura("Pyroblast", "Ignite", "Combustion", "Living Bomb")),
                                 Spell.Cast("Dragon's Breath", ret => Me.CurrentTarget.DistanceSqr <= 12 * 12),
                                 Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location)
                                 )
@@ -246,7 +247,7 @@ namespace Singular.ClassSpecific.Mage
                                             && Me.HasAura("Heating Up") 
                                             && SpellManager.HasSpell("Inferno Blast"),
                                         new Action(r => {
-                                            Logger.Write("/cancel Fireball for Heating Up proc");
+                                            Logger.Write( LogColor.Cancel, "/cancel Fireball for Heating Up proc");
                                             SpellManager.StopCasting();
                                             })
                                         )
@@ -268,7 +269,8 @@ namespace Singular.ClassSpecific.Mage
                             ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
                                 // Movement.CreateEnsureMovementStoppedBehavior(5f),
-                                Spell.Cast("Inferno Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
+                                Spell.Cast("Blast Wave"),
+                                Spell.Cast("Inferno Blast", ret => Me.CurrentTarget.HasAnyAura("Pyroblast", "Ignite", "Combustion", "Living Bomb")),
                                 Spell.Cast("Dragon's Breath", ret => Me.CurrentTarget.DistanceSqr <= 12 * 12),
                                 Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location)
                                 )
@@ -278,11 +280,11 @@ namespace Singular.ClassSpecific.Mage
 
                         // Single Target
                         // living bomb in Common
-                        Spell.Cast("Combustion", ret => Me.CurrentTarget.HasMyAura("Ignite")),
-                        Spell.Cast("Pyroblast", ret => Me.ActiveAuras.ContainsKey("Pyroblast!") && Me.ActiveAuras.ContainsKey("Heating Up")),
-                        Spell.Cast("Inferno Blast", ret => Me.ActiveAuras.ContainsKey("Heating Up")),
-                        Spell.Cast("Fireball"),
-                        Spell.Cast("Scorch"),
+                        Spell.Cast("Combustion", on => Me.CurrentTarget, req => Me.CurrentTarget.HasMyAura("Ignite"), cancel => false),
+                        Spell.Cast("Pyroblast", on => Me.CurrentTarget, req => Me.ActiveAuras.ContainsKey("Pyroblast!") && Me.ActiveAuras.ContainsKey("Heating Up"), cancel => false),
+                        Spell.Cast("Inferno Blast", on => Me.CurrentTarget, req => Me.ActiveAuras.ContainsKey("Heating Up"), cancel => false),
+                        Spell.Cast("Fireball", on => Me.CurrentTarget, req => true, cancel => false),
+                        Spell.Cast("Scorch", on => Me.CurrentTarget, req => true, cancel => false),
 
                         Spell.Cast("Frostfire Bolt")
                         )

@@ -30,7 +30,9 @@ namespace Singular.ClassSpecific.Rogue
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
-        private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); } 
+        private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); }
+
+        const int BLINDSIDE = 121153;
 
         #region Normal Rotation
 
@@ -73,7 +75,7 @@ namespace Singular.ClassSpecific.Rogue
             return new Decorator(
                 req => !Common.HasTwoDaggers,
                 new Sequence(
-                    new Action(r => Logger.Write(Color.White, "^User Error: not Dual Wielding Daggers - using Sinister Strike")),
+                    new Action(r => Logger.Write( LogColor.Hilite, "^User Error: not Dual Wielding Daggers - using Sinister Strike")),
                     Spell.Cast("Sinister Strike")
                     )
                 );
@@ -105,33 +107,47 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Cast("Garrote", ret => Common.AreStealthAbilitiesAvailable && Me.CurrentTarget.MeIsBehind),
 
                         new Decorator(
-                            ret => Common.AoeCount >= 3 && Spell.UseAOE,
+                            ret => Spell.UseAOE && Common.AoeCount > 1,
                             new PrioritySelector(
-                                Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
-                                Spell.Buff("Rupture", true, ret => (Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 3)),
-                                Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
-                                Spell.BuffSelf("Fan of Knives", ret => !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
+                                ctx => Common.AoeCount >= RogueSettings.AoeSpellPriorityCount,
+
+                                Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 6)),
+                                Spell.Cast("Crimson Tempest", req => (bool)req  && Me.ComboPoints >= 5),
+                                Spell.Buff(
+                                    "Rupture", 
+                                    3, 
+                                    on => Unit.UnfriendlyUnits(5)
+                                        .FirstOrDefault(u => !u.HasMyAura("Rupture") && u.IsWithinMeleeRange && Me.IsSafelyFacing(u) && u.InLineOfSpellSight),
+                                    req => !(bool) req
+                                    ),
+                                Spell.BuffSelf(
+                                    "Fan of Knives", 
+                                    req => !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount 
+                                    ),
                                 Spell.Cast("Mutilate", ret => !SpellManager.HasSpell("Fan of Knives") && Common.HasTwoDaggers),
                                 AssaCastSinisterStrike(),
+
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
                             ),
 
-                        Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
-                        Spell.Buff("Rupture", true, ret => Me.ComboPoints == 5 && (Me.CurrentTarget.IsPlayer || Me.TimeToDeath() > 20) && Me.CurrentTarget.HasAuraExpired("Rupture", 3)),
+                        Spell.Cast("Envenom", on => Me.CurrentTarget, req => Me.ComboPoints > 0 && Me.GetAuraTimeLeft("Slice and Dice").TotalMilliseconds.Between(50, 6000)),
+                        Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && !Me.HasAuraExpired("Slice and Dice", 1)),
+                        Spell.Buff("Rupture", true, ret => Me.ComboPoints >= 5 && (Me.CurrentTarget.IsPlayer || Me.TimeToDeath() > 20) && Me.CurrentTarget.HasAuraExpired("Rupture", 7)),
 
+                        // catch all to make sure we finish at 5 pts
                         new Decorator(
-                            ret => Me.ComboPoints == 5 || !SpellManager.HasSpell("Slice and Dice") || (Me.HasAura("Slice and Dice") && Me.HasAuraExpired("Slice and Dice", 3) && Me.ComboPoints > 0),
+                            ret => Me.ComboPoints >= 5 || !SpellManager.HasSpell("Slice and Dice"),
                             new PrioritySelector(
                                 Spell.Cast("Envenom", ret => true),
                                 Spell.Cast("Eviscerate", ret => !SpellManager.HasSpell("Envenom"))
                                 )
                             ),
 
-                        Spell.Cast("Dispatch", req => Common.HasDaggerInMainHand), // daggers
+                        Spell.Cast("Dispatch", req => Common.HasDaggerInMainHand && (Me.CurrentTarget.HealthPercent < 35 || Me.HasAura(BLINDSIDE))), // daggers
 
-                        Spell.BuffSelf("Fan of Knives", ret => !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount),
-                        Spell.Cast("Mutilate", req => Common.HasTwoDaggers),  // daggers
+                        Spell.BuffSelf("Fan of Knives", ret => Spell.UseAOE && !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount),
+                        Spell.Cast("Mutilate", req => Common.HasTwoDaggers && Me.CurrentTarget.HealthPercent >= 35),  // daggers
 
                         Common.CheckThatDaggersAreEquippedIfNeeded(),
 

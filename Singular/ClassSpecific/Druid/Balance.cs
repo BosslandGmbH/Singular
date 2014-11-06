@@ -99,7 +99,7 @@ namespace Singular.ClassSpecific.Druid
                     Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < DruidSettings.SelfCenarionWardHealth),
 
                     new Decorator(
-                        ret => Me.HealthPercent < DruidSettings.SelfHealingTouchHealth || (_CrowdControlTarget != null && _CrowdControlTarget.IsValid && (_CrowdControlTarget.IsCrowdControlled() || Spell.DoubleCastPreventionDict.ContainsAny( _CrowdControlTarget, "Disorienting Roar", "Mighty Bash", "Cyclone", "Hibernate"))),
+                        ret => Me.HealthPercent < DruidSettings.SelfHealingTouchHealth || (_CrowdControlTarget != null && _CrowdControlTarget.IsValid && (_CrowdControlTarget.IsCrowdControlled() || Spell.DoubleCastContainsAny( _CrowdControlTarget, "Disorienting Roar", "Mighty Bash", "Cyclone", "Hibernate"))),
                         new PrioritySelector(
 
                             Spell.Buff("Disorienting Roar", req => !Me.CurrentTarget.Stunned && !Me.CurrentTarget.IsCrowdControlled()),
@@ -307,7 +307,7 @@ namespace Singular.ClassSpecific.Druid
                     ret => !Spell.IsGlobalCooldown(), 
                     new PrioritySelector(
 
-                        Spell.BuffSelf("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
+                        Common.CastForm("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
                         new PrioritySelector(
                             ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => u.IsCasting && u.Distance <30 && u.CurrentTargetGuid == Me.Guid ),
@@ -402,7 +402,7 @@ namespace Singular.ClassSpecific.Druid
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        Spell.BuffSelf("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
+                        Common.CastForm("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
                         // Spell.Cast("Mighty Bash", ret => Me.CurrentTarget.IsWithinMeleeRange),
 
@@ -548,7 +548,7 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
                 CreateBalanceDiagnosticOutputBehavior(),
-                Spell.BuffSelf("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
+                Common.CastForm("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
                 );
         }
 
@@ -556,7 +556,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateBalanceCombatBuffNormal()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
+                Common.CastForm("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
                 );
         }
 
@@ -564,7 +564,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateBalanceCombatBuffBattlegrounds()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
+                Common.CastForm("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
 
                 );
         }

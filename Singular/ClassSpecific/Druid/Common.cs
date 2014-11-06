@@ -364,7 +364,7 @@ namespace Singular.ClassSpecific.Druid
                     {
                         if (Me.HealthPercent < 30)
                         {
-                            Logger.Write("/cancel Hurricane since my health at {0:F1}%", Me.HealthPercent);
+                            Logger.Write(LogColor.Cancel, "/cancel Hurricane since my health at {0:F1}%", Me.HealthPercent);
                             return true;
                         }
                         return false;
@@ -393,7 +393,7 @@ namespace Singular.ClassSpecific.Druid
                         int cnt = Unit.NearbyUnfriendlyUnits.Count(u => u.HasMyAura("Hurricane"));
                         if (cnt < 3)
                         {
-                            Logger.Write( Color.White, "/cancel Hurricane since only {0} targets effected", cnt);
+                            Logger.Write( LogColor.Cancel, "/cancel Hurricane since only {0} targets effected", cnt);
                             return true;
                         }
                         if (cancel(until))
@@ -531,21 +531,33 @@ namespace Singular.ClassSpecific.Druid
                             new Decorator(
                                 ret => DruidSettings.UseTravelForm
                                     && !Me.Mounted
-                                    && !Me.IsSwimming 
-                                    && !Me.HasAnyShapeshift( ShapeshiftForm.Travel, ShapeshiftForm.FlightForm, ShapeshiftForm.EpicFlightForm)
+                                    && !Me.IsSwimming
+                                    && !Me.HasAnyShapeshift(ShapeshiftForm.Travel, ShapeshiftForm.FlightForm, ShapeshiftForm.EpicFlightForm)
                                     && SpellManager.HasSpell("Cat Form")
                                     && IsBotPoiWithinMovementBuffRange(),
                                 new Sequence(
-                                    new Action(r => Logger.WriteDebug("DruidMoveBuff: poitype={0} poidist={1:F1} indoors={2} canmount={3} riding={4}",
+                                    new Action(r => Logger.WriteDebug("DruidMoveBuff: poitype={0} poidist={1:F1} indoors={2} canmount={3} riding={4} form={5}",
                                         BotPoi.Current.Type,
                                         BotPoi.Current.Location.Distance(Me.Location),
                                         Me.IsIndoors.ToYN(),
                                         Mount.CanMount().ToYN(),
-                                        Me.GetSkill(SkillLine.Riding).CurrentValue
+                                        Me.GetSkill(SkillLine.Riding).CurrentValue,
+                                        Me.Shapeshift.ToString()
                                         )),
                                     new PrioritySelector(
-                                        Spell.BuffSelf("Travel Form", req => Me.IsOutdoors && BotPoi.Current.Type != PoiType.Kill),
-                                        Spell.BuffSelf("Cat Form")
+                                        Common.CastForm("Travel Form", 
+                                            req => {
+                                                if (!Me.IsOutdoors || BotPoi.Current.Type == PoiType.Kill)
+                                                    return false;
+                                                WoWUnit possibleAggro = Unit.UnfriendlyUnits(40).FirstOrDefault(u => u.IsHostile && (!u.Combat || u.CurrentTargetGuid != Me.Guid));
+                                                if (possibleAggro != null && !Me.IsInsideSanctuary)
+                                                {
+                                                    Logger.WriteDiagnostic("DruidMoveBuff: suppressing Travel Form since hostile {0} is {1:F1} yds away", possibleAggro.SafeName(), possibleAggro.SpellDistance());
+                                                    return false;
+                                                }
+                                                return true;
+                                            }),
+                                        Common.CastForm("Cat Form")
                                         )
                                     )
                                 ),
@@ -554,7 +566,7 @@ namespace Singular.ClassSpecific.Druid
                                     && BotPoi.Current.Location.Distance(Me.Location) >= 10
                                     && Me.Shapeshift != ShapeshiftForm.Aqua
                                     && Spell.CanCastHack("Aquatic Form", Me, false), 
-                                Spell.BuffSelf( "Aquatic Form")
+                                Common.CastForm( "Aquatic Form")
                                 )
                             ),
 
@@ -613,6 +625,25 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
         
+        public static Composite CastForm( string spellName, SimpleBooleanDelegate requirements = null)
+        {
+            return new Decorator(
+                req => !Me.HasAura(spellName) && (requirements == null || requirements(req)),
+                new Sequence(
+                    new Action( r => {
+                        WoWAura aura = Me.GetAllAuras().FirstOrDefault( a => a.Spell.Name.Substring(a.Name.Length - 5).Equals(" Form"));
+                        Logger.WriteDiagnostic( "CastForm: changing to form='{0}',  current='{1}',  hb-says='{2}'", 
+                            spellName, aura == null ? "-none-" : aura.Name, Me.Shapeshift.ToString()
+                            );
+                        }),
+                    Spell.BuffSelf(spellName),
+                    new PrioritySelector(
+                        new Wait(TimeSpan.FromMilliseconds(500), until => Me.HasAura(spellName), new Action( r => Logger.WriteDiagnostic("CastForm: the form '{0}' is now active!", spellName))),
+                        new Action( r => Logger.WriteDiagnostic("CastForm: error - did not yet enter form '{0}'", spellName))
+                        )
+                    )
+                );
+        }
 
 #if NOT_IN_USE
         public static Composite CreateEscapeFromCc()
@@ -631,7 +662,7 @@ namespace Singular.ClassSpecific.Druid
                          Me.Shapeshift == ShapeshiftForm.Cat && SpellManager.HasSpell("Dash") &&
                          SpellManager.Spells["Dash"].Cooldown),
                         new Sequence(
-                            new Action(ret => SpellManager.Cast(WoWSpell.FromId(77764))
+                            new Action(ret => Spell.CastPrimative(WoWSpell.FromId(77764))
                                 )
                             )),
                     new Decorator(

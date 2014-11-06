@@ -132,7 +132,7 @@ namespace Singular.ClassSpecific.Hunter
                             new Sequence(
                                 new Action( ctx => Logger.Write( "/dismiss Pet")),
                                 Spell.Cast("Dismiss Pet", on => Me.Pet, req => true, cancel => false),
-                                // new Action(ctx => SpellManager.Cast("Dismiss Pet")),
+                                // new Action(ctx => Spell.CastPrimative("Dismiss Pet")),
                                 new WaitContinue(TimeSpan.FromMilliseconds(1500), ret => !Me.GotAlivePet, new ActionAlwaysSucceed())
                                 )
                             ),
@@ -431,7 +431,7 @@ namespace Singular.ClassSpecific.Hunter
                             Logger.WriteDebug("Trap: launcher aura present = {0}", Me.HasAura("Trap Launcher"));
                             Logger.WriteDebug("Trap: cancast = {0}", Spell.CanCastHack(trapName, onUnit(ret)));
                             Logger.Write(Color.PowderBlue, "^{0} trap: {1} on {2}", useLauncher ? "Launch" : "Set", trapName, onUnit(ret).SafeName());
-                            SpellManager.Cast(trapName, onUnit(ret));
+                            Spell.CastPrimative(trapName, onUnit(ret));
                             return RunStatus.Success;
                             }),
                         Helpers.Common.CreateWaitForLagDuration(),
@@ -500,7 +500,7 @@ namespace Singular.ClassSpecific.Hunter
                                     Logger.WriteDebug("AddTrap: launcher aura present = {0}", Me.HasAura("Trap Launcher"));
                                     Logger.WriteDebug("AddTrap: cancast = {0}", Spell.CanCastHack(trapName, unit));
                                     Logger.Write(Color.PowderBlue, "^Launch add trap: {0} on {1}", trapName, unit.SafeName());
-                                    if (SpellManager.Cast(trapName, unit))
+                                    if (Spell.CastPrimative(trapName, unit))
                                         return RunStatus.Success;
                                     Logger.WriteDebug("AddTrap: cast of trap failed");
                                 }
@@ -930,7 +930,7 @@ namespace Singular.ClassSpecific.Hunter
                 new DecoratorContinue(
                     ret => Me.HasAura("Feign Death"),
                     new Sequence(
-                        new Action(ret => Logger.Write("/cancel Feign Death after {0} seconds", (DateTime.Now - waitToCancelFeignDeath.StartTime).TotalSeconds)),
+                        new Action(ret => Logger.Write(LogColor.Cancel, "/cancel Feign Death after {0} seconds", (DateTime.Now - waitToCancelFeignDeath.StartTime).TotalSeconds)),
                         new Action(ret => Me.CancelAura("Feign Death"))
                         )
                     ),
@@ -956,7 +956,7 @@ namespace Singular.ClassSpecific.Hunter
                     && SpellManager.HasSpell("Steady Shot"),
                 new Sequence(
                     new Action(ret => Spell.LogCast("Steady Shot", onUnit(ret))),
-                    new Action(ret => SpellManager.Cast("Steady Shot", onUnit(ret)))
+                    new Action(ret => Spell.CastPrimative("Steady Shot", onUnit(ret)))
                     )
                 );
         }

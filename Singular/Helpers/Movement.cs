@@ -179,7 +179,7 @@ namespace Singular.Helpers
                     if (unit.Distance < 0.1)
                     {
                         strafe = (((int)DateTime.Now.Second) & 1) == 0 ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
-                        Logger.Write( Color.White, "FaceTarget: {0} for {1} ms since too close to target @ {2:F2} yds", strafe, StrafeTime, unit.Distance);
+                        Logger.Write( LogColor.Hilite, "FaceTarget: {0} for {1} ms since too close to target @ {2:F2} yds", strafe, StrafeTime, unit.Distance);
                         WoWMovement.Move(strafe, TimeSpan.FromMilliseconds(StrafeTime));
                     }
 
@@ -378,7 +378,7 @@ namespace Singular.Helpers
                                 })
                                 )
                             ),
-                        new Action(ret => StopMoving.InMeleeRangeOfUnit(((WoWUnit)ret))),
+                        new Action(ret => StopMoving.InMeleeRangeOfUnit( ((MoveContext)ret).Unit)),
                         new ActionAlwaysFail()
                         )
                     )
@@ -661,7 +661,7 @@ namespace Singular.Helpers
                             }
                         }
 
-                        Logger.Write( Color.White, "MoveToSide: moving diagonally {0} for {1:F1} yds", CMTS(r).Direction.ToString().Substring(6), CMTS(r).Distance);
+                        Logger.Write( LogColor.Hilite, "MoveToSide: moving diagonally {0} for {1:F1} yds", CMTS(r).Direction.ToString().Substring(6), CMTS(r).Distance);
                         Navigator.MoveTo(CMTS(r).Destination);
                         CMTS(r).TimeToStop = DateTime.Now + TimeSpan.FromSeconds(CMTS(r).MoveTime);
                         return RunStatus.Success;

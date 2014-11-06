@@ -1014,7 +1014,7 @@ namespace Singular.Settings
 
         [Setting,ReadOnly(false)]
         
-        [DefaultValue(PullMoreTargetType.All)]
+        [DefaultValue(PullMoreTargetType.LikeCurrent)]
         [Category("Enemy Control - Pull More!")]
         [DisplayName("Pull More Target Type")]
         [Description("None: disabled, Current: like CurrentTarget; Hostile: any hostile target; Any: any nearby valid target")]

@@ -82,7 +82,7 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Buff("Premeditation", req => Common.AreStealthAbilitiesAvailable && Me.ComboPoints <= 3),
 
                         new Decorator(
-                            ret => Common.AoeCount > 1 && !Me.CurrentTarget.IsPlayer,
+                            ret => Common.AoeCount > 1,
                             new PrioritySelector(
                                 Spell.BuffSelf("Shadow Dance", ret => Common.AoeCount >= 3),
                                 Spell.Cast("Eviscerate", ret => Me.ComboPoints >= 5 && Common.AoeCount < 7 && !Me.CurrentTarget.HasAuraExpired("Crimson Tempest", 7)),
@@ -164,13 +164,17 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.BuffSelf("Vanish", ret => Me.CurrentTarget.IsBoss() && Me.CurrentTarget.MeIsBehind),
 
                         Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints >= (Me.CurrentTarget.IsBoss() ? 5 : 1) && Me.HasAuraExpired("Slice and Dice", 2)),
-                        Spell.Buff("Rupture", true, ret => Me.ComboPoints == 5),
-                        Spell.Cast("Eviscerate", ret => Me.ComboPoints == 5),
+                        Spell.Buff("Rupture", 7, require: req => Me.ComboPoints == 5),
+                        Spell.Cast("Eviscerate", req => Me.ComboPoints == 5),
 
                         Spell.Cast(sp => "Ambush", chkMov => false, on => Me.CurrentTarget, req => Common.IsAmbushNeeded(), canCast: Common.RogueCanCastOpener),
-                        Spell.Buff("Hemorrhage"),
-                        Spell.Cast("Backstab", ret => Me.CurrentTarget.MeIsBehind && Common.HasDaggerInMainHand ),
-                        Spell.Cast("Hemorrhage", ret => !Me.CurrentTarget.MeIsBehind || !Common.HasDaggerInMainHand),
+                        Spell.Buff("Hemorrhage", 7, on => Me.CurrentTarget),
+
+                        new PrioritySelector(
+                            ctx => Me.IsBehindOrSide(Me.CurrentTarget),
+                            Spell.Cast("Backstab", req => (bool) req && Common.HasDaggerInMainHand ),
+                            Spell.Cast("Hemorrhage", req => !(bool) req || !Common.HasDaggerInMainHand)
+                            ),
 
                         Common.CheckThatDaggersAreEquippedIfNeeded()
                         )

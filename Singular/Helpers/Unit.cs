@@ -807,7 +807,7 @@ namespace Singular.Helpers
             if (a != null && a.Cancellable)
             {
                 a.TryCancelAura();
-                Logger.Write( Color.White, "/cancelaura: {0} #{1}", a.Name, a.SpellId);
+                Logger.Write( LogColor.Cancel, "/cancelaura: {0} #{1}", a.Name, a.SpellId);
             }
         }
 

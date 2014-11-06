@@ -793,7 +793,7 @@ namespace Singular.ClassSpecific.Druid
                                                     cancel => {
                                                         if (Me.HealthPercent < 30)
                                                         {
-                                                            Logger.Write("/cancel Hurricane since my health at {0:F1}%", Me.HealthPercent);
+                                                            Logger.Write(LogColor.Cancel, "/cancel Hurricane since my health at {0:F1}%", Me.HealthPercent);
                                                             return true;
                                                         }
                                                         return false;

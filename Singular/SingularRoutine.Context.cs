@@ -91,7 +91,7 @@ namespace Singular
             if (ForcedContext != WoWContext.None)
             {
                 if (_lastContext != ForcedContext)
-                    Logger.Write(Color.White, "Context: forcing use of {0} behaviors", ForcedContext);
+                    Logger.Write( LogColor.Hilite, "Context: forcing use of {0} behaviors", ForcedContext);
 
                 return ForcedContext;
             }
@@ -101,7 +101,7 @@ namespace Singular
             if (map.IsBattleground || map.IsArena)
             {
                 if (_lastContext != WoWContext.Battlegrounds)
-                    Logger.Write(Color.White, "Context: using {0} behaviors since in battleground/arena", WoWContext.Battlegrounds);
+                    Logger.Write( LogColor.Hilite, "Context: using {0} behaviors since in battleground/arena", WoWContext.Battlegrounds);
 
                 return WoWContext.Battlegrounds;
             }
@@ -111,7 +111,7 @@ namespace Singular
                 if (Me.IsInInstance)
                 {
                     if (_lastContext != WoWContext.Instances)
-                        Logger.Write(Color.White, "Context: using {0} behaviors since inside an instance", WoWContext.Instances);
+                        Logger.Write( LogColor.Hilite, "Context: using {0} behaviors since inside an instance", WoWContext.Instances);
 
                     return WoWContext.Instances;
                 }
@@ -121,19 +121,19 @@ namespace Singular
                 if ((Me.Role & hasGroupRoleMask) != WoWPartyMember.GroupRole.None)
                 {
                     if (_lastContext != WoWContext.Instances)
-                        Logger.Write(Color.White, "Context: using {0} behaviors since in group as {1}", WoWContext.Instances, Me.Role & hasGroupRoleMask);
+                        Logger.Write( LogColor.Hilite, "Context: using {0} behaviors since in group as {1}", WoWContext.Instances, Me.Role & hasGroupRoleMask);
 
                     return WoWContext.Instances;
                 }
 
                 if (_lastContext != WoWContext.Normal)
-                    Logger.Write(Color.White, "Context: no Role assigned (Tank/Healer/Damage), so using Normal (SOLO) behaviors");
+                    Logger.Write( LogColor.Hilite, "Context: no Role assigned (Tank/Healer/Damage), so using Normal (SOLO) behaviors");
 
                 return WoWContext.Normal;
             }
 
             if (_lastContext != WoWContext.Normal)
-                Logger.Write(Color.White, "Context: using Normal (SOLO) behaviors since we are not in a group");
+                Logger.Write( LogColor.Hilite, "Context: using Normal (SOLO) behaviors since we are not in a group");
 
             return WoWContext.Normal;
         }
@@ -359,7 +359,7 @@ namespace Singular
 #endif
 
             if (Styx.CommonBot.Targeting.PullDistance < 25)
-                Logger.Write(Color.White, "your Pull Distance is {0:F0} yds which is low for any class!!!", Styx.CommonBot.Targeting.PullDistance);
+                Logger.Write( LogColor.Hilite, "your Pull Distance is {0:F0} yds which is low for any class!!!", Styx.CommonBot.Targeting.PullDistance);
         }
 
         private static string SpecializationName()

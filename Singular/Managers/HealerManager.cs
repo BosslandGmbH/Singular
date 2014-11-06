@@ -436,7 +436,8 @@ namespace Singular.Managers
             if (Me.ManaPercent < SingularSettings.Instance.HealerCombatMinMana)
                 return false;
 
-            if (HealerManager.Instance.FirstUnit != null && HealerManager.Instance.FirstUnit.HealthPercent < SingularSettings.Instance.HealerCombatMinHealth)
+            WoWUnit low = FindLowestHealthTarget();
+            if (low != null && low.HealthPercent < SingularSettings.Instance.HealerCombatMinHealth)
                 return false;
 
             return true;
@@ -466,22 +467,29 @@ namespace Singular.Managers
             }
 
             // use a window less than actual to avoid cast/cancel/cast/cancel due to mana hovering at setting level
-            string action = castInProgress ? "/cancel" : "!do-not-dps";
+            string action = castInProgress ? "^Cancelling DPS" : "!do-not-dps";
 
             if (Me.ManaPercent < (SingularSettings.Instance.HealerCombatMinMana - 3))
             {
-                Logger.WriteDebug(Color.Orange, "{0} because my Mana={1:F1}% fell below Min={2}%", action, Me.ManaPercent, SingularSettings.Instance.HealerCombatMinMana);
+                Logger.Write( LogColor.Hilite, "{0} because my Mana={1:F1}% fell below Min={2}%", action, Me.ManaPercent, SingularSettings.Instance.HealerCombatMinMana);
                 return true;
             }
 
             // check if group health has dropped below setting
-            if (HealerManager.Instance.FirstUnit != null && HealerManager.Instance.FirstUnit.HealthPercent < SingularSettings.Instance.HealerCombatMinHealth)
+            WoWUnit low = HealerManager.FindLowestHealthTarget();
+            if (low != null && low.HealthPercent < SingularSettings.Instance.HealerCombatMinHealth)
             {
-                Logger.WriteDebug(Color.Orange, "{0} because {1} @ {2:F1}% health fell below Min={3}%", action, HealerManager.Instance.FirstUnit.SafeName(), HealerManager.Instance.FirstUnit.HealthPercent, SingularSettings.Instance.HealerCombatMinHealth);
+                Logger.Write( LogColor.Hilite, "{0} because {1} @ {2:F1}% health fell below minimum {3}%", action, low.SafeName(), low.HealthPercent, SingularSettings.Instance.HealerCombatMinHealth);
                 return true;
             }
 
             return false;
+        }
+
+        private static WoWUnit FindUnitForAllowDpsCheck()
+        {
+            // return HealerManager.Instance.FirstUnit;
+            return HealerManager.FindLowestHealthTarget();
         }
 
         public static WoWUnit GetBestCoverageTarget(string spell, int health, int range, int radius, int minCount, SimpleBooleanDelegate requirements = null, IEnumerable<WoWUnit> mainTarget = null)
@@ -574,6 +582,25 @@ namespace Singular.Managers
 
                 return Group.Tanks.Where(t => t.IsAlive && (t.Combat || t.Distance < SingularSettings.Instance.MaxHealTargetRange)).OrderBy(t => t.Distance).FirstOrDefault();
             }
+        }
+
+        public static bool IsTankSettledIntoFight(WoWUnit tank = null)
+        {
+            if (tank == null)
+                tank = HealerManager.TankToStayNear;
+
+            if (tank == null)
+                ;
+            else if (!tank.Combat)
+                ;
+            else if (tank.IsMoving)
+                ;
+            else if (!tank.GotTarget || tank.SpellDistance(tank.CurrentTarget) > 8)
+                ;
+            else
+                return true;
+
+            return false;
         }
 
         /// <summary>

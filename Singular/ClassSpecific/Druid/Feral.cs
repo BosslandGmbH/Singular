@@ -104,7 +104,7 @@ namespace Singular.ClassSpecific.Druid
                                 )
                             ),
 
-                        Spell.BuffSelf("Cat Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
+                        Common.CastForm("Cat Form", req => Me.Shapeshift != ShapeshiftForm.Cat && !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
                         Common.CreateProwlBehavior(),
 
@@ -175,12 +175,12 @@ namespace Singular.ClassSpecific.Druid
                     // - only if No Recent Shapefhift Error (since form may have resulted from error in picking up Quest, completing Quest objectives, or turning in Quest)
                     new Throttle(
                         10, 
-                        Spell.BuffSelf( 
+                        Common.CastForm( 
                             "Cat Form", 
                             req => !Utilities.EventHandlers.IsShapeshiftSuppressed
                                 && Me.IsMoving
                                 && !Me.IsFlying && !Me.IsSwimming 
-                                && !Me.HasAnyShapeshift( ShapeshiftForm.Travel, ShapeshiftForm.Aqua, ShapeshiftForm.FlightForm, ShapeshiftForm.EpicFlightForm)
+                                && !Me.HasAnyShapeshift( ShapeshiftForm.Cat, ShapeshiftForm.Travel, ShapeshiftForm.Aqua, ShapeshiftForm.FlightForm, ShapeshiftForm.EpicFlightForm)
                             )
                         ),
 
@@ -208,7 +208,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateFeralCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Cat Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
+                Common.CastForm("Cat Form", req => Me.Shapeshift != ShapeshiftForm.Cat && !Utilities.EventHandlers.IsShapeshiftSuppressed)
                 );
         }
 

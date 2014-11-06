@@ -95,7 +95,7 @@ namespace Singular.Dynamics
             if (context == WoWContext.None)
             {
                 // None is an invalid context, but rather than stopping bot wait it out with donothing logic
-                Logger.Write(Color.White, "No Active Context -{0}{1} for{2} set to DoNothingBehavior temporarily", wowClass.ToString().CamelToSpaced(), behavior.ToString().CamelToSpaced(), spec.ToString().CamelToSpaced());
+                Logger.Write( LogColor.Hilite, "No Active Context -{0}{1} for{2} set to DoNothingBehavior temporarily", wowClass.ToString().CamelToSpaced(), behavior.ToString().CamelToSpaced(), spec.ToString().CamelToSpaced());
                 behaviourCount = 1;
                 return NoContextAvailable.CreateDoNothingBehavior();
             }

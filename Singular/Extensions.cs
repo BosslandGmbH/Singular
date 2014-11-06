@@ -141,8 +141,10 @@ namespace Singular
             33076,  // Prayer of Mending
             120517, // Halo
             73920,  // Healing Rain
-            115460, // Healing Sphere
-
+            115460, // Healing Sphere,
+            ClassSpecific.Shaman.Totems.ToSpellId(WoWTotem.HealingStream),
+            ClassSpecific.Shaman.Totems.ToSpellId(WoWTotem.HealingTide),
+            ClassSpecific.Shaman.Totems.ToSpellId(WoWTotem.SpiritLink),
         };
 
         public static bool IsHeal(this WoWSpell spell)

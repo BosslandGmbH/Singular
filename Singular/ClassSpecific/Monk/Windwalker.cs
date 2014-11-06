@@ -39,20 +39,6 @@ namespace Singular.ClassSpecific.Monk
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-#if NOT_NOW
-                        //only use Spinning Fire Blossom on flying targets presently
-                        new Decorator(
-                            ret => Me.CurrentTarget.IsAerialTarget(),
-                            new PrioritySelector(
-                                new Action( ret => {
-                                    Logger.WriteDebug( "{0} is an aerial target", Me.CurrentTarget.SafeName());
-                                    return RunStatus.Failure;
-                                    }),
-                                Movement.CreateFaceTargetBehavior(2f),
-                                new Throttle(1, 5, Spell.Cast("Spinning Fire Blossom", ret => Me.CurrentTarget.Distance.Between(10,40) && Me.IsSafelyFacing(Me.CurrentTarget, 1f)))
-                                )
-                            ),
-#endif
 #if OLD_ROLL_LOGIC
                         new Decorator(
                             ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.SpellDistance() > 10,
@@ -69,8 +55,6 @@ namespace Singular.ClassSpecific.Monk
 #else
                         Common.CreateMonkCloseDistanceBehavior( ),
 #endif
-                        Common.CreateGrappleWeaponBehavior(),
-
                         Spell.Cast(sp => "Crackling Jade Lightning", mov => true, on => Me.CurrentTarget, req => !Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.SpellDistance() < 40, cancel => false),
                         Spell.Cast("Provoke", ret => !Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.Combat && Me.CurrentTarget.SpellDistance().Between(20, 40)),
 
@@ -93,7 +77,6 @@ namespace Singular.ClassSpecific.Monk
                                 );
                             return RunStatus.Failure;
                         }),
-                        Spell.Cast("Spinning Fire Blossom", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 50 && Me.IsSafelyFacing(Me.CurrentTarget, 5f)),
                         Spell.Cast(sp => "Crackling Jade Lightning", mov => true, on => Me.CurrentTarget, req => !Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.SpellDistance() < 40, cancel => false),
                         Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget, 27f, 22f)
                         )
@@ -199,9 +182,7 @@ namespace Singular.ClassSpecific.Monk
 #endif
 
 
-                        Common.CreateGrappleWeaponBehavior(),
-
-                        Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
+                        Common.CastTouchOfDeath(),
 
                         // AoE behavior
                         Spell.Cast("Paralysis", 
@@ -293,20 +274,10 @@ namespace Singular.ClassSpecific.Monk
                         Helpers.Common.CreateInterruptBehavior(),
 
                         // ranged attack on the run when chasing
-                        Spell.Cast(
-                            "Spinning Fire Blossom", 
-                            req => Spell.UseAOE 
-                                && Me.IsMoving 
-                                && Me.CurrentTarget.SpellDistance().Between(10, 50) 
-                                && Me.IsSafelyFacing(Me.CurrentTarget, 5f) 
-                                && Me.IsSafelyBehind(Me.CurrentTarget)
-                                ),
-
-                        Common.CreateGrappleWeaponBehavior(),
 
                         Spell.Cast("Leg Sweep", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange && !u.IsCrowdControlled())),
 
-                        Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
+                        Common.CastTouchOfDeath(),
 
                         Spell.Buff("Paralysis",
                             onu => Unit.NearbyUnfriendlyUnits

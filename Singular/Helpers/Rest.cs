@@ -56,10 +56,22 @@ namespace Singular.Helpers
 
                 // Self-heal if possible
                         new Decorator(
-                            ret => spellHeal != null
-                                && Me.HealthPercent <= 85  // not redundant... this eliminates unnecessary GetPredicted... checks
-                                && SpellManager.HasSpell(spellHeal) && Spell.CanCastHack(spellHeal, Me)
-                                && Me.PredictedHealthPercent(includeMyHeals: true) <= 85 && !Me.HasAnyAura("Drink", "Food"),
+                            ret => {
+                                if (Me.HasAnyAura("Drink", "Food"))
+                                    return false;
+                                if (spellHeal == null || Me.HealthPercent > 85)
+                                    return false;
+                                if (!SpellManager.HasSpell(spellHeal))
+                                    return false;
+                                if (!Spell.CanCastHack(spellHeal, Me))
+                                {
+                                    Logger.WriteDebug("DefaultRest: CanCast failed for {0}", spellHeal);
+                                    return false;
+                                }
+                                if (Me.PredictedHealthPercent(includeMyHeals: true) > 85)
+                                    return false;
+                                return true;
+                                },
                             new Sequence(
                                 Movement.CreateEnsureMovementStoppedBehavior(reason: "to heal"),
                                 new Action(r => Logger.WriteDebug("Rest Heal - {0} @ {1:F1}% Predict:{2:F1}% and moving:{3}, cancast:{4}", spellHeal, Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true), Me.IsMoving, Spell.CanCastHack(spellHeal, Me, skipWowCheck: false)) ),
@@ -92,7 +104,7 @@ namespace Singular.Helpers
                                 new DecoratorContinue(ret => Me.IsMoving, Movement.CreateEnsureMovementStoppedBehavior(reason: "to cannibalize")),
                                 new Wait(1, ret => !Me.IsMoving, new ActionAlwaysSucceed()),
                                 new Action(ret => Logger.Write(LogColor.SpellHeal, "*Cannibalize @ health:{0:F1}%{1}", Me.HealthPercent, (Me.PowerType != WoWPowerType.Mana) ? "" : string.Format(" mana:{0:F1}%", Me.ManaPercent))),
-                                new Action(ret => SpellManager.Cast("Cannibalize")),
+                                new Action(ret => Spell.CastPrimative("Cannibalize")),
 
                                 // wait until Cannibalize in progress
                                 new WaitContinue(
@@ -132,9 +144,28 @@ namespace Singular.Helpers
                             Item.CreateUseBandageBehavior()
                             ),
 
+                // Make sure we're a class with mana, if not, just ignore drinking all together! Other than that... same for food.
+                        new Decorator(
+                            ret => !Me.IsSwimming && (Me.PowerType == WoWPowerType.Mana || Me.Class == WoWClass.Druid)
+                                && Me.ManaPercent <= SingularSettings.Instance.MinMana 
+                                && !Me.HasAura("Drink") && Consumable.GetBestDrink(false) != null,
+                            new PrioritySelector(
+                                Movement.CreateEnsureMovementStoppedBehavior(reason: "to drink"),
+                                new Sequence(
+                                    new Action(ret =>
+                                    {
+                                        Logger.Write("Drinking @ {0:F1}% mana", Me.ManaPercent);
+                                        Styx.CommonBot.Rest.DrinkImmediate();
+                                    }),
+                                    Helpers.Common.CreateWaitForLagDuration()
+                                    )
+                                )
+                            ),
+
                 // Check if we're allowed to eat (and make sure we have some food. Don't bother going further if we have none.
                         new Decorator(
-                            ret => !Me.IsSwimming && Me.PredictedHealthPercent(includeMyHeals: true) <= SingularSettings.Instance.MinHealth
+                            ret => !Me.IsSwimming 
+                                && Me.PredictedHealthPercent(includeMyHeals: true) <= SingularSettings.Instance.MinHealth
                                 && !Me.HasAura("Food") && Consumable.GetBestFood(false) != null,
                             new PrioritySelector(
                                 Movement.CreateEnsureMovementStoppedBehavior(reason: "to eat"),
@@ -142,6 +173,7 @@ namespace Singular.Helpers
                                     new Action(
                                         ret =>
                                         {
+                                            Logger.Write("Eating @ {0:F1}% health", Me.HealthPercent);
                                             Styx.CommonBot.Rest.FeedImmediate();
                                         }),
                                     Helpers.Common.CreateWaitForLagDuration()
@@ -149,26 +181,31 @@ namespace Singular.Helpers
                                 )
                             ),
 
-                // Make sure we're a class with mana, if not, just ignore drinking all together! Other than that... same for food.
+                        // STAY SEATED (in Rest) while eating/drinking aura active.
+                        //  true: stay seated
+                        //  false:  allow interruption of Drink
                         new Decorator(
-                            ret => !Me.IsSwimming && (Me.PowerType == WoWPowerType.Mana || Me.Class == WoWClass.Druid)
-                                && Me.ManaPercent <= SingularSettings.Instance.MinMana && !Me.HasAura("Drink") && Consumable.GetBestDrink(false) != null,
-                            new PrioritySelector(
-                                Movement.CreateEnsureMovementStoppedBehavior(reason: "to drink"),
-                                new Sequence(
-                                    new Action(ret =>
-                                        {
-                                            Styx.CommonBot.Rest.DrinkImmediate();
-                                        }),
-                                    Helpers.Common.CreateWaitForLagDuration()
-                                    )
-                                )
-                            ),
+                            ret => {
+                                if (Me.HasAura("Drink") && Me.PowerType == WoWPowerType.Mana && Me.ManaPercent < 95)
+                                    return true;
 
-                // This is to ensure we STAY SEATED while eating/drinking. No reason for us to get up before we have to.
-                        new Decorator(
-                            ret => (Me.HasAura("Food") && Me.HealthPercent < 95)
-                                || (Me.HasAura("Drink") && Me.PowerType == WoWPowerType.Mana && Me.ManaPercent < 95),
+                                if (Me.HasAura("Food") && Me.HealthPercent < 95)
+                                {
+                                    if (Me.ManaPercent < 70)
+                                    {
+                                        return true;
+                                    }
+
+                                    if (spellHeal != null)
+                                    {
+                                        Logger.Write(LogColor.Cancel, "/cancel Eating since mana at {0:F1}%", Me.ManaPercent );
+                                        Me.CancelAura("Food");
+                                        return true;
+                                    }
+                                }
+
+                                return false;
+                                },
                             new ActionAlwaysSucceed()
                             ),
 

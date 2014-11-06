@@ -281,7 +281,7 @@ namespace Singular.ClassSpecific.Priest
                                     on => (WoWUnit)on, 
                                     req => OrbCount >= 1
                                         && ((WoWUnit)req).Distance < 30 
-                                        && (((WoWUnit)req).Class == WoWClass.Hunter || ((WoWUnit)req).Class == WoWClass.Rogue || ((WoWUnit)req).Class == WoWClass.Warrior || ((WoWUnit)req).Class == WoWClass.DeathKnight || ((WoWUnit)req).HasAnyAura("Inquisition", "Maelstrom Weapon", "Savage Roar"))
+                                        && (((WoWUnit)req).Class == WoWClass.Hunter || ((WoWUnit)req).Class == WoWClass.Rogue || ((WoWUnit)req).Class == WoWClass.Warrior || ((WoWUnit)req).Class == WoWClass.DeathKnight || ((WoWUnit)req).HasAnyAura("Maelstrom Weapon", "Savage Roar"))
                                     )
                                 )
                             ),
@@ -524,13 +524,13 @@ namespace Singular.ClassSpecific.Priest
                         return false;
 
                     if (!Spell.IsSpellOnCooldown("Mind Blast") && Spell.GetSpellCastTime("Mind Blast") == TimeSpan.Zero)
-                        Logger.Write(Color.White, "/cancel Mind Flay for instant Mind Blast proc");
+                        Logger.Write(LogColor.Cancel, "/cancel Mind Flay for instant Mind Blast proc");
                     else if (Me.HasAura("Surge of Darkness"))
-                        Logger.Write(Color.White, "/cancel Mind Flay for instant Mind Spike proc");
+                        Logger.Write(LogColor.Cancel, "/cancel Mind Flay for instant Mind Spike proc");
                     else if (SpellManager.HasSpell("Shadow Word: Insanity") && Unit.NearbyUnfriendlyUnits.Any(u => u.GetAuraTimeLeft("Shadow Word: Pain", true).TotalMilliseconds.Between(1000, 5000) && u.InLineOfSpellSight))
-                        Logger.Write(Color.White, "/cancel Mind Flay for Shadow Word: Insanity proc");
+                        Logger.Write(LogColor.Cancel, "/cancel Mind Flay for Shadow Word: Insanity proc");
                     else if (!Spell.IsSpellOnCooldown("Shadow Word: Death") && Unit.NearbyUnfriendlyUnits.Any(u => u.HealthPercent < 20 && u.InLineOfSpellSight))
-                        Logger.Write(Color.White, "/cancel Mind Flay for Shadow Word: Death proc");
+                        Logger.Write(LogColor.Cancel, "/cancel Mind Flay for Shadow Word: Death proc");
                     else
                         return false;
 

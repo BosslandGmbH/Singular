@@ -320,33 +320,33 @@ namespace Singular.ClassSpecific.Warrior
 
                     if (Me.CurrentTarget.IsFlying)
                     {
-                        Logger.Write(Color.White, "Ranged Attack: {0} is Flying! using Ranged attack....", Me.CurrentTarget.SafeName());
+                        Logger.Write( LogColor.Hilite, "Ranged Attack: {0} is Flying! using Ranged attack....", Me.CurrentTarget.SafeName());
                         return true;
                     }
 
                     if ((DateTime.Now - Singular.Utilities.EventHandlers.LastNoPathFailure).TotalSeconds < 1f)
                     {
-                        Logger.Write(Color.White, "Ranged Attack: No Path Available error just happened, so using Ranged attack ....", Me.CurrentTarget.SafeName());
+                        Logger.Write( LogColor.Hilite, "Ranged Attack: No Path Available error just happened, so using Ranged attack ....", Me.CurrentTarget.SafeName());
                         return true;
                     }
 /*
                     if (Me.CurrentTarget.IsAboveTheGround())
                     {
-                    Logger.Write(Color.White, "{0} is {1:F1) yds above the ground! using Ranged attack....", Me.CurrentTarget.SafeName(), Me.CurrentTarget.HeightOffTheGround());
+                    Logger.Write( LogColor.Hilite, "{0} is {1:F1) yds above the ground! using Ranged attack....", Me.CurrentTarget.SafeName(), Me.CurrentTarget.HeightOffTheGround());
                     return true;
                     }
 */
                     double heightCheck = Me.CurrentTarget.MeleeDistance();
                     if (Me.CurrentTarget.Distance2DSqr < heightCheck * heightCheck && Math.Abs(Me.Z - Me.CurrentTarget.Z) >= heightCheck )
                     {
-                        Logger.Write(Color.White, "Ranged Attack: {0} appears to be off the ground! using Ranged attack....", Me.CurrentTarget.SafeName());
+                        Logger.Write( LogColor.Hilite, "Ranged Attack: {0} appears to be off the ground! using Ranged attack....", Me.CurrentTarget.SafeName());
                         return true;
                     }
                     
                     WoWPoint dest = Me.CurrentTarget.Location;
                     if (!Me.CurrentTarget.IsWithinMeleeRange && !Styx.Pathing.Navigator.CanNavigateFully(Me.Location, dest))
                     {
-                        Logger.Write(Color.White, "Ranged Attack: {0} is not Fully Pathable! using ranged attack....", Me.CurrentTarget.SafeName());
+                        Logger.Write( LogColor.Hilite, "Ranged Attack: {0} is not Fully Pathable! using ranged attack....", Me.CurrentTarget.SafeName());
                         return true;
                     }
 

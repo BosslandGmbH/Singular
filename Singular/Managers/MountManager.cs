@@ -1,11 +1,9 @@
-﻿using Styx;
+﻿using Singular.Helpers;
+using Singular.Settings;
+using Styx;
 using Styx.CommonBot;
 using Styx.WoWInternals;
-using System;
-using Singular.Settings;
-using Singular.Helpers;
-using System.Drawing;
-
+using System.Linq;
 namespace Singular.Managers
 {
     // This class is here to deal with Ghost Wolf/Travel Form usage for shamans and druids
@@ -40,9 +38,9 @@ namespace Singular.Managers
 
                         if (!StyxWoW.Me.HasAura("Ghost Wolf"))
                         {
-                            Logger.Write(Color.White, "^Ghost Wolf instead of mounting");
+                            Logger.Write( LogColor.Hilite, "^Ghost Wolf instead of mounting");
                             Spell.LogCast("Ghost Wolf", StyxWoW.Me);
-                            SpellManager.Cast("Ghost Wolf");
+                            Spell.CastPrimative("Ghost Wolf");
                         }
                     }
                     else if (StyxWoW.Me.Class == WoWClass.Druid && SingularSettings.Instance.Druid().UseTravelForm && SpellManager.HasSpell("Travel Form") && StyxWoW.Me.IsOutdoors)
@@ -51,9 +49,12 @@ namespace Singular.Managers
 
                         if (!StyxWoW.Me.HasAura("Travel Form"))
                         {
-                            Logger.Write(Color.White, "^Travel Form instead of mounting.");
-                            Spell.LogCast("Travel Form", StyxWoW.Me);
-                            SpellManager.Cast("Travel Form");
+                            WoWAura aura = StyxWoW.Me.GetAllAuras().FirstOrDefault(a => a.Spell.Name.Substring(a.Name.Length - 5).Equals(" Form"));
+                            Logger.Write(LogColor.Hilite, "^Travel Form instead of mounting.");
+                            Logger.WriteDiagnostic("MountManager: changing to form='{0}',  current='{1}',  hb-says='{2}'",
+                                "Travel Form", aura == null ? "-none-" : aura.Name, StyxWoW.Me.Shapeshift.ToString()
+                                ); Spell.LogCast("Travel Form", StyxWoW.Me);
+                            Spell.CastPrimative("Travel Form");
                         }
                     }
                 }
@@ -63,9 +64,13 @@ namespace Singular.Managers
 
                     if (!StyxWoW.Me.HasAnyAura("Aquatic Form", "Flight Form"))  // check flightform in case we jump cast it at water surface
                     {
-                        Logger.Write(Color.White, "^Aquatic Form instead of mounting.");
+                        WoWAura aura = StyxWoW.Me.GetAllAuras().FirstOrDefault(a => a.Spell.Name.Substring(a.Name.Length - 5).Equals(" Form"));
+                        Logger.WriteDiagnostic("MountManager: changing to form='{0}',  current='{1}',  hb-says='{2}'",
+                            "Travel Form", aura == null ? "-none-" : aura.Name, StyxWoW.Me.Shapeshift.ToString()
+                            ); Spell.LogCast("Travel Form", StyxWoW.Me);
+                        Logger.Write(LogColor.Hilite, "^Aquatic Form instead of mounting.");
                         Spell.LogCast("Aquatic Form", StyxWoW.Me);
-                        SpellManager.Cast("Aquatic Form");
+                        Spell.CastPrimative("Aquatic Form");
                     }
                 }
             }

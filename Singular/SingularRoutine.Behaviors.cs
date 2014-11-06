@@ -229,8 +229,8 @@ namespace Singular
                     _inQuestVehicle = Me.InVehicle; 
                     if (_inQuestVehicle )
                     {
-                        Logger.Write(Color.White, "Singular is {0} while in a Quest Vehicle", SingularSettings.Instance.DisableInQuestVehicle ? "Disabled" : "Enabled");
-                        Logger.Write(Color.White, "Change [Disable in Quest Vehicle] setting to '{0}' to change", !SingularSettings.Instance.DisableInQuestVehicle);
+                        Logger.Write( LogColor.Hilite, "Singular is {0} while in a Quest Vehicle", SingularSettings.Instance.DisableInQuestVehicle ? "Disabled" : "Enabled");
+                        Logger.Write( LogColor.Hilite, "Change [Disable in Quest Vehicle] setting to '{0}' to change", !SingularSettings.Instance.DisableInQuestVehicle);
                     }
                 }
 
@@ -251,7 +251,7 @@ namespace Singular
                     _inPetCombat = PetBattleInProgress();
                     if (_inPetCombat)
                     {
-                        Logger.Write(Color.White, "Behaviors disabled in Pet Fight");
+                        Logger.Write( LogColor.Hilite, "Behaviors disabled in Pet Fight");
                     }
                 }
 
@@ -343,9 +343,9 @@ namespace Singular
 
                             return RunStatus.Failure;
                         }),
-                        new ThrottlePasses(1, 1, new Decorator(ret => Me.Fleeing, new Action(r => { Logger.Write(Color.White, "FLEEING! (loss of control)"); return RunStatus.Failure; }))),
-                        new ThrottlePasses(1, 1, new Decorator(ret => Me.Stunned, new Action(r => { Logger.Write(Color.White, "STUNNED! (loss of control)"); return RunStatus.Failure; }))),
-                        new ThrottlePasses(1, 1, new Decorator(ret => Me.Silenced, new Action(r => { Logger.Write(Color.White, "SILENCED! (loss of control)"); return RunStatus.Failure; }))),
+                        new ThrottlePasses(1, 1, new Decorator(ret => Me.Fleeing, new Action(r => { Logger.Write( LogColor.Hilite, "FLEEING! (loss of control)"); return RunStatus.Failure; }))),
+                        new ThrottlePasses(1, 1, new Decorator(ret => Me.Stunned, new Action(r => { Logger.Write( LogColor.Hilite, "STUNNED! (loss of control)"); return RunStatus.Failure; }))),
+                        new ThrottlePasses(1, 1, new Decorator(ret => Me.Silenced, new Action(r => { Logger.Write( LogColor.Hilite, "SILENCED! (loss of control)"); return RunStatus.Failure; }))),
                         new Throttle(1,
                             new PrioritySelector(
                                 composite ?? new ActionAlwaysFail(),
@@ -712,7 +712,7 @@ namespace Singular
             if (_prevPullDistance != CharacterSettings.Instance.PullDistance)
             {
                 _prevPullDistance = CharacterSettings.Instance.PullDistance;
-                Logger.Write(Color.HotPink, "info: Pull Distance set to {0} yds by {1}, Plug-in, Profile, or User", _prevPullDistance, GetBotName());
+                Logger.WriteDiagnostic(Color.HotPink, "info: Pull Distance set to {0} yds by {1}, Plug-in, Profile, or User", _prevPullDistance, GetBotName());
             }
         }
 
@@ -1061,7 +1061,7 @@ namespace Singular
                                         new Action( r => 
                                             {
                                             WoWUnit unit = (r as WoWUnit);
-                                            Logger.Write(Color.White, "Pull More: could not pull {0} @ {1:F1} yds within {2} seconds, blacklisting",
+                                            Logger.Write( LogColor.Hilite, "Pull More: could not pull {0} @ {1:F1} yds within {2} seconds, blacklisting",
                                                 unit.SafeName(),
                                                 unit.SpellDistance(),
                                                 SingularSettings.Instance.PullMoreTimeOut
@@ -1108,6 +1108,7 @@ namespace Singular
                                                 && Unit.ValidUnit(t)
                                                 && t.Level <= (Me.Level + 2)
                                                 && (whereClause(t) || Targeting.Instance.TargetList.Any(u => u.Guid == t.Guid))
+                                                && (ProfileManager.CurrentProfile == null || ProfileManager.CurrentProfile.AvoidMobs == null || !ProfileManager.CurrentProfile.AvoidMobs.Contains(t.Entry))
                                                 && t.SpellDistance() <= _rangePullMore
                                             )
                                         .OrderBy(k => (long)k.DistanceSqr)
@@ -1123,7 +1124,7 @@ namespace Singular
                                             unit.IsTagged.ToYN()
                                             );
 
-                                        Logger.Write(Color.White, "Pull More: pulling {0} #{1} - {2} @ {3:F1} yds", _PullMoreTargetFindType, _mobCountInCombat + 1, nextPull.SafeName(), nextPull.SpellDistance());
+                                        Logger.Write( LogColor.Hilite, "Pull More: pulling {0} #{1} - {2} @ {3:F1} yds", _PullMoreTargetFindType, _mobCountInCombat + 1, nextPull.SafeName(), nextPull.SpellDistance());
                                         BotPoi poi = new BotPoi(nextPull, PoiType.Kill, NavType.Run);
                                         Logger.WriteDebug("Setting BotPoi to Kill {0}", nextPull.SafeName());
                                         Styx.CommonBot.POI.BotPoi.Current = poi;
@@ -1272,28 +1273,40 @@ namespace Singular
 
                 WoWDescriptorQuest wd;
                 playerQuest.GetData(out wd);
-                string wdout = "";
-
-                foreach (ushort i in wd.ObjectivesDone)
-                {
-                    wdout += i.ToString() + " ";
-                }
-
+                //string wdout = "";
+                //
+                //foreach (ushort i in wd.ObjectivesDone)
+                //{
+                //    wdout += i.ToString() + " ";
+                //}
+                //
                 // Logger.WriteDiagnostic("   Completed: {0}", wdout);
+
                 foreach (var objective in objectives)
                 {
-                    // ensure the index is valid - not really sure if this check is required but better be safe than sorry. HV
-                    if (objective.Index < 0 || objective.Index >= wd.ObjectivesDone.Length)
-                        continue;
-                    
-                    if (wd.ObjectivesDone[objective.Index] < objective.Count)
+                    bool addObjectiveToKillList = false;
+                    if (objective.Type == Quest.QuestObjectiveType.KillMob || objective.Type == Quest.QuestObjectiveType.CollectItem || objective.Type == Quest.QuestObjectiveType.CollectIntermediateItem)
+                    {
+                        if (wd.ObjectivesDone == null)
+                            Logger.WriteDebug("PullMoreQuestTargets: quest:{0}  obj:{1}  wd:{2} - WoWDescriptorQuest has unexpected Done tracking list", playerQuest.Id, objective.ID, wd.Id);
+                        else if (objective.Count == 0)
+                            ;   // assume 0 when no objective and quest is complete when picked up
+                        else if (objective.Index < wd.ObjectivesDone.GetLowerBound(0))
+                            Logger.WriteDebug("PullMoreQuestTargets: quest:{0}  obj:{1}  wd:{2} - Done.LowerBound:{3} but obj.Index{4} too low", playerQuest.Id, objective.ID, wd.Id, wd.ObjectivesDone.GetLowerBound(0), objective.Index);
+                        else if (objective.Index > wd.ObjectivesDone.GetUpperBound(0))
+                            Logger.WriteDebug("PullMoreQuestTargets: quest:{0}  obj:{1}  wd:{2} - Done.UpperBound:{3} but obj.Index{4} too high", playerQuest.Id, objective.ID, wd.Id, wd.ObjectivesDone.GetUpperBound(0), objective.Index);
+                        else 
+                            addObjectiveToKillList = wd.ObjectivesDone[objective.Index] < objective.Count;
+                    }
+
+                    if (addObjectiveToKillList)
                     {
                         if (objective.Type == Quest.QuestObjectiveType.KillMob)
                         {
                             // Logger.WriteDiagnostic("   KillQuestObj:  #{0}  {1} {2}", objective.ID, objective.Index, objective.Count);
                             killObjectives.Add(objective);
                         }
-                        else if (objective.Type == Quest.QuestObjectiveType.CollectItem)
+                        else if (objective.Type == Quest.QuestObjectiveType.CollectItem || objective.Type == Quest.QuestObjectiveType.CollectIntermediateItem)
                         {
                             // Logger.WriteDiagnostic("   CollQuestObj:  #{0}  {1} {2}", objective.ID, objective.Index, objective.Count);
                             collectObjectives.Add(objective);
@@ -1338,7 +1351,7 @@ namespace Singular
             if (_pmGuids == null || !_pmGuids.Any())
                 return u => false;
 
-            return u => _pmGuids.Contains(u.Guid);
+            return u => _pmGuids.Contains(u.Guid)  ;
         }
 
         private static uint _prevQuestId;
@@ -1346,7 +1359,6 @@ namespace Singular
         {
             if (!IsQuestProfileLoaded)
                 return;
-
 
             // loop through all open quests
             foreach (var playerQuest in Styx.WoWInternals.QuestLog.Instance.GetAllQuests())
@@ -1373,7 +1385,7 @@ namespace Singular
                     wdout += i.ToString() + " ";
                 }
 
-                Logger.WriteDiagnostic("   Completed: {0}", wdout);
+                Logger.WriteDiagnostic("   Completed[{0}]: {1}", wd.ObjectivesDone.GetLength(0), wdout);
                 foreach (var objective in objectives)
                 {
                     Logger.WriteDiagnostic("   CurrQuestObjInfo: #{0} [{1}], Objective: type={2} #{3} idx={4} cnt={5} ", playerQuest.Id, playerQuest.Name, objective.Type, objective.ID, objective.Index, objective.Count);
@@ -1440,11 +1452,13 @@ namespace Singular
 #endif
         private static HashSet<uint> _pmFactions { get; set; }
         private static HashSet<uint> _pmEntrys { get; set; }
-
+        private static HashSet<uint> _pmAvoid { get; set; }
         private static Func<WoWUnit, bool> PullMoreGrindTargetsDelegate()
         {
             _pmFactions = null;
             _pmEntrys = null;
+            _pmAvoid = null;
+
             if (ProfileManager.CurrentProfile != null && ProfileManager.CurrentProfile.GrindArea != null)
             {
                 if (ProfileManager.CurrentProfile.GrindArea.Factions.Any())

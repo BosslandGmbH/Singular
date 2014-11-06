@@ -15,7 +15,6 @@ using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using Singular.Settings;
-using Styx.WoWInternals;
 using Styx.Common.Helpers;
 
 
@@ -280,24 +279,7 @@ namespace Singular.ClassSpecific.Monk
 
                             Helpers.Common.CreateInterruptBehavior(),
 
-                            Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
-
-                            new Decorator(
-                                req =>
-                                {
-                                    if (!Me.GotTarget)
-                                        return false;
-
-                                    if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
-                                        return Me.CurrentTarget.IsBoss();
-
-                                    // grapple weapon if target is within melee range of its target
-                                    WoWUnit tt = Me.CurrentTarget.CurrentTarget;
-                                    return !Me.CurrentTarget.IsStunned() && tt != null && tt.IsWithinMeleeRangeOf(Me.CurrentTarget);
-                                },
-
-                                Common.CreateGrappleWeaponBehavior()
-                                ),
+                            Common.CastTouchOfDeath(),
 
                             Spell.Cast("Paralysis",
                                 onu => Unit.NearbyUnfriendlyUnits
@@ -321,6 +303,7 @@ namespace Singular.ClassSpecific.Monk
 
                             // chi dump
                             Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
+                            Spell.Cast("Rising Sun Kick", ret => Me.CurrentChi >= 2),
                             Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi),
 
                             Spell.Cast("Expel Harm", on => Common.BestExpelHarmTarget()),
@@ -373,21 +356,7 @@ namespace Singular.ClassSpecific.Monk
                                     Helpers.Common.CreateInterruptBehavior(),
                                     Dispelling.CreatePurgeEnemyBehavior("Detox"),
 
-                                    Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
-
-                                    new Decorator(
-                                        req =>
-                                        {
-                                            if (!Me.GotTarget)
-                                                return false;
-
-                                            // grapple weapon if target is within melee range of its target
-                                            WoWUnit tt = Me.CurrentTarget.CurrentTarget;
-                                            return !Me.CurrentTarget.IsStunned() && tt != null && tt.IsWithinMeleeRangeOf(Me.CurrentTarget);
-                                        },
-
-                                        Common.CreateGrappleWeaponBehavior()
-                                        ),
+                                    Common.CastTouchOfDeath(),
 
                                     Spell.Cast("Paralysis",
                                         onu => Unit.NearbyUnfriendlyUnits
@@ -504,14 +473,14 @@ namespace Singular.ClassSpecific.Monk
 
                                         if (HealerManager.CancelHealerDPS())
                                         {
-                                            Logger.Write(Color.Orange, "/cancel {0} since only {1} friendly targets hit and cannot DPS", SpinningCraneKick, countFriendly);
+                                            Logger.Write(LogColor.Cancel, "/cancel {0} since only {1} friendly targets hit and cannot DPS", SpinningCraneKick, countFriendly);
                                             return true;
                                         }
 
                                         int countEnemy = Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() <= 8);
                                         if ((countFriendly + countEnemy) < 3)
                                         {
-                                            Logger.Write(Color.Orange, "/cancel {0} since only {1} friendly and {2} enemy targets hit", SpinningCraneKick, countFriendly, countEnemy);
+                                            Logger.Write(LogColor.Cancel, "/cancel {0} since only {1} friendly and {2} enemy targets hit", SpinningCraneKick, countFriendly, countEnemy);
                                             return true;
                                         }
                                         return false;
@@ -540,73 +509,9 @@ namespace Singular.ClassSpecific.Monk
                                 // I WANT CHI!!!
                                 Spell.Cast("Expel Harm", on => Common.BestExpelHarmTarget(), ret => Me.CurrentChi < Me.MaxChi),
 
-                                // deal with buffs as highest priority
-                                new Decorator(
-                                    req => Me.HasAura("Teachings of the Monastery"),
-                                    new PrioritySelector(
-
-                                        // lets keep up Muscle Memory
-                                        new Decorator(
-                                            req => !Me.HasAura("Muscle Memory"),
-                                            new Sequence(
-                                                Spell.Cast("Jab"),
-                                                Helpers.Common.CreateWaitForLagDuration(until => Me.HasAura("Muscle Memory"))
-                                                )
-                                            ),
-
-                                        // lets keep up Tiger Power and Serpent Zeal
-                                        new Decorator(
-                                            req => !Me.HasAura("Serpent Zeal") || !Me.HasAura("Tiger Power"),
-                                            new PrioritySelector(
-                                                // let's buff Muscle Memory if we need a Tiger Palm or Blackout Kick
-                                                new Decorator(
-                                                    req => !Me.HasAura("Muscle Memory"),
-                                                    new Sequence(
-                                                        Spell.Cast("Jab"),
-                                                        Helpers.Common.CreateWaitForLagDuration( until => Me.HasAura("Muscle Memory"))
-                                                        )
-                                                    ),
-                                                Spell.Cast("Tiger Palm", req => Me.HasKnownAuraExpired("Tiger Power") || Me.HasKnownAuraExpired("Vital Mists")),
-                                                Spell.Cast("Blackout Kick", req => Me.HasKnownAuraExpired("Serpent Zeal"))
-                                                )
-                                            ),
-
-                                        // if multiple targets, lets Blackout Kick
-                                        new Decorator(
-                                            req => HealerManager.Instance.FirstUnit != null
-                                                && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
-                                            new PrioritySelector(                                                
-                                                new Decorator(
-                                                    req => !Me.HasAura("Muscle Memory"),
-                                                    new Sequence(
-                                                        Spell.Cast("Jab"),
-                                                        Helpers.Common.CreateWaitForLagDuration(until => Me.HasAura("Muscle Memory"))
-                                                        )
-                                                    ),
-
-                                                Spell.Cast("Blackout Kick", req => Me.HasAura("Muscle Memory") )
-                                                )
-                                            )
-                                        )
-                                    ),
-                                        
-
                                 //        
                                 Helpers.Common.CreateInterruptBehavior(),
-                                Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
-
-                                // grapple weapon if target is within melee range of its target
-                                new Decorator(
-                                    req =>
-                                    {
-                                        if (!Me.GotTarget)
-                                            return false;
-                                        WoWUnit tt = Me.CurrentTarget.CurrentTarget;
-                                        return !Me.CurrentTarget.IsStunned() && tt != null && tt.IsWithinMeleeRangeOf(Me.CurrentTarget);
-                                    },
-
-                                    Common.CreateGrappleWeaponBehavior()
-                                    ),
+                                Common.CastTouchOfDeath(),
 
                                 Spell.Cast("Leg Sweep", ret => Spell.UseAOE && SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.CurrentTarget.IsWithinMeleeRange),
 
@@ -617,6 +522,7 @@ namespace Singular.ClassSpecific.Monk
 
                                 // chi dump
                                 Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
+                                Spell.Cast("Rising Sun Kick", ret => Me.CurrentChi >= 2),
                                 Spell.Cast("Blackout Kick", ret => Me.CurrentChi >= 2),
 
                                 Spell.Cast(
@@ -819,7 +725,7 @@ namespace Singular.ClassSpecific.Monk
             {
                 behavs.AddBehavior(
                     HealthToPriority(MonkSettings.MistHealSettings.ThunderFocusHealGroup) + 400,
-                    String.Format("Thunder Focus Uplift on {0} targets @ {1}%", MonkSettings.MistHealSettings.CountThunderFocusHealGroup, MonkSettings.MistHealSettings.ThunderFocusHealGroup),
+                    String.Format("Thunder Focus Renewing Mist on {0} targets @ {1}%", MonkSettings.MistHealSettings.CountThunderFocusHealGroup, MonkSettings.MistHealSettings.ThunderFocusHealGroup),
                     "Thunder Focus Tea",
                     new Decorator(
                         ret =>
@@ -833,7 +739,7 @@ namespace Singular.ClassSpecific.Monk
                             if (!Spell.CanCastHack("Thunder Focus Tea"))
                                 return false;
 
-                            int count = HealerManager.Instance.TargetList.Count(p => !p.HasAuraExpired("Renewing Mist", TimeSpan.FromMilliseconds(150)) && p.PredictedHealthPercent() <= MonkSettings.MistHealSettings.ThunderFocusHealGroup);
+                            int count = HealerManager.Instance.TargetList.Count(p => p.HasAuraExpired("Renewing Mist", TimeSpan.FromMilliseconds(150)) && p.PredictedHealthPercent() <= MonkSettings.MistHealSettings.ThunderFocusHealGroup);
                             if (count >= MonkSettings.MistHealSettings.CountThunderFocusHealGroup)
                             {
                                 Logger.WriteDebug("ThunderFocus: found {0} below {1}%", MonkSettings.MistHealSettings.CountThunderFocusHealGroup, MonkSettings.MistHealSettings.ThunderFocusHealGroup);
@@ -845,7 +751,7 @@ namespace Singular.ClassSpecific.Monk
                         new Sequence(
                             Spell.Cast("Thunder Focus Tea"),
                             Spell.Cast(
-                                "Uplift",
+                                "Renewing Mist",
                                 on => on as WoWUnit
                                 )
                             )
@@ -906,24 +812,6 @@ namespace Singular.ClassSpecific.Monk
 
             #region Single Target Heals
 
-            // healing sphere
-            behavs.AddBehavior(
-                HealthToPriority(MonkSettings.MistHealSettings.HealingSphere),
-                String.Format("Healing Sphere @ {0}%", MonkSettings.MistHealSettings.HealingSphere),
-                "Healing Sphere",
-                new Decorator(
-                    req => (req as WoWUnit).PredictedHealthPercent(includeMyHeals: true) < MonkSettings.MistHealSettings.HealingSphere,
-                    new Sequence(
-                        Spell.CastOnGround("Healing Sphere", on => (WoWUnit)on, req => true, false),
-                        new Wait(TimeSpan.FromMilliseconds(350), until => Spell.GetPendingCursorSpell != null, new ActionAlwaysSucceed()),
-                        new Action(r =>
-                        {
-                            Logger.WriteDebug("HealingSphere: /cancel Pending Spell {0}", Spell.GetPendingCursorSpell.Name);
-                            Lua.DoString("SpellStopTargeting()");
-                        })
-                        )
-                    )
-                );
 
             behavs.AddBehavior(
                 HealthToPriority(MonkSettings.MistHealSettings.SoothingMist),
@@ -1002,7 +890,7 @@ namespace Singular.ClassSpecific.Monk
                             if (revlist.Count() < MonkSettings.MistHealSettings.CountRevival)
                                 return null;
 
-                            Logger.Write(Color.White, "Revival: found {0} heal targets below {1}%", revlist.Count(), MonkSettings.MistHealSettings.Revival);
+                            Logger.Write( LogColor.Hilite, "Revival: found {0} heal targets below {1}%", revlist.Count(), MonkSettings.MistHealSettings.Revival);
                             return revlist.FirstOrDefault(u => u != null && u.IsValid);
                         })
                         )
@@ -1205,26 +1093,6 @@ namespace Singular.ClassSpecific.Monk
                         )
                     )
                 );
-
-            // healing sphere
-            behavs.AddBehavior(
-                HealthToPriority(MonkSettings.MistHealSettings.HealingSphere),
-                String.Format("Healing Sphere @ {0}%", MonkSettings.MistHealSettings.HealingSphere),
-                "Healing Sphere",
-                new Decorator(
-                    req => Me.IsMoving && (req as WoWUnit).PredictedHealthPercent(includeMyHeals: true) < MonkSettings.MistHealSettings.HealingSphere,
-                    new Sequence(
-                        Spell.CastOnGround("Healing Sphere", on => (WoWUnit)on, req => true, false),
-                        new Wait(TimeSpan.FromMilliseconds(350), until => Spell.GetPendingCursorSpell != null, new ActionAlwaysSucceed()),
-                        new Action(r =>
-                        {
-                            Logger.WriteDebug("HealingSphere: /cancel Pending Spell {0}", Spell.GetPendingCursorSpell.Name);
-                            Lua.DoString("SpellStopTargeting()");
-                        })
-                        )
-                    )
-                );
-
         }
 
 
@@ -1435,7 +1303,7 @@ namespace Singular.ClassSpecific.Monk
                                 new DecoratorContinue(
                                     req => (req as WoWUnit).HealthPercent > 99,
                                     new Sequence(
-                                        new Action(u => Logger.Write(System.Drawing.Color.OrangeRed, "/cancel: cancel {0} on {1} @ {2:F1}", Me.ChanneledSpell.Name, (u as WoWUnit).SafeName(), (u as WoWUnit).HealthPercent)),
+                                        new Action(u => Logger.Write(LogColor.Cancel, "/cancel: cancel {0} on {1} @ {2:F1}", Me.ChanneledSpell.Name, (u as WoWUnit).SafeName(), (u as WoWUnit).HealthPercent)),
                                         new Action(r => SpellManager.StopCasting()),
 
                                         // wait for channel to actual stop
@@ -1480,9 +1348,9 @@ namespace Singular.ClassSpecific.Monk
                                             {
                                                 Logger.WriteDiagnostic(surgmistTargetMessage, (req as WoWUnit).SafeName(), (req as WoWUnit).HealthPercent);
                                                 if (req == null)
-                                                    Logger.Write(System.Drawing.Color.OrangeRed, "/cancel: {0} because {1} @ {2:F1}% needs saving heal", Me.ChanneledSpell.Name, cancelFor.SafeName(), cancelFor.HealthPercent);
+                                                    Logger.Write(LogColor.Cancel, "/cancel: {0} because {1} @ {2:F1}% needs saving heal", Me.ChanneledSpell.Name, cancelFor.SafeName(), cancelFor.HealthPercent);
                                                 else
-                                                    Logger.Write(System.Drawing.Color.OrangeRed, "/cancel: {0} on {1} @ {2:F1}% because {3} @ {4:F1}% needs saving heal", Me.ChanneledSpell.Name, (req as WoWUnit).SafeName(), (req as WoWUnit).HealthPercent, cancelFor.SafeName(), cancelFor.HealthPercent);
+                                                    Logger.Write(LogColor.Cancel, "/cancel: {0} on {1} @ {2:F1}% because {3} @ {4:F1}% needs saving heal", Me.ChanneledSpell.Name, (req as WoWUnit).SafeName(), (req as WoWUnit).HealthPercent, cancelFor.SafeName(), cancelFor.HealthPercent);
 
                                                 SpellManager.StopCasting();
                                                 HealerManager.SavingHealUnit = cancelFor;
@@ -1807,13 +1675,12 @@ namespace Singular.ClassSpecific.Monk
                         else if (!target.IsValid)
                             line += ", target=(invalid)";
                         else
-                            line += string.Format(", target={0} {1:F1}% @ {2:F1} yds, face={3} tloss={4}, gw={5}",
+                            line += string.Format(", target={0} {1:F1}% @ {2:F1} yds, face={3} tloss={4}",
                                 target.SafeName(),
                                 target.HealthPercent,
                                 target.Distance,
                                 Me.IsSafelyFacing(target).ToYN(),
-                                target.InLineOfSpellSight.ToYN(),
-                                (long)target.GetAuraTimeLeft("Grapple Weapon").TotalMilliseconds
+                                target.InLineOfSpellSight.ToYN()
                                 );
 
                         Logger.WriteDebug(Color.Yellow, line);

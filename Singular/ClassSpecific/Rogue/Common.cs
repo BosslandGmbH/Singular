@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using Styx.Helpers;
 using System.Drawing;
 using Styx.Common;
+using Singular.Utilities;
 
 namespace Singular.ClassSpecific.Rogue
 {
@@ -386,7 +387,7 @@ namespace Singular.ClassSpecific.Rogue
                     if (!Spell.CanCastHackHaveEnoughPower(spell, unit))
                         return false;
 
-                    Logger.Write(Color.White, "^Cloak and Dagger: attempting a ranged {0} from {1:F1} yds", spell.Name, unit.SpellDistance());
+                    Logger.Write( LogColor.Hilite, "^Cloak and Dagger: attempting a ranged {0} from {1:F1} yds", spell.Name, unit.SpellDistance());
                     return true;
                 }
             }
@@ -522,7 +523,7 @@ namespace Singular.ClassSpecific.Rogue
                 _lastSapTarget = closestTarget.Guid;
                 // reset the Melee Range check timeer to avoid timing out
                 SingularRoutine.ResetCurrentTargetTimer();
-                Logger.Write(Color.White, msg, closestTarget.SafeName());
+                Logger.Write( LogColor.Hilite, msg, closestTarget.SafeName());
             }
 
             return closestTarget;
@@ -733,8 +734,10 @@ namespace Singular.ClassSpecific.Rogue
         public static Action CreateActionCalcAoeCount()
         {
             return new Action(ret =>
-            { 
+            {
                 if (!Spell.UseAOE || Battlegrounds.IsInsideBattleground || Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Me.CurrentTargetGuid && u.IsCrowdControlled()))
+                    AoeCount = 1;
+                else if (DateTime.Now < (EventHandlers.LastAttackedByEnemyPlayer + TimeSpan.FromSeconds(30)))
                     AoeCount = 1;
                 else
                     AoeCount = Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 3));
@@ -761,26 +764,26 @@ namespace Singular.ClassSpecific.Rogue
 
                     if (Me.CurrentTarget.IsFlying)
                     {
-                        Logger.Write(Color.White, "{0} is Flying! using Ranged attack....", Me.CurrentTarget.SafeName());
+                        Logger.Write( LogColor.Hilite, "{0} is Flying! using Ranged attack....", Me.CurrentTarget.SafeName());
                         return true;
                     }
 
                     if (Me.CurrentTarget.IsAboveTheGround())
                     {
-                        Logger.Write(Color.White, "{0} is {1:F1} yds above the ground! using Ranged attack....", Me.CurrentTarget.SafeName(), Me.CurrentTarget.HeightOffTheGround());
+                        Logger.Write( LogColor.Hilite, "{0} is {1:F1} yds above the ground! using Ranged attack....", Me.CurrentTarget.SafeName(), Me.CurrentTarget.HeightOffTheGround());
                         return true;
                     }
 
                     if (Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(Me.Z - Me.CurrentTarget.Z) >= 5)
                     {
-                        Logger.Write(Color.White, "{0} appears to be off the ground! using Ranged attack....", Me.CurrentTarget.SafeName());
+                        Logger.Write( LogColor.Hilite, "{0} appears to be off the ground! using Ranged attack....", Me.CurrentTarget.SafeName());
                         return true;
                     }
 
                     WoWPoint dest = Me.CurrentTarget.Location;
                     if ( !Me.CurrentTarget.IsWithinMeleeRange && !Styx.Pathing.Navigator.CanNavigateFully( Me.Location, dest))
                     {
-                        Logger.Write(Color.White, "{0} is not Fully Pathable! trying ranged attack....", Me.CurrentTarget.SafeName());
+                        Logger.Write( LogColor.Hilite, "{0} is not Fully Pathable! trying ranged attack....", Me.CurrentTarget.SafeName());
                         return true;
                     }
 
@@ -795,7 +798,7 @@ namespace Singular.ClassSpecific.Rogue
                     new Decorator(
                         ret => Me.HasAura("Stealth"),
                         new Sequence(
-                            new Action(ret => Logger.Write("/cancel Stealth")),
+                            new Action(ret => Logger.Write( LogColor.Cancel, "/cancel Stealth")),
                             new Action(ret => Me.CancelAura("Stealth")),
                             new Wait(TimeSpan.FromMilliseconds(500), ret => !Me.HasAura("Stealth"), new ActionAlwaysSucceed())
                             )
@@ -834,19 +837,19 @@ namespace Singular.ClassSpecific.Rogue
                 {
                     if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
                     {
-                        Logger.Write(Color.White, "warning:  Cloak and Dagger will be skipped on Pick Pocketable mobs.  Turn off 'Use Pick Pocket' to always use ranged Ambush, Cheap Shot, and Garrote.");
+                        Logger.Write( LogColor.Hilite, "warning:  Cloak and Dagger will be skipped on Pick Pocketable mobs.  Turn off 'Use Pick Pocket' to always use ranged Ambush, Cheap Shot, and Garrote.");
                         return new ActionAlwaysFail();
                     }
                     else
                     {
-                        Logger.Write(Color.White, "warning:  Cloak and Dagger will greatly reduce Pick Pocket usage.");
+                        Logger.Write( LogColor.Hilite, "warning:  Cloak and Dagger will greatly reduce Pick Pocket usage.");
                         return new ActionAlwaysFail();
                     }
                 }
 
                 if (!AutoLootIsEnabled())
                 {
-                    Logger.Write(Color.White, "warning:  Auto Loot is off, so Pick Pocket disabled - to allow Pick Pocket by Singular, enable your Auto Loot setting");
+                    Logger.Write( LogColor.Hilite, "warning:  Auto Loot is off, so Pick Pocket disabled - to allow Pick Pocket by Singular, enable your Auto Loot setting");
                     return new ActionAlwaysFail();
                 }
             }
@@ -928,7 +931,7 @@ namespace Singular.ClassSpecific.Rogue
                     // open unlocked box
                     new Sequence(
                         new Action(r => { box = FindUnlockedBox(); return box == null ? RunStatus.Failure : RunStatus.Success; }),
-                        new Action(r => Logger.Write(Color.White, "/open: unlocked {0} #{1}", box.Name, box.Entry)),
+                        new Action(r => Logger.Write( LogColor.Hilite, "/open: unlocked {0} #{1}", box.Name, box.Entry)),
                         new Wait(2, ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(), new ActionAlwaysSucceed()),
                         new Action(r => Logger.WriteDebug("openbox: no spell cast or gcd")),
                         new Action(r => box.UseContainerItem()),
@@ -943,8 +946,8 @@ namespace Singular.ClassSpecific.Rogue
                             Movement.CreateEnsureMovementStoppedBehavior(reason: "to Pick Lock"),
                             new ActionAlwaysSucceed()
                             ),
-                        new Action(r => Logger.Write(Color.White, "/pick lock: {0} #{1}", box.Name, box.Entry)),
-                        new Action( r => { return SpellManager.Cast( "Pick Lock", Me) ? RunStatus.Success : RunStatus.Failure; }),
+                        new Action(r => Logger.Write( LogColor.Hilite, "/pick lock: {0} #{1}", box.Name, box.Entry)),
+                        new Action( r => { return Spell.CastPrimative( "Pick Lock", Me) ? RunStatus.Success : RunStatus.Failure; }),
                         new Action( r => Logger.WriteDebug( "picklock: wait for spell on cursor")),
                         new Wait( 1, ret => Spell.GetPendingCursorSpell != null, new ActionAlwaysSucceed()),
                         new Action( r => Logger.WriteDebug( "picklock: use item")),

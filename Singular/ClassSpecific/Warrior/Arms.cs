@@ -168,7 +168,7 @@ namespace Singular.ClassSpecific.Warrior
                         // Noxxic
                         //----------------
                         new Decorator(
-                            ret => WarriorSettings.ArmsSpellPriority == Singular.Settings.WarriorSettings.SpellPriority.Noxxic,
+                            ret => true, // WarriorSettings.ArmsSpellPriority == WarriorSettings.SpellPriority.Noxxic,
                             new PrioritySelector(
 
                                 new Decorator(
@@ -225,7 +225,7 @@ namespace Singular.ClassSpecific.Warrior
 
 
                         new Decorator(
-                            ret => WarriorSettings.ArmsSpellPriority == Singular.Settings.WarriorSettings.SpellPriority.IcyVeins,
+                            ret => false, // WarriorSettings.ArmsSpellPriority == Singular.Settings.WarriorSettings.SpellPriority.IcyVeins,
                             new PrioritySelector(
                                 // Icy-Veins
                                 //-------------------------------
@@ -281,7 +281,7 @@ namespace Singular.ClassSpecific.Warrior
                             ),
 
                         new Decorator(
-                            ret => WarriorSettings.ArmsSpellPriority == Singular.Settings.WarriorSettings.SpellPriority.ElitistJerks,
+                            ret => false, // WarriorSettings.ArmsSpellPriority == Singular.Settings.WarriorSettings.SpellPriority.ElitistJerks,
                             new PrioritySelector(
         #region EXECUTE AVAILABLE
                                 new Decorator( ret => Me.CurrentTarget.HealthPercent <= 20,
@@ -521,7 +521,7 @@ namespace Singular.ClassSpecific.Warrior
                             return RunStatus.Failure;
 
                         Spell.LogCast("Heroic Leap", Me.CurrentTarget);
-                        SpellManager.Cast("Heroic Leap");
+                        Spell.CastPrimative("Heroic Leap");
                         SpellManager.ClickRemoteLocation(leapPos);
                         return RunStatus.Success;
                     }),
@@ -593,13 +593,13 @@ namespace Singular.ClassSpecific.Warrior
                 {
                     if (Me.RagePercent >= (Me.MaxRage - 15) && (Me.CurrentTarget.HealthPercent > 20 || !SpellManager.HasSpell("Colossus Smash")))
                     {
-                        Logger.Write(Color.White, "^Heroic Strike - Rage Dump @ {0}%", (int)Me.RagePercent);
+                        Logger.Write( LogColor.Hilite, "^Heroic Strike - Rage Dump @ {0}%", (int)Me.RagePercent);
                         return true;
                     }
 
                     if (Me.CurrentTarget.HasAura("Colossus Smash"))
                     {
-                        Logger.Write(Color.White, "^Heroic Strike - Rage Dump @ {0}% with Colossus Smash active", (int)Me.RagePercent);
+                        Logger.Write( LogColor.Hilite, "^Heroic Strike - Rage Dump @ {0}% with Colossus Smash active", (int)Me.RagePercent);
                         return true;
                     }
                 }
@@ -616,7 +616,7 @@ namespace Singular.ClassSpecific.Warrior
                 {
                     if (Me.CurrentTarget.HasAura("Colossus Smash") || !SpellManager.HasSpell("Colossus Smash") || Me.CurrentTarget.TimeToDeath() < 8)
                     {
-                        Logger.Write(Color.White, "^Heroic Strike - Rage Dump @ {0}%", (int)Me.RagePercent);
+                        Logger.Write( LogColor.Hilite, "^Heroic Strike - Rage Dump @ {0}%", (int)Me.RagePercent);
                         return true;
                     }
                 }

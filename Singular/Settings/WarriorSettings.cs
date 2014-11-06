@@ -36,13 +36,13 @@ namespace Singular.Settings
             IcyVeins = 2,
             ElitistJerks = 3
         }
-
+#if MULTIPLE_SUPPORTED
         [Setting]
         [DefaultValue(SpellPriority.Noxxic)]
         [Category("Arms")]
         [DisplayName("Spell Priority Selection")]
         public SpellPriority ArmsSpellPriority { get; set; }
-
+#endif
         [Setting]
         [DefaultValue(50)]
         [Category("Protection")]

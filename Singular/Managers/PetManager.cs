@@ -116,7 +116,7 @@ namespace Singular.Managers
             if ( unit == null || StyxWoW.Me.Pet == null || StyxWoW.Me.Pet.CurrentTargetGuid == unit.Guid)
                 return false;
 
-            Logger.Write(Color.White, "/petattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
+            Logger.Write( LogColor.Hilite, "/petattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
             PetManager.CastPetAction("Attack", unit);
             return true;
         }
@@ -238,7 +238,7 @@ namespace Singular.Managers
                     if (Spell.CanCastHack("Summon " + petName))
                     {
                         Logger.Write(Color.DeepSkyBlue, "[Pet] Calling out my {0}", petName);
-                        bool result = SpellManager.Cast("Summon " + petName);
+                        bool result = Spell.CastPrimative("Summon " + petName);
                         return result;
                     }
                     break;
@@ -247,7 +247,7 @@ namespace Singular.Managers
                     if (Spell.CanCastHack("Summon Water Elemental"))
                     {
                         Logger.Write(Color.DeepSkyBlue, "[Pet] Calling out Water Elemental");
-                        bool result = SpellManager.Cast("Summon Water Elemental");
+                        bool result = Spell.CastPrimative("Summon Water Elemental");
                         return result;
                     }
                     break;
@@ -258,7 +258,7 @@ namespace Singular.Managers
                         if (!StyxWoW.Me.GotAlivePet)
                         {
                             Logger.Write(Color.DeepSkyBlue, "[Pet] Calling out pet #{0}", petName);
-                            bool result = SpellManager.Cast("Call Pet " + petName);
+                            bool result = Spell.CastPrimative("Call Pet " + petName);
                             return result;
                         }
                     }
@@ -389,26 +389,26 @@ namespace Singular.Managers
                 bool allowed;
                 bool active = PetManager.IsAutoCast(ps, out allowed);
                 if (!allowed)
-                    Logger.Write(Color.White, "PetManager: '{0}' is NOT an auto-cast ability for this Pet", spellName);
+                    Logger.Write( LogColor.Hilite, "PetManager: '{0}' is NOT an auto-cast ability for this Pet", spellName);
                 else
                 {
                     if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
                     {
                         if (!active)
-                            Logger.Write(Color.White, "PetManager: '{0}' Auto-Cast Already Disabled", spellName);
+                            Logger.Write( LogColor.Hilite, "PetManager: '{0}' Auto-Cast Already Disabled", spellName);
                         else
                         {
-                            Logger.Write(Color.White, "PetManager: Disabling '{0}' Auto-Cast", spellName);
+                            Logger.Write( LogColor.Hilite, "PetManager: Disabling '{0}' Auto-Cast", spellName);
                             Lua.DoString("DisableSpellAutocast(GetSpellInfo(" + ps.Spell.Id + "))");
                         }
                     }
                     else
                     {
                         if (active)
-                            Logger.Write(Color.White, "PetManager: '{0}' Auto-Cast Already Enabled", spellName);
+                            Logger.Write( LogColor.Hilite, "PetManager: '{0}' Auto-Cast Already Enabled", spellName);
                         else
                         {
-                            Logger.Write(Color.White, "PetManager: Enabling '{0}' Auto-Cast", spellName);
+                            Logger.Write( LogColor.Hilite, "PetManager: Enabling '{0}' Auto-Cast", spellName);
                             Lua.DoString("EnableSpellAutocast(GetSpellInfo(" + ps.Spell.Id + "))");
                         }
                     }

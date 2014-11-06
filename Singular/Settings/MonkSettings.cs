@@ -16,13 +16,6 @@ namespace Singular.Settings
 
         #region Spheres
 
-        [Setting]
-        [DefaultValue(45)]
-        [Category("Spheres")]
-        [DisplayName("Rest Healing Sphere Health")]
-        [Description("Min Resting Health % to cast Healing Sphere")]
-        public int RestHealingSphereHealth { get; set; }
-
         #endregion
 
         #region Common
@@ -49,13 +42,6 @@ namespace Singular.Settings
         public int ChiWavePct { get; set; }
 
         [Setting]
-        [DefaultValue(false)]
-        [Category("General")]
-        [DisplayName("Use Grapple Weapon")]
-        [Description("True: use Grapple Weapon on cooldown; False: do not cast")]
-        public bool UseGrappleWeapon { get; set; }
-
-        [Setting]
         [DefaultValue(true)]
         [Category("Common")]
         [DisplayName("Leg Sweep immediately in Normal Context")]
@@ -75,19 +61,6 @@ namespace Singular.Settings
         #region Brewmaster
 
         [Setting]
-        [DefaultValue(70)]
-        [Category("Brewmaster")]
-        [DisplayName("Avert Harm Group Health Percent")]
-        [Description("Avert Harm is used when the averge health percent of group falls below this value")]
-        public int AvertHarmGroupHealthPct { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Brewmaster")]
-        [DisplayName("Use Avert Harm")]
-        public bool UseAvertHarm { get; set; }
-
-        [Setting]
         [DefaultValue(6)]
         [Category("Brewmaster")]
         [DisplayName("Elusive Brew Min. Stack")]
@@ -99,6 +72,22 @@ namespace Singular.Settings
         [Category("Brewmaster")]
         [DisplayName("Use Elusive Brew")]
         public bool UseElusiveBrew { get; set; }
+
+        [Setting]
+        [DefaultValue(90)]
+        [Category("Brewmaster")]
+        [DisplayName("Guard Health Percent")]
+        [Description("Guard is used when health percent is at or below this value")]
+        public int GuardHealthPct { get; set; }
+
+        [Setting]
+        [DefaultValue(2)]
+        [Category("Brewmaster")]
+        [DisplayName("Guard Mob Count")]
+        [Description("Guard is used when in combat with this many mobs or more")]
+        public int GuardMobCount { get; set; }
+
+
         #endregion
 
         #region Windwalker
@@ -153,7 +142,7 @@ namespace Singular.Settings
         private MonkOffHealSettings _offhealpve;
 
         [Browsable(false)]
-        public MistweaverHealSettings MistBattleground { get { return _mistinstance ?? (_mistinstance = new MistweaverHealSettings(HealingContext.Battlegrounds)); } }
+        public MistweaverHealSettings MistBattleground { get { return _mistbattleground ?? (_mistbattleground = new MistweaverHealSettings(HealingContext.Battlegrounds)); } }
 
         [Browsable(false)]
         public MistweaverHealSettings MistInstance { get { return _mistinstance ?? (_mistinstance = new MistweaverHealSettings(HealingContext.Instances)); } }
@@ -193,6 +182,7 @@ namespace Singular.Settings
         }
 
         #endregion
+
     }
 
     internal class MistweaverHealSettings : Singular.Settings.HealerSettings
@@ -275,13 +265,6 @@ namespace Singular.Settings
         [DisplayName("% Life Cocoon")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int LifeCocoon { get; set; }
-
-        [Setting]
-        [DefaultValue(51)]
-        [Category("Health %")]
-        [DisplayName("% Healing Sphere")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int HealingSphere { get; set; }
 
         [Setting]
         [DefaultValue(35)]
@@ -388,20 +371,6 @@ namespace Singular.Settings
         [Description("Min number of players healed")]
         public int CountChiBurstTalent { get; set; }
 
-        [Setting]
-        [DefaultValue(60)]
-        [Category("Health %")]
-        [DisplayName("% Zen Meditation")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int ZenMeditation { get; set; }
-
-        [Setting]
-        [DefaultValue(1)]
-        [Category("Target Minimum")]
-        [DisplayName("Count Zen Meditation")]
-        [Description("Min number of players protected")]
-        public int CountZenMeditation { get; set; }
-
     }
 
     internal class MonkOffHealSettings : Singular.Settings.HealerSettings
@@ -456,13 +425,6 @@ namespace Singular.Settings
         [DisplayName("% Chi Burst Talent")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int ChiBurstTalent { get; set; }
-
-        [Setting]
-        [DefaultValue(60)]
-        [Category("Health %")]
-        [DisplayName("% Healing Sphere")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int HealingSphere { get; set; }
 
         [Setting]
         [DefaultValue(1)]

@@ -143,13 +143,13 @@ namespace Singular.Settings
             Noxxic = 1,
             IcyVeins = 2
         }
-
+#if SUPPORT_MULTIPLE_PRIORITIES
         [Setting]
         [DefaultValue(SpellPriority.Noxxic )]
         [Category("Destruction")]
         [DisplayName("Spell Priority Selection")]
         public SpellPriority DestructionSpellPriority { get; set; }
-
+#endif
 
 
 #region Setting Helpers

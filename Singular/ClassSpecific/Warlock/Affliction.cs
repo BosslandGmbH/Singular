@@ -425,7 +425,7 @@ namespace Singular.ClassSpecific.Warlock
                     new Action(ret =>
                     {
                         Logger.Write(LogColor.SpellNonHeal, string.Format("*Soul Swap on {0}", onUnit(ret).SafeName()));
-                        SpellManager.Cast("Soul Swap", onUnit(ret));
+                        Spell.CastPrimative("Soul Swap", onUnit(ret));
                     })
                     )
                 );

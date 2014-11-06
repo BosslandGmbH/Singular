@@ -31,7 +31,7 @@ namespace Singular
 
         public static uint Latency { get; set; }
         private static WaitTimer WaitForLatencyCheck = new WaitTimer(TimeSpan.Zero);
-
+       
         public static SingularRoutine Instance { get; private set; }
 
         public override string Name { get { return GetSingularRoutineName(); } }
@@ -106,7 +106,7 @@ namespace Singular
                 if (!WeAreTheCurrentCombatRoutine)
                     return;
 
-                Logger.Write(Color.White, "Hooks cleared, re-creating behaviors");
+                Logger.Write( LogColor.Hilite, "Hooks cleared, re-creating behaviors");
                 RebuildBehaviors(silent: true);
                 Spell.GcdInitialize();   // probably not needed, but quick
             };
@@ -124,7 +124,7 @@ namespace Singular
                 if (e.PropertyName == "LogLevel" && _lastLogLevel != GlobalSettings.Instance.LogLevel)
                 {
                     _lastLogLevel = GlobalSettings.Instance.LogLevel;
-                    Logger.Write(Color.White, "HonorBuddy {0} setting changed to {1}, re-creating behaviors", e.PropertyName, _lastLogLevel.ToString());
+                    Logger.Write( LogColor.Hilite, "HonorBuddy {0} setting changed to {1}, re-creating behaviors", e.PropertyName, _lastLogLevel.ToString());
                     RebuildBehaviors();
                     Spell.GcdInitialize();   // probably not needed, but quick
                 }
@@ -154,7 +154,7 @@ namespace Singular
             // NOTE: Hook these events AFTER the context update.
             OnWoWContextChanged += (orig, ne) =>
                 {
-                    Logger.Write(Color.White, "Context changed, re-creating behaviors");
+                    Logger.Write( LogColor.Hilite, "Context changed, re-creating behaviors");
                     SingularRoutine.DescribeContext();
                     RebuildBehaviors();
                     Spell.GcdInitialize();
@@ -162,7 +162,7 @@ namespace Singular
                 };
             RoutineManager.Reloaded += (s, e) =>
                 {
-                    Logger.Write(Color.White, "Routines were reloaded, re-creating behaviors");
+                    Logger.Write( LogColor.Hilite, "Routines were reloaded, re-creating behaviors");
                     RebuildBehaviors(silent:true);
                     Spell.GcdInitialize();
                 };
@@ -178,7 +178,7 @@ namespace Singular
             //
             if (IsPluginEnabled("DrinkPotions"))
             {
-                Logger.Write(Color.White, "info: disabling DrinkPotions plugin, conflicts with Singular potion support");
+                Logger.Write( LogColor.Hilite, "info: disabling DrinkPotions plugin, conflicts with Singular potion support");
                 SetPluginEnabled("DrinkPotions", false);
             }
 
@@ -384,12 +384,13 @@ namespace Singular
         static DateTime _nextNotInWorldMsgAllowed = DateTime.MinValue;
         static DateTime _nextCombatDisabledMsgAllowed = DateTime.MinValue;
 
+        static int _pulsePhase = 0;
 
         public override void Pulse()
         {
 
 #region Pulse - check for conditions that we should not Pulse during
-
+            /*
             if (!StyxWoW.IsInGame)
             {
                 if (DateTime.Now > _nextNotInGameMsgAllowed)
@@ -411,76 +412,97 @@ namespace Singular
                 return;
             }
             _nextNotInWorldMsgAllowed = DateTime.MinValue;
-
-            if (WaitForLatencyCheck.IsFinished)
-            {
-                Latency = StyxWoW.WoWClient.Latency;
-                WaitForLatencyCheck.Reset();
-            }
-
-            // output messages about pulldistance and behaviorflag changes here
-            MonitorPullDistance();
-            MonitorBehaviorFlags();
-
-            // now if combat disabled, bail out 
-            if (Bots.Grind.BehaviorFlags.Combat != (Bots.Grind.LevelBot.BehaviorFlags & Bots.Grind.BehaviorFlags.Combat))
-                return;
-
-            _nextCombatDisabledMsgAllowed = DateTime.MinValue;
+             */
 
 #endregion
 
-            // check time since last call and be sure user knows if Singular isn't being called
-            if (SingularSettings.Debug)
+            // _pulsePhase++;
+
+            // if (_pulsePhase == 1)
             {
-                TimeSpan since = CallWatch.TimeSpanSinceLastCall;
-                if (since.TotalSeconds > (4 * CallWatch.SecondsBetweenWarnings))
+                if (WaitForLatencyCheck.IsFinished)
                 {
-                    if (!Me.IsGhost && !Me.Mounted && !Me.IsFlying && DateTime.Now > _nextNoCallMsgAllowed)
+                    Latency = StyxWoW.WoWClient.Latency;
+                    WaitForLatencyCheck.Reset();
+                }
+
+                // output messages about pulldistance and behaviorflag changes here
+                MonitorPullDistance();
+                MonitorBehaviorFlags();
+
+                // now if combat disabled, bail out 
+                if (Bots.Grind.BehaviorFlags.Combat != (Bots.Grind.LevelBot.BehaviorFlags & Bots.Grind.BehaviorFlags.Combat))
+                {
+                    if (DateTime.Now > _nextCombatDisabledMsgAllowed)
                     {
-                        Logger.WriteDebug(Color.HotPink, "info: {0:F0} seconds since {1} BotBase last called Singular", since.TotalSeconds, GetBotName());
-                        _nextNoCallMsgAllowed = DateTime.Now.AddSeconds(4 * CallWatch.SecondsBetweenWarnings);
+                        _nextCombatDisabledMsgAllowed = DateTime.Now + TimeSpan.FromSeconds(30);
+                        Logger.Write(Color.HotPink, "info: botbase disabled BehaviorFlags.Combat");
+                    }
+
+                    return;
+                }
+                _nextCombatDisabledMsgAllowed = DateTime.MinValue;
+
+                // check time since last call and be sure user knows if Singular isn't being called
+                if (SingularSettings.Debug)
+                {
+                    TimeSpan since = CallWatch.TimeSpanSinceLastCall;
+                    if (since.TotalSeconds > (4 * CallWatch.SecondsBetweenWarnings))
+                    {
+                        if (!Me.IsGhost && !Me.Mounted && !Me.IsFlying && DateTime.Now > _nextNoCallMsgAllowed)
+                        {
+                            Logger.WriteDebug(Color.HotPink, "info: {0:F0} seconds since {1} BotBase last called Singular", since.TotalSeconds, GetBotName());
+                            _nextNoCallMsgAllowed = DateTime.Now.AddSeconds(4 * CallWatch.SecondsBetweenWarnings);
+                        }
                     }
                 }
+
+                UpdateDiagnosticFPS();
             }
-
-            UpdateDiagnosticFPS();
-
-            // talentmanager.Pulse() intense if does work, so return if true
-            if (TalentManager.Pulse())
-                return;
-
-            // check and output casting state information
-            UpdateDiagnosticCastingState();
-
-            UpdatePullMoreConditionals();
-
-            // Update the current context, check if we need to rebuild any behaviors.
-            UpdateContext();
-
-            // Double cast shit
-            Spell.DoubleCastPreventionDict.RemoveAll(t => DateTime.UtcNow > t);
-
-            // Output if Target changed 
-            CheckCurrentTarget();
-
-            // Output if Pet or Pet Target changed
-            CheckCurrentPet();
-
-            // Pulse our StopAt manager
-            StopMoving.Pulse();
-
-            //Only pulse for classes with pets
-            switch (StyxWoW.Me.Class)
+            // else if (_pulsePhase == 2)
             {
-                case WoWClass.Hunter:
-                case WoWClass.DeathKnight:
-                case WoWClass.Warlock:
-                case WoWClass.Mage:
-                    PetManager.Pulse();
-                    break;
+                // talentmanager.Pulse() intense if does work, so return if true
+                if (TalentManager.Pulse())
+                    return;
+
+                // check and output casting state information
+                UpdateDiagnosticCastingState();
+
+                UpdatePullMoreConditionals();
+
+                // Update the current context, check if we need to rebuild any behaviors.
+                UpdateContext();
+            }
+            // else if (_pulsePhase == 3)
+            {
+                _pulsePhase = 0;
+
+                // Output if Target changed 
+                CheckCurrentTarget();
+
+                // Output if Pet or Pet Target changed
+                CheckCurrentPet();
+
+                // Pulse our StopAt manager
+                StopMoving.Pulse();
+
+                //Only pulse for classes with pets
+                switch (StyxWoW.Me.Class)
+                {
+                    case WoWClass.Hunter:
+                    case WoWClass.DeathKnight:
+                    case WoWClass.Warlock:
+                    case WoWClass.Mage:
+                        PetManager.Pulse();
+                        break;
+                }
+
             }
 
+            // Double cast maintenance
+            Spell.MaintainDoubleCast();
+
+            // check Targeting pulses
             if (HealerManager.NeedHealTargeting)
             {
                 BotBase bot = GetCurrentBotBase();
@@ -489,14 +511,16 @@ namespace Singular
                     HealerManager.Instance.Pulse();
                 }
             }
-
-            if (CurrentWoWContext == WoWContext.Instances && Me.IsInGroup() && Group.MeIsTank)
-                TankManager.Instance.Pulse();
+            else if (TankManager.NeedTankTargeting && Group.MeIsTank)
+            {
+                BotBase bot = GetCurrentBotBase();
+                if (bot != null && (bot.PulseFlags & PulseFlags.Targeting) != PulseFlags.Targeting)
+                {
+                    TankManager.Instance.Pulse();
+                }
+            }
 
             HotkeyDirector.Pulse();
-
-            // Singular.SingularRoutine.PullMoreQuestTargetsDump();
-
         }
 
         private static WoWGuid _lastPetGuid = WoWGuid.Empty;
@@ -615,12 +639,12 @@ namespace Singular
             if (ForcedContext == WoWContext.None && unit != null && !IsQuestBotActive && unit.IsTrainingDummy())
             {
                 ForcedContext = SingularRoutine.TrainingDummyBehaviors;
-                Logger.Write(Color.White, "^Detected Training Dummy: forcing {0} behaviors", CurrentWoWContext.ToString());
+                Logger.Write( LogColor.Hilite, "^Detected Training Dummy: forcing {0} behaviors", CurrentWoWContext.ToString());
             }
             else if (ForcedContext != WoWContext.None && (unit == null || !unit.IsTrainingDummy()))
             {
                 ForcedContext = WoWContext.None;
-                Logger.Write(Color.White, "^Detected Training Dummy: reverting to {0} behaviors", CurrentWoWContext.ToString());
+                Logger.Write( LogColor.Hilite, "^Detected Training Dummy: reverting to {0} behaviors", CurrentWoWContext.ToString());
             }
         }
 

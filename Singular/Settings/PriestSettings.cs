@@ -513,7 +513,7 @@ namespace Singular.Settings
             if (!FlashHealAdjusted && StyxWoW.Me.Level >= 34 && (ctx == HealingContext.Instances || ctx == HealingContext.Raids))
             {
                 if (SavedToFile)
-                    Logger.Write(Color.White, "Flash Heal % changed from {0} to {1} for {2}.  Visit Class Config and Save to make permanent.", FlashHeal, GuardianSpirit + 1, ctx.ToString());
+                    Logger.Write( LogColor.Hilite, "Flash Heal % changed from {0} to {1} for {2}.  Visit Class Config and Save to make permanent.", FlashHeal, GuardianSpirit + 1, ctx.ToString());
 
                 FlashHeal = GuardianSpirit + 1;
                 FlashHealAdjusted = true;

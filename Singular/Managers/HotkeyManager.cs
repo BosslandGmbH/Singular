@@ -143,7 +143,7 @@ namespace Singular.Managers
             if ((key & Keys.Control) != 0)
                 mods |= ModifierKeys.Control;
 
-            Logger.Write(Color.White, "Hotkey: To disable {0}, press: [{1}]", name, key.ToFormattedString());
+            Logger.Write( LogColor.Hilite, "Hotkey: To disable {0}, press: [{1}]", name, key.ToFormattedString());
             HotkeysManager.Register(name, keyCode, mods, callback);
         }
 
@@ -301,9 +301,9 @@ namespace Singular.Managers
 
                 // keep these notifications in Log window only
                 if (last_IsMovementTemporarilySuspended)
-                    Logger.Write(Color.White, "Bot Movement disabled during user movement...");
+                    Logger.Write( LogColor.Hilite, "Bot Movement disabled during user movement...");
                 else
-                    Logger.Write(Color.White, "Bot Movement restored!");
+                    Logger.Write( LogColor.Hilite, "Bot Movement restored!");
 
                 MovementManager.Update();
             }

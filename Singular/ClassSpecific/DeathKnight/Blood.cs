@@ -141,7 +141,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                     Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget, ret => true, false),
 
                                     // Spell.Cast("Gorefiend's Grasp", ret => Common.HasTalent( DeathKnightTalents.GorefiendsGrasp)),
-                                    Spell.Cast("Remorseless Winter", ret => Common.HasTalent( DeathKnightTalents.RemorselessWinter)),
+                                    Spell.BuffSelf("Remorseless Winter", ret => Me.CurrentTarget.IsWithinMeleeRange && Common.HasTalent( DeathKnightTalents.RemorselessWinter)),
 
                                     // refresh diseases if possible
                                     new Throttle(2, Spell.Cast("Blood Boil", ret => UseBloodBoilForDiseases()) ),

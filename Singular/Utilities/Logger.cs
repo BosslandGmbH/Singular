@@ -21,6 +21,7 @@ namespace Singular
         public static Color SpellNonHeal = Color.DodgerBlue;
         public static Color Debug = Color.Orange;
         public static Color Diagnostic = Color.Yellow;
+        public static Color Cancel = Color.OrangeRed;
     }
 
     public static class Logger
@@ -69,7 +70,7 @@ namespace Singular
         /// <param name="message">message text</param>
         public static void WriteDebug(string message)
         {
-            WriteDebug(Color.Orange, message);
+            WriteDebug( LogColor.Debug, message);
         }
 
         /// <summary>
@@ -79,7 +80,7 @@ namespace Singular
         /// <param name="args">replacement parameter values</param>
         public static void WriteDebug(string message, params object[] args)
         {
-            WriteDebug(Color.Orange, message, args);
+            WriteDebug( LogColor.Debug, message, args);
         }
 
         /// <summary>
@@ -140,7 +141,7 @@ namespace Singular
         /// <param name="message">message text</param>
         public static void WriteDiagnostic(string message)
         {
-            WriteDiagnostic(Color.Orange, message);
+            WriteDiagnostic( LogColor.Debug, message);
         }
 
         /// <summary>
@@ -150,7 +151,7 @@ namespace Singular
         /// <param name="args">replacement parameter values</param>
         public static void WriteDiagnostic(string message, params object[] args)
         {
-            WriteDiagnostic(Color.Orange, message, args);
+            WriteDiagnostic( LogColor.Debug, message, args);
         }
 
         /// <summary>

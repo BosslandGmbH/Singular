@@ -141,8 +141,8 @@ namespace Singular.ClassSpecific.Warlock
                         new Decorator(
                             ret => NeedToApplyMetamorphosis(),
                             new Sequence(
-                                new Action(ret => Logger.Write(Color.White, "^Applying Metamorphosis Buff")),
-                                new Action(ret => SpellManager.Cast("Metamorphosis", Me)),
+                                new Action(ret => Logger.Write( LogColor.Hilite, "^Applying Metamorphosis Buff")),
+                                new Action(ret => Spell.CastPrimative("Metamorphosis", Me)),
                                 new WaitContinue(
                                     TimeSpan.FromMilliseconds(450),
                                     canRun => Me.HasAura("Metamorphosis"),
@@ -158,7 +158,7 @@ namespace Singular.ClassSpecific.Warlock
                         new Decorator(
                             ret => NeedToCancelMetamorphosis(),
                             new Sequence(
-                                new Action(ret => Logger.Write(Color.White, "^Cancel Metamorphosis Buff")),
+                                new Action(ret => Logger.Write( LogColor.Hilite, "^Cancel Metamorphosis Buff")),
                 // new Action(ret => Lua.DoString("CancelUnitBuff(\"player\",\"Metamorphosis\");")),
                                 new Action(ret => Me.CancelAura("Metamorphosis")),
                                 new WaitContinue(TimeSpan.FromMilliseconds(450), canRun => !Me.HasAura("Metamorphosis"), new ActionAlwaysSucceed())
@@ -225,7 +225,7 @@ namespace Singular.ClassSpecific.Warlock
             {
                 _guidLastUberDoom = Me.CurrentTargetGuid;
                 _timeNextUberDoom = DateTime.Now + TimeSpan.FromSeconds(60);
-                Logger.Write(Color.White, "^Perfect Aim: applying 100% Critical Doom");
+                Logger.Write( LogColor.Hilite, "^Perfect Aim: applying 100% Critical Doom");
                 return true;
             }
 

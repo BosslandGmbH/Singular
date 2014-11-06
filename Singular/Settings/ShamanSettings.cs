@@ -27,7 +27,7 @@ namespace Singular.Settings
         private ShamanOffHealSettings _offhealpve;
 
         [Browsable(false)]
-        public ShamanRestoHealSettings RestoBattleground { get { return _restoinstance ?? (_restoinstance = new ShamanRestoHealSettings(HealingContext.Battlegrounds)); } }
+        public ShamanRestoHealSettings RestoBattleground { get { return _restobattleground ?? (_restobattleground = new ShamanRestoHealSettings(HealingContext.Battlegrounds)); } }
 
         [Browsable(false)]
         public ShamanRestoHealSettings RestoInstance { get { return _restoinstance ?? (_restoinstance = new ShamanRestoHealSettings(HealingContext.Instances)); } }
@@ -84,13 +84,6 @@ namespace Singular.Settings
         [DisplayName("Use Bloodlust/Heroism")]
         [Description("Lust when appropriate (never when movement disabled)")]
         public bool UseBloodlust { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
-        [DisplayName("Use Weapon Imbues")]
-        [Description("True: Automatically select and apply weapon imbues, False: automatic cast of imbues prevented")]
-        public bool UseWeaponImbues { get; set; }
 
         [Setting]
         [DefaultValue(true)]
@@ -240,10 +233,9 @@ namespace Singular.Settings
             {
                 if (ctx == Singular.HealingContext.Battlegrounds)
                 {
-                    HealingWave = 95;
                     ChainHeal = 90;
                     HealingRain = 93;
-                    GreaterHealingWave = 0;
+                    HealingWave = 0;
                     Ascendance = 49;
                     SpiritLinkTotem = 50;
                     HealingSurge = 85;
@@ -258,28 +250,26 @@ namespace Singular.Settings
                 }
                 else if (ctx == Singular.HealingContext.Instances)
                 {
+                    ChainHeal = 92;
+                    HealingRain = 91;
                     HealingWave = 90;
-                    ChainHeal = 90;
-                    HealingRain = 70;
-                    GreaterHealingWave = 70;
-                    Ascendance = 48;
+                    Ascendance = 50;
                     SpiritLinkTotem = 49;
-                    HealingSurge = 60;
-                    AncestralSwiftness = 20;
-                    HealingStreamTotem = 85;
-                    HealingTideTotem = 50;
+                    HealingSurge = 70;
+                    AncestralSwiftness = 30;
+                    HealingStreamTotem = 90;
+                    HealingTideTotem = 65;
 
                     RollRiptideCount = 1;
-                    MinHealingRainCount = 4;
+                    MinHealingRainCount = 2;
                     MinChainHealCount = 3;
                     MinHealingTideCount = 2;
                 }
                 else if (ctx == Singular.HealingContext.Raids)
                 {
-                    HealingWave = 93;
                     ChainHeal = 90;
                     HealingRain = 95;
-                    GreaterHealingWave = 50;
+                    HealingWave = 50;
                     Ascendance = 50;
                     SpiritLinkTotem = 48;
                     HealingSurge = 21;
@@ -287,7 +277,7 @@ namespace Singular.Settings
                     HealingStreamTotem = 85;
                     HealingTideTotem = 70;
 
-                    RollRiptideCount = 2;
+                    RollRiptideCount = 5;
                     MinHealingRainCount = 3;
                     MinChainHealCount = 2;
                     MinHealingTideCount = 4;
@@ -299,7 +289,7 @@ namespace Singular.Settings
             if (!HealingSurgeAdjusted && StyxWoW.Me.Level >= 60 && (ctx == HealingContext.Instances || ctx == HealingContext.Raids))
             {
                 if (SavedToFile)
-                    Logger.Write(Color.White, "Healing Surge % changed from {0} to {1} for {2}.  Visit Class Config and Save to make permanent.", HealingSurge, AncestralSwiftness + 1, ctx.ToString());
+                    Logger.Write( LogColor.Hilite, "Healing Surge % changed from {0} to {1} for {2}.  Visit Class Config and Save to make permanent.", HealingSurge, AncestralSwiftness + 1, ctx.ToString());
 
                 HealingSurge = AncestralSwiftness + 1;
                 HealingSurgeAdjusted = true;
@@ -319,13 +309,6 @@ namespace Singular.Settings
         public bool HealingSurgeAdjusted { get; set; }
 
         [Setting]
-        [DefaultValue(70)]
-        [Category("Restoration")]
-        [DisplayName("% Healing Wave")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int HealingWave { get; set; }
-
-        [Setting]
         [DefaultValue(92)]
         [Category("Restoration")]
         [DisplayName("% Chain Heal")]
@@ -342,9 +325,9 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(60)]
         [Category("Restoration")]
-        [DisplayName("% Greater Healing Wave")]
+        [DisplayName("% Healing Wave")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int GreaterHealingWave { get; set; }
+        public int HealingWave { get; set; }
 
         [Setting]
         [DefaultValue(45)]
@@ -364,7 +347,7 @@ namespace Singular.Settings
         [DefaultValue(15)]
         [Category("Restoration")]
         [DisplayName("% Oh Shoot!")]
-        [Description("Health % to cast Oh Shoot Heal (Ancestral Swiftness + Greater Healing Wave).  Disabled if set to 0, on cooldown, or talent not selected.")]
+        [Description("Health % to cast Oh Shoot Heal (Ancestral Swiftness + Healing Wave).  Disabled if set to 0, on cooldown, or talent not selected.")]
         public int AncestralSwiftness { get; set; }
 
         [Setting]
@@ -464,7 +447,6 @@ namespace Singular.Settings
             {
                 if (ctx == Singular.HealingContext.Battlegrounds)
                 {
-                    ChainHeal = 90;
                     HealingRain = 93;
                     HealingSurge = 85;
                     AncestralSwiftness = 40;
@@ -472,12 +454,10 @@ namespace Singular.Settings
                     HealingTideTotem = 60;
 
                     MinHealingRainCount = 3;
-                    MinChainHealCount = 3;
                     MinHealingTideCount = 2;
                 }
                 else // use group/companion healing
                 {
-                    ChainHeal = 90;
                     HealingRain = 93;
                     HealingSurge = 80;
                     AncestralSwiftness = 35;
@@ -485,7 +465,6 @@ namespace Singular.Settings
                     HealingTideTotem = 60;
 
                     MinHealingRainCount = 4;
-                    MinChainHealCount = 3;
                     MinHealingTideCount = 2;
                 }
             }
@@ -497,13 +476,6 @@ namespace Singular.Settings
         [Browsable(false)]
         [DefaultValue(false)]
         public bool SavedToFile { get; set; }
-
-        [Setting]
-        [DefaultValue(92)]
-        [Category("OffHeal")]
-        [DisplayName("% Chain Heal")]
-        [Description("Health % to cast this ability at. Must heal Min 2 people in party. Set to 0 to disable.")]
-        public int ChainHeal { get; set; }
 
         [Setting]
         [DefaultValue(91)]
@@ -546,13 +518,6 @@ namespace Singular.Settings
         [DisplayName("Healing Rain Min Count")]
         [Description("Min number of players below Healing Rain % in area")]
         public int MinHealingRainCount { get; set; }
-
-        [Setting]
-        [DefaultValue(3)]
-        [Category("OffHeal")]
-        [DisplayName("Chain Heal Min Count")]
-        [Description("Min number of players healed")]
-        public int MinChainHealCount { get; set; }
 
         [Setting]
         [DefaultValue(4)]

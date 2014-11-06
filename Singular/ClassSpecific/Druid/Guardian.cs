@@ -56,7 +56,7 @@ namespace Singular.ClassSpecific.Druid
                                 )
                             ),
 
-                        Spell.BuffSelf("Bear Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
+                        Common.CastForm("Bear Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
                         CreateGuardianWildChargeBehavior(),
                         Common.CreateFaerieFireBehavior( on => Me.CurrentTarget, req => true)
                         )
@@ -78,7 +78,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateGuardianNormalCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Bear Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
+                Common.CastForm("Bear Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
                 Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < Settings.TankFrenziedRegenerationHealth && Me.CurrentRage >=60),
                 Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < 30 && Me.CurrentRage >= 15),

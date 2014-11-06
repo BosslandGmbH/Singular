@@ -85,7 +85,7 @@ namespace Singular.Helpers
                             new Action(ret =>
                             {
                                 WoWUnit unit = Me.CurrentTarget;
-                                Logger.Write(Color.White, "/startattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
+                                Logger.Write( LogColor.Hilite, "/startattack on {0} @ {1:F1}% at {2:F1} yds", unit.SafeName(), unit.HealthPercent, unit.SpellDistance());
                                 Lua.DoString("StartAttack()");
                                 return RunStatus.Failure;
                             })
@@ -103,7 +103,7 @@ namespace Singular.Helpers
                             new Action(ret =>
                             {
                                 WoWUnit unit = Me.CurrentTarget;
-                                Logger.Write(Color.White, "/startattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
+                                Logger.Write( LogColor.Hilite, "/startattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
                                 Lua.DoString("StartAttack()");
                                 return RunStatus.Failure;
                             })
@@ -205,7 +205,7 @@ namespace Singular.Helpers
             return new PrioritySelector(
                 new Decorator(
                     ret => Item.HasWand && !StyxWoW.Me.IsWanding() && extra(ret),
-                    new Action(ret => SpellManager.Cast("Shoot")))
+                    new Action(ret => Spell.CastPrimative("Shoot")))
                 );
 #else
             return new ActionAlwaysFail();
@@ -650,7 +650,7 @@ namespace Singular.Helpers
                                     {
                                         brezPrevGuid = ((WoWUnit)on).Guid;
                                         brezStart = DateTime.Now + TimeSpan.FromSeconds( SingularSettings.Instance.CombatRezDelay);
-                                        Logger.Write(Color.White,"^Combat Ressurrect: {0} @ {1:F1} yds in {2} seconds", ((WoWUnit)on).SafeName(), ((WoWUnit)on).SpellDistance(), SingularSettings.Instance.CombatRezDelay);
+                                        Logger.Write( LogColor.Hilite,"^Combat Ressurrect: {0} @ {1:F1} yds in {2} seconds", ((WoWUnit)on).SafeName(), ((WoWUnit)on).SpellDistance(), SingularSettings.Instance.CombatRezDelay);
                                     }
                                     return RunStatus.Failure;
                                 }),
@@ -695,7 +695,7 @@ namespace Singular.Helpers
                             new Sequence(
                                 new Action( r=> 
                                 {
-                                    Logger.Write( Color.White, "^Interact with Soulwell");
+                                    Logger.Write( LogColor.Hilite, "^Interact with Soulwell");
                                     (r as WoWGameObject).Interact();
                                 }),
                                 new WaitContinue( TimeSpan.FromSeconds(1), until => ClassSpecific.Warlock.Common.HaveHealthStone, new ActionAlwaysSucceed())
@@ -760,7 +760,7 @@ namespace Singular.Helpers
                         TimeSpan.FromSeconds(15),
                         new Decorator(
                             req => Me.FreeNormalBagSlots < 1,
-                            new Action( r=> Logger.Write(Color.White, "Refreshment Table:  !! Bags Full - skipping !!"))
+                            new Action( r=> Logger.Write( LogColor.Hilite, "Refreshment Table:  !! Bags Full - skipping !!"))
                             )
                         ),
 
@@ -777,7 +777,7 @@ namespace Singular.Helpers
 
                             if (slotsNeeded > slotsToFill)
                             {
-                                Logger.Write(Color.White, "Refreshment Table: only {0} bag slots free - reducing amount we pickup", slotsToFill);
+                                Logger.Write( LogColor.Hilite, "Refreshment Table: only {0} bag slots free - reducing amount we pickup", slotsToFill);
                                 slotsNeeded = slotsToFill;
                             }
                             
@@ -799,7 +799,7 @@ namespace Singular.Helpers
                                     new Sequence(
                                         new Action(r =>
                                         {
-                                            Logger.Write(Color.White, "^Interact with Refreshment Table");
+                                            Logger.Write( LogColor.Hilite, "^Interact with Refreshment Table");
                                             (r as WoWGameObject).Interact();
                                         }),
                                         Helpers.Common.CreateWaitForLagDuration()

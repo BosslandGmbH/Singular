@@ -131,7 +131,7 @@ namespace Singular.Helpers
 
         private static void UseItem(WoWItem item)
         {
-            Logger.Write( Color.White, "/use " + item.Name);
+            Logger.Write( LogColor.Hilite, "/use " + item.Name);
             item.Use();
         }
 
@@ -697,7 +697,7 @@ namespace Singular.Helpers
                             new DecoratorContinue(
                                 ret => Me.IsCasting || Me.IsChanneling,
                                 new Sequence(
-                                    new Action( r => Logger.Write( "/cancel First Aid @ {0:F0}%", Me.HealthPercent )),
+                                    new Action( r => Logger.Write( LogColor.Cancel, "/cancel First Aid @ {0:F0}%", Me.HealthPercent )),
                                     new Action( r => SpellManager.StopCasting() )
                                     )
                                 )

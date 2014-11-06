@@ -228,7 +228,7 @@ namespace Singular.Utilities
                             Logger.WriteDiagnostic("GankDetect: attacked by Level {0} {1}{2}", enemy.Level, enemy.SafeName(), extra);
                             if ( SingularSettings.Instance.TargetWorldPvpRegardless && (BotPoi.Current == null || BotPoi.Current.Guid != enemy.Guid))
                             {
-                                Logger.Write(Color.White, "GankDetect: setting {0} as BotPoi Kill Target");
+                                Logger.Write( LogColor.Hilite, "GankDetect: setting {0} as BotPoi Kill Target");
                                 BotPoi.Current = new BotPoi(enemy, PoiType.Kill);
                             }
                         }
@@ -284,7 +284,7 @@ namespace Singular.Utilities
                         {
                             string symbolicName = LocalizedShapeshiftMessages[e.Args[14].ToString()];
                             SuppressShapeshiftUntil = DateTime.Now.Add( TimeSpan.FromSeconds(30));
-                            Logger.Write(Color.White, "/cancel{0} - due to Shapeshift Error '{1}' on cast, suppress form until {2}!", StyxWoW.Me.Shapeshift.ToString().CamelToSpaced(), symbolicName, SuppressShapeshiftUntil.ToString("HH:mm:ss.fff"));
+                            Logger.Write(LogColor.Cancel, "/cancel{0} - due to Shapeshift Error '{1}' on cast, suppress form until {2}!", StyxWoW.Me.Shapeshift.ToString().CamelToSpaced(), symbolicName, SuppressShapeshiftUntil.ToString("HH:mm:ss.fff"));
                             Lua.DoString("CancelShapeshiftForm()");
                         }
                     }
@@ -491,7 +491,7 @@ namespace Singular.Utilities
                     {
                         string symbolicName = LocalizedShapeshiftMessages[args.Args[0].ToString()];
                         SuppressShapeshiftUntil = DateTime.Now.Add(TimeSpan.FromSeconds(30));
-                        Logger.Write(Color.White, "/cancel{0} - due to Error '{1}', suppress form until {2}!", StyxWoW.Me.Shapeshift.ToString().CamelToSpaced(), symbolicName, SuppressShapeshiftUntil.ToString("HH:mm:ss.fff"));
+                        Logger.Write(LogColor.Cancel, "/cancel{0} - due to Error '{1}', suppress form until {2}!", StyxWoW.Me.Shapeshift.ToString().CamelToSpaced(), symbolicName, SuppressShapeshiftUntil.ToString("HH:mm:ss.fff"));
                         Lua.DoString("CancelShapeshiftForm()");
                         handled = true;
                     }

@@ -288,14 +288,27 @@ namespace Singular.ClassSpecific.Shaman
                                 if (Exist(WoWTotem.StoneBulwark))
                                     return false;
 
-                                WoWUnit deadTank = Group.Tanks.FirstOrDefault(t => t.IsDead && t.Distance < 70);
-                                if (deadTank == null)
+                                if (Spell.IsSpellOnCooldown("Earth Elemental"))
                                     return false;
 
+                                // no living tanks in range
+                                IEnumerable<WoWUnit> tanks = Group.Tanks.Where(u => u.DistanceSqr < 65 * 65);
+                                if (!tanks.Any(t => t.IsAlive) || tanks.Any( t => t.IsDead))
+                                {
+                                    // we are okay if another Earth Elemental active
+                                    if ( ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Any( o => o.Entry == 15352))
+                                        return false;
+
+                                    // we are okay if nothing in combat with our group 
+                                    if (!Unit.NearbyUnitsInCombatWithUsOrOurStuff.Any())
+                                        return false;
+                                }
+
+                                // check we can cast it before messaging
                                 if (!Spell.CanCastHack("Earth Elemental"))
                                     return false;
 
-                                Logger.Write(Color.White, "^Earth Elemental Totem: setting since {0} is dead", deadTank.SafeName());
+                                Logger.Write(LogColor.Hilite, "^Earth Elemental Totem: tank is dead or not nearby");
                                 return true;
                             }),
 
@@ -442,9 +455,9 @@ namespace Singular.ClassSpecific.Shaman
             {
                 if (SpellManager.HasSpell("Totemic Recall"))
                 {
-                    Logger.Write(Color.White, "^Recalling totems!");
+                    Logger.Write( LogColor.Hilite, "^Recalling totems!");
                     Spell.LogCast("Totemic Recall", Me);
-                    return SpellManager.Cast("Totemic Recall");
+                    return Spell.CastPrimative("Totemic Recall");
                 }
 
                 List<WoWTotemInfo> totems = StyxWoW.Me.Totems;

@@ -74,14 +74,14 @@ namespace Singular.ClassSpecific.Mage
                                 )
                             ),
                         */
-                        CreateMageArmorBehavior(),
+//                        CreateMageArmorBehavior(),
 /*
                         new PrioritySelector(
                             ctx => MageTable,
                             new Decorator(
                                 ctx => ctx != null && CarriedMageFoodCount < 60 && StyxWoW.Me.FreeNormalBagSlots > 1,
                                 new Sequence(
-                                    new Action(ctx => Logger.Write(Color.White, "^Getting Mage food")),
+                                    new Action(ctx => Logger.Write( LogColor.Hilite, "^Getting Mage food")),
                 // Move to the Mage table
                                     new DecoratorContinue(
                                         ctx => ((WoWGameObject)ctx).DistanceSqr > 5 * 5,
@@ -100,9 +100,9 @@ namespace Singular.ClassSpecific.Mage
                             new Decorator(
                                 ctx => ShouldSummonTable && NeedTableForBattleground,
                                 new Sequence(
-                                    new Action(ctx => Logger.Write(Color.White, "^Conjure Refreshment Table")),
+                                    new Action(ctx => Logger.Write( LogColor.Hilite, "^Conjure Refreshment Table")),
                                     Spell.Cast("Conjure Refreshment Table", mov => true, on => Me, req => true, cancel => false, LagTolerance.No ),
-                                    // new Action(ctx => SpellManager.Cast("Conjure Refreshment Table")),
+                                    // new Action(ctx => Spell.CastPrimative("Conjure Refreshment Table")),
                                     new WaitContinue(4, ctx => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed())
                                     )
                                 )
@@ -127,7 +127,7 @@ namespace Singular.ClassSpecific.Mage
                         new Decorator(
                             ret => DateTime.Now < _cancelIceBlockForCauterize && !Me.ActiveAuras.ContainsKey("Cauterize"),
                             new Action(ret => {
-                                Logger.Write(Color.White, "/cancel Ice Block since Cauterize has expired");
+                                Logger.Write(LogColor.Cancel, "/cancel Ice Block since Cauterize has expired");
                                 _cancelIceBlockForCauterize = DateTime.MinValue ;
                                 // Me.GetAuraByName("Ice Block").TryCancelAura();
                                 Me.CancelAura("Ice Block");
@@ -136,10 +136,9 @@ namespace Singular.ClassSpecific.Mage
                             ),
                         new ActionIdle()
                         )
-                    ),
+                    )
 
                 // Spell.BuffSelf("Blink", ret => MovementManager.IsClassMovementAllowed && Me.Stunned && !TalentManager.HasGlyph("Rapid Displacement")),
-                Spell.BuffSelf("Temporal Shield", ret => Me.Stunned)
                 );
         }
 
@@ -152,8 +151,7 @@ namespace Singular.ClassSpecific.Mage
             return new Decorator(
                 req => Me.GotTarget && Me.CurrentTarget.SpellDistance() < 40,
                 new PrioritySelector(
-                    CreateMageRuneOfPowerBehavior(),
-                    CreateMageInvocationBehavior()
+                    CreateMageRuneOfPowerBehavior()
                     )
                 );
         }
@@ -164,7 +162,10 @@ namespace Singular.ClassSpecific.Mage
             return new Decorator(
                 req => !Unit.IsTrivial(Me.CurrentTarget),
                 new PrioritySelector(
+
                     // Defensive 
+                    CastAlterTime(),
+
                     Spell.BuffSelf( "Slow Fall", req => MageSettings.UseSlowFall && Me.IsFalling ),
                         
                     // handle Cauterize debuff if we took talent and get it
@@ -177,9 +178,7 @@ namespace Singular.ClassSpecific.Mage
                                     return true;
                                 }),
 
-                            Spell.BuffSelf("Temporal Shield"),
                             Spell.BuffSelf("Ice Barrier"),
-                            Spell.BuffSelf("Incanter's Ward"),
 
                             new Throttle( 8, Item.CreateUsePotionAndHealthstone(100, 0))
                             )
@@ -192,14 +191,15 @@ namespace Singular.ClassSpecific.Mage
                             && StyxWoW.Me.HealthPercent < 20
                             && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
 
-                    Spell.BuffSelf("Incanter's Ward", req => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any()),
+                    Spell.BuffSelf("Evanesce", req => Me.HealthPercent < MageSettings.EvanesceHealthPct && Unit.UnfriendlyUnits(40).Any(u => u.CurrentTargetGuid == Me.Guid)),
                     Spell.BuffSelf("Ice Ward"),
 
-                    // cast Evocation for Buff
-                    CreateMagePullBuffs(),
-
                     // cast Evocation for Heal or Mana
-                    new Throttle( 3, Spell.Cast("Evocation", mov => true, on => Me, ret => NeedEvocation, cancel => false) ),
+                    new Decorator(
+                        req => Me.Specialization == WoWSpec.MageArcane,
+                        new Throttle( 3, Spell.Cast("Evocation", mov => true, on => Me, ret => NeedEvocation, cancel => false) )
+                        ),
+
                     // new Wait( 1, until => !HasTalent(MageTalents.Invocation) || Me.HasAura("Invoker's Energy"), new ActionAlwaysSucceed())
 
                     Dispelling.CreatePurgeEnemyBehavior("Spellsteal"),
@@ -207,18 +207,17 @@ namespace Singular.ClassSpecific.Mage
 
                     Spell.Cast("Ice Barrier", on => Me, ret => Me.HasAuraExpired("Ice Barrier", 2)),
 
+                    CreateMageRuneOfPowerBehavior(),
+                    CreateMageInvocationBehavior(),
+
                     Spell.Buff("Nether Tempest", 1, on => Me.CurrentTarget, req => true),
                     Spell.Buff("Living Bomb", 0, on => Me.CurrentTarget, req => true),
                     Spell.Buff("Frost Bomb", 0, on => Me.CurrentTarget, req => true),
-
-                    // Spell.Cast("Alter Time", ret => StyxWoW.Me.HasAura("Icy Veins") && StyxWoW.Me.HasAura("Brain Freeze") && StyxWoW.Me.HasAura("Fingers of Frost") && StyxWoW.Me.HasAura("Invoker's Energy")),
 
                     Spell.Cast("Mirror Image", 
                          req => Me.GotTarget &&  (Me.CurrentTarget.IsBoss() || (Me.CurrentTarget.Elite && SingularRoutine.CurrentWoWContext != WoWContext.Instances) || Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3)),
 
                     Spell.BuffSelf("Time Warp", ret => MageSettings.UseTimeWarp && NeedToTimeWarp),
-
-                    // , Spell.BuffSelf( "Ice Floes", req => Me.IsMoving)
 
                     CreateHealWaterElemental()
                     )
@@ -227,6 +226,7 @@ namespace Singular.ClassSpecific.Mage
 
         public static Composite CreateHealWaterElemental()
         {
+#if REMOVED_IN_WOD
             return Spell.Cast("Frostbolt", mov => true, on => Me.Pet,
                 req => 
                 {
@@ -236,7 +236,7 @@ namespace Singular.ClassSpecific.Mage
                         {
                             if (Spell.CanCastHack("Frostbolt", Me.Pet, false))
                             {
-                                Logger.Write(Color.White, "^Heal Water Elemental: currently at {0:F1}%", Me.Pet.HealthPercent);
+                                Logger.Write( LogColor.Hilite, "^Heal Water Elemental: currently at {0:F1}%", Me.Pet.HealthPercent);
                                 return true;
                             }
                         }
@@ -246,6 +246,9 @@ namespace Singular.ClassSpecific.Mage
                 cancel => Me.Pet == null || !Me.Pet.IsAlive || Me.Pet.PredictedHealthPercent(false) >= 100
                 )
             ;
+#else
+            return new ActionAlwaysFail();
+#endif
         }
 
         private static readonly uint[] MageFoodIds = new uint[]
@@ -529,10 +532,12 @@ namespace Singular.ClassSpecific.Mage
         {
             get
             {
-                return SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && PVP.PrepTimeLeft < secsBeforeBattle && Me.HasAnyAura("Preparation", "Arena Preparation");
+                return SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds 
+                    && PVP.PrepTimeLeft < secsBeforeBattle && Me.HasAnyAura("Preparation", "Arena Preparation");
             }
         }
 
+/* passive in WoD
         /// <summary>
         /// behavior to cast appropriate Armor 
         /// </summary>
@@ -598,7 +603,7 @@ namespace Singular.ClassSpecific.Mage
 
             return bestArmor;
         }
-
+*/
         public static Composite CreateSpellstealEnemyBehavior()
         {
             return Dispelling.CreatePurgeEnemyBehavior("Spellsteal");
@@ -685,29 +690,32 @@ namespace Singular.ClassSpecific.Mage
         { 
             get 
             {
+                /* changed in WoD
                 // never cast Evocation if we talent rune of power
                 if (HasTalent(MageTalents.RuneOfPower))
                     return false;
+                */
 
                 if (!Spell.CanCastHack("Evoation"))
                     return false;
 
                 // always evocate if low mana
-                if (Me.ManaPercent < 30)
+                if (Me.ManaPercent <= MageSettings.EvocationManaPct)
                 {
-                    Logger.Write(Color.White, "^Evocation: casting due to low Mana");
+                    Logger.Write( LogColor.Hilite, "^Evocation: casting due to low Mana @ {0:F1}%", Me.ManaPercent);
                     return true;
                 }
 
+                /* changed in WoD
                 // if low health, return true if we are glyphed (made sure no invocation or rune of power talented chars reach here already)
                 if (Me.HealthPercent < 40)
                 {
                     bool needHeal = TalentManager.HasGlyph("Evocation");
                     if (needHeal)
-                        Logger.Write(Color.White, "^Evocation: casting for glyphed heal");
+                        Logger.Write( LogColor.Hilite, "^Evocation: casting for glyphed heal");
                     return needHeal;
                 }
-
+                */
                 return false;
             }
         }
@@ -741,7 +749,7 @@ namespace Singular.ClassSpecific.Mage
             return new Decorator(
                 req => !Me.HasAura("Invoker's Energy") && Spell.CanCastHack("Evocation"),
                 new Sequence(
-                    new Action(r => Logger.Write(Color.White, "^Invocation: buffing Invoker's Energy")),
+                    new Action(r => Logger.Write( LogColor.Hilite, "^Invocation: buffing Invoker's Energy")),
                     Spell.Cast("Evocation", on => Me, req => true, cancel => false),
                     Helpers.Common.CreateWaitForLagDuration(),
                     new Wait(TimeSpan.FromMilliseconds(500), until => Me.HasAura("Invoker's Energy"), new ActionAlwaysSucceed())
@@ -750,6 +758,55 @@ namespace Singular.ClassSpecific.Mage
  */
             return new ActionAlwaysFail();
         }
+
+        /// <summary>
+        /// handle Alter Time cast (both initial and secondary to reset)
+        /// </summary>
+        /// <returns></returns>
+        public static Composite CastAlterTime()
+        {
+            return new Throttle(
+                1,
+                new PrioritySelector(
+                    ctx => Me.HasAura("Alter Time"),
+                    new Sequence(
+                        Spell.BuffSelf(
+                            "Alter Time", 
+                            req =>
+                            {
+                                if ((bool) req)
+                                    return false;
+
+                                int countEnemy = Unit.UnfriendlyUnits(40).Count(u => Unit.ValidUnit(u));
+                                if (countEnemy >= MageSettings.AlterTimeMobCount)
+                                    return true;
+                                int countPlayers = Unit.UnfriendlyUnits(45).Count(u => u.IsPlayer);
+                                if (countPlayers >= MageSettings.AlterTimePlayerCount)
+                                    return true;
+
+                                return false;
+                            }),
+                            new Action( r => {
+                                _healthAlterTime = (int)Me.HealthPercent;
+                                _locAlterTime = Me.Location;
+                                Logger.Write( LogColor.Hilite, "^Alter Time: cast again if health falls below {0}%", (_healthAlterTime * MageSettings.AlterTimeHealthPct) / 100);
+                                })
+                            ),
+
+                    new Decorator(
+                        req => ((bool)req) && Me.HealthPercent <= ((_healthAlterTime * MageSettings.AlterTimeHealthPct) / 100),
+                        new Action( r => {
+                            Logger.Write( LogColor.Hilite, "^Alter Time: restoring to {0}% at {1:F1} yds away", _healthAlterTime, _locAlterTime.Distance(Me.Location));
+                            Spell.LogCast("Alter Time", Me, true);
+                            Spell.CastPrimative("Alter Time");
+                            })
+                        )
+                    )
+                );
+        }
+
+        private static WoWPoint _locAlterTime { get; set; }
+        private static int _healthAlterTime { get; set; }
 
     }
 

@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using Styx.CommonBot;
 using Action = Styx.TreeSharp.Action;
 using Styx.WoWInternals.WoWObjects;
+using Styx.WoWInternals;
+using CommonBehaviors.Actions;
 
 namespace Singular.ClassSpecific.Monk
 {
@@ -20,7 +22,6 @@ namespace Singular.ClassSpecific.Monk
         private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk(); } }
         public static bool HasTalent(MonkTalents tal) { return TalentManager.IsSelected((int)tal); }
 
-        private static readonly WaitTimer _clashTimer = new WaitTimer(TimeSpan.FromSeconds(3));
         // ToDo  Summon Black Ox Statue, Chi Burst and 
 
         private static bool UseChiBrew
@@ -32,55 +33,39 @@ namespace Singular.ClassSpecific.Monk
             }
         }
 
-        // fix for when clash target is out of range due to long server generatord paths.
-        private static Composite TryCastClashBehavior()
-        {
-            return new Decorator(
-                ctx => _clashTimer.IsFinished && Spell.CanCastHack("Clash", Me.CurrentTarget) && Singular.Utilities.EventHandlers.LastNoPathTarget != Me.CurrentTargetGuid,
-                new Sequence(new Action(ctx => SpellManager.Cast("Clash")), new Action(ctx => _clashTimer.Reset())));
-        }
 
-        [Behavior(BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkBrewmaster, WoWContext.Instances)]
-        public static Composite CreateBrewmasterMonkPullInstances()
+        private static Composite CastDizzyingHaze( UnitSelectionDelegate onUnit = null)
         {
-            return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Spell.WaitForCastOrChannel(),
-                new Decorator(
-                    req => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-                        Helpers.Common.CreateAutoAttack(true),
-                        Helpers.Common.CreateInterruptBehavior(),
-                        CreateDizzyingHazeSingleton(),
-                        CreateCloseDistanceBehavior(),
-                        Spell.Cast("Tiger Palm"),
-                        Spell.Cast("Expel Harm", on => Common.BestExpelHarmTarget(), ret => Me.HealthPercent < 80 && Me.CurrentTarget.Distance < 10),
-                        Spell.Cast("Jab")
+            const string DIZZYING_HAZE = "Dizzying Haze";
+
+            if (onUnit == null)
+            {
+                // cast on those in combat with us that are moving away and don't have Dizzying Haze
+                onUnit = uu => Unit.NearbyUnfriendlyUnits.FirstOrDefault(
+                    u => (u.Aggro || u.Combat && u.IsTargetingUs()) 
+                        && !Me.HasMyAura(DIZZYING_HAZE) 
+                        && !Spell.DoubleCastContains(u, DIZZYING_HAZE) 
+                        && (u.SpellDistance() > 10 || u.IsMovingAway()));
+            }
+
+            return new Throttle(
+                TimeSpan.FromMilliseconds(2500),
+                new PrioritySelector(
+                    ctx => {
+                        WoWUnit unit = onUnit(ctx);
+                        if (unit.HasMyAura(DIZZYING_HAZE))
+                            unit = null;
+                        return unit;
+                        },
+                    new Sequence(
+                        Spell.CastOnGround(DIZZYING_HAZE, on => on as WoWUnit, req => true, false),
+                        new Action( r => Spell.UpdateDoubleCast(DIZZYING_HAZE, r as WoWUnit))
                         )
                     )
                 );
         }
 
-        private static Composite _dishaze = null;
-        private static Composite CreateDizzyingHazeSingleton()
-        {
-            if (_dishaze == null)
-            {
-                _dishaze = new Throttle(
-                    TimeSpan.FromMilliseconds(2500),
-                    new PrioritySelector(
-                        ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => !Me.HasMyAura("Dizzying Haze") && (u.SpellDistance() > 15 || u.IsMovingAway())),
-                        Spell.CastOnGround("Dizzying Haze", on => on as WoWUnit, req => true, false)
-                        )
-                    );
-
-            }
-
-            return _dishaze;
-        }
-
-        [Behavior(BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkBrewmaster, WoWContext.Normal)]
-        [Behavior(BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkBrewmaster, WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkBrewmaster)]
         public static Composite CreateBrewmasterMonkPullNormal()
         {
             return new PrioritySelector(
@@ -91,7 +76,7 @@ namespace Singular.ClassSpecific.Monk
                     new PrioritySelector(
                         Helpers.Common.CreateInterruptBehavior(),
                         CreateCloseDistanceBehavior(),
-                        CreateDizzyingHazeSingleton(),
+                        CastDizzyingHaze(),
                         Spell.Cast("Tiger Palm"),
                         Spell.Cast("Expel Harm", on => Common.BestExpelHarmTarget(), ret => Me.HealthPercent < 80 && Me.CurrentTarget.Distance < 10),
                         Spell.Cast("Jab")
@@ -118,20 +103,9 @@ namespace Singular.ClassSpecific.Monk
                 new Decorator(
                     req => !Unit.IsTrivial( Me.CurrentTarget),
                     new PrioritySelector(
-                        Spell.BuffSelf(
-                            "Avert Harm",
-                            ctx =>
-                            {
-                                if (!MonkSettings.UseAvertHarm || !Me.GroupInfo.IsInParty)
-                                    return false;
-                                var nearbyGroupMembers = Me.RaidMembers.Where(r => !r.IsMe && r.Distance <= 10).ToList();
-                                return nearbyGroupMembers.Any() && nearbyGroupMembers.Average(u => u.HealthPercent) <= MonkSettings.AvertHarmGroupHealthPct;
-                            }),
-
                         Spell.BuffSelf("Zen Meditation", req => Targeting.Instance.TargetList.Any( u => u.IsCasting && u.CurrentTargetGuid != Me.Guid && Me.GroupInfo.IsInCurrentRaid(u.CurrentTargetGuid) && u.SpellDistance(u.CurrentTarget) < 20)),
-
                         Spell.BuffSelf("Fortifying Brew", ctx => Me.HealthPercent <= MonkSettings.FortifyingBrewPct),
-                        Spell.BuffSelf("Guard", ctx => Me.HasAura("Power Guard")),
+                        Spell.BuffSelf("Guard", req => Me.HealthPercent < MonkSettings.GuardHealthPct || Unit.UnfriendlyUnits(40).Count( u => u.CurrentTargetGuid == Me.Guid) >= MonkSettings.GuardMobCount ),
                         Spell.BuffSelf("Elusive Brew", ctx => MonkSettings.UseElusiveBrew && Me.HasAura("Elusive Brew", MonkSettings.ElusiveBrewMinumumCount)),
                         Spell.Cast("Chi Brew", ctx => UseChiBrew),
                         Spell.BuffSelf("Zen Sphere", ctx => HasTalent(MonkTalents.ZenSphere) && Me.HealthPercent < 90)
@@ -170,10 +144,8 @@ namespace Singular.ClassSpecific.Monk
                         Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
 
-                        Common.CreateGrappleWeaponBehavior(),
-
                         // keep these auras up!
-                        Spell.Cast("Tiger Palm", ret => Me.HasKnownAuraExpired("Tiger Power", 1) || (SpellManager.HasSpell("Brewmaster Training") && Me.HasKnownAuraExpired("Power Guard", 1))),
+                        Spell.Cast("Tiger Palm", ret => Me.HasKnownAuraExpired("Tiger Power", 1)),
                         Spell.Cast("Blackout Kick", ctx => SpellManager.HasSpell("Brewmaster Training") && Me.HasKnownAuraExpired("Shuffle", 1)),
 
                         // AOE
@@ -189,7 +161,7 @@ namespace Singular.ClassSpecific.Monk
                                     req => req != null,
                                     new PrioritySelector(
                                         // throw debuff on them to hit themselves and slow
-                                        CreateDizzyingHazeSingleton(),
+                                        CastDizzyingHaze(),
 
                                         // throw DoT on them
                                         Spell.Cast("Breath of Fire", 
@@ -210,7 +182,7 @@ namespace Singular.ClassSpecific.Monk
                             ),
 
                         // execute if we can
-                        Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
+                        Common.CastTouchOfDeath(),
 
                         // stun if configured to do so
                         Spell.Cast("Leg Sweep", ret => Spell.UseAOE && MonkSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.CurrentTarget.IsWithinMeleeRange),
@@ -230,7 +202,7 @@ namespace Singular.ClassSpecific.Monk
                             ),
 
                         // use dizzying only if target not in range of keg smash or running away and doesnt have debuff
-                        CreateDizzyingHazeSingleton(),
+                        CastDizzyingHaze(),
 
                         new Decorator(
                             req => Me.CurrentChi > 2,
@@ -262,9 +234,6 @@ namespace Singular.ClassSpecific.Monk
 
                 Helpers.Common.CreateInterruptBehavior(),
 
-                Common.CreateGrappleWeaponBehavior(),
-
-                Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
                 // slow if current target running away
                 new Throttle( TimeSpan.FromMilliseconds(1500),                           
                     Spell.CastOnGround("Dizzying Haze", on => Me.CurrentTarget, req => Me.CurrentTarget.IsMovingAway(), waitForSpell: false)
@@ -296,10 +265,29 @@ namespace Singular.ClassSpecific.Monk
                         Helpers.Common.CreateInterruptBehavior(),
 
                         // Execute if we can
-                        Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
+                        Common.CastTouchOfDeath(),
 
                         // make sure I have aggro.
-                        Spell.Cast("Provoke", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(), ret => SingularSettings.Instance.EnableTaunting),
+                        new Decorator(
+                            req => SingularSettings.Instance.EnableTaunting,
+                            new Decorator(
+                                req => TankManager.Instance.NeedToTaunt.FirstOrDefault() != null,
+                                new PrioritySelector(
+                                    new Decorator(
+                                        req => TankManager.Instance.NeedToTaunt.Count() > 1,
+                                        new PrioritySelector(
+                                            new Sequence(
+                                                CreateSummonBlackOxStatueBehavior( on => TankManager.Instance.NeedToTaunt.FirstOrDefault()),
+                                                new Wait(1, until => FindStatue() != null, new ActionAlwaysSucceed()),
+                                                Spell.Cast("Provoke", ret => FindStatue())
+                                                ),
+                                            Spell.Cast("Provoke", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault()),
+                                            CastDizzyingHaze()
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
 
                         // highest priority -- Keg Smash for threat and debuff
                         Spell.Cast("Keg Smash", req => Me.MaxChi - Me.CurrentChi >= 2 && Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8).Any(u => !u.HasAura("Weakened Blows"))),
@@ -318,35 +306,36 @@ namespace Singular.ClassSpecific.Monk
                                 Spell.BuffSelf("Zen Sphere", ctx => HasTalent( MonkTalents.ZenSphere) && Me.HealthPercent < 90),
                         // aoe stuns
                                 Spell.Cast("Charging Ox Wave", ctx => TalentManager.IsSelected((int)MonkTalents.ChargingOxWave) && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 30) >= 3),
-                                Spell.Cast("Leg Sweep", ctx => TalentManager.IsSelected((int)MonkTalents.LegSweep))
+                                Spell.Cast("Leg Sweep", ctx => TalentManager.IsSelected((int)MonkTalents.LegSweep)),
+                                Spell.Cast("Spinning Crane Kick", req => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= MonkSettings.SpinningCraneKickCnt),
+                                Spell.Cast("Rushing Jade Wind", req => HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3)
                                 )
                             ),
 
-                        // ***** Spend Chi *****
-                        // Spell.Cast("Rushing Jade Wind", ctx => TalentManager.IsSelected((int)MonkTalents.RushingJadeWind) && (!Me.HasAura("Shuffle") || Me.Auras["Shuffle"].TimeLeft <= TimeSpan.FromSeconds(1))),
-                        Spell.Cast("Blackout Kick", ctx => !SpellManager.HasSpell("Brewmaster Training") || Me.HasKnownAuraExpired("Shuffle", 1)),
-                        Spell.Cast("Tiger Palm", ret => Me.HasKnownAuraExpired("Tiger Power", 1) || (SpellManager.HasSpell("Brewmaster Training") && Me.HasKnownAuraExpired("Power Guard", 1))),
-
                         Spell.BuffSelf("Purifying Brew", ctx => Me.HasAura("Stagger") && Me.CurrentChi >= 3),
 
-                        // ***** Generate Chi *****
+
                         new Decorator(
-                            req => Me.CurrentChi < Me.MaxChi,
+                            req => Me.CurrentChi <= (Me.MaxChi - 2),
                             new PrioritySelector(
-                                Spell.Cast("Keg Smash", ctx => Me.MaxChi - Me.CurrentChi >= 2),
-                                Spell.Cast("Rushing Jade Wind", req => Spell.UseAOE && HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3),
-                                Spell.Cast("Spinning Crane Kick", req => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= MonkSettings.SpinningCraneKickCnt),
-
-                                // jab with power strike talent is > expel Harm if off CD.
-                                new Decorator(ctx => TalentManager.IsSelected((int)MonkTalents.PowerStrikes) && Me.MaxChi - Me.CurrentChi >= 2 && Spell.CanCastHack("Jab") && powerStrikeTimer.IsFinished,
-                                    new Sequence(
-                                        new Action(ctx => powerStrikeTimer.Reset()),
-                                        Spell.Cast("Jab")
-                                        )
-                                    ),
-
-                                Spell.Cast("Expel Harm", on => Common.BestExpelHarmTarget(), req => Me.HealthPercent < 90 && Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 10 * 10)),
+                                Spell.Cast("Keg Smash"),
+                                Spell.Cast("Expel Harm"),
                                 Spell.Cast("Jab")
+                                )
+                            ),
+
+                        // use dizzying only if target not in range of keg smash or running away and doesnt have debuff
+                        CastDizzyingHaze(),
+
+                        new Decorator(
+                            req => Me.CurrentChi > 2,
+                            new PrioritySelector(
+                                Spell.BuffSelf("Elusive Brew", ctx => MonkSettings.UseElusiveBrew && Me.HasAura("Elusive Brew", MonkSettings.ElusiveBrewMinumumCount)),
+                                Spell.BuffSelf("Purifying Brew", ctx => Me.HasAnyAura("Moderate Stagger", "Heavy Stagger") && Me.CurrentChi >= 3),
+                                Spell.Cast("Blackout Kick", ctx => SpellManager.HasSpell("Brewmaster Training") && Me.HasKnownAuraExpired("Shuffle", 1)),
+                                Spell.Cast("Guard"),
+                                Spell.Cast("Blackout Kick", req => Me.CurrentChi >= 4),
+                                Spell.Cast("Tiger Palm", ret => Me.HasKnownAuraExpired("Tiger Power", 2))
                                 )
                             ),
 
@@ -370,7 +359,6 @@ namespace Singular.ClassSpecific.Monk
                             req => !((WoWUnit)req).IsAboveTheGround() && ((WoWUnit)req).SpellDistance() > 10 && Me.IsSafelyFacing(((WoWUnit)req), 10f),
                             new Sequence(
                                 new PrioritySelector(
-                                    Spell.Cast("Clash", on => (WoWUnit) on),
                                     Spell.Cast("Roll", on => (WoWUnit) on, req => !MonkSettings.DisableRoll)
                                     )
                                 )
@@ -381,6 +369,63 @@ namespace Singular.ClassSpecific.Monk
 
         }
 
+        private static WoWUnit _statue;
+
+        private static Composite CreateSummonBlackOxStatueBehavior( UnitSelectionDelegate on )
+        {
+            if (!SpellManager.HasSpell("Summon Black Ox Statue"))
+                return new ActionAlwaysFail();
+
+            return new Throttle(
+                8,
+                new Decorator(
+                    req => !Spell.IsSpellOnCooldown("Summon Black Ox Statue"),
+
+                    new PrioritySelector(
+                        ctx => _statue = FindStatue(),
+
+                        new Decorator(
+
+                            req => _statue == null || (Me.GotTarget && _statue.SpellDistance(on(req)) > 30),
+
+                            new Throttle(
+                                10,
+                                new PrioritySelector(
+
+                                    ctx => on(ctx),
+
+                                    Spell.CastOnGround(
+                                        "Summon Black Ox Statue",
+                                        loc =>
+                                        {
+                                            WoWUnit unit = on(loc);
+                                            WoWPoint locStatue = WoWMovement.CalculatePointFrom(unit.Location, -5);
+                                            if (locStatue.Distance(Me.Location) > 30)
+                                            {
+                                                float needFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(Me.Location, locStatue );
+                                                locStatue = locStatue.RayCast(needFacing, 30f);
+                                            }
+                                            return locStatue;
+                                        },
+                                        req => req != null,
+                                        false,
+                                        desc => string.Format("{0:F1} yds from {1}", 5, (desc as WoWUnit).SafeName())
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                );
+        }
+
+        public static WoWUnit FindStatue()
+        {
+            const uint BLACK_OX_STATUE = 61146;
+            WoWGuid guidMe = Me.Guid;
+            return ObjectManager.GetObjectsOfType<WoWUnit>()
+                .FirstOrDefault(u => u.Entry == BLACK_OX_STATUE && u.CreatedByUnitGuid == guidMe);
+        }
 
     }
 }

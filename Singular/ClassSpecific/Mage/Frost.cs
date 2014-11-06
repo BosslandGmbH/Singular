@@ -50,7 +50,7 @@ namespace Singular.ClassSpecific.Mage
                             new Sequence(
                                 new Action(ctx => Logger.Write("/dismiss Pet")),
                                 Spell.Cast("Dismiss Pet", on => Me.Pet, req => true, cancel => false),
-                // new Action(ctx => SpellManager.Cast("Dismiss Pet")),
+                // new Action(ctx => Spell.CastPrimative("Dismiss Pet")),
                                 new WaitContinue(TimeSpan.FromMilliseconds(1500), ret => !Me.GotAlivePet, new ActionAlwaysSucceed())
                                 )
                             )
@@ -260,7 +260,6 @@ namespace Singular.ClassSpecific.Mage
                                             )
                                         )
                                     ),
-                                Spell.CastOnGround("Flamestrike", on => (WoWUnit) on, req => true, waitForSpell: false),
                                 Spell.Cast("Frozen Orb", req => Spell.UseAOE && Me.IsSafelyFacing(Me.CurrentTarget, 5f) && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage() && Me.IsSafelyFacing(u, 20))),
                                 Spell.Cast("Fire Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
 
@@ -359,14 +358,6 @@ namespace Singular.ClassSpecific.Mage
 
         #region Battleground Rotation
 
-        private static HashSet<int> alterTimeBuffs = new HashSet<int>
-            {
-                12043,  // Presence of Mind
-                114003, // Invocation
-                44549,  // Brain Freeze
-                12472   // Icy Veins
-            };
-
         [Behavior(BehaviorType.Pull|BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageFrost, WoWContext.Battlegrounds)]
         public static Composite CreateMageFrostPvPCombat()
         {
@@ -440,12 +431,6 @@ namespace Singular.ClassSpecific.Mage
 
                         // 3 min
                          Spell.BuffSelf("Mage Ward", ret => Me.HealthPercent <= 75),
-
-                         Spell.BuffSelf("Alter Time", req =>
-                         {
-                             int count = Me.GetAllAuras().Count(a => a.TimeLeft.TotalSeconds > 0 && alterTimeBuffs.Contains(a.SpellId));
-                             return count >= 2;
-                         }),
 
                          // Rotation
                          new Decorator(

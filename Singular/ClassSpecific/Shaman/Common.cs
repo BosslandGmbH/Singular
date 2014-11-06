@@ -27,16 +27,16 @@ namespace Singular.ClassSpecific.Shaman
     /// Temporary Enchant Id associated with Shaman Imbue
     /// Note: each enum value and Imbue.GetSpellName() must be maintained in a way to allow tranlating an enum into a corresponding spell name
     /// </summary>
-    public enum Imbue
-    {
-        None = 0,
+    //public enum Imbue
+    //{
+    //    None = 0,
 
-        Flametongue = 5,
-        Windfury = 283,
-        Earthliving = 3345,
-        Frostbrand = 2,
-        Rockbiter = 3021
-    }
+    //    Flametongue = 5,
+    //    Windfury = 283,
+    //    Earthliving = 3345,
+    //    Frostbrand = 2,
+    //    Rockbiter = 3021
+    //}
 
     public static class Common
     {
@@ -116,11 +116,9 @@ namespace Singular.ClassSpecific.Shaman
                     new PrioritySelector(
                         Spell.Cast("Earth Shock", ret => StyxWoW.Me.HasAura("Lightning Shield", 5)),
                         Spell.Buff("Flame Shock", true, req => SpellManager.HasSpell("Lava Burst")),
-                        Spell.Cast("Unleash Weapon", ret => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
+                        Spell.Cast("Unleash Elements"),
                         Spell.Cast("Earth Shock", ret => !SpellManager.HasSpell("Flame Shock")),
-
-                        Spell.Cast("Lightning Bolt", req => TalentManager.CurrentSpec != WoWSpec.ShamanEnhancement),
-                        Spell.Cast("Lightning Bolt", ret => TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement && !ShamanSettings.AvoidMaelstromDamage && StyxWoW.Me.HasAura("Maelstrom Weapon", 5) && (StyxWoW.Me.GetAuraTimeLeft("Maelstom Weapon", true).TotalSeconds < 3000 || StyxWoW.Me.PredictedHealthPercent(includeMyHeals: true) > 90))
+                        Spell.Cast("Lightning Bolt")
                         )
                     )
                 );
@@ -136,7 +134,7 @@ namespace Singular.ClassSpecific.Shaman
                         ret => Me.Fleeing && !Spell.IsSpellOnCooldown(WoWTotem.Tremor.ToSpellId()),
                         new PrioritySelector(
                             new Action( r => {
-                                Logger.Write(Color.White, "/use Tremor Totem (I am fleeing...)");
+                                Logger.Write( LogColor.Hilite, "/use Tremor Totem (I am fleeing...)");
                                 return RunStatus.Failure;
                             }),
                             Spell.Cast(WoWTotem.Tremor.ToSpellId(), on => Me),
@@ -280,158 +278,6 @@ namespace Singular.ClassSpecific.Shaman
                 );
         }
 
-        #region IMBUE SUPPORT
-        public static Decorator CreateShamanImbueMainHandBehavior(params Imbue[] imbueList)
-        {
-            return new Decorator(ret => CanImbue(Me.Inventory.Equipped.MainHand),
-                new PrioritySelector(
-                    imb => imbueList.FirstOrDefault(i => SpellManager.HasSpell(i.ToSpellName())),
-
-                    new Decorator(
-                        ret => Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != (int)ret
-                            && SpellManager.HasSpell(((Imbue)ret).ToSpellName())
-                            && Spell.CanCastHack(((Imbue)ret).ToSpellName(), null),
-                        new Sequence(
-                            new Action(ret => Logger.WriteDebug(Color.Pink, "Main hand [" 
-                                + (Me.Inventory.Equipped.MainHand == null ? "-null-" : Me.Inventory.Equipped.MainHand.Name )
-                                + " #" + (Me.Inventory.Equipped.MainHand == null ? 0 : Me.Inventory.Equipped.MainHand.Entry ) 
-                                + "] currently imbued: " + ((Imbue)Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id).ToString())),
-                            new Action(ret => Lua.DoString("CancelItemTempEnchantment(1)")),
-                            new WaitContinue(1,
-                                ret => Me.Inventory.Equipped.MainHand != null && (Imbue)Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == Imbue.None,
-                                new ActionAlwaysSucceed()),
-                            new DecoratorContinue(ret => ((Imbue)ret) != Imbue.None,
-                                new Sequence(
-                                    new Action(ret => Logger.Write(Color.Pink, 
-                                        "Imbuing main hand ["
-                                        + " #" + (Me.Inventory.Equipped.MainHand == null ? 0 : Me.Inventory.Equipped.MainHand.Entry)
-                                        + "] weapon with " + ((Imbue)ret).ToString())
-                                        ),
-                                    new Action(ret => SpellManager.Cast(((Imbue)ret).ToSpellName(), null)),
-                                    new Action(ret => SetNextAllowedImbueTime())
-                                    )
-                                )
-                            )
-                        )
-                    )
-                );
-        }
-
-        public static Composite CreateShamanImbueOffHandBehavior(params Imbue[] imbueList)
-        {
-            return new Decorator(ret => CanImbue(Me.Inventory.Equipped.OffHand),
-                new PrioritySelector(
-                    imb => imbueList.FirstOrDefault(i => SpellManager.HasSpell(i.ToSpellName())),
-
-                    new Decorator(
-                        ret => Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id != (int)ret
-                            && SpellManager.HasSpell(((Imbue)ret).ToSpellName())
-                            && Spell.CanCastHack(((Imbue)ret).ToSpellName(), null),
-                        new Sequence(
-                            new Action(ret => Logger.WriteDebug(Color.Pink, "Off hand ["
-                                + (Me.Inventory.Equipped.OffHand == null ? "-null-" : Me.Inventory.Equipped.OffHand.Name)
-                                + " #" + (Me.Inventory.Equipped.OffHand == null ? 0 : Me.Inventory.Equipped.OffHand.Entry) 
-                                + "] currently imbued: " + ((Imbue)Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id).ToString())),
-                            new Action(ret => Lua.DoString("CancelItemTempEnchantment(2)")),
-                            new WaitContinue(1,
-                                ret => Me.Inventory.Equipped.OffHand != null && (Imbue)Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id == Imbue.None,
-                                new ActionAlwaysSucceed()),
-                            new DecoratorContinue(ret => ((Imbue)ret) != Imbue.None,
-                                new Sequence(
-                                    new Action(ret => Logger.Write(System.Drawing.Color.Pink, "Imbuing Off hand ["
-                                        + (Me.Inventory.Equipped.OffHand == null ? "-null-" : Me.Inventory.Equipped.OffHand.Name)
-                                        + " #" + (Me.Inventory.Equipped.OffHand == null ? 0 : Me.Inventory.Equipped.OffHand.Entry)
-                                        + "] weapon with " + ((Imbue)ret).ToString())),
-                                    new Action(ret => SpellManager.Cast(((Imbue)ret).ToSpellName(), null)),
-                                    new Action(ret => SetNextAllowedImbueTime())
-                                    )
-                                )
-                            )
-                        )
-                    )
-                );
-        }
-
-        // imbues are sometimes slow to appear on client... need to allow time
-        // .. for buff to appear, otherwise will get in an imbue spam loop
-
-        private static DateTime nextImbueAllowed = DateTime.Now;
-
-        public static bool CanImbue(WoWItem item)
-        {
-            if (ShamanSettings.UseWeaponImbues && item != null && item.ItemInfo.IsWeapon)
-            {
-                // during combat, only mess with imbues if they are missing
-                if (Me.Combat && item.TemporaryEnchantment.Id != 0)
-                    return false;
-
-                // check if enough time has passed since last imbue
-                // .. guards against detecting is missing immediately after a cast but before buff appears
-                // .. (which results in imbue cast spam)
-                if (nextImbueAllowed > DateTime.Now)
-                    return false;
-
-                switch (item.ItemInfo.WeaponClass)
-                {
-                    case WoWItemWeaponClass.Axe:
-                        return true;
-                    case WoWItemWeaponClass.AxeTwoHand:
-                        return true;
-                    case WoWItemWeaponClass.Dagger:
-                        return true;
-                    case WoWItemWeaponClass.Fist:
-                        return true;
-                    case WoWItemWeaponClass.Mace:
-                        return true;
-                    case WoWItemWeaponClass.MaceTwoHand:
-                        return true;
-                    case WoWItemWeaponClass.Polearm:
-                        return true;
-                    case WoWItemWeaponClass.Staff:
-                        return true;
-                    case WoWItemWeaponClass.Sword:
-                        return true;
-                    case WoWItemWeaponClass.SwordTwoHand:
-                        return true;
-                }
-            }
-
-            return false;
-        }
-
-        public static void SetNextAllowedImbueTime()
-        {
-            // 2 seconds to allow for 0.5 seconds plus latency for buff to appear
-            nextImbueAllowed = DateTime.Now + new TimeSpan(0, 0, 0, 0, 750); // 1500 + (int) SingularRoutine.Latency << 1);
-        }
-
-        public static string ToSpellName(this Imbue i)
-        {
-            return i.ToString() + " Weapon";
-        }
-
-        public static Imbue GetImbue(WoWItem item)
-        {
-            if (item != null)
-                return (Imbue)item.TemporaryEnchantment.Id;
-
-            return Imbue.None;
-        }
-
-        public static bool IsImbuedForDPS(WoWItem item)
-        {
-            Imbue imb = GetImbue(item);
-            return imb == Imbue.Flametongue || imb == Imbue.Windfury;
-        }
-
-        public static bool IsImbuedForHealing(WoWItem item)
-        {
-            return GetImbue(item) == Imbue.Earthliving;
-        }
-
-        #endregion
-
-
         public static bool Players(this CastOn c)
         {
             return c == CastOn.All || c == CastOn.Players;
@@ -446,13 +292,7 @@ namespace Singular.ClassSpecific.Shaman
 
         public static Composite CreateShamanDpsShieldBehavior()
         {
-            return new Throttle( 8,
-                new PrioritySelector(
-                    ctx => HealerManager.ActingAsOffHealer,
-                    Spell.BuffSelf("Water Shield", ret => (bool)ret || Me.ManaPercent <= ShamanSettings.TwistWaterShield ),
-                    Spell.BuffSelf("Lightning Shield", ret => !(bool)ret && Me.ManaPercent >= ShamanSettings.TwistDamageShield )
-                    )
-                );
+            return new Throttle( 8, Spell.BuffSelf("Lightning Shield") );
         }
 
         public static Composite CreateShamanDpsHealBehavior()
@@ -570,7 +410,7 @@ namespace Singular.ClassSpecific.Shaman
                     ret => (Me.Combat || ((WoWUnit)ret).Combat) && ((WoWUnit)ret).PredictedHealthPercent() < ShamanSettings.OffHealSettings.AncestralSwiftness,
                     new PrioritySelector(
                         Spell.OffGCD(Spell.BuffSelf("Ancestral Swiftness")),
-                        Spell.Cast("Healing Surge", on => (WoWUnit)on, ret => !SpellManager.HasSpell("Greater Healing Wave"))
+                        Spell.Cast("Healing Surge", on => (WoWUnit)on)
                         )
                     )
                 );
@@ -608,12 +448,6 @@ namespace Singular.ClassSpecific.Shaman
                 string.Format("Healing Rain @ {0}% Count={1}", ShamanSettings.OffHealSettings.HealingRain, ShamanSettings.OffHealSettings.MinHealingRainCount),
                 "Healing Rain",
                 Spell.CastOnGround("Healing Rain", on => Restoration.GetBestHealingRainTarget(), req => HealerManager.Instance.TargetList.Count() > 1, false)
-                );
-
-            behavs.AddBehavior(Restoration.HealthToPriority(ShamanSettings.OffHealSettings.ChainHeal) + 100,
-                string.Format("Chain Heal @ {0}% Count={1}", ShamanSettings.OffHealSettings.ChainHeal, ShamanSettings.OffHealSettings.MinChainHealCount),
-                "Chain Heal",
-                Spell.Cast("Chain Heal", on => Restoration.GetBestChainHealTarget())
                 );
 
             #endregion

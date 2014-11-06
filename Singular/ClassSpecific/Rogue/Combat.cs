@@ -108,12 +108,6 @@ namespace Singular.ClassSpecific.Rogue
 
                         Spell.Cast("Eviscerate", ret => !SpellManager.HasSpell("Recuperate") && Me.CurrentTarget.TimeToDeath(999) <= Me.ComboPoints ),
 
-                        Spell.Cast("Rupture",
-                            ret => Me.ComboPoints >= 4
-                                && !Me.HasAura("Blade Flurry")
-                                && Me.CurrentTarget.TimeToDeath() >= 7
-                                && Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 1), // && Me.CurrentTarget.HasBleedDebuff()
-
                         Spell.Cast("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount),
                         Spell.Cast("Sinister Strike")
                         )
@@ -164,22 +158,15 @@ namespace Singular.ClassSpecific.Rogue
                             new PrioritySelector(
                                 Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
-                                Spell.Cast("Fan of Knives"),
+                                Spell.Cast("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount),
                                 Spell.Cast("Sinister Strike"),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
                             ),
 
                         Spell.Cast("Revealing Strike", ret => !Me.CurrentTarget.HasMyAura("Revealing Strike")),
+
                         Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
-
-                        Spell.Buff("Rupture", true,
-                            ret => RogueSettings.CombatUseRuptureFinisher 
-                                && Common.AoeCount <= 1
-                                && Me.ComboPoints >= 4
-                                && Me.CurrentTarget.HasMyAura("Revealing Strike")),
-//                              && Me.CurrentTarget.HasBleedDebuff()),
-
                         Spell.Cast("Eviscerate", ret => Me.ComboPoints == 5),
 
                         Spell.Cast("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount),
@@ -198,7 +185,7 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => Me.HasAura("Blade Flurry") && (!Spell.UseAOE || Common.AoeCount <= 1),
                     new Sequence(
-                        new Action(ret => Logger.Write("/cancel Blade Flurry")),
+                        new Action(ret => Logger.Write( LogColor.Cancel, "/cancel Blade Flurry")),
                         new Action(ret => Me.CancelAura("Blade Flurry")),
                         new Wait(TimeSpan.FromMilliseconds(500), ret => !Me.HasAura("Blade Flurry"), new ActionAlwaysSucceed())
                         )

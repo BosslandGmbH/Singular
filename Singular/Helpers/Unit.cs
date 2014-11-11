@@ -153,13 +153,26 @@ namespace Singular.Helpers
         ///   Gets the nearby friendly players that can be seen
         /// </summary>
         /// <value>The nearby friendly players.</value>
-        public static IEnumerable<WoWPlayer> FriendlyPlayers(double range = 100.0 )
+        public static IEnumerable<WoWPlayer> FriendlyPlayers(double range = 100.0)
         {
-            if ( range >= 100.0)
+            if (range >= 100.0)
                 return ObjectManager.GetObjectsOfType<WoWPlayer>(false, true).Where(p => p.IsFriendly).ToList();
 
             range *= range;
             return ObjectManager.GetObjectsOfType<WoWPlayer>(false, true).Where(p => p.IsFriendly && p.DistanceSqr < range).ToList();
+        }
+
+        /// <summary>
+        ///   Gets the nearby friendly units that can be seen
+        /// </summary>
+        /// <value>The nearby friendly units.</value>
+        public static IEnumerable<WoWUnit> FriendlyUnit(double range = 100.0)
+        {
+            if (range >= 100.0)
+                return ObjectManager.GetObjectsOfType<WoWUnit>(false, true).Where(p => p.IsFriendly).ToList();
+
+            range *= range;
+            return ObjectManager.GetObjectsOfType<WoWUnit>(false, true).Where(p => p.IsFriendly && p.DistanceSqr < range).ToList();
         }
 
         /// <summary>
@@ -1319,6 +1332,14 @@ namespace Singular.Helpers
                 canAttack = Lua.GetReturnVal<bool>("return UnitCanAttack(\"player\",\"target\")", 0);
             else
             {
+                // do not perform test in PVP or Instance contexts
+                if (SingularRoutine.CurrentWoWContext != WoWContext.Normal)
+                    return true;
+
+                // skip test if not a player 
+                if (!unit.IsPlayer)
+                    return true;
+
                 WoWUnit focusSave = StyxWoW.Me.FocusedUnit;
                 StyxWoW.Me.SetFocus(unit);
                 canAttack = Lua.GetReturnVal<bool>("return UnitCanAttack(\"player\",\"focus\")", 0);

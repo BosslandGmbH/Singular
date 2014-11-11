@@ -18,24 +18,34 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateLowbieRogueCombat()
         {
             return new PrioritySelector(
+                Safers.EnsureTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptBehavior(),
-                Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5 || StyxWoW.Me.CurrentTarget.HealthPercent <= 40 && StyxWoW.Me.ComboPoints >= 2),
-                Spell.Cast("Sinister Strike"),
-                Movement.CreateMoveToMeleeBehavior(true)
+
+                Spell.WaitForCastOrChannel(),
+
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Helpers.Common.CreateAutoAttack(false),
+                        Helpers.Common.CreateInterruptBehavior(),
+                        Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5 || StyxWoW.Me.CurrentTarget.HealthPercent <= 40 && StyxWoW.Me.ComboPoints >= 2),
+                        Spell.Cast("Sinister Strike")
+                        )
+                    )
                 );
         }
+
         [Behavior(BehaviorType.Pull, WoWClass.Rogue, 0)]
         public static Composite CreateLowbieRoguePull()
         {
+
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
+
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
+                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget && Me.IsSafelyFacing(Me.CurrentTarget),
                     new PrioritySelector(
                         Common.CreateStealthBehavior(),
                         Common.CreateRogueOpenerBehavior(),

@@ -131,13 +131,6 @@ namespace Singular.Settings
         [Description("0: disable ability, otherwise mob count required within 8 yds.  Controls Wrathstorm also")]
         public int FelstormMobCount { get; set; }
 
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Demonology")]
-        [DisplayName("Use Demonic Leap")]
-        [Description("Demonic Leap to disengage from melee")]
-        public bool UseDemonicLeap { get; set; }
-
         public enum SpellPriority
         {
             Noxxic = 1,

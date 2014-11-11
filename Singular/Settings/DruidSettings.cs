@@ -274,6 +274,13 @@ namespace Singular.Settings
         #region Resto
 
         [Setting]
+        [DefaultValue(1)]
+        [Category("Restoration")]
+        [DisplayName("Wild Charge Count")]
+        [Description("Count of Melee Attacks which cause this spell to be used, 0: disable")]
+        public int RestoWildChargeCount { get; set; }
+
+        [Setting]
         [DefaultValue(60)]
         [Category("Restoration")]
         [DisplayName("Tranquility Health")]

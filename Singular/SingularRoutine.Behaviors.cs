@@ -899,9 +899,12 @@ namespace Singular
                     break;
 
                 case WoWSpec.WarriorArms:
-                case WoWSpec.WarriorFury:
                 case WoWSpec.WarriorProtection:
                     needSpell = "Thunder Clap"; // 20
+                    break;
+
+                case WoWSpec.WarriorFury:
+                    needSpell = "Whirlwind";    // 26
                     break;
             }
 
@@ -938,6 +941,11 @@ namespace Singular
             {
                 allow = false;
                 Logger.WriteDiagnostic("Pull More: disabled automatically for Context = '{0}'", SingularRoutine.CurrentWoWContext);
+            }
+            else if (Me.Specialization == WoWSpec.None)
+            {
+                allow = false;
+                Logger.WriteDiagnostic("Pull More: disabled for Lowbie characters (no specialization)");
             }
             else if (!SpellManager.HasSpell(needSpell))
             {
@@ -990,7 +998,7 @@ namespace Singular
                             req => ((DateTime.Now - Singular.Utilities.EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 15),
                             new Action(r =>
                             {
-                                Logger.WriteDiagnostic(Color.White, "Pull More: attacked by enemy player, disabling pull more until out of combat");
+                                Logger.WriteDiagnostic(Color.White, "Pull More: attacked by player {0:F1} seconds ago, disabling pull more until out of combat", (DateTime.Now - Singular.Utilities.EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds);
                                 _allowPullMoreUntil = DateTime.Now;
                             })
                             ),

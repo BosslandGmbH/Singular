@@ -72,9 +72,7 @@ namespace Singular.Helpers
                 || TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement
                 || Me.Class == WoWClass.Warrior;
 
-            bool autoAttackRanged =
-                   TalentManager.CurrentSpec == WoWSpec.None
-                || Me.Class == WoWClass.Hunter;
+            bool autoAttackRanged = Me.Class == WoWClass.Hunter;
 
             if (autoAttackMelee)
             {

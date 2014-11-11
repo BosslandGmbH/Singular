@@ -37,7 +37,11 @@ namespace Singular.Managers
             Update();
         }
 
-        public static WoWSpec CurrentSpec { get; private set; }
+        public static WoWSpec CurrentSpec 
+        { 
+            get; 
+            private set; 
+        }
 
         public static List<Talent> Talents { get; private set; }
 

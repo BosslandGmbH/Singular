@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Reflection;
 using System.Linq;
 using System.Windows.Forms;
@@ -30,7 +29,7 @@ namespace Singular
         private static LogLevel _lastLogLevel = LogLevel.None;
 
         public static uint Latency { get; set; }
-        private static WaitTimer WaitForLatencyCheck = new WaitTimer(TimeSpan.Zero);
+        private static WaitTimer WaitForLatencyCheck = new WaitTimer( TimeSpan.FromSeconds(5));
        
         public static SingularRoutine Instance { get; private set; }
 
@@ -416,9 +415,9 @@ namespace Singular
 
 #endregion
 
-            // _pulsePhase++;
+            _pulsePhase++;
 
-            // if (_pulsePhase == 1)
+            if (_pulsePhase == 1)
             {
                 if (WaitForLatencyCheck.IsFinished)
                 {
@@ -459,7 +458,7 @@ namespace Singular
 
                 UpdateDiagnosticFPS();
             }
-            // else if (_pulsePhase == 2)
+            else if (_pulsePhase == 2)
             {
                 // talentmanager.Pulse() intense if does work, so return if true
                 if (TalentManager.Pulse())
@@ -473,15 +472,9 @@ namespace Singular
                 // Update the current context, check if we need to rebuild any behaviors.
                 UpdateContext();
             }
-            // else if (_pulsePhase == 3)
+            else if (_pulsePhase == 3)
             {
                 _pulsePhase = 0;
-
-                // Output if Target changed 
-                CheckCurrentTarget();
-
-                // Output if Pet or Pet Target changed
-                CheckCurrentPet();
 
                 // Pulse our StopAt manager
                 StopMoving.Pulse();
@@ -497,10 +490,17 @@ namespace Singular
                         break;
                 }
 
+                // Double cast maintenance
+                Spell.MaintainDoubleCast();
+
+                HotkeyDirector.Pulse();
             }
 
-            // Double cast maintenance
-            Spell.MaintainDoubleCast();
+            // Output if Target changed 
+            CheckCurrentTarget();
+
+            // Output if Pet or Pet Target changed
+            CheckCurrentPet();
 
             // check Targeting pulses
             if (HealerManager.NeedHealTargeting)
@@ -520,7 +520,6 @@ namespace Singular
                 }
             }
 
-            HotkeyDirector.Pulse();
         }
 
         private static WoWGuid _lastPetGuid = WoWGuid.Empty;
@@ -691,12 +690,19 @@ namespace Singular
         }
 
         private static WaitTimer _pollInterval = new WaitTimer(TimeSpan.FromSeconds(10));
-
+        private static uint _lastFPS = 0;
+        
         private static void UpdateDiagnosticFPS()
         {
-            if ( SingularSettings.Debug && _pollInterval.IsFinished )
+            if ( SingularSettings.Debug && _pollInterval.IsFinished && Me.Combat)
             {
-                Logger.WriteDebug("PerfMon: FPS:{0} Latency:{1}", GetFPS(), SingularRoutine.Latency);
+                uint currFPS = GetFPS();
+                if (currFPS != _lastFPS)
+                {
+                    _lastFPS = currFPS;
+                    Logger.WriteDebug("CombatPerfMon: FPS:{0} Latency:{1}", currFPS, SingularRoutine.Latency);
+                }
+
                 _pollInterval.Reset();
             }
         }

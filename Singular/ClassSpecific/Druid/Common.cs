@@ -536,14 +536,17 @@ namespace Singular.ClassSpecific.Druid
                                     && SpellManager.HasSpell("Cat Form")
                                     && IsBotPoiWithinMovementBuffRange(),
                                 new Sequence(
-                                    new Action(r => Logger.WriteDebug("DruidMoveBuff: poitype={0} poidist={1:F1} indoors={2} canmount={3} riding={4} form={5}",
-                                        BotPoi.Current.Type,
-                                        BotPoi.Current.Location.Distance(Me.Location),
-                                        Me.IsIndoors.ToYN(),
-                                        Mount.CanMount().ToYN(),
-                                        Me.GetSkill(SkillLine.Riding).CurrentValue,
-                                        Me.Shapeshift.ToString()
+/*
+                                    new Action(r => 
+                                        Logger.WriteDebug("DruidMoveBuff: poitype={0} poidist={1:F1} indoors={2} canmount={3} riding={4} form={5}",
+                                            BotPoi.Current.Type,
+                                            BotPoi.Current.Location.Distance(Me.Location),
+                                            Me.IsIndoors.ToYN(),
+                                            Mount.CanMount().ToYN(),
+                                            Me.GetSkill(SkillLine.Riding).CurrentValue,
+                                            Me.Shapeshift.ToString()
                                         )),
+ */ 
                                     new PrioritySelector(
                                         Common.CastForm("Travel Form", 
                                             req => {

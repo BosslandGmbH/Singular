@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>11/10/2014 21:56:28</ScanTime>
+  <ScanTime>11/12/2014 17:56:16</ScanTime>
   <FileList>
     <File Hash="27856" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="33471" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -17,7 +17,7 @@
     <File Hash="9146" Name="ClassSpecific\Hunter\BeastMaster.cs" />
     <File Hash="57898" Name="ClassSpecific\Hunter\Common.cs" />
     <File Hash="1444" Name="ClassSpecific\Hunter\Lowbie.cs" />
-    <File Hash="8672" Name="ClassSpecific\Hunter\Marksman.cs" />
+    <File Hash="8799" Name="ClassSpecific\Hunter\Marksman.cs" />
     <File Hash="8330" Name="ClassSpecific\Hunter\Survival.cs" />
     <File Hash="14448" Name="ClassSpecific\Mage\Arcane.cs" />
     <File Hash="38312" Name="ClassSpecific\Mage\Common.cs" />
@@ -56,11 +56,11 @@
     <File Hash="23034" Name="ClassSpecific\Warlock\Demonology.cs" />
     <File Hash="17445" Name="ClassSpecific\Warlock\Destruction.cs" />
     <File Hash="1286" Name="ClassSpecific\Warlock\Lowbie.cs" />
-    <File Hash="32455" Name="ClassSpecific\Warrior\Arms.cs" />
-    <File Hash="20009" Name="ClassSpecific\Warrior\Common.cs" />
-    <File Hash="16328" Name="ClassSpecific\Warrior\Fury.cs" />
+    <File Hash="32584" Name="ClassSpecific\Warrior\Arms.cs" />
+    <File Hash="20509" Name="ClassSpecific\Warrior\Common.cs" />
+    <File Hash="16392" Name="ClassSpecific\Warrior\Fury.cs" />
     <File Hash="1943" Name="ClassSpecific\Warrior\Lowbie.cs" />
-    <File Hash="17396" Name="ClassSpecific\Warrior\Protection.cs" />
+    <File Hash="17460" Name="ClassSpecific\Warrior\Protection.cs" />
     <File Hash="1275" Name="Dynamics\Attributes.cs" />
     <File Hash="7532" Name="Dynamics\CompositeBuilder.cs" />
     <File Hash="837" Name="Dynamics\SessionState.cs" />
@@ -78,9 +78,9 @@
     <File Hash="17285" Name="Helpers\Party.cs" />
     <File Hash="7864" Name="Helpers\Pet.cs" />
     <File Hash="5375" Name="Helpers\PVP.cs" />
-    <File Hash="14959" Name="Helpers\Rest.cs" />
+    <File Hash="17389" Name="Helpers\Rest.cs" />
     <File Hash="35572" Name="Helpers\Safers.cs" />
-    <File Hash="113831" Name="Helpers\Spell.cs" />
+    <File Hash="112763" Name="Helpers\Spell.cs" />
     <File Hash="16825" Name="Helpers\Throttle.cs" />
     <File Hash="63749" Name="Helpers\Unit.cs" />
     <File Hash="54180" Name="Lists\BossList.cs" />

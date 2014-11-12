@@ -192,6 +192,8 @@ namespace Singular.ClassSpecific.Warrior
                                 )
                             ),
 
+                        Common.CreateExecuteOnSuddenDeath(),
+
                         // Generate Rage
                         Spell.Cast("Shield Slam", ret => Me.CurrentRage < RageBuild && HasShieldInOffHand),
                         Spell.Cast("Revenge"),

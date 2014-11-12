@@ -153,6 +153,8 @@ namespace Singular.ClassSpecific.Warrior
                         // special "in combat" pull logic for mobs not tagged and out of melee range
                         Common.CreateWarriorCombatPullMore(),
 
+                        Common.CreateExecuteOnSuddenDeath(),
+
                         new Throttle(
                             new Decorator(
                                 ret => Me.HasAura("Glyph of Incite"),
@@ -462,6 +464,8 @@ namespace Singular.ClassSpecific.Warrior
             #endregion
 
             #region Damage
+
+                         Common.CreateExecuteOnSuddenDeath(),
 
                 // see if we can get debuff on them
                         Spell.Cast("Colossus Smash", ret => Me.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModDecreaseSpeed) && Me.CurrentTarget.GetAuraTimeLeft("Colossus Smash").TotalMilliseconds < 1500),

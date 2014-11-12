@@ -395,9 +395,22 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
+        public static Composite CreateExecuteOnSuddenDeath( UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate requirements = null)
+        {
+            const int SUDDEN_DEATH_PROC = 52437;
+
+            if (onUnit == null)
+                onUnit = on => Me.CurrentTarget;
+
+            if (requirements == null)
+                requirements = req => true;
+
+            return Spell.Cast("Execute", onUnit, req => Me.HasAura(SUDDEN_DEATH_PROC) && requirements(req));
+        }
+
         public static Composite CreateDieByTheSwordBehavior()
         {
-            return Spell.OffGCD( Spell.BuffSelf("Die by the Sword", req => Me.Combat && Me.HealthPercent <= WarriorSettings.DieByTheSwordHealth) );
+            return Spell.OffGCD(Spell.BuffSelf("Die by the Sword", req => Me.Combat && Me.HealthPercent <= WarriorSettings.DieByTheSwordHealth));
         }
 
         public static Composite CreateVigilanceBehavior()
@@ -420,6 +433,8 @@ namespace Singular.ClassSpecific.Warrior
 
             return Spell.Buff( "Vigilance",  onUnit);
         }
+
+
 
     }
 

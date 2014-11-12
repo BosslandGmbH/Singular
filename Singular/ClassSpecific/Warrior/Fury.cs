@@ -162,6 +162,8 @@ namespace Singular.ClassSpecific.Warrior
                         // Disarm if setting enabled
                         Common.CreateDisarmBehavior(),
 
+                        Common.CreateExecuteOnSuddenDeath(),
+
                         // AOE 
                         // -- check melee dist+3 rather than 8 so works for large hitboxes (8 is range of DR and WW)
 

@@ -70,6 +70,7 @@ namespace Singular.ClassSpecific.Hunter
                                 ctx => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Where(u => u.InLineOfSpellSight).OrderByDescending(u => (uint) u.HealthPercent).FirstOrDefault(),
                                 Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), req => Me.HealthPercent < 85),
                                 Spell.Cast("Multi-Shot", ctx => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f)),
+                                Common.CreateHunterTrapBehavior("Explosive Trap", true, on => Me.CurrentTarget, req => true),
                                 Common.CastSteadyShot(on => Me.CurrentTarget)
                                 )
                             ),

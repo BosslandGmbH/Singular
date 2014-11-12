@@ -56,7 +56,8 @@ namespace Singular.Helpers
 
                 // Self-heal if possible
                         new Decorator(
-                            ret => {
+                            ret =>
+                            {
                                 if (Me.HasAnyAura("Drink", "Food"))
                                     return false;
                                 if (spellHeal == null || Me.HealthPercent > 85)
@@ -71,22 +72,47 @@ namespace Singular.Helpers
                                 if (Me.PredictedHealthPercent(includeMyHeals: true) > 85)
                                     return false;
                                 return true;
-                                },
+                            },
                             new Sequence(
-                                Movement.CreateEnsureMovementStoppedBehavior(reason: "to heal"),
-                                new Action(r => Logger.WriteDebug("Rest Heal - {0} @ {1:F1}% Predict:{2:F1}% and moving:{3}, cancast:{4}", spellHeal, Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true), Me.IsMoving, Spell.CanCastHack(spellHeal, Me, skipWowCheck: false)) ),
-                                new Sequence(
-                                    ctx => (int) Me.HealthPercent,
-                                    Spell.Cast(spellHeal,
-                                        mov => true,
-                                        on => Me,
-                                        req => true,
-                                        cancel => Me.HealthPercent > 90
-                                        ),
-                                    new WaitContinue( TimeSpan.FromMilliseconds(500), until => Me.HealthPercent > (1.1 * ((int)until)), new ActionAlwaysSucceed()),
-                                    new Action( r => Logger.WriteDebug("Rest - After Heal Attempted: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true)))
+                                new PrioritySelector(
+                                    Movement.CreateEnsureMovementStoppedBehavior(reason: "to heal"),
+                                    new Wait(TimeSpan.FromMilliseconds(500), until => !Me.IsMoving, new ActionAlwaysSucceed())
                                     ),
-                                new Action( r => Logger.WriteDebug("Rest - After Heal Skipped: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true)))
+                                new PrioritySelector(
+                                    new Sequence(
+                                        ctx => Me.HealthPercent,
+                                        new Action(r => Logger.WriteDebug("Rest Heal - {0} @ {1:F1}% Predict:{2:F1}% and moving:{3}, cancast:{4}",
+                                            spellHeal, (double)r, Me.PredictedHealthPercent(includeMyHeals: true), Me.IsMoving, Spell.CanCastHack(spellHeal, Me, skipWowCheck: false))),
+                                        Spell.Cast(spellHeal,
+                                            mov => true,
+                                            on => Me,
+                                            req => true,
+                                            cancel =>
+                                            {
+                                                if (Me.HealthPercent < 90)
+                                                    return false;
+                                                Logger.WriteDiagnostic("Rest Heal - cancelling since health reached {0:F1}%", Me.HealthPercent);
+                                                return true;
+                                            },
+                                            LagTolerance.No
+                                            ),
+                                        new Action(r => Logger.WriteDebug("Rest - Before Heal Cast Wait")),
+                                        new WaitContinue(TimeSpan.FromMilliseconds(1500), until => Spell.CanCastHack(spellHeal, Me), new ActionAlwaysSucceed()),
+                                        new Action(r => Logger.WriteDebug("Rest - Before Heal Health Increase Wait")),
+                                        new WaitContinue(TimeSpan.FromMilliseconds(500), until => Me.HealthPercent > (1.1 * ((double)until)), new ActionAlwaysSucceed()),
+                                        new Action(r => Logger.WriteDebug("Rest - Before Heal Cast Wait")),
+                                        new Action(r =>
+                                        {
+                                            Logger.WriteDebug("Rest - After Heal Completed: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true));
+                                            return RunStatus.Success;
+                                        })
+                                        ),
+
+                                    new Action(r => {
+                                        Logger.WriteDebug("Rest - After Heal Skipped: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true));
+                                        return RunStatus.Failure;
+                                        })
+                                    )
                                 )
                             ),
 
@@ -147,7 +173,7 @@ namespace Singular.Helpers
                 // Make sure we're a class with mana, if not, just ignore drinking all together! Other than that... same for food.
                         new Decorator(
                             ret => !Me.IsSwimming && (Me.PowerType == WoWPowerType.Mana || Me.Class == WoWClass.Druid)
-                                && Me.ManaPercent <= SingularSettings.Instance.MinMana 
+                                && Me.ManaPercent <= SingularSettings.Instance.MinMana
                                 && !Me.HasAura("Drink") && Consumable.GetBestDrink(false) != null,
                             new PrioritySelector(
                                 Movement.CreateEnsureMovementStoppedBehavior(reason: "to drink"),
@@ -164,7 +190,7 @@ namespace Singular.Helpers
 
                 // Check if we're allowed to eat (and make sure we have some food. Don't bother going further if we have none.
                         new Decorator(
-                            ret => !Me.IsSwimming 
+                            ret => !Me.IsSwimming
                                 && Me.PredictedHealthPercent(includeMyHeals: true) <= SingularSettings.Instance.MinHealth
                                 && !Me.HasAura("Food") && Consumable.GetBestFood(false) != null,
                             new PrioritySelector(
@@ -173,6 +199,8 @@ namespace Singular.Helpers
                                     new Action(
                                         ret =>
                                         {
+                                            float myHealth = Me.PredictedHealthPercent(includeMyHeals: true);
+                                            Logger.WriteDebug("NeedToEat:  predictedhealth @ {0:F1}", myHealth);
                                             Logger.Write("Eating @ {0:F1}% health", Me.HealthPercent);
                                             Styx.CommonBot.Rest.FeedImmediate();
                                         }),
@@ -182,31 +210,33 @@ namespace Singular.Helpers
                             ),
 
                         // STAY SEATED (in Rest) while eating/drinking aura active.
-                        //  true: stay seated
-                        //  false:  allow interruption of Drink
+                //  true: stay seated
+                //  false:  allow interruption of Drink
                         new Decorator(
-                            ret => {
-                                if (Me.HasAura("Drink") && Me.PowerType == WoWPowerType.Mana && Me.ManaPercent < 95)
-                                    return true;
-
-                                if (Me.HasAura("Food") && Me.HealthPercent < 95)
-                                {
-                                    if (Me.ManaPercent < 70)
-                                    {
-                                        return true;
-                                    }
-
-                                    if (spellHeal != null)
-                                    {
-                                        Logger.Write(LogColor.Cancel, "/cancel Eating since mana at {0:F1}%", Me.ManaPercent );
-                                        Me.CancelAura("Food");
-                                        return true;
-                                    }
-                                }
-
-                                return false;
-                                },
+                            ret => Me.HasAura("Drink")
+                                && (Me.PowerType == WoWPowerType.Mana || Me.Specialization == WoWSpec.DruidFeral)
+                                && Me.ManaPercent < 95,
                             new ActionAlwaysSucceed()
+                            ),
+
+                        new Decorator(
+                            req => Me.HasAura("Food") && Me.HealthPercent < 95,
+                            new PrioritySelector(
+                                new Decorator(
+                                    req => spellHeal != null
+                                        && Spell.CanCastHack(spellHeal, Me)
+                                        && Me.PowerType == WoWPowerType.Mana
+                                        && Me.ManaPercent >= 70
+                                        && Me.HealthPercent < 85,
+                                    new Sequence(
+                                        new Action(r => Logger.Write(LogColor.Hilite, "^Stop eating and '{0}' since mana reached {1:F1}%", spellHeal, Me.ManaPercent)),
+                                        new Action(r => Me.CancelAura("Food")),
+                                        new Wait(TimeSpan.FromMilliseconds(500), until => !Me.HasAura("Food"), new ActionAlwaysSucceed())
+                                        )
+                                    ),
+
+                                new ActionAlwaysSucceed()   // keep eating then
+                                )
                             ),
 
                 // wait here if we are moving -OR- do not have food or drink

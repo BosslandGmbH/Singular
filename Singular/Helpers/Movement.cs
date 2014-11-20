@@ -335,7 +335,7 @@ namespace Singular.Helpers
                     CreateMoveBehindTargetBehavior(ctx => ctx != null && ((WoWUnit)ctx).IsBoss() && !((WoWUnit)ctx).IsMoving)
                     ),
                 new Decorator(
-                    ret => !MovementManager.IsMovementDisabled && Me.CurrentTarget != null && !Me.CurrentTarget.IsWithinMeleeRange,
+                    ret => !MovementManager.IsMovementDisabled && Me.CurrentTarget != null && !InMoveToMeleeStopRange(Me.CurrentTarget),
                     new Sequence(
                         ctx => new MoveContext(),
                         new DecoratorContinue(

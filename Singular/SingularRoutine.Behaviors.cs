@@ -492,18 +492,6 @@ namespace Singular
 
             if (behav == BehaviorType.CombatBuffs)
             {
-                Composite behavHealingSpheres = new ActionAlwaysFail();
-                if (SingularSettings.Instance.MoveToSpheres)
-                {
-                    behavHealingSpheres = new ThrottlePasses(
-                        1, 1, 
-                        new Decorator(
-                            ret => Me.HealthPercent < SingularSettings.Instance.SphereHealthPercentInCombat && Singular.ClassSpecific.Monk.Common.AnySpheres(SphereType.Life, SingularSettings.Instance.SphereDistanceInCombat),
-                            Singular.ClassSpecific.Monk.Common.CreateMoveToSphereBehavior(SphereType.Life, SingularSettings.Instance.SphereDistanceInCombat)
-                            )
-                        );
-                }
-
                 composite = new LockSelector(
                     new CallWatch("CombatBuffs",
                         new Decorator(
@@ -513,7 +501,6 @@ namespace Singular
                                 Generic.CreateUseTrinketsBehaviour(),
                                 Generic.CreatePotionAndHealthstoneBehavior(),
                                 Generic.CreateRacialBehaviour(),
-                                behavHealingSpheres,
                                 composite ?? new ActionAlwaysFail()
                                 )
                             )
@@ -523,6 +510,18 @@ namespace Singular
 
             if (behav == BehaviorType.Heal)
             {
+                Composite behavHealingSpheres = new ActionAlwaysFail();
+                if (SingularSettings.Instance.MoveToSpheres)
+                {
+                    behavHealingSpheres = new ThrottlePasses(
+                        1, 1,
+                        new Decorator(
+                            ret => Me.HealthPercent < SingularSettings.Instance.SphereHealthPercentInCombat && Singular.ClassSpecific.Monk.Common.AnySpheres(SphereType.Life, SingularSettings.Instance.SphereDistanceInCombat),
+                            Singular.ClassSpecific.Monk.Common.CreateMoveToSphereBehavior(SphereType.Life, SingularSettings.Instance.SphereDistanceInCombat)
+                            )
+                        );
+                }
+
                 composite = new LockSelector(
                     new CallWatch("Heal",
                         SingularRoutine.Instance._lostControlBehavior,
@@ -532,7 +531,11 @@ namespace Singular
                             ),
                         new Decorator(
                             ret => AllowBehaviorUsage() && OkToCallBehaviorsWithCurrentCastingStatus(),
-                            composite ?? new ActionAlwaysFail()
+                            new PrioritySelector(
+                                Generic.CreatePotionAndHealthstoneBehavior(),
+                                composite ?? new ActionAlwaysFail(),
+                                behavHealingSpheres
+                                )
                             )
                         )
                     );
@@ -1006,7 +1009,7 @@ namespace Singular
                         new PrioritySelector(
 
                             ctx => Unit.UnitsInCombatWithUsOrOurStuff(45)
-                                .FirstOrDefault( u => u.TappedByAllThreatLists || (u.Elite && (u.Level + 8) > Me.Level) || (u.MaxHealth > (Me.MaxHealth * 2))),
+                                .FirstOrDefault(u => u.TappedByAllThreatLists || (u.Elite && (u.Level + 8) > Me.Level) || (u.MaxHealth > (Me.MaxHealth * 2))),
 
                             new Decorator(
                                 req => req != null,
@@ -1105,6 +1108,19 @@ namespace Singular
                                     _timeoutPullMoreAt = DateTime.MaxValue;
                                     Func<WoWUnit, bool> whereClause = PullMoreTargetSelectionDelegate();
 
+                                    // build list of location of mobs to avoid
+                                    List<WoWPoint> mobToAvoid = Unit.UnfriendlyUnits()
+                                        .Where( u => u.IsHostile 
+                                            && u.IsAlive 
+                                            && (
+                                                (u.Elite && u.Level+8 > Me.Level) 
+                                                || (u.MaxHealth > Me.MaxHealth * 2) 
+                                                || (ProfileManager.CurrentProfile != null && ProfileManager.CurrentProfile.AvoidMobs != null && ProfileManager.CurrentProfile.AvoidMobs.Contains(u.Entry))
+                                                )
+                                            && u.DistanceSqr < 70 * 70)
+                                        .Select( u => u.Location)
+                                        .ToList();
+
                                     WoWUnit nextPull = Unit.UnfriendlyUnits()
                                         .Where(
                                             t => !t.IsPlayer
@@ -1118,6 +1134,7 @@ namespace Singular
                                                 && (whereClause(t) || Targeting.Instance.TargetList.Any(u => u.Guid == t.Guid))
                                                 && (ProfileManager.CurrentProfile == null || ProfileManager.CurrentProfile.AvoidMobs == null || !ProfileManager.CurrentProfile.AvoidMobs.Contains(t.Entry))
                                                 && t.SpellDistance() <= _rangePullMore
+                                                && !mobToAvoid.Any( loc => loc.DistanceSqr(t.Location) < 40)
                                             )
                                         .OrderBy(k => (long)k.DistanceSqr)
                                         .FirstOrDefault();
@@ -1125,6 +1142,8 @@ namespace Singular
                                     // set target at botpoi
                                     if (nextPull != null && unit.Guid != nextPull.Guid)
                                     {
+
+
                                         Logger.WriteDebug("Pull More: more adds allowed since current KillPoi {0}, target={1}, combat={2}, tagged={3}",
                                             unit.SafeName(),
                                             unit.GotTarget ? unit.SafeName() : "(null)",

@@ -122,8 +122,6 @@ namespace Singular.ClassSpecific.Warrior
                                     ret => Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (!Me.IsInGroup() && AoeCount >= 3),
                                     new PrioritySelector(
                                         Spell.OffGCD( Spell.Cast("Recklessness")),
-                                        Spell.OffGCD( Spell.Cast("Skull Banner")),
-                        // Spell.Cast("Demoralizing Banner", ret => !Me.CurrentTarget.IsBoss() && UseAOE),
                                         Spell.OffGCD( Spell.Cast("Avatar"))
                                         )
                                     ),

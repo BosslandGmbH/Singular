@@ -293,6 +293,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             get 
             {
+                /*
                 int friends = Unit.NearbyFriendlyPlayers.Count(f => f.IsAlive);
                 if (friends < 3)
                     return false;
@@ -303,6 +304,8 @@ namespace Singular.ClassSpecific.Warrior
 
                 int diff = Math.Abs(friends - enemies);
                 return diff <= ((friends / 3) + 1);
+                 */
+                return false;
             }
         }
 
@@ -383,7 +386,7 @@ namespace Singular.ClassSpecific.Warrior
                     new Action(r =>
                     {
                         // check if it makes sense to cancel to resume normal speed movement and charge
-                        if (Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Rest || !Me.Combat || !Unit.UnfriendlyUnits(20).Any(u => u.Aggro || (u.IsPlayer && u.IsHostile)))
+                        if (!Me.Combat || !Unit.UnfriendlyUnits(20).Any(u => u.Aggro || (u.IsPlayer && u.IsHostile)))
                         {
                             Logger.WriteDebug("Bladestorm: cancel since out of combat or no targets within 20 yds");
                             Me.CancelAura("Bladestorm");

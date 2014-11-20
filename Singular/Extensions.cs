@@ -34,18 +34,18 @@ namespace Singular
         {
             int len = s.Length;
             if (len >= width)
-                return s.Substring(0, width);
+                return s.Left(width);
 
-            return s + ("                                                                                                                          ".Substring(0, width - len));
+            return s + ("                                                                                                                          ".Left(width - len));
         }
 
         public static string AlignRight(this string s, int width)
         {
             int len = s.Length;
             if (len >= width)
-                return s.Substring(0, width);
+                return s.Left(width);
 
-            return ("                                                                                                                          ".Substring(0, width - len)) + s;
+            return ("                                                                                                                          ".Left(width - len)) + s;
         }
 
         /// <summary>
@@ -70,7 +70,11 @@ namespace Singular
             return sb.ToString();
         }
 
-        private static string Right(string s, int c)
+        public static string Left(this string s, int c)
+        {
+            return s.Substring(0, c);
+        }
+        public static string Right(this string s, int c)
         {
             return s.Substring(c > s.Length ? 0 : s.Length - c);
         }

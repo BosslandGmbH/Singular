@@ -551,8 +551,8 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new Sequence(
                 new PrioritySelector(
-                    Spell.BuffSelf(ret => (int)Poisons.NeedLethalPosion(), req => Poisons.NeedLethalPosion() != LethalPoisonType.None ),
-                    Spell.BuffSelf(ret => (int)Poisons.NeedNonLethalPosion(), req => Poisons.NeedNonLethalPosion() != NonLethalPoisonType.None )
+                    Spell.BuffSelf(ret => (int)Poisons.NeedLethalPosion(), req => true ),
+                    Spell.BuffSelf(ret => (int)Poisons.NeedNonLethalPosion(), req => true )
                     ),
                 new Wait(1, ret => Me.IsCasting, new ActionAlwaysSucceed()),
                 new Wait(4, ret => !Me.IsCasting, new ActionAlwaysSucceed()),
@@ -807,11 +807,14 @@ namespace Singular.ClassSpecific.Rogue
                 );
         }
 
-        internal static Composite CreateStealthBehavior( SimpleBooleanDelegate req = null)
+        internal static Composite CreateStealthBehavior( SimpleBooleanDelegate requirements = null)
         {
+            if (requirements == null)
+                requirements = req => true;
+
             return new PrioritySelector(
                 new Sequence(
-                    Spell.BuffSelf("Stealth", ret => !AreStealthAbilitiesAvailable && (req == null || req(ret)) && !Me.GetAllAuras().Any( a => a.IsHarmful)),
+                    Spell.BuffSelf("Stealth", ret => !AreStealthAbilitiesAvailable && requirements(ret) && !Me.GetAllAuras().Any(a => a.IsHarmful)),
                     new Wait( TimeSpan.FromMilliseconds(500), ret => AreStealthAbilitiesAvailable, new ActionAlwaysSucceed())
                     )                
                 );

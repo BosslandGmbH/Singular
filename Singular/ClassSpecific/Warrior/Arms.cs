@@ -94,8 +94,6 @@ namespace Singular.ClassSpecific.Warrior
                                 return Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= 4;
                                 },
                             new PrioritySelector(
-                                Spell.OffGCD( Spell.CastOnGround("Demoralizing Banner", on => Me.CurrentTarget, req => true, false)),
-                                Spell.OffGCD( Spell.BuffSelf("Skull Banner" )),
                                 Spell.OffGCD( Spell.BuffSelf("Avatar")),
                                 Spell.OffGCD( Spell.BuffSelf("Bloodbath"))
                                 )
@@ -201,7 +199,6 @@ namespace Singular.ClassSpecific.Warrior
                                         // 5 Whirlwind as a filler ability when target is above 20% health.
                                         Spell.Cast( "Whirlwind", req => Me.CurrentTarget.HealthPercent > 20 ),
 
-                                        // 6 Run out of range and Charge back for additional Rage.
                                         new ActionAlwaysFail()
                                         )
                                     ),
@@ -221,7 +218,11 @@ namespace Singular.ClassSpecific.Warrior
                                         // 4 Run out of range and Charge back for additional Rage.
                                         new ActionAlwaysFail()
                                         )
-                                    )
+                                    ),
+
+                                Spell.Cast("Dragon Roar", req => Spell.UseAOE),
+                                Spell.Cast("Storm Bolt")
+
                                 )
                             ),
 
@@ -372,15 +373,12 @@ namespace Singular.ClassSpecific.Warrior
 
                         Spell.BuffSelf("Rallying Cry", req => Me.HealthPercent < 60),
 
-                        Spell.CastOnGround("Demoralizing Banner", on => Me.CurrentTarget, req => true, false),
-
                         new Decorator(
                             ret => Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.IsCrowdControlled(),
                             new PrioritySelector(
                                 Spell.OffGCD( Spell.BuffSelf("Avatar")),
                                 Spell.OffGCD( Spell.BuffSelf("Bloodbath")),
-                                Spell.OffGCD( Spell.BuffSelf("Recklessness")),
-                                Spell.OffGCD( Spell.Cast("Skull Banner"))
+                                Spell.OffGCD( Spell.BuffSelf("Recklessness"))
                                 )
                             ),
 

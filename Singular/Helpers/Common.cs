@@ -503,6 +503,24 @@ namespace Singular.Helpers
                 ret => SingularSettings.Instance.WaitForResSickness && StyxWoW.Me.HasAura("Resurrection Sickness"),
                 new PrioritySelector(
                     new Throttle(TimeSpan.FromMinutes(1), new Action(r => Logger.Write("Waiting out Resurrection Sickness (expires in {0:F0} seconds)", StyxWoW.Me.GetAuraTimeLeft("Resurrection Sickness", false).TotalSeconds))),
+#if IN_DEV
+                    Spell.WaitForGcdOrCastOrChannel(),
+
+                    new Decorator(
+                        req => Me.Class == WoWClass.Druid && SpellManager.HasSpell("Cat Form") && SpellManager.HasSpell("Prowl"),
+                        new PrioritySelector(
+                            new Throttle( 1, 30, new Action( r=> Logger.Write( LogColor.Hilite, "^Prowl: maintain while waiting out Rez Sickness"))),
+                            ClassSpecific.Druid.Common.CreateProwlBehavior(req => true )
+                            )
+                        ),
+                    new Decorator(
+                        req => Me.Class == WoWClass.Rogue && SpellManager.HasSpell("Stealth"),
+                        new PrioritySelector(
+                            new Throttle(1, 30, new Action(r => Logger.Write(LogColor.Hilite, "^Stealth: maintain while waiting out Rez Sickness"))),
+                            ClassSpecific.Rogue.Common.CreateStealthBehavior(req => true)
+                            )
+                        ),
+#endif
                     new Action(ret => { })
                     )
                 );

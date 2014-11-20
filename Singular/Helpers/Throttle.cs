@@ -29,6 +29,13 @@ namespace Singular.Helpers
         private int _count;
         private RunStatus _limitStatus;
 
+        private static Composite ChildComposite(params Composite[] children)
+        {
+            if (children.GetLength(0) == 1)
+                return children[0];
+            return new PrioritySelector(children);
+        }
+
         /// <summary>
         /// time span that Limit child Successes can occur
         /// </summary>
@@ -47,8 +54,8 @@ namespace Singular.Helpers
         /// <param name = "timeFrame">time span for occurrences</param>
         /// <param name="limitStatus">RunStatus to return when limit reached</param>
         /// <param name = "child">composite children to tick (run)</param>
-        public ThrottlePasses(int limit, TimeSpan timeFrame, RunStatus limitStatus, Composite child)
-            : base(child)
+        public ThrottlePasses(int limit, TimeSpan timeFrame, RunStatus limitStatus, params Composite[] children)
+            : base(ChildComposite(children))
         {
             TimeFrame = timeFrame;
             Limit = limit;
@@ -65,8 +72,8 @@ namespace Singular.Helpers
         /// </summary>
         /// <param name = "timeFrame">wait TimeSpan after child success before another attempt</param>
         /// <param name = "child">composite children to tick (run)</param>
-        public ThrottlePasses(TimeSpan timeFrame, Composite child)
-            : this(1, timeFrame, RunStatus.Failure, child)
+        public ThrottlePasses(TimeSpan timeFrame, params Composite[] children)
+            : this(1, timeFrame, RunStatus.Failure, ChildComposite(children))
         {
         }
 
@@ -78,14 +85,14 @@ namespace Singular.Helpers
         /// <param name = "Limit">max number of occurrences</param>
         /// <param name = "timeFrame">time span for occurrences in seconds</param>
         /// <param name = "child">composite children to tick (run)</param>
-        public ThrottlePasses(int Limit, int timeSeconds, Composite child)
-            : this(Limit, TimeSpan.FromSeconds(timeSeconds), RunStatus.Failure, child)
+        public ThrottlePasses(int Limit, int timeSeconds, params Composite[] children)
+            : this(Limit, TimeSpan.FromSeconds(timeSeconds), RunStatus.Failure, ChildComposite(children))
         {
 
         }
 
-        public ThrottlePasses(int Limit, TimeSpan ts, Composite child)
-            : this(Limit, ts, RunStatus.Failure, child)
+        public ThrottlePasses(int Limit, TimeSpan ts, params Composite[] children)
+            : this(Limit, ts, RunStatus.Failure, ChildComposite(children))
         {
 
         }
@@ -97,8 +104,8 @@ namespace Singular.Helpers
         /// </summary>
         /// <param name = "timeFrame">time span for occurrences in seconds</param>
         /// <param name = "child">composite children to tick (run)</param>
-        public ThrottlePasses(int timeSeconds, Composite child)
-            : this(1, TimeSpan.FromSeconds(timeSeconds), RunStatus.Failure, child)
+        public ThrottlePasses(int timeSeconds, params Composite[] children)
+            : this(1, TimeSpan.FromSeconds(timeSeconds), RunStatus.Failure, ChildComposite(children))
         {
 
         }
@@ -166,6 +173,13 @@ namespace Singular.Helpers
         private int _count;
         private RunStatus _limitStatus;
 
+        private static Composite ChildComposite(params Composite[] children)
+        {
+            if (children.GetLength(0) == 1)
+                return children[0];
+            return new PrioritySelector(children);
+        }
+
         /// <summary>
         /// time span that Limit child Successes can occur
         /// </summary>
@@ -184,8 +198,8 @@ namespace Singular.Helpers
         /// <param name = "timeFrame">time span for occurrences</param>
         /// <param name="limitStatus">RunStatus to return when limit reached</param>
         /// <param name = "child">composite children to tick (run)</param>
-        public Throttle(int limit, TimeSpan timeFrame, RunStatus limitStatus, Composite child)
-            : base(child)
+        public Throttle(int limit, TimeSpan timeFrame, RunStatus limitStatus, params Composite[] children)
+            : base(ChildComposite(children))
         {
             TimeFrame = timeFrame;
             Limit = limit;
@@ -202,8 +216,8 @@ namespace Singular.Helpers
         /// </summary>
         /// <param name = "timeFrame">time span for occurrences</param>
         /// <param name = "child">composite children to tick (run)</param>
-        public Throttle(TimeSpan timeFrame, Composite child)
-            : this(1, timeFrame, RunStatus.Failure, child)
+        public Throttle(TimeSpan timeFrame, params Composite[] children)
+            : this(1, timeFrame, RunStatus.Failure, ChildComposite(children))
         {
         }
 
@@ -214,8 +228,8 @@ namespace Singular.Helpers
         /// </summary>
         /// <param name = "timeFrame">time span for occurrences</param>
         /// <param name = "child">composite children to tick (run)</param>
-        public Throttle(int Limit, TimeSpan timeFrame, Composite child)
-            : this(Limit, timeFrame, RunStatus.Failure, child)
+        public Throttle(int Limit, TimeSpan timeFrame, params Composite[] children )
+            : this(Limit, timeFrame, RunStatus.Failure, ChildComposite(children))
         {
         }
 
@@ -227,8 +241,8 @@ namespace Singular.Helpers
         /// <param name = "Limit">max number of occurrences</param>
         /// <param name = "timeFrame">time span for occurrences in seconds</param>
         /// <param name = "child">composite children to tick (run)</param>
-        public Throttle(int Limit, int timeSeconds, Composite child)
-            : this(Limit, TimeSpan.FromSeconds(timeSeconds), RunStatus.Failure, child)
+        public Throttle(int Limit, int timeSeconds, params Composite[] children)
+            : this(Limit, TimeSpan.FromSeconds(timeSeconds), RunStatus.Failure, ChildComposite(children))
         {
             
         }
@@ -240,8 +254,8 @@ namespace Singular.Helpers
         /// </summary>
         /// <param name = "timeFrame">wait in seconds after child success before another attempt</param>
         /// <param name = "child">composite children to tick (run)</param>
-        public Throttle(int timeSeconds, Composite child)
-            : this(1, TimeSpan.FromSeconds(timeSeconds), RunStatus.Failure, child)
+        public Throttle(int timeSeconds, params Composite[] children)
+            : this(1, TimeSpan.FromSeconds(timeSeconds), RunStatus.Failure, ChildComposite(children))
         {
             
         }
@@ -253,8 +267,8 @@ namespace Singular.Helpers
         /// </summary>
         /// <param name = "timeFrame">time span for occurrences in seconds</param>
         /// <param name = "child">composite children to tick (run)</param>
-        public Throttle(Composite child)
-            : this(1, TimeSpan.FromMilliseconds(250), RunStatus.Failure, child)
+        public Throttle(params Composite[] children)
+            : this(1, TimeSpan.FromMilliseconds(250), RunStatus.Failure, ChildComposite(children))
         {
 
         }

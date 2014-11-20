@@ -176,7 +176,7 @@ namespace Singular.ClassSpecific.Warlock
                         new Decorator(
                             req =>
                             {
-                                if (Me.HasAnyAura("Dark Soul: Instability", "Skull Banner", "Toxic Power", "Expanded Mind"))
+                                if (Me.HasAnyAura("Dark Soul: Instability", "Toxic Power", "Expanded Mind"))
                                     return true;
                                 return false;
                             },
@@ -212,7 +212,7 @@ namespace Singular.ClassSpecific.Warlock
                                     {
                                         if (CurrentBurningEmbers >= 35)
                                             return true;
-                                        if (Me.HasAnyAura("Dark Soul: Instability", "Skull Banner", "Toxic Power", "Expanded Mind"))
+                                        if (Me.HasAnyAura("Dark Soul: Instability", "Toxic Power", "Expanded Mind"))
                                             return true;
                                         if (Me.CurrentTarget.TimeToDeath(99) < 3)
                                             return true;
@@ -232,7 +232,7 @@ namespace Singular.ClassSpecific.Warlock
                                     {
                                         if (CurrentBurningEmbers >= 35)
                                             return true;
-                                        if (Me.HasAnyAura("Dark Soul: Instability", "Skull Banner"))
+                                        if (Me.HasAura("Dark Soul: Instability"))
                                             return true;
                                     }
                                     return false;

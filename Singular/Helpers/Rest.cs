@@ -183,7 +183,11 @@ namespace Singular.Helpers
                                         Logger.Write("Drinking @ {0:F1}% mana", Me.ManaPercent);
                                         Styx.CommonBot.Rest.DrinkImmediate();
                                     }),
-                                    Helpers.Common.CreateWaitForLagDuration()
+                                    Helpers.Common.CreateWaitForLagDuration(),
+                                    new PrioritySelector(
+                                        new Wait(TimeSpan.FromMilliseconds(500), until => Me.HasAura("Drink"), new ActionAlwaysSucceed()),
+                                        new Action(r => Logger.WriteDiagnostic("Drinking: failed to see 'Drink' aura"))
+                                        )
                                     )
                                 )
                             ),
@@ -204,7 +208,11 @@ namespace Singular.Helpers
                                             Logger.Write("Eating @ {0:F1}% health", Me.HealthPercent);
                                             Styx.CommonBot.Rest.FeedImmediate();
                                         }),
-                                    Helpers.Common.CreateWaitForLagDuration()
+                                    Helpers.Common.CreateWaitForLagDuration(),
+                                    new PrioritySelector(
+                                        new Wait( TimeSpan.FromMilliseconds(500), until => Me.HasAura("Food"), new ActionAlwaysSucceed()),
+                                        new Action( r => Logger.WriteDiagnostic("Eating: failed to see 'Food' aura"))
+                                        )
                                     )
                                 )
                             ),

@@ -40,6 +40,8 @@ namespace Singular.Helpers
             return new Throttle( 60,
                 new Decorator(
                     req => {
+                        Logger.Write(LogColor.Hilite, "Death Behavior invoked!  Alive={0}, Ghost={1}", Me.IsAlive.ToYN(), Me.IsGhost.ToYN());
+
                         if (Me.IsAlive || Me.IsGhost)
                             return false;
 

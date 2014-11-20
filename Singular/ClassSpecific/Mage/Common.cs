@@ -454,6 +454,9 @@ namespace Singular.ClassSpecific.Mage
 
         public static Composite CreateMagePolymorphOnAddBehavior()
         {
+            if (!MageSettings.UsePolymorphOnAdds)
+                return new ActionAlwaysFail();
+
             return new Decorator(
                 req => !Unit.NearbyUnfriendlyUnits.Any(u => u.HasMyAura("Polymorph")),
                 Spell.Buff("Polymorph", on => Unit.NearbyUnfriendlyUnits.Where(IsViableForPolymorph).OrderByDescending(u => u.CurrentHealth).FirstOrDefault())

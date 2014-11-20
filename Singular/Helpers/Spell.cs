@@ -964,8 +964,14 @@ namespace Singular.Helpers
                 new Throttle(
                     new Action(ret =>
                     {
+                        int id = spellId(ret);
+
+                        // exit now if spell search not needed
+                        if (id == 0)
+                            return RunStatus.Failure;
+
                         SpellFindResults sfr;
-                        if (SpellManager.FindSpell(spellId(ret), out sfr))
+                        if (SpellManager.FindSpell(id, out sfr))
                         {
                             WoWUnit castOnUnit = onUnit(ret);
                             if (castOnUnit != null && requirements(ret))

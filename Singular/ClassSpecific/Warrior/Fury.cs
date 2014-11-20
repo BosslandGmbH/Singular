@@ -70,8 +70,6 @@ namespace Singular.ClassSpecific.Warrior
                             ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal
                                 && (Me.CurrentTarget.IsPlayer || 4 <= Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 1)) || Me.CurrentTarget.TimeToDeath() > 40),
                             new PrioritySelector(
-                                Spell.CastOnGround("Demoralizing Banner", on => Me.CurrentTarget, req => true, false),
-                                Spell.Cast("Skull Banner"),
                                 Spell.Cast("Avatar"),
                                 Spell.Cast("Bloodbath")
                                 )
@@ -84,7 +82,6 @@ namespace Singular.ClassSpecific.Warrior
                         new Decorator(
                             ret => Me.CurrentTarget.IsBoss(),
                             new PrioritySelector(
-                                Spell.Cast("Skull Banner", ret => Me.CurrentTarget.IsBoss()),
                                 Spell.Cast("Avatar", ret => Me.CurrentTarget.IsBoss()),
                                 Spell.Cast("Bloodbath", ret => Me.CurrentTarget.IsBoss())
                                 )
@@ -194,7 +191,7 @@ namespace Singular.ClassSpecific.Warrior
                         // Use the single target rotation!
                         SingleTarget(),
 
-                        // Charge if we can
+                            // Charge if we can
                         Common.CreateChargeBehavior()
                         )
                     ),
@@ -250,12 +247,13 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     ret => Spell.UseAOE && Me.GotTarget && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss()) && Me.CurrentTarget.Distance < 8,
                     new PrioritySelector(
-                        Spell.Cast("Dragon Roar"),
-                        Spell.Cast("Storm Bolt"),
                         Spell.BuffSelf("Bladestorm"),
                         Spell.Cast("Shockwave")
                         )
                     ),
+
+                Spell.Cast("Dragon Roar", req => Spell.UseAOE),
+                Spell.Cast("Storm Bolt"),
 
                 Spell.BuffSelf("Berserker Rage", ret => !IsEnraged && StyxWoW.Me.CurrentTarget.IsWithinMeleeRange)
                 );

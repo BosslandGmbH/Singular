@@ -16,7 +16,7 @@ namespace Singular.ClassSpecific.Rogue
         None    = 0,
         Auto,
         Deadly  = 2823,
-        Wound   = 8679
+        Wound   = 8679       
     }
 
     public enum NonLethalPoisonType
@@ -24,9 +24,10 @@ namespace Singular.ClassSpecific.Rogue
         None            = 0,
         Auto,
         Crippling       = 3408,
-        MindNumbing     = 5761,
         Leeching        = 108211,
-        Paralytic       = 108215
+
+        MindNumbing = 0,
+        Paralytic = 0
     }
 
     public static class Poisons
@@ -59,9 +60,15 @@ namespace Singular.ClassSpecific.Rogue
 
         private static LethalPoisonType PoisonCheck(LethalPoisonType poison)
         {
+            // exit quickly if user wants control of poisons
+            if (poison == LethalPoisonType.None)
+                return poison;
+
+            // if user selects a poison rogue doesnt know, switch to auto selection
             if (poison > LethalPoisonType.Auto && !SpellManager.HasSpell((int)poison))
                 poison = LethalPoisonType.Auto;
 
+            // for auto selection, pick most likely desired poison for the moment
             if (poison == LethalPoisonType.Auto)
             {
                 if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && SpellManager.HasSpell((int)LethalPoisonType.Wound))
@@ -72,8 +79,17 @@ namespace Singular.ClassSpecific.Rogue
                     poison = LethalPoisonType.None;
             }
 
-            if ( poison != LethalPoisonType.None && Me.GetAuraTimeLeft((int)poison, true).TotalMinutes < RefreshAtMinutesLeft)
+            // validate spell is known.  if it is but an override exists, switch to the override id
+            SpellFindResults sfr;
+            if (!SpellManager.FindSpell((int)poison, out sfr))
+                poison = LethalPoisonType.None;
+            else if (sfr.Override != null)
+                poison = (LethalPoisonType)sfr.Override.Id;     // upgrade spell.Id if an override exists
+
+            if (poison != LethalPoisonType.None && Me.GetAuraTimeLeft((int)poison, true).TotalMinutes < RefreshAtMinutesLeft)
+            {
                 return poison;
+            }
 
             return LethalPoisonType.None;
         }

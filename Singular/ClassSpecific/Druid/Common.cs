@@ -424,7 +424,9 @@ namespace Singular.ClassSpecific.Druid
         internal static Composite CreateProwlBehavior(SimpleBooleanDelegate req = null)
         {
             return new Sequence(
-                Spell.BuffSelf("Prowl", ret => Me.Shapeshift == ShapeshiftForm.Cat && (req == null || req(ret))),
+                // Prowl invokes Cat Form, so removed that as a requirement
+                // Spell.BuffSelf("Prowl", ret => Me.Shapeshift == ShapeshiftForm.Cat && (req == null || req(ret))),
+                Spell.BuffSelf("Prowl", ret => req == null || req(ret)),
                 new Wait(TimeSpan.FromMilliseconds(500), ret => Me.HasAura("Prowl"), new ActionAlwaysSucceed())
                 );
         }
@@ -634,7 +636,7 @@ namespace Singular.ClassSpecific.Druid
                 req => !Me.HasAura(spellName) && (requirements == null || requirements(req)),
                 new Sequence(
                     new Action( r => {
-                        WoWAura aura = Me.GetAllAuras().FirstOrDefault( a => a.Spell.Name.Substring(a.Name.Length - 5).Equals(" Form"));
+                        WoWAura aura = Me.GetAllAuras().FirstOrDefault( a => a.Spell.Name.Right(5).Equals(" Form"));
                         Logger.WriteDiagnostic( "CastForm: changing to form='{0}',  current='{1}',  hb-says='{2}'", 
                             spellName, aura == null ? "-none-" : aura.Name, Me.Shapeshift.ToString()
                             );

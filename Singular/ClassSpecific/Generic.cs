@@ -20,7 +20,19 @@ namespace Singular.ClassSpecific
 {
     public static class Generic
     {
-        // [Behavior(BehaviorType.Combat, priority: 999)]
+        public static Composite CreateUseHealTrinketsBehaviour()
+        {
+            if (SingularSettings.IsTrinketUsageWanted(TrinketUsage.LowHealth))
+            {
+                return new Decorator(
+                    ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.PotionHealth,
+                    Item.UseEquippedTrinket(TrinketUsage.LowHealth)
+                    );
+            }
+
+            return new Action(ret => { return RunStatus.Failure; });
+        }
+
         public static Composite CreateUseTrinketsBehaviour()
         {
             // Saving Settings via GUI will now force reinitialize so we can build the behaviors

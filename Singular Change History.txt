@@ -1,3 +1,10 @@
+--- Release 4.0.0.3974 ---
+
+General
+
+fixed - Suppress casting Garrison Ability when in Nagrand and spell is TELAARI TALBUK or FROSTWOLF WAR WOLF.  HonorBuddy manages those with all other mounts.  
+
+
 --- Release 4.0.0.3969 ---
 
 General

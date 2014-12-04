@@ -1,3 +1,40 @@
+--- Release 4.0.0.3969 ---
+
+General
+
+*new* - Support for casting Garrison Ability.  Settings added to control Health % or Mob Count to trigger its use
+
+*new* - Support for Stealth/Prowl/Shadowmeld if waiting out Ressurrection Sickness.  Setting added allowing user to disable this behavior if not wanted.
+
+*new* - Suppresses Dismount for Combat if mounted on Telaari Talbuk or Frostwolf War Wolf in Nagrand
+
+fixed - Buff logic now uses spell override name if one exists
+
+
+Death Knight
+
+fixed - All Specs - revision to criteria for Blood Charge detection and use of Blood Tap
+
+fixed - All Specs - refinement to use of Death Grip and Chains of Ice for mobs/players trying to escape
+
+
+Priest
+
+fixed - Shadow - Mind Spike logic was detecting passive aura Surge of Darkness which is always present, causing it to be cast too frequently.  Fixed Surge of Darkness detection to detect proc so Mind Spike now appropriately cast
+
+added - Shadow - Prayer of Mending health % now controlled by user setting
+
+
+Rogue 
+
+*new* - All Specs - setting added to control when Stealth is used (Auto, Always, None)
+
+fixed - All Specs - endless Sap loop if target is immune. Now correctly detects if Sap failed due to immunity and suppresses further use against that mob type
+
+fixed - All Specs - Sap on target moving away.  Was not testing as thoroughly if target was viable for Sap.
+
+
+
 --- Release 4.0.0.3899 ---
 
 General

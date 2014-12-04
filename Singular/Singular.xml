@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>12/04/2014 01:15:19</ScanTime>
+  <ScanTime>12/04/2014 17:00:00</ScanTime>
   <FileList>
     <File Hash="27849" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="33736" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -13,7 +13,7 @@
     <File Hash="12270" Name="ClassSpecific\Druid\Guardian.cs" />
     <File Hash="5951" Name="ClassSpecific\Druid\Lowbie.cs" />
     <File Hash="53428" Name="ClassSpecific\Druid\Resto.cs" />
-    <File Hash="12797" Name="ClassSpecific\Generic.cs" />
+    <File Hash="13926" Name="ClassSpecific\Generic.cs" />
     <File Hash="9146" Name="ClassSpecific\Hunter\BeastMaster.cs" />
     <File Hash="57898" Name="ClassSpecific\Hunter\Common.cs" />
     <File Hash="1444" Name="ClassSpecific\Hunter\Lowbie.cs" />

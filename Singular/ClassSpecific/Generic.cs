@@ -252,6 +252,27 @@ namespace Singular.ClassSpecific
                     new Decorator(
                         ret =>
                         {
+                            const string GARRISON_ABILITY = "Garrison Ability";
+                            const int ZONE_NAGRAND = 6755;
+                            const int SPELL_TELAARI_TALBUK = 165803;
+                            const int SPELL_FROSTWOLF_WAR_WOLF = 164222;
+
+                            if (StyxWoW.Me.ZoneId == ZONE_NAGRAND)
+                            {
+                                SpellFindResults sfr;
+                                if ( SpellManager.FindSpell(GARRISON_ABILITY, out sfr))
+                                {
+                                    if (sfr.Override != null)
+                                    {
+                                        if (sfr.Override.Id == SPELL_FROSTWOLF_WAR_WOLF || sfr.Override.Id == SPELL_TELAARI_TALBUK)
+                                        {
+                                            // don't invoke these abilities
+                                            return false;
+                                        }
+                                    }
+                                }
+                            }
+
                             if (!Unit.ValidUnit(StyxWoW.Me.CurrentTarget))
                                 return false;
                             if (!Spell.CanCastHack("Garrison Ability", StyxWoW.Me.CurrentTarget))

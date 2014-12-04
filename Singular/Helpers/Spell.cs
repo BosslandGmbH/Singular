@@ -1248,6 +1248,11 @@ namespace Singular.Helpers
                     if (_buffName == null)
                         return false;
 
+                    SpellFindResults sfr;
+                    if (!SpellManager.FindSpell(_buffName, out sfr))
+                        return false;
+
+                    _buffName = (sfr.Override ?? sfr.Original).Name;
                     if (DoubleCastContains(_buffUnit, _buffName))
                         return false;
 
@@ -1258,24 +1263,22 @@ namespace Singular.Helpers
                     if (!buffNames.Any())
                     {
                         hasExpired = _buffUnit.HasAuraExpired(_buffName, expires, myBuff);
-                        if (SingularSettings.DebugSpellCasting)
-                        { 
-                            Logger.WriteDebug("Spell.Buff(r=>'{0}'): hasspell={1}, auraleft={2:F1} secs", _buffName, SpellManager.HasSpell(_buffName).ToYN(), _buffUnit.GetAuraTimeLeft(_buffName, true).TotalSeconds);
-                        }
+                        if (hasExpired && SingularSettings.DebugSpellCasting)
+                            Logger.WriteDebug("Spell.Buff(r=>'{0}')={1}: hasspell={2}, auraleft={3:F1} secs", _buffName, hasExpired, SpellManager.HasSpell(_buffName).ToYN(), _buffUnit.GetAuraTimeLeft(_buffName, true).TotalSeconds);
 
                         return hasExpired;
                     }
 
                     hasExpired = SpellManager.HasSpell(_buffName) && buffNames.All(b => _buffUnit.HasKnownAuraExpired(b, expires, myBuff));
                     if (hasExpired && SingularSettings.DebugSpellCasting)
-                        Logger.WriteDebug("Spell.Buff(r=>'{0}'): hasspell={1}, all auras less than {2:F1} secs", _buffName, SpellManager.HasSpell(_buffName).ToYN(), expires.TotalSeconds);
+                        Logger.WriteDebug("Spell.Buff(r=>'{0}')={1}: hasspell={2}, all auras less than {3:F1} secs", _buffName, hasExpired, SpellManager.HasSpell(_buffName).ToYN(), expires.TotalSeconds);
 
                     return hasExpired;
                 },
                 new Sequence(
                 // new Action(ctx => _lastBuffCast = name),
-                    Cast(name, chkMov => true, onUnit, require, cancel => false /* causes cast to complete */ ),
-                    new Action(ret => UpdateDoubleCast(name(ret), onUnit(ret)))
+                    Cast(sp => _buffName, chkMov => true, onUnit, require, cancel => false /* causes cast to complete */ ),
+                    new Action(ret => UpdateDoubleCast( _buffName, _buffUnit))
                     )
                 );
         }
@@ -1329,6 +1332,21 @@ namespace Singular.Helpers
             return Buff(name, expirSecs, on => Me, require: requirements);
         }
 
+        public static Composite BuffSelfAndWait(SimpleStringDelegate name, SimpleBooleanDelegate requirements = null, int expirSecs = 0)
+        {
+            if (requirements == null)
+                requirements = req => true;
+
+            return new Sequence(
+                ctx => name(ctx),
+                BuffSelf( sp => (string) sp, requirements, expirSecs),
+                new DynaWait( 
+                    time => TimeSpan.FromMilliseconds(Me.Combat ? 500 : 1000),
+                    until => StyxWoW.Me.HasAura( until as string),
+                    new ActionAlwaysSucceed()
+                    )
+                );
+        }
 
         #endregion
 

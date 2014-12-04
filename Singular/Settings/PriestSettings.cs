@@ -84,6 +84,13 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(50)]
         [Category("Shadow")]
+        [DisplayName("Prayer of Mending Health")]
+        [Description("Health for Flash Heal for shadow spec")]
+        public int PrayerOfMending { get; set; }
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Shadow")]
         [DisplayName("Mind Flay Mana")]
         [Description("Will only use Mind Flay while manapercent is above this value")]
         public int MindFlayManaPct { get; set; }

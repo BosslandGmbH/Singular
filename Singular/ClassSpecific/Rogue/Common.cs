@@ -42,6 +42,35 @@ namespace Singular.ClassSpecific.Rogue
         public static bool IsStealthed { get { return Me.HasAnyAura("Stealth", "Vanish"); } }
 
         /// <summary>
+        /// determines based upon settings specified and conditions whether Stealth
+        /// should be allowed
+        /// </summary>
+        public static bool IsStealthAllowed
+        {
+            get
+            {
+                if (RogueSettings.Stealth == StealthMode.Always)
+                    return true;
+
+                if (RogueSettings.Stealth == StealthMode.Auto && (Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull || Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.PullBuffs))
+                    return true;
+
+                if (RogueSettings.Stealth == StealthMode.PVP)
+                {
+                    if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                        return true;
+                    if (StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.IsPlayer && Unit.ValidUnit(StyxWoW.Me.CurrentTarget))
+                        return true;
+                    if (BotPoi.Current.Type == PoiType.Kill && BotPoi.Current.AsObject is WoWPlayer)
+                        return true;
+                }
+                // also Never
+                return false;
+            }
+        }
+
+
+        /// <summary>
         /// determines if we should use Cloak and Dagger ability.  this allows encapsulating check for 
         /// pick pocket mode, etc
         /// </summary>
@@ -161,7 +190,7 @@ namespace Singular.ClassSpecific.Rogue
             return new PrioritySelector(
 
                 CreateStealthBehavior(
-                    ret => RogueSettings.StealthAlways
+                    ret => RogueSettings.Stealth == StealthMode.Always 
                         && BotPoi.Current.Type != PoiType.Loot
                         && BotPoi.Current.Type != PoiType.Skin
                         && !ObjectManager.GetObjectsOfType<WoWUnit>().Any(u => u.IsDead && ((CharacterSettings.Instance.LootMobs && u.CanLoot && u.Lootable) || (CharacterSettings.Instance.SkinMobs && u.Skinnable && u.CanSkin)) && u.Distance < CharacterSettings.Instance.LootRadius)
@@ -415,7 +444,7 @@ namespace Singular.ClassSpecific.Rogue
                     new Sequence(
                         new Action(r => Logger.WriteDebug("MovingAwayFromMe: Target ({0:F2}) faster than Me ({1:F2}) -- trying Sprint or Ranged Attack", Me.CurrentTarget.MovementInfo.CurrentSpeed, Me.MovementInfo.CurrentSpeed)),
                         new PrioritySelector(
-                            Spell.Cast("Sap", req => AreStealthAbilitiesAvailable && (Me.CurrentTarget.IsHumanoid || Me.CurrentTarget.IsBeast || Me.CurrentTarget.IsDemon || Me.CurrentTarget.IsDragon)),
+                            Spell.Cast("Sap", req => AreStealthAbilitiesAvailable && IsUnitViableForSap(Me.CurrentTarget)),
                             new Decorator(
                                 req => !Me.HasAnyAura("Sprint","Burst of Speed","Shadowstep"),
                                 new PrioritySelector(
@@ -467,8 +496,8 @@ namespace Singular.ClassSpecific.Rogue
                     )
                 );
         }
-
-        private static WoWGuid _lastSapTarget;
+       
+        public static WoWGuid lastSapTarget { get; set; }
 
         private static WoWUnit GetBestSapTarget()
         {
@@ -488,7 +517,7 @@ namespace Singular.ClassSpecific.Rogue
             {
                 // stick with our target if we thought it was a good choice previously 
                 // ... (to avoid zig zag back and forth at boundary distance conditions)
-                if (_lastSapTarget.IsValid && Me.CurrentTargetGuid == _lastSapTarget)
+                if (lastSapTarget.IsValid && Me.CurrentTargetGuid == lastSapTarget && IsUnitViableForSap(Me.CurrentTarget))
                     closestTarget = Me.CurrentTarget;
                 else
                 {
@@ -518,9 +547,9 @@ namespace Singular.ClassSpecific.Rogue
             {
                 Logger.WriteDebug(Color.White, "no nearby Sap target");
             }
-            else if (_lastSapTarget != closestTarget.Guid)
+            else if (lastSapTarget != closestTarget.Guid)
             {
-                _lastSapTarget = closestTarget.Guid;
+                lastSapTarget = closestTarget.Guid;
                 // reset the Melee Range check timeer to avoid timing out
                 SingularRoutine.ResetCurrentTargetTimer();
                 Logger.Write( LogColor.Hilite, msg, closestTarget.SafeName());
@@ -537,6 +566,12 @@ namespace Singular.ClassSpecific.Rogue
             if (!(unit.IsHumanoid || unit.IsBeast || unit.IsDemon || unit.IsDragon))
                 return false;
 
+            if (unit.IsBoss())
+                return false;
+
+            if (_entryImmuneToSap.Contains( unit.Entry) )
+                return false;
+
             if (unit.IsCrowdControlled())
                 return false;
 
@@ -546,6 +581,17 @@ namespace Singular.ClassSpecific.Rogue
             return true;
         }
 
+
+        private static HashSet<uint> _entryImmuneToSap = new HashSet<uint>();
+
+        public static void AddEntryToSapImmuneList( WoWUnit unit )
+        {
+            if (unit == null || _entryImmuneToSap.Contains(unit.Entry))
+                return;
+
+            Logger.Write(LogColor.Hilite, "ImmuneToSap: adding {0} #{1} to immunity list", unit.SafeName(), unit.Entry );
+            _entryImmuneToSap.Add(unit.Entry);
+        }
 
         public static Composite CreateApplyPoisons()
         {
@@ -809,14 +855,18 @@ namespace Singular.ClassSpecific.Rogue
 
         internal static Composite CreateStealthBehavior( SimpleBooleanDelegate requirements = null)
         {
-            if (requirements == null)
-                requirements = req => true;
+            if (RogueSettings.Stealth == StealthMode.Never)
+                return new ActionAlwaysFail();
 
-            return new PrioritySelector(
-                new Sequence(
-                    Spell.BuffSelf("Stealth", ret => !AreStealthAbilitiesAvailable && requirements(ret) && !Me.GetAllAuras().Any(a => a.IsHarmful)),
-                    new Wait( TimeSpan.FromMilliseconds(500), ret => AreStealthAbilitiesAvailable, new ActionAlwaysSucceed())
-                    )                
+            SimpleBooleanDelegate needStealth = 
+                req => IsStealthAllowed
+                    && (requirements == null || requirements(req))
+                    && !AreStealthAbilitiesAvailable 
+                    && !Me.GetAllAuras().Any(a => a.IsHarmful);
+
+            return new Sequence(
+                Spell.BuffSelf("Stealth", needStealth),
+                new Wait( TimeSpan.FromMilliseconds(500), ret => AreStealthAbilitiesAvailable, new ActionAlwaysSucceed())
                 );
         }
 

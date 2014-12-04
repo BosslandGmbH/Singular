@@ -21,6 +21,8 @@ namespace Singular.ClassSpecific.Priest
 {
     public class Shadow
     {
+        const int SURGE_OF_DARKNESS = 87160;
+
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static PriestSettings PriestSettings { get { return SingularSettings.Instance.Priest(); } }
 
@@ -68,10 +70,7 @@ namespace Singular.ClassSpecific.Priest
                 Spell.BuffSelf("Power Word: Shield", ret => (Me.HealthPercent < PriestSettings.PowerWordShield || (!Me.HasAura("Shadowform") && SpellManager.HasSpell("Shadowform"))) && !Me.HasAura("Weakened Soul")),
 
                 // keep heal buffs on if (glyph no longer required)
-                new PrioritySelector(
-                    Spell.BuffSelf("Prayer of Mending", ret => Me.HealthPercent <= 90),
-                    Spell.BuffSelf("Renew", ret => Me.HealthPercent <= 90)
-                    ),
+                Spell.BuffSelf("Prayer of Mending", ret => Me.HealthPercent <= PriestSettings.PrayerOfMending),
 
                 Spell.Cast("Psychic Scream", ret => PriestSettings.UsePsychicScream
                     && Me.HealthPercent <= PriestSettings.ShadowFlashHeal
@@ -192,7 +191,7 @@ namespace Singular.ClassSpecific.Priest
                             new PrioritySelector(
                                 // We don't want to dot targets below 40% hp to conserve mana. Mind Blast/Flay will kill them soon anyway
                                 Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20 && OrbCount < MaxOrbs),
-                                Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
+                                Spell.Cast("Mind Spike", ret => Me.HasAura(SURGE_OF_DARKNESS)),
                                 Spell.Cast("Mind Blast", on => Me.CurrentTarget, req => OrbCount < MaxOrbs, cancel => false),
                                 Spell.Buff("Devouring Plague", true, ret => OrbCount >= 3),
                                 Spell.Buff("Vampiric Touch"),
@@ -204,7 +203,7 @@ namespace Singular.ClassSpecific.Priest
                         // for targets that die quickly
                         new PrioritySelector(
                             Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20 && OrbCount < MaxOrbs),
-                            Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
+                            Spell.Cast("Mind Spike", ret => Me.HasAura(SURGE_OF_DARKNESS)),
                             Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20),
                             Spell.Cast("Mind Blast", on => Me.CurrentTarget, req => OrbCount < MaxOrbs, cancel => false),
 
@@ -311,7 +310,7 @@ namespace Singular.ClassSpecific.Priest
                             ),
 
                         // only cast Mind Spike if its instant
-                        Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
+                        Spell.Cast("Mind Spike", ret => Me.HasAura(SURGE_OF_DARKNESS)),
 
                         CastInsanity(),
 
@@ -421,7 +420,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast("Mind Blast", on => Me.CurrentTarget, req => OrbCount < MaxOrbs, cancel => false),
 
                         Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20 && OrbCount < MaxOrbs),
-                        Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
+                        Spell.Cast("Mind Spike", ret => Me.HasAura(SURGE_OF_DARKNESS)),
                         CastInsanity(),
                         Spell.Buff("Shadow Word: Pain", 5, on => Me.CurrentTarget, req => true),
                         Spell.Buff("Vampiric Touch", 4, on => Me.CurrentTarget, req => true),
@@ -525,7 +524,7 @@ namespace Singular.ClassSpecific.Priest
 
                     if (!Spell.IsSpellOnCooldown("Mind Blast") && Spell.GetSpellCastTime("Mind Blast") == TimeSpan.Zero)
                         Logger.Write(LogColor.Cancel, "/cancel Mind Flay for instant Mind Blast proc");
-                    else if (Me.HasAura("Surge of Darkness"))
+                    else if (Me.HasAura(SURGE_OF_DARKNESS))
                         Logger.Write(LogColor.Cancel, "/cancel Mind Flay for instant Mind Spike proc");
                     else if (SpellManager.HasSpell("Shadow Word: Insanity") && Unit.NearbyUnfriendlyUnits.Any(u => u.GetAuraTimeLeft("Shadow Word: Pain", true).TotalMilliseconds.Between(1000, 5000) && u.InLineOfSpellSight))
                         Logger.Write(LogColor.Cancel, "/cancel Mind Flay for Shadow Word: Insanity proc");
@@ -560,7 +559,7 @@ namespace Singular.ClassSpecific.Priest
                         Me.IsMoving,
                         Me.Shapeshift,
                         orbs,
-                        (long)Me.GetAuraTimeLeft("Surge of Darkness", true).TotalMilliseconds,
+                        (long)Me.GetAuraTimeLeft(SURGE_OF_DARKNESS, true).TotalMilliseconds,
                         (long)Me.GetAuraTimeLeft("Divine Insight", true).TotalMilliseconds
                         );
 

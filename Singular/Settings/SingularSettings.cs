@@ -638,14 +638,21 @@ namespace Singular.Settings
         [Description("Force use of Framelock in Singular.  Primarily for use with Botbases that do not support Framelock")]
         public bool UseFrameLock { get; set; }
 
-        [Setting,ReadOnly(false)]
+        [Setting, ReadOnly(false)]
         [DefaultValue(true)]
         [Category("General")]
-        [DisplayName("Wait For Res Sickness")]
+        [DisplayName("Res Sickness: Wait")]
         [Description("Wait for resurrection sickness to wear off.")]
-        public bool WaitForResSickness { get; set; }
+        public bool ResSicknessWait { get; set; }
 
-        [Setting,ReadOnly(false)]
+        [Setting, ReadOnly(false)]
+        [DefaultValue(false)]
+        [Category("General")]
+        [DisplayName("Res Sickness: Stealth")]
+        [Description("Stealth while waiting for resurrection sickness to wear off.")]
+        public bool ResSicknessStealthDuring { get; set; }
+
+        [Setting, ReadOnly(false)]
         [DefaultValue(false)]
         [Category("General")]
         [DisplayName("Disable Non Combat Behaviors")]
@@ -666,12 +673,26 @@ namespace Singular.Settings
         [Description("Prevent Singular from casting any spell with this cooldown or greater; set to 0 to allow Singular to cast all spells")]
         public int DisableSpellsWithCooldown { get; set; }
 
-        [Setting,ReadOnly(false)]
-        [DefaultValue(SelfRessurectStyle.Auto )]
+        [Setting, ReadOnly(false)]
+        [DefaultValue(SelfRessurectStyle.Auto)]
         [Category("General")]
         [DisplayName("Self-Ressurect")]
         [Description("Auto: Self-Ressurect (Ankh/Soulstone) unless Movement is disabled, Enable: Always Self-Ressurect if available, None: never Self-Ressurect")]
         public SelfRessurectStyle SelfRessurect { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(50)]
+        [Category("General")]
+        [DisplayName("Garrison Ability: at Health %")]
+        [Description("Use Garrison Ability if Health below this and target(s) likely to out live you")]
+        public int GarrisonAbilityHealth { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(3)]
+        [Category("General")]
+        [DisplayName("Garrison Ability: at mob count")]
+        [Description("Use Garrison Ability if in combat with this many mobs or more")]
+        public int GarrisonAbilityMobCount { get; set; }
 
         #endregion
 

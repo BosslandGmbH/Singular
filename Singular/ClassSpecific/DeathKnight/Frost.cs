@@ -366,7 +366,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.Cast( sp => Spell.UseAOE ? "Howling Blast" : "Icy Touch", mov => false, on => Me.CurrentTarget, req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
                 // Blood Tap
-                Spell.BuffSelf("Blood Tap"),
+                Spell.BuffSelf("Blood Tap", req => Common.NeedBloodTap()),
 
                 // Frost Strikeif RP is 40 or higher
                 Spell.Cast("Frost Strike", req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.CurrentRunicPower >= 40),
@@ -412,7 +412,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.Cast(sp => Spell.UseAOE ? "Howling Blast" : "Icy Touch", mov => false, on => Me.CurrentTarget, req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
                 // Blood Tap
-                Spell.BuffSelf("Blood Tap"),
+                Spell.BuffSelf("Blood Tap", req => Common.NeedBloodTap()),
 
                 // Frost Strikeif RP is 40 or higher
                 Spell.Cast("Frost Strike", req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.CurrentRunicPower >= 40),

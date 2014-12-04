@@ -40,29 +40,38 @@ namespace Singular.Helpers
             return new Throttle( 60,
                 new Decorator(
                     req => {
-                        Logger.Write(LogColor.Hilite, "Death Behavior invoked!  Alive={0}, Ghost={1}", Me.IsAlive.ToYN(), Me.IsGhost.ToYN());
-
                         if (Me.IsAlive || Me.IsGhost)
+                        {
+                            Logger.WriteDiagnostic(LogColor.Hilite, "Death Behavior: ERROR - should not be called with Alive={0}, Ghost={1}", Me.IsAlive.ToYN(), Me.IsGhost.ToYN());
                             return false;
+                        }
 
+                        Logger.WriteDiagnostic(LogColor.Hilite, "Death Behavior: invoked!  Alive={0}, Ghost={1}", Me.IsAlive.ToYN(), Me.IsGhost.ToYN());
                         if (SingularSettings.Instance.SelfRessurect == Singular.Settings.SelfRessurectStyle.None)
+                        {
+                            Logger.WriteDiagnostic(LogColor.Hilite, "Death Behavior: ERROR - should not be called with Alive={0}, Ghost={1}", Me.IsAlive.ToYN(), Me.IsGhost.ToYN());
                             return false;
+                        }
 
                         List<string> hasSoulstone = Lua.GetReturnValues("return HasSoulstone()", "hawker.lua");
                         if (hasSoulstone == null || hasSoulstone.Count == 0 || String.IsNullOrEmpty(hasSoulstone[0]) || hasSoulstone[0].ToLower() == "nil")
+                        {
+                            Logger.WriteDiagnostic(LogColor.Hilite, "Death Behavior: character unable to self-ressurrect currently");
                             return false;
+                        }
 
                         if (SingularSettings.Instance.SelfRessurect == Singular.Settings.SelfRessurectStyle.Auto && MovementManager.IsMovementDisabled)
                         {
                             if (NextSuppressMessage < DateTime.Now)
                             {
                                 NextSuppressMessage = DateTime.Now.AddSeconds(RezWaitTime);
-                                Logger.Write(Color.Aquamarine, "Suppressing {0} behavior since movement disabled...", hasSoulstone[0]);
+                                Logger.Write(Color.Aquamarine, "Suppressing automatic {0} since movement disabled...", hasSoulstone[0]);
                             }
                             return false;
                         }
 
                         SelfRezSpell = hasSoulstone[0];
+                        Logger.WriteDiagnostic(LogColor.Hilite, "Death Behavior: beginning {0}", SelfRezSpell);
                         return true;
                         },
                     new Sequence(

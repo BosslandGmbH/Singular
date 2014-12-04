@@ -8,6 +8,14 @@ using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 
 namespace Singular.Settings
 {
+    public enum StealthMode
+    {
+        Never   = 0,
+        Auto    = 1,
+        PVP     = 2,
+        Always  = 4
+    }
+
     internal class RogueSettings : Styx.Helpers.Settings
     {
         public RogueSettings()
@@ -44,17 +52,17 @@ namespace Singular.Settings
         public NonLethalPoisonType NonLethalPoison { get; set; }
 
         [Setting]
-        [DefaultValue(false)]
+        [DefaultValue(StealthMode.Auto)]
         [Category("Common")]
-        [DisplayName("Stealth Always")]
-        [Description("Stealth at all times out of combat. Does not disable mounting (you can in HB Settings if desired)")]
-        public bool StealthAlways { get; set; }
+        [DisplayName("Stealth Mode")]
+        [Description("Auto: stealth used on Pull; PVP: used only against players; Always: stealth when not in Combat; Never: disable stealth")]
+        public StealthMode Stealth { get; set; }
 
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
         [DisplayName("Stealth When Eating")]
-        [Description("Stealth if eating food")]
+        [Description("Setting is ignored if Stealth Mode = 'Never'")]
         public bool StealthIfEating { get; set; }
 
         [Setting]

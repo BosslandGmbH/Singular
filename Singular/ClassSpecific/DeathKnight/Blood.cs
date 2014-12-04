@@ -418,11 +418,12 @@ namespace Singular.ClassSpecific.DeathKnight
                     ),
 
                 // Blood Tap behavior
-                new Decorator( 
-                    req => Common.HasTalent(DeathKnightTalents.BloodTap) && Me.GetAuraStacks("Blood Charges") >= 10 && Common.DeathRuneSlotsActive == 0,
-                    new PrioritySelector(
-                        Spell.OffGCD( Spell.BuffSelf("Blood Tap") ),
-                        Spell.OffGCD( Spell.BuffSelf("Blood Tap") )
+                new Decorator(
+                    req => Common.NeedBloodTap(),
+                    new Sequence(
+                        ctx => Common.DeathRuneSlotsActive,
+                        Spell.OffGCD(Spell.BuffSelf("Blood Tap", req => ((int)req) < 1) ),
+                        Spell.OffGCD(Spell.BuffSelf("Blood Tap", req => ((int)req) < 2) )
                         )
                     ),
 

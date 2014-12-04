@@ -501,6 +501,7 @@ namespace Singular
                                 Generic.CreateUseTrinketsBehaviour(),
                                 Generic.CreatePotionAndHealthstoneBehavior(),
                                 Generic.CreateRacialBehaviour(),
+                                Generic.CreateGarrisonAbilityBehaviour(),
                                 composite ?? new ActionAlwaysFail()
                                 )
                             )

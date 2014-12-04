@@ -373,6 +373,15 @@ namespace Singular.Utilities
                             Logger.WriteDebug("{0} is immune to {1} spell school", unit.Name, e.SpellSchool);
                             SpellImmunityManager.Add(unit.Entry, e.SpellSchool);
                         }
+
+                        if (StyxWoW.Me.Class == WoWClass.Rogue && e.SpellId == 6770)
+                        {
+                            WoWUnit unitImmune = unit;
+                            if (unitImmune == null)
+                                unitImmune = ObjectManager.GetObjectByGuid<WoWUnit>(Singular.ClassSpecific.Rogue.Common.lastSapTarget);
+
+                            Singular.ClassSpecific.Rogue.Common.AddEntryToSapImmuneList(unitImmune);
+                        }
                     }
                     break;
 

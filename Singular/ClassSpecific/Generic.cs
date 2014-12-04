@@ -241,6 +241,59 @@ namespace Singular.ClassSpecific
         {
             return Item.CreateUsePotionAndHealthstone(SingularSettings.Instance.PotionHealth, SingularSettings.Instance.PotionMana);
         }
+
+        // [Behavior(BehaviorType.Combat, priority: 998)]
+        public static Composite CreateGarrisonAbilityBehaviour()
+        {
+            PrioritySelector pri = new PrioritySelector();
+            if (SpellManager.HasSpell("Garrison Ability"))
+            {
+                pri.AddChild(
+                    new Decorator(
+                        ret =>
+                        {
+                            if (!Unit.ValidUnit(StyxWoW.Me.CurrentTarget))
+                                return false;
+                            if (!Spell.CanCastHack("Garrison Ability", StyxWoW.Me.CurrentTarget))
+                                return false;
+
+                            int mobCount = Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count();
+                            if (mobCount > 0)
+                            {
+                                if (mobCount >= SingularSettings.Instance.GarrisonAbilityMobCount)
+                                    return true;
+
+                                if (StyxWoW.Me.HealthPercent < SingularSettings.Instance.GarrisonAbilityHealth)
+                                {
+                                    if (mobCount > 1)
+                                        return true;
+                                    if (StyxWoW.Me.CurrentTarget.TimeToDeath(-1) > 10)
+                                        return true;
+                                    if (StyxWoW.Me.CurrentTarget.IsPlayer)
+                                        return true;
+                                    if (StyxWoW.Me.CurrentTarget.MaxHealth > (StyxWoW.Me.MaxHealth * 2))
+                                        return true;
+                                    if (StyxWoW.Me.CurrentTarget.TappedByAllThreatLists)
+                                        return true;
+                                }
+                            }
+
+                            return false;
+                        },
+                        new Throttle(
+                            2,
+                            new Sequence(
+                                new Action( r => Logger.Write(LogColor.Hilite, "^Garrison Ability: using now")),
+                                Spell.Cast("Garrison Ability"),
+                                new Action( r => Logger.WriteDiagnostic("Garrison Ability: successfully used"))
+                                )
+                            )
+                        )
+                    );
+            }
+            return pri;
+        }
+
     }
 
 

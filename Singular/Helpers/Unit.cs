@@ -644,19 +644,24 @@ namespace Singular.Helpers
         /// <param name="spell">spell that applies aura</param>
         /// <param name="aura">aura</param>
         /// <returns>true if spell known and aura missing or less than 'secs' time left, otherwise false</returns>
-        public static bool HasAuraExpired(this WoWUnit u, string spell, string aura, TimeSpan tm, bool myAura = true)
+        public static bool HasAuraExpired(this WoWUnit u, string spell, string auraName, TimeSpan tm, bool myAura = true)
         {
             // need to compare millisecs even though seconds are provided.  otherwise see it as expired 999 ms early because
             // .. of loss of precision
             if (!SpellManager.HasSpell(spell))
                 return false;
 
-            TimeSpan timeLeft = u.GetAuraTimeLeft(aura, myAura);
+            WoWAura wantedAura = u.GetAllAuras()
+                .Where(a => a != null && string.Compare(a.Name, auraName, false) == 0 && a.TimeLeft > TimeSpan.Zero && (!myAura || a.CreatorGuid == StyxWoW.Me.Guid))
+                .FirstOrDefault();
+
+            if (wantedAura == null)
+                return true;
 
             // be aware: test previously was <= and vague recollection that was needed 
             // .. but no comment and need a way to consider passive ones found with timeleft of 0 as not expired if
             // .. if we pass 0 in as the timespan
-            if (timeLeft < tm)
+            if (wantedAura.TimeLeft < tm)
                 return true;
 
             return false;
@@ -672,19 +677,28 @@ namespace Singular.Helpers
         /// <param name="tm">time to </param>
         /// <param name="myAura">true: restrict to only your characters auras</param>
         /// <returns>true if spell known and aura missing or less than 'secs' time left, otherwise false</returns>
-        public static bool HasAuraExpired(this WoWUnit u, string spell, string aura, int stackCount, TimeSpan tm, bool myAura = true)
+        public static bool HasAuraExpired(this WoWUnit u, string spell, string auraName, int stackCount, TimeSpan tm, bool myAura = true)
         {
             // need to compare millisecs even though seconds are provided.  otherwise see it as expired 999 ms early because
             // .. of loss of precision
             if (!SpellManager.HasSpell(spell))
                 return false;
 
-            uint stacks;
-            TimeSpan timeLeft = u.GetAuraStacksAndTimeLeft(aura, out stacks, myAura);
-            if (timeLeft.TotalSeconds <= tm.TotalSeconds || stacks < stackCount)
+            WoWAura wantedAura = u.GetAllAuras()
+                .Where(a => a != null && string.Compare(a.Name, auraName, false) == 0 && a.TimeLeft > TimeSpan.Zero && (!myAura || a.CreatorGuid == StyxWoW.Me.Guid))
+                .FirstOrDefault();
+
+            if (wantedAura == null)
+                return true;
+
+            if (wantedAura.TimeLeft < tm)
+                return true;
+
+            if (Math.Max(1, wantedAura.StackCount) < stackCount)
                 return true;
 
             return false;
+
         }
 
 

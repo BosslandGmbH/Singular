@@ -364,9 +364,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                 && (!Spell.CanCastHack("Death Grip") || SingularRoutine.CurrentWoWContext == WoWContext.Instances) 
                                 && Me.CurrentTarget.DistanceSqr > 10 * 10),
 
-                        Spell.BuffSelf("Blood Tap",
-                            req => Me.HasAura( "Blood Charge", 5) 
-                                && (BloodRuneSlotsActive == 0 || FrostRuneSlotsActive == 0 || UnholyRuneSlotsActive == 0)),
+                        Spell.BuffSelf("Blood Tap", req => Common.NeedBloodTap()),
 
                         Spell.Cast("Plague Leech", req => CanCastPlagueLeech),
 
@@ -441,7 +439,13 @@ namespace Singular.ClassSpecific.DeathKnight
                 new PrioritySelector(
                     CreateDeathGripBehavior(),
                     new Decorator(
-                        req => (Me.Combat || Me.CurrentTarget.Combat) && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsMovingAway()),
+                        req => {
+							if (!Me.GotTarget)
+								return false;
+							if (!(Me.Combat || Me.CurrentTarget.Combat))
+								return false;
+							return (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsMovingAway());
+						},
                         CreateChainsOfIceBehavior()
                         )
                     )
@@ -688,6 +692,12 @@ namespace Singular.ClassSpecific.DeathKnight
                         )
                     )
                 );
+        }
+
+        public static bool NeedBloodTap()
+        {
+            const int BLOOD_CHARGE = 114851;
+            return StyxWoW.Me.HasAura(BLOOD_CHARGE, 5) && Common.DeathRuneSlotsActive < 2 && (Common.BloodRuneSlotsActive == 0 || Common.FrostRuneSlotsActive == 0 || Common.UnholyRuneSlotsActive == 0);
         }
 
     }

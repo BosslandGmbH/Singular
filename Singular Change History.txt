@@ -1,3 +1,49 @@
+--- Release 4.0.0.3989 ---
+
+General
+
+fixed - Garrison Abilities - added an internally maintained list of which ones Singular will cast.  Limited to those which inflict damage only
+
+change- Solo Combat for Casters - will no longer move to the side to keep mobs in front.  This was less of a benefit to casters and introduced short delays where they couldn't ABC (Always Be Casting)
+
+
+
+Mage
+
+fixed - Frost - removed Fire Blast which remained from MoP as a filler on frost immune mobs.  Since this spell is now overriden by Ice Lance in WoD and some preceding combat routine logic had changed, it was unintentionally casting more Ice Lance's than desired.  Fire Blast now cast only prior to learning Ice Lance
+
+
+Priest
+
+change- All Specs - revised logic for casting Mindbender/Shadowfiend so they are cast more frequently
+
+change- Shadow - Psychic Scream improved.  Settings added to provide user more granular control.  Should now cast more frequently in "we are going to die anyway" situations, and much more frequently if Glyph of Psychic Scream is equipped
+
+change- Shadow - Psychic Horror improved.  Now cast to crowd control a mob long enough to get a heal off when Solo.  Also cast with awareness of whether Psychic Scream is available, off cooldown, and its an AoE situation
+
+change - Shadow - Healing.  Prayer of Mending now defaults to 0% (which disables it.)  
+
+change - Shadow - Healing.  Flash Heal defaults to 30%
+
+fixed - Shadow - Healing.  Will now only use healing spells with a cast time if all attackers within 40 yds are crowd controlled.  This combined with improved Psychic Horror/Psychic Scream usage will improve survivability
+
+change- Shadow - Vamipiric Embrace.  Will now cast only if below the Vampiric Embrace Health % configured and the target will survive more than 15 seconds or there are multiple attackers
+
+change- Shadow - Devouring Plague.  Will now target the highest health attacker to maximize healing
+
+change- Shadow - Solo AOE Combat.  This has been an issue in WoD leveling - you should see improved results due to a change in the spell priority in this area
+
+fixed - Shadow - Solo Single Target Combat.  Added support for Insanity which was missing.  Reprioritized spells to give faster damage.
+
+
+Warrior
+
+fixed - Fury / Arms - both struggled at low levels from 10 -20 due to low Rage generation.  Revised to cast spells without attempting to pool rage until Whirlwind is learned
+
+
+
+
+
 --- Release 4.0.0.3974 ---
 
 General

@@ -112,8 +112,15 @@ namespace Singular.ClassSpecific.Mage
                             new PrioritySelector(
                                 Spell.Buff("Nether Tempest", 1, on => Me.CurrentTarget, req => true),
                                 Spell.Buff("Living Bomb", 0, on => Me.CurrentTarget, req => true),
-                                Spell.Cast("Ice Lance"),
-                                Spell.Cast("Fire Blast")
+                                Spell.Cast("Ice Lance", ret =>
+                                {
+                                    if (!Spell.CanCastHack("Ice Lance", Me.CurrentTarget))
+                                        return false;
+
+                                    Logger.WriteDiagnostic("Ice Lance: casting for fast pull");
+                                    return true;
+                                }),
+                                Spell.Cast("Fire Blast", req => !SpellManager.HasSpell("Ice Lance"))
                                 )
                             ),
             #endregion
@@ -133,8 +140,19 @@ namespace Singular.ClassSpecific.Mage
 
                         Spell.Cast("Frostbolt", ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                         Spell.Cast("Frostfire Bolt"),
-                        Spell.Cast("Ice Lance", req => Me.IsMoving ),
-                        Spell.Cast("Fire Blast")
+                        Spell.Cast("Ice Lance", ret =>
+                        {
+                            if (!Spell.CanCastHack("Ice Lance", Me.CurrentTarget))
+                                return false;
+
+                            if (!Me.IsMoving)
+                                return false;
+
+                            Logger.WriteDiagnostic("Ice Lance: casting while moving");
+                            return true;
+                        }),
+                        Spell.Cast("Fire Blast", req => !SpellManager.HasSpell("Ice Lance"))
+
                         )
                     ),
 
@@ -261,7 +279,12 @@ namespace Singular.ClassSpecific.Mage
                                         )
                                     ),
                                 Spell.Cast("Frozen Orb", req => Spell.UseAOE && Me.IsSafelyFacing(Me.CurrentTarget, 5f) && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage() && Me.IsSafelyFacing(u, 20))),
-                                Spell.Cast("Fire Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
+                                Spell.Cast(
+                                    "Fire Blast", 
+                                    ret => !SpellManager.HasSpell("Ice Lance")
+                                        && TalentManager.HasGlyph("Fire Blast") 
+                                        && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")
+                                    ),
 
                                 // Pull with Ice Lance if trivial or FoF built up
                                 CreateIceLanceFoFBehavior()
@@ -343,7 +366,7 @@ namespace Singular.ClassSpecific.Mage
                         new Decorator(
                             ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire) && (Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) || !SpellManager.HasSpell("Frostbolt")),
                             new PrioritySelector(
-                                Spell.Cast("Fire Blast"),
+                                Spell.Cast("Fire Blast", req => !SpellManager.HasSpell("Ice Lance")),
                                 Spell.Cast("Frostfire Bolt")
                                 )
                             )

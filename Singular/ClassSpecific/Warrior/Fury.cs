@@ -229,7 +229,7 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
 
                         //Execute to prevent capping your Rage.
-                        Spell.Cast( "Execute", req => Me.RagePercent > 80),
+                        Spell.Cast("Execute", req => Me.RagePercent > 80),
 
                         //Bloodthirst on cooldown when not Enraged. Procs Bloodsurge.
                         Spell.Cast("Bloodthirst", ret => !IsEnraged),
@@ -239,6 +239,16 @@ namespace Singular.ClassSpecific.Warrior
 
                         //Wild Strike when Enraged or with Bloodsurge procs.
                         Spell.Cast("Wild Strike", ret => IsEnraged || StyxWoW.Me.HasAura("Bloodsurge"))
+                        )
+                    ),
+
+                new Decorator(
+                    req => !SpellManager.HasSpell("Whirlwind"),
+                    new PrioritySelector(
+                        Spell.Cast("Execute"),
+                        Spell.Cast("Bloodthirst"),
+                        Spell.Cast("Wild Strike"),
+                        Spell.Cast("Thunder Clap", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8)
                         )
                     ),
 

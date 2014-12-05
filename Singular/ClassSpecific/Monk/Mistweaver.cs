@@ -53,21 +53,21 @@ namespace Singular.ClassSpecific.Monk
         {
             SpinningCraneKick = HasTalent(MonkTalents.RushingJadeWind) ? "Rushing Jade Wind" : "Spinning Crane Kick";
             if (HasTalent(MonkTalents.RushingJadeWind))
-                Logger.Write("[spinning crane kick] Using Rushing Jade Wind");
+                Logger.Write(LogColor.Init, "[spinning crane kick] Using Rushing Jade Wind");
 
             RangedAttacks = SpellManager.HasSpell("Crackling Jade Lightning");
-            Logger.Write("[dps distance] Will DPS from {0}", RangedAttacks ? "Range" : "Melee");
+            Logger.Write(LogColor.Init, "[dps distance] Will DPS from {0}", RangedAttacks ? "Range" : "Melee");
 
             minDistRollAllowed = RangedAttacks ? 45 : 12;
-            Logger.Write("[roll distance] Must be atleast {0} yds away for Roll", minDistRollAllowed);
+            Logger.Write(LogColor.Init, "[roll distance] Must be atleast {0} yds away for Roll", minDistRollAllowed);
 
             glyphedManaTea = TalentManager.HasGlyph("Mana Tea");
             if (glyphedManaTea)
-                Logger.Write("[glyph of mana tea] Recognize as Instant Cast");
+                Logger.Write(LogColor.Init, "[glyph of mana tea] Recognize as Instant Cast");
 
             glyphedRenewingMist = TalentManager.HasGlyph("Renewing Mist");
             if (glyphedRenewingMist)
-                Logger.Write("[glyph of renewing mist] Using 40 yd hop distance");
+                Logger.Write(LogColor.Init, "[glyph of renewing mist] Using 40 yd hop distance");
             
             return null;
         }

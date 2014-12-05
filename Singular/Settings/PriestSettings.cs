@@ -77,19 +77,19 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(30)]
         [Category("Shadow")]
-        [DisplayName("Flash Heal Health")]
-        [Description("Health for Flash Heal for shadow spec")]
+        [DisplayName("Flash Heal %")]
+        [Description("Health % for Flash Heal for shadow spec.  Used only if all attackers within 40 yds are crowd controlled")]
         public int ShadowFlashHeal { get; set; }
 
         [Setting]
-        [DefaultValue(50)]
+        [DefaultValue(0)]
         [Category("Shadow")]
-        [DisplayName("Prayer of Mending Health")]
-        [Description("Health for Flash Heal for shadow spec")]
+        [DisplayName("Prayer of Mending %")]
+        [Description("Health % for Prayer of Mending for shadow spec.  Used only if all attackers within 40 yds are crowd controlled")]
         public int PrayerOfMending { get; set; }
 
         [Setting]
-        [DefaultValue(50)]
+        [DefaultValue(25)]
         [Category("Shadow")]
         [DisplayName("Mind Flay Mana")]
         [Description("Will only use Mind Flay while manapercent is above this value")]
@@ -105,7 +105,7 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(3)]
         [Category("Shadow")]
-        [DisplayName("Vampiric Embrace Health")]
+        [DisplayName("Vampiric Embrace Mob Count")]
         [Description("Count of players for Vampiric Embrace in Instances (Solo and Dungeon checks only characters health")]
         public int VampiricEmbraceCount { get; set; }
 
@@ -212,16 +212,30 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
-        [DisplayName("Use Psychic Scream")]
-        [Description("Use Psychic Scream")]
-        public bool UsePsychicScream { get; set; }
+        [DisplayName("Psychic Scream: Allow")]
+        [Description("")]
+        public bool PsychicScreamAllow { get; set; }
 
         [Setting]
-        [DefaultValue(2)]
+        [DefaultValue(4)]
         [Category("Common")]
-        [DisplayName("Use Psychic Scream Count")]
-        [Description("Uses Psychic Scream when there's >= these number of adds (not including current target)")]
+        [DisplayName("Psychic Scream: Count")]
+        [Description("Use Psychic Scream when fighting this # of mobs; if Glyphed value is 2")]
         public int PsychicScreamAddCount { get; set; }
+
+        [Setting]
+        [DefaultValue(25)]
+        [Category("Common")]
+        [DisplayName("Psychic Scream: Health %")]
+        [Description("Use Psychic Scream as a hail mary to get some heals if health falls below")]
+        public int PsychicScreamHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Common")]
+        [DisplayName("Psychic Horror: Health %")]
+        [Description("Use Psychic Horror if health falls below this value")]
+        public int PsychicHorrorHealth { get; set; }
 
         [Setting]
         [DefaultValue(true)]

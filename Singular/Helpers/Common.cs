@@ -616,7 +616,7 @@ namespace Singular.Helpers
         public static Composite EnsureReadyToAttackFromMediumRange( )
         {
             return new PrioritySelector(
-                Movement.CreatePositionMobsInFront(),
+                // Movement.CreatePositionMobsInFront(),
 
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
@@ -630,7 +630,7 @@ namespace Singular.Helpers
         public static Composite EnsureReadyToAttackFromLongRange()
         {
             return new PrioritySelector(
-                Movement.CreatePositionMobsInFront(),
+                // Movement.CreatePositionMobsInFront(),
 
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),

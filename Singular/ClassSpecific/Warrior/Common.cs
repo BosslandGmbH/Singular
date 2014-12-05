@@ -39,7 +39,7 @@ namespace Singular.ClassSpecific.Warrior
 
             if (TalentManager.HasGlyph("Long Charge"))
             {
-                Logger.Write("[glyph of charge] Recognized - Charge Distance increased by 5 yds");
+                Logger.Write(LogColor.Init, "[glyph of charge] Recognized - Charge Distance increased by 5 yds");
                 DistanceChargeBehavior = 30f;
             }
 
@@ -47,27 +47,27 @@ namespace Singular.ClassSpecific.Warrior
             VictoryRushHealth = 90;
             if (SpellManager.HasSpell("Impending Victory"))
             {
-                Logger.Write("[impending victory talent] Recognized");
+                Logger.Write(LogColor.Init, "[impending victory talent] Recognized");
                 VictoryRushHealth = 80;
                 spellVictory = "Impending Victory";
             }
             else if (TalentManager.HasGlyph("Victory Rush"))
             {
-                Logger.Write("[glyph of victory rush] Recognized");
+                Logger.Write(LogColor.Init, "[glyph of victory rush] Recognized");
                 VictoryRushHealth -= (100 - VictoryRushHealth) / 2;
             }
 
             if (WarriorSettings.VictoryRushOnCooldown)
             {
-                Logger.Write("[victory rush on cooldown] User Setting will cause [{0}] cast on cooldown", spellVictory);
+                Logger.Write(LogColor.Init, "[victory rush on cooldown] User Setting will cause [{0}] cast on cooldown", spellVictory);
                 VictoryRushHealth = 100;
             }
             else
             {
-                Logger.WriteDebug("[victory rush] will cast if health <= {0}%", VictoryRushHealth);
+                Logger.Write(LogColor.Init, "[victory rush] will cast if health <= {0}%", VictoryRushHealth);
             }
 
-            Logger.Write("[charge distance] Charge cast at targets within {0:F1} yds", DistanceChargeBehavior);
+            Logger.Write(LogColor.Init, "[charge distance] Charge cast at targets within {0:F1} yds", DistanceChargeBehavior);
 
             DistanceChargeBehavior -= 0.2f;    // should not be needed, but is  -- based on log files and observations we need this adjustment
 

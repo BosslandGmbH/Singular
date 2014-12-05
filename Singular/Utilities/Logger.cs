@@ -22,6 +22,7 @@ namespace Singular
         public static Color Debug = Color.Orange;
         public static Color Diagnostic = Color.Yellow;
         public static Color Cancel = Color.OrangeRed;
+        public static Color Init = Color.LightCyan;
     }
 
     public static class Logger

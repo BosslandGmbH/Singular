@@ -527,10 +527,7 @@ VoidShift               Void Shift
                     Spell.BuffSelf("Prayer of Mending", ret => Me.Combat && Me.HealthPercent <= 90),
                     Spell.BuffSelf("Renew", ret => Me.Combat && Me.HealthPercent <= 90),
 
-                    Spell.Cast("Psychic Scream", ret => Me.Combat
-                        && PriestSettings.UsePsychicScream
-                        && Me.HealthPercent <= PriestSettings.ShadowFlashHeal
-                        && (Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10) >= PriestSettings.PsychicScreamAddCount || (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && Unit.NearbyUnfriendlyUnits.Any(u => Me.SpellDistance(u) < 8 )))),
+                    Common.CreatePsychicScreamBehavior(),
 
                     Spell.Cast("Flash Heal",
                         ctx => Me,

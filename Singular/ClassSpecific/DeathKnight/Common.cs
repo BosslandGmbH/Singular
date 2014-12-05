@@ -112,7 +112,7 @@ namespace Singular.ClassSpecific.DeathKnight
             else
             {
                 BloodBoilRange = 15;
-                Logger.Write("Glyph of Blood Boil: range of Blood Boil extended to {0}", BloodBoilRange);
+                Logger.Write(LogColor.Init, "Glyph of Blood Boil: range of Blood Boil extended to {0}", BloodBoilRange);
             }
 
             BloodBoilRangeSqr = BloodBoilRange * BloodBoilRange;

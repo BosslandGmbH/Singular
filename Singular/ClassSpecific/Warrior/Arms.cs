@@ -191,7 +191,7 @@ namespace Singular.ClassSpecific.Warrior
                                         Spell.Cast( "Execute", req => Me.CurrentRage > 60 && Me.CurrentTarget.HealthPercent <= 20),
 
                                         // 3 Mortal Strike on cooldown when target is above 20% health.
-                                        Spell.Cast( "Mortal Strike", req => Me.HealthPercent > 20),
+                                        Spell.Cast( "Mortal Strike", req => Me.CurrentTarget.HealthPercent > 20),
 
                                         // 4 Colossus Smash as often as possible.
                                         Spell.Cast( "Colossus Smash"),
@@ -199,6 +199,7 @@ namespace Singular.ClassSpecific.Warrior
                                         // 5 Whirlwind as a filler ability when target is above 20% health.
                                         Spell.Cast( "Whirlwind", req => Me.CurrentTarget.HealthPercent > 20 ),
 
+                                        // Done here
                                         new ActionAlwaysFail()
                                         )
                                     ),
@@ -215,14 +216,22 @@ namespace Singular.ClassSpecific.Warrior
                                         // 3 Whirlwind as a filler ability when target is above 20% health.
                                         Spell.Cast( "Whirlwind", req => Me.CurrentTarget.HealthPercent > 20 ),
 
-                                        // 4 Run out of range and Charge back for additional Rage.
+                                        // Done here
                                         new ActionAlwaysFail()
                                         )
                                     ),
 
                                 Spell.Cast("Dragon Roar", req => Spell.UseAOE),
-                                Spell.Cast("Storm Bolt")
+                                Spell.Cast("Storm Bolt"),
 
+                                // if we are low-level with low rage regen, do any damage we can
+                                new Decorator(
+                                    req => !SpellManager.HasSpell("Whirlwind"),
+                                    new PrioritySelector(
+                                        Spell.Cast("Rend"),
+                                        Spell.Cast("Thunder Clap", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8)
+                                        )
+                                    )
                                 )
                             ),
 

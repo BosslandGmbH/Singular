@@ -277,12 +277,40 @@ namespace Singular.ClassSpecific.Priest
 
         public static Composite CreateShadowfiendBehavior()
         {
+            if (SpellManager.HasSpell("Mindbender"))
+                return Spell.Cast("Mindbender",
+                    ret => {
+                        if (!Me.GotTarget || !Unit.ValidUnit(Me.CurrentTarget))
+                            return false;
+
+                        if (Me.CurrentTarget.IsPlayer)
+                            return true;
+
+                        if (Me.HealthPercent < 35)
+                            return true;
+
+                        if (Me.ManaPercent < PriestSettings.ShadowfiendMana && Me.CurrentTarget.TimeToDeath() > 15)
+                            return true;
+
+                        return false;
+                        }
+                    );
+
             return Spell.Cast("Shadowfiend",
-                ret => Me.ManaPercent < PriestSettings.ShadowfiendMana
-                    && Me.GotTarget
-                    && Unit.ValidUnit(Me.CurrentTarget)
-                    && Me.CurrentTarget.TimeToDeath() > 15
-                );
+                    ret =>
+                    {
+                        if (!Me.GotTarget || !Unit.ValidUnit(Me.CurrentTarget))
+                            return false;
+
+                        if (Me.CurrentTarget.IsPlayer)
+                            return true;
+
+                        if (Me.ManaPercent < PriestSettings.ShadowfiendMana && Me.CurrentTarget.TimeToDeath() > 15)
+                            return true;
+
+                        return false;
+                    }
+                    );
         }
 
         public static Composite CreateHolyFireBehavior()
@@ -347,6 +375,64 @@ namespace Singular.ClassSpecific.Priest
 
             return new ActionAlwaysFail();
         }
+
+        public static Composite CreatePsychicScreamBehavior(int health = -1)
+        {
+            if (health < 0)
+                health = PriestSettings.PsychicScreamHealth;
+
+            PrioritySelector pri = new PrioritySelector();
+            if (PriestSettings.PsychicHorrorHealth > 0 && SpellManager.HasSpell("Psychic Horror"))
+                pri.AddChild(
+                    Spell.Cast(
+                        "Psychic Horror",
+                        ret =>
+                        {
+                            int count = Unit.UnitsInCombatWithUsOrOurStuff(30).Count( u => !u.IsCrowdControlled());
+                            if (count == 0)
+                                return false;
+
+                            if (Me.HealthPercent <= PriestSettings.PsychicHorrorHealth)
+                            {
+                                if (count == 1 || !PriestSettings.PsychicScreamAllow || Spell.GetSpellCooldown("Psychic Scream").TotalSeconds > 3)
+                                {
+                                    return true;
+                                }
+                            }
+
+                            return false;
+                        })
+                    );
+
+                if (PriestSettings.PsychicScreamAllow && SpellManager.HasSpell("Psychic Scream"))
+                    pri.AddChild(
+                        Spell.Cast(
+                            "Psychic Scream",
+                            ret =>
+                            {
+                                if (!PriestSettings.PsychicScreamAllow)
+                                    return false;
+
+                                int count = Unit.UnitsInCombatWithUsOrOurStuff(8).Count(u => !u.IsCrowdControlled());
+                                if (count == 0)
+                                    return false;
+
+                                if (count >= PriestSettings.PsychicScreamAddCount)
+                                    return true;
+
+                                if (count > 1 && TalentManager.HasGlyph("Psychic Scream"))
+                                    return true;
+
+                                if (Me.HealthPercent <= health)
+                                    return true;
+
+                                return false;
+                            })
+                        );
+
+            return pri;
+        }
+
     }
 
     public enum PriestTalents

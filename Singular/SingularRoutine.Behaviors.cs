@@ -780,11 +780,11 @@ namespace Singular
             IsPullMoreActive = IsPullMoreAllowed();
 
             if (false == IsPullMoreActive)
-                Logger.Write("Pull More: will not pull additional mobs during Combat");
+                Logger.Write(LogColor.Init, "Pull More: not active, Singular will not pull additional mobs during Combat");
             else
             {
                 _rangePullMore = Me.IsMelee() ? SingularSettings.Instance.PullMoreDistMelee : SingularSettings.Instance.PullMoreDistRanged;
-                Logger.Write("Pull More: will pull up to {0} from mob types=[{1}] within {2} yds during Combat", 
+                Logger.Write(LogColor.Init, "Pull More: Singular will pull up to {0} from mob types=[{1}] within {2} yds during Combat", 
                     SingularSettings.Instance.PullMoreMobCount,
                     SingularSettings.Instance.UsePullMore != PullMoreUsageType.Auto 
                         ? SingularSettings.Instance.PullMoreTargetType.ToString()

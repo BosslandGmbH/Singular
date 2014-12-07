@@ -11,7 +11,7 @@ namespace Singular.Settings
     {
         Auto,
         BattleStance        = Styx.ShapeshiftForm.BattleStance ,
-        BerserkerStance     = Styx.ShapeshiftForm.BerserkerStance ,
+        BerserkerStance     = Styx.ShapeshiftForm.BattleStance ,    // keep this to avoid errors for existing users
         DefensiveStance     = Styx.ShapeshiftForm.DefensiveStance 
     }
 

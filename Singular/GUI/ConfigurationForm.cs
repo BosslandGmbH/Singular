@@ -44,6 +44,7 @@ namespace Singular.GUI
         {
             // lblVersion.Text = string.Format("Version {0}", Assembly.GetExecutingAssembly().GetName().Version);
             lblVersion.Text = string.Format("Version {0}", SingularRoutine.GetSingularVersion());
+            lblBuildTime.Text = SingularRoutine.GetSingularBuildTime();
 
             //HealTargeting.Instance.OnTargetListUpdateFinished += new Styx.Logic.TargetListUpdateFinishedDelegate(Instance_OnTargetListUpdateFinished);
             pgGeneral.SelectedObject = SingularSettings.Instance;

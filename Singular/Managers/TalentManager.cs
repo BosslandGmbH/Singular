@@ -51,6 +51,9 @@ namespace Singular.Managers
 
         private static int[] GlyphId { get; set; }
 
+        private static uint SpellCount = 0;
+        private static uint SpellBookSignature = 0;
+
         private static WaitTimer EventRebuildTimer = new WaitTimer(TimeSpan.FromSeconds(1));
         private static WaitTimer SpecChangeTestTimer = new WaitTimer(TimeSpan.FromSeconds(3));
 
@@ -101,6 +104,8 @@ namespace Singular.Managers
             var oldSpec = CurrentSpec;
             int[] oldTalent = TalentId;
             int[] oldGlyph = GlyphId;
+            uint oldSig = SpellBookSignature;
+            uint oldSpellCount = SpellCount;
 
             Logger.WriteDebug("{0} Event Fired!", args.EventName);
 
@@ -145,7 +150,23 @@ namespace Singular.Managers
                 }
             }
 
-            Logger.WriteDebug(Color.White, "TalentManager: RebuildNeeded={0}", RebuildNeeded);
+            if (SpellBookSignature != oldSig || SpellCount != oldSpellCount)
+            {
+                RebuildNeeded = true;
+                Logger.Write(LogColor.Hilite, "TalentManager: Your available Spells have changed.");
+            }
+
+            Logger.WriteDebug(LogColor.Hilite, "TalentManager: RebuildNeeded={0}", RebuildNeeded);
+        }
+
+        private static uint CalcSpellBookSignature()
+        {
+            uint sig = 0;
+            foreach (var sp in SpellManager.Spells)
+            {
+                sig ^= (uint) sp.Value.Id;
+            }
+            return sig;
         }
 
         /// <summary>
@@ -193,6 +214,8 @@ namespace Singular.Managers
                     }
                 }
 
+                SpellCount = (uint) SpellManager.Spells.Count;
+                SpellBookSignature = CalcSpellBookSignature();
             }
 
         }

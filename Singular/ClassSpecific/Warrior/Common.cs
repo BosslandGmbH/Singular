@@ -98,8 +98,8 @@ namespace Singular.ClassSpecific.Warrior
         {
             return
                 new PrioritySelector(
-                    Spell.BuffSelf(SelectedStance.ToString().CamelToSpaced(), ret => StyxWoW.Me.Shapeshift != (ShapeshiftForm)SelectedStance),
-                    Spell.BuffSelf(Common.SelectedShout)
+                    Spell.BuffSelfAndWait(sp => SelectedStanceAsSpellName, req => StyxWoW.Me.Shapeshift != (ShapeshiftForm)SelectedStance),
+                    Spell.BuffSelfAndWait(sp => SelectedShoutAsSpellName)
                     );
         }
 
@@ -158,7 +158,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        public static string SelectedShout
+        public static string SelectedShoutAsSpellName
         {
             get { return WarriorSettings.Shout.ToString().CamelToSpaced().Substring(1); }
         }
@@ -176,7 +176,7 @@ namespace Singular.ClassSpecific.Warrior
                             stance = WarriorStance.BattleStance;
                             break;
                         case WoWSpec.WarriorFury:
-                            stance = WarriorStance.BerserkerStance;
+                            stance = WarriorStance.BattleStance;
                             break;
                         default:
                         case WoWSpec.WarriorProtection:
@@ -186,6 +186,14 @@ namespace Singular.ClassSpecific.Warrior
                 }
 
                 return stance ;
+            }
+        }
+
+        public static string SelectedStanceAsSpellName
+        {
+            get 
+            {
+                return SelectedStance.ToString().CamelToSpaced().Substring(1);
             }
         }
 

@@ -76,7 +76,7 @@ namespace Singular.ClassSpecific.Priest
                 new PrioritySelector(
                     Spell.Cast("Guardian Spirit", on => Me, ret => Me.Stunned && Me.HealthPercent < 20),
                     Spell.Cast("Pain Suppression", on => Me, ret => Me.Stunned),
-                    Spell.Cast("Dispersion", on => Me, ret => Me.HealthPercent < 60)
+                    Spell.Cast("Dispersion", on => Me, ret => Me.HealthPercent < 60 || Me.IsSlowed(20) || Me.Rooted)
                     )
                 );
         }
@@ -382,18 +382,18 @@ namespace Singular.ClassSpecific.Priest
                 health = PriestSettings.PsychicScreamHealth;
 
             PrioritySelector pri = new PrioritySelector();
-            if (PriestSettings.PsychicHorrorHealth > 0 && SpellManager.HasSpell("Psychic Horror"))
+            if (PriestSettings.CrowdControlHealth > 0 && SpellManager.HasSpell("Psychic Horror"))
                 pri.AddChild(
                     Spell.Cast(
                         "Psychic Horror",
                         ret =>
                         {
-                            int count = Unit.UnitsInCombatWithUsOrOurStuff(30).Count( u => !u.IsCrowdControlled());
-                            if (count == 0)
-                                return false;
-
-                            if (Me.HealthPercent <= PriestSettings.PsychicHorrorHealth)
+                            if (Me.HealthPercent <= PriestSettings.CrowdControlHealth)
                             {
+                                int count = Unit.UnitsInCombatWithUsOrOurStuff(30).Count(u => !u.IsCrowdControlled() && !u.IsTrivial());
+                                if (count == 0)
+                                    return false;
+
                                 if (count == 1 || !PriestSettings.PsychicScreamAllow || Spell.GetSpellCooldown("Psychic Scream").TotalSeconds > 3)
                                 {
                                     return true;
@@ -413,7 +413,7 @@ namespace Singular.ClassSpecific.Priest
                                 if (!PriestSettings.PsychicScreamAllow)
                                     return false;
 
-                                int count = Unit.UnitsInCombatWithUsOrOurStuff(8).Count(u => !u.IsCrowdControlled());
+                                int count = Unit.UnitsInCombatWithUsOrOurStuff(8).Count(u => !u.IsCrowdControlled() && !u.IsTrivial());
                                 if (count == 0)
                                     return false;
 
@@ -432,6 +432,59 @@ namespace Singular.ClassSpecific.Priest
 
             return pri;
         }
+
+        public static Composite CreatePriestShackleUndeadAddBehavior()
+        {
+            const string SHACKLE_UNDEAD = "Shackle Undead";
+
+            if (PriestSettings.CrowdControlHealth == 0 || !SpellManager.HasSpell(SHACKLE_UNDEAD))
+                return new ActionAlwaysFail();
+
+            return Spell.Buff(
+                SHACKLE_UNDEAD,
+                on =>
+                {
+                    WoWUnit unit = null;
+                    if (Me.HealthPercent <= PriestSettings.CrowdControlHealth)
+                    {
+                        int count = Unit.UnitsInCombatWithUsOrOurStuff(30).Count( u => !u.IsCrowdControlled() && !u.IsTrivial());
+                        if (count > 0)
+                        {
+                            if (!Unit.UnfriendlyUnits(40).Any(u => u.HasMyAura(SHACKLE_UNDEAD)))
+                            {
+                                unit = Unit.UnfriendlyUnits(30)
+                                    .Where(u => IsViableForShackle(u))
+                                    .OrderBy( u => u.Guid == Me.CurrentTargetGuid ? 1 : 0)
+                                    .FirstOrDefault();
+                            }
+                        }
+                    }
+
+                    return null;
+                }
+                );
+        }
+
+        private static bool IsViableForShackle(WoWUnit unit)
+        {
+            if (!unit.Combat)
+                return false;
+
+            if (unit.CreatureType != WoWCreatureType.Undead)
+                return false;
+
+            if (unit.IsCrowdControlled())
+                return false;
+
+            if (!unit.IsTargetingMeOrPet && !unit.IsTargetingMyPartyMember)
+                return false;
+
+            if (StyxWoW.Me.RaidMembers.Any(m => m.CurrentTargetGuid == unit.Guid && m.IsAlive))
+                return false;
+
+            return true;
+        }
+
 
     }
 

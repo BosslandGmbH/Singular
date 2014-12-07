@@ -50,7 +50,7 @@ namespace Singular.ClassSpecific.Warrior
 
                         CreateDiagnosticOutputBehavior("Pull"),
 
-                        new Throttle( 2, Spell.BuffSelf(Common.SelectedShout)),
+                        new Throttle( 2, Spell.BuffSelf(Common.SelectedShoutAsSpellName)),
 
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
@@ -115,7 +115,7 @@ namespace Singular.ClassSpecific.Warrior
                             }),
 
 
-                        Spell.BuffSelf(Common.SelectedShout)
+                        Spell.BuffSelf(Common.SelectedShoutAsSpellName)
 
                         )
                     )
@@ -376,7 +376,7 @@ namespace Singular.ClassSpecific.Warrior
                     ret => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
 
                     new PrioritySelector(
-                        Spell.BuffSelf(Common.SelectedShout),
+                        Spell.BuffSelf(Common.SelectedShoutAsSpellName),
 
                         Common.CreateDieByTheSwordBehavior(),
 

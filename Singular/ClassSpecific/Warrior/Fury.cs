@@ -42,7 +42,7 @@ namespace Singular.ClassSpecific.Warrior
                         CreateDiagnosticOutputBehavior("Pull"),
 
                         //Buff up
-                        Spell.BuffSelf(Common.SelectedShout),
+                        Spell.BuffSelf(Common.SelectedShoutAsSpellName),
 
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
@@ -97,7 +97,7 @@ namespace Singular.ClassSpecific.Warrior
                             return false;
                             }),
 
-                        Spell.BuffSelf(Common.SelectedShout)
+                        Spell.BuffSelf(Common.SelectedShoutAsSpellName)
 
                         )
                     )

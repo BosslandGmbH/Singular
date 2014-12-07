@@ -147,28 +147,7 @@ namespace Singular.Settings
         [DisplayName("Healing Spells Health")]
         [Description("Won't attempt to use healing spells unless below this health percent")]
         public int DontHealPercent { get; set; }
-/*
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Shadow")]
-        [DisplayName("No Shadowform Below Heal")]
-        [Description("Won't attempt to re-enter shadowform while below healing spells health threshold")]
-        public bool DontShadowFormHealth { get; set; }
 
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Shadow")]
-        [DisplayName("Psychic Horror Adds")]
-        [Description("Attempt to psychic horror adds")]
-        public bool UsePsychicHorrorAdds { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Shadow")]
-        [DisplayName("Psychic Horror Interrupt")]
-        [Description("Attempt to psychic horror target as interrupt (on top of silence)")]
-        public bool UsePsychicHorrorInterrupt { get; set; }
-*/
         #endregion
 
         #region Common
@@ -210,6 +189,13 @@ namespace Singular.Settings
                         public bool UseShadowProtection { get; set; }
                 */
         [Setting]
+        [DefaultValue(50)]
+        [Category("Common")]
+        [DisplayName("Crowd Control: Health %")]
+        [Description("If health falls below this, use Shackle Undead / Psychic Horror")]
+        public int CrowdControlHealth { get; set; }
+
+        [Setting]
         [DefaultValue(true)]
         [Category("Common")]
         [DisplayName("Psychic Scream: Allow")]
@@ -229,13 +215,6 @@ namespace Singular.Settings
         [DisplayName("Psychic Scream: Health %")]
         [Description("Use Psychic Scream as a hail mary to get some heals if health falls below")]
         public int PsychicScreamHealth { get; set; }
-
-        [Setting]
-        [DefaultValue(50)]
-        [Category("Common")]
-        [DisplayName("Psychic Horror: Health %")]
-        [Description("Use Psychic Horror if health falls below this value")]
-        public int PsychicHorrorHealth { get; set; }
 
         [Setting]
         [DefaultValue(true)]

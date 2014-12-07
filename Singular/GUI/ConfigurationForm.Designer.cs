@@ -64,7 +64,7 @@
             this.btnLogMark = new System.Windows.Forms.Button();
             this.btnSaveAndClose = new System.Windows.Forms.Button();
             this.lblVersion = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
+            this.lblBuildTime = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.tabControl1.SuspendLayout();
@@ -428,7 +428,7 @@
             this.grpFooter.Controls.Add(this.btnLogMark);
             this.grpFooter.Controls.Add(this.btnSaveAndClose);
             this.grpFooter.Controls.Add(this.lblVersion);
-            this.grpFooter.Controls.Add(this.label2);
+            this.grpFooter.Controls.Add(this.lblBuildTime);
             this.grpFooter.Controls.Add(this.label1);
             this.grpFooter.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.grpFooter.ForeColor = System.Drawing.SystemColors.Control;
@@ -443,7 +443,7 @@
             // btnDump
             // 
             this.btnDump.ForeColor = System.Drawing.SystemColors.ControlDark;
-            this.btnDump.Location = new System.Drawing.Point(234, 11);
+            this.btnDump.Location = new System.Drawing.Point(237, 11);
             this.btnDump.Name = "btnDump";
             this.btnDump.Size = new System.Drawing.Size(23, 19);
             this.btnDump.TabIndex = 8;
@@ -455,7 +455,7 @@
             // 
             this.btnLogMark.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.btnLogMark.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.btnLogMark.Location = new System.Drawing.Point(132, 35);
+            this.btnLogMark.Location = new System.Drawing.Point(135, 35);
             this.btnLogMark.Name = "btnLogMark";
             this.btnLogMark.Size = new System.Drawing.Size(96, 26);
             this.btnLogMark.TabIndex = 6;
@@ -468,7 +468,7 @@
             // 
             this.btnSaveAndClose.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.btnSaveAndClose.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.btnSaveAndClose.Location = new System.Drawing.Point(234, 35);
+            this.btnSaveAndClose.Location = new System.Drawing.Point(237, 35);
             this.btnSaveAndClose.Name = "btnSaveAndClose";
             this.btnSaveAndClose.Size = new System.Drawing.Size(96, 26);
             this.btnSaveAndClose.TabIndex = 7;
@@ -479,22 +479,23 @@
             // lblVersion
             // 
             this.lblVersion.AutoSize = true;
+            this.lblVersion.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblVersion.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.lblVersion.Location = new System.Drawing.Point(8, 51);
+            this.lblVersion.Location = new System.Drawing.Point(8, 38);
             this.lblVersion.Name = "lblVersion";
-            this.lblVersion.Size = new System.Drawing.Size(46, 13);
+            this.lblVersion.Size = new System.Drawing.Size(75, 13);
             this.lblVersion.TabIndex = 6;
-            this.lblVersion.Text = "v0.1.0.0";
+            this.lblVersion.Text = "v0.1.0.0000";
             // 
-            // label2
+            // lblBuildTime
             // 
-            this.label2.AutoSize = true;
-            this.label2.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.label2.Location = new System.Drawing.Point(8, 38);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(92, 13);
-            this.label2.TabIndex = 5;
-            this.label2.Text = "Community Driven";
+            this.lblBuildTime.AutoSize = true;
+            this.lblBuildTime.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblBuildTime.Location = new System.Drawing.Point(8, 51);
+            this.lblBuildTime.Name = "lblBuildTime";
+            this.lblBuildTime.Size = new System.Drawing.Size(124, 13);
+            this.lblBuildTime.TabIndex = 5;
+            this.lblBuildTime.Text = "####/##/## ##:##:##";
             // 
             // label1
             // 
@@ -565,7 +566,7 @@
         private System.Windows.Forms.GroupBox grpFooter;
         private System.Windows.Forms.Button btnSaveAndClose;
         private System.Windows.Forms.Label lblVersion;
-        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label lblBuildTime;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.PropertyGrid pgHeal;
         private System.Windows.Forms.GroupBox groupBox2;

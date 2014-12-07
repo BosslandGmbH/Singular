@@ -599,7 +599,8 @@ namespace Singular
                     }
                     else
                     {
-                        info += string.Format(", tagme={0}, tagother={1}, tapall={2}",
+                        info += string.Format(", creature={0}, tagme={1}, tagother={2}, tapall={3}",
+                            unit.CreatureType,
                             unit.TaggedByMe.ToYN(),
                             unit.TaggedByOther.ToYN(),
                             unit.TappedByAllThreatLists.ToYN()

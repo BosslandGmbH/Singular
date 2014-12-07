@@ -1338,8 +1338,7 @@ namespace Singular.Helpers
                 requirements = req => true;
 
             return new Sequence(
-                ctx => name(ctx),
-                BuffSelf( sp => (string) sp, requirements, expirSecs),
+                BuffSelf( name, requirements, expirSecs),
                 new DynaWait( 
                     time => TimeSpan.FromMilliseconds(Me.Combat ? 500 : 1000),
                     until => StyxWoW.Me.HasAura( until as string),

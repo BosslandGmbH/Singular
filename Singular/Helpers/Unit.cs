@@ -18,6 +18,7 @@ using Styx.WoWInternals.DBC;
 using Styx.CommonBot.POI;
 using System.Text;
 using Singular.Managers;
+using Singular.Utilities;
 
 namespace Singular.Helpers
 {
@@ -239,6 +240,20 @@ namespace Singular.Helpers
             get { return NearbyUnfriendlyUnits.Where(p => p.Aggro || (p.Combat && p.CurrentTargetGuid == StyxWoW.Me.Guid)); }
         }
 
+        public static IEnumerable<WoWUnit> UnitsInCombatWithMeOrMyStuff(int maxSpellDist)
+        {
+            return UnfriendlyUnits(maxSpellDist)
+                .Where(
+                    p => p.Aggro
+                        || (p.Combat
+                            && (p.TaggedByMe
+                                || (p.GotTarget && p.IsTargetingMyStuff())
+                                || (p == EventHandlers.AttackingEnemyPlayer && (DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 15)
+                                )
+                            )
+                    );
+        }
+
         public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithMeOrMyStuff
         {
             get { return NearbyUnfriendlyUnits.Where(p => p.Aggro || (p.Combat && (p.TaggedByMe || (p.GotTarget && p.IsTargetingMyStuff())))); }
@@ -246,7 +261,16 @@ namespace Singular.Helpers
 
         public static IEnumerable<WoWUnit> UnitsInCombatWithUsOrOurStuff(int maxSpellDist)
         {
-            return UnfriendlyUnits(maxSpellDist).Where(p => p.Aggro || (p.Combat && (p.TaggedByMe || (p.GotTarget && p.IsTargetingUs())))); 
+            return UnfriendlyUnits(maxSpellDist)
+                .Where(
+                    p => p.Aggro 
+                        || (p.Combat 
+                            && (p.TaggedByMe 
+                                || (p.GotTarget && p.IsTargetingUs()) 
+                                || (p == EventHandlers.AttackingEnemyPlayer && (DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 15)
+                                )
+                            )
+                    ); 
         }
 
         public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithUsOrOurStuff

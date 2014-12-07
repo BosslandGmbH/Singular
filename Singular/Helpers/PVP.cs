@@ -63,7 +63,7 @@ namespace Singular.Helpers
             return unit.Rooted || unit.HasAuraWithEffect(WoWApplyAuraType.ModRoot);
         }
 
-        public static bool IsSilenced(WoWUnit unit)
+        public static bool IsSilenced(this WoWUnit unit)
         {
             // return unit.Silenced || unit.GetAllAuras().Any(a => a.IsHarmful && (a.Spell.Mechanic == WoWSpellMechanic.Interrupted || a.Spell.Mechanic == WoWSpellMechanic.Silenced));
             return unit.Silenced || unit.HasAuraWithEffect(WoWApplyAuraType.ModSilence, WoWApplyAuraType.ModPacifySilence);

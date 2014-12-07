@@ -43,7 +43,7 @@ namespace Singular.ClassSpecific
 
             if (SingularSettings.Instance.Trinket1Usage == TrinketUsage.Never
                 && SingularSettings.Instance.Trinket2Usage == TrinketUsage.Never
-                && SingularSettings.Instance.GloveUsage == TrinketUsage.Never )
+                && SingularSettings.Instance.GloveUsage == TrinketUsage.Never)
             {
                 return new Action(ret => { return RunStatus.Failure; });
             }
@@ -57,16 +57,17 @@ namespace Singular.ClassSpecific
 
             if (SingularSettings.IsTrinketUsageWanted(TrinketUsage.OnCooldownInCombat))
             {
-                ps.AddChild( 
-                    new Decorator( 
-                        ret => {
-                            if ( !StyxWoW.Me.Combat || !StyxWoW.Me.GotTarget)
+                ps.AddChild(
+                    new Decorator(
+                        ret =>
+                        {
+                            if (!StyxWoW.Me.Combat || !StyxWoW.Me.GotTarget)
                                 return false;
                             bool isMelee = StyxWoW.Me.IsMelee();
                             if (isMelee)
                                 return StyxWoW.Me.CurrentTarget.IsWithinMeleeRange;
                             return !StyxWoW.Me.IsMoving && StyxWoW.Me.CurrentTarget.SpellDistance() < 40;
-                            }, 
+                        },
                         Item.UseEquippedTrinket(TrinketUsage.OnCooldownInCombat)
                         )
                     );
@@ -74,25 +75,25 @@ namespace Singular.ClassSpecific
 
             if (SingularSettings.IsTrinketUsageWanted(TrinketUsage.LowHealth))
             {
-                ps.AddChild( new Decorator( ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.PotionHealth,
-                                            Item.UseEquippedTrinket( TrinketUsage.LowHealth)));
+                ps.AddChild(new Decorator(ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.PotionHealth,
+                                            Item.UseEquippedTrinket(TrinketUsage.LowHealth)));
             }
 
             if (SingularSettings.IsTrinketUsageWanted(TrinketUsage.LowPower))
             {
-                ps.AddChild( new Decorator( ret => StyxWoW.Me.PowerPercent < SingularSettings.Instance.PotionMana,
+                ps.AddChild(new Decorator(ret => StyxWoW.Me.PowerPercent < SingularSettings.Instance.PotionMana,
                                             Item.UseEquippedTrinket(TrinketUsage.LowPower)));
             }
 
-            if (SingularSettings.IsTrinketUsageWanted(TrinketUsage.CrowdControlled ))
+            if (SingularSettings.IsTrinketUsageWanted(TrinketUsage.CrowdControlled))
             {
-                ps.AddChild( new Decorator( ret => Unit.IsCrowdControlled( StyxWoW.Me),
-                                            Item.UseEquippedTrinket( TrinketUsage.CrowdControlled )));
+                ps.AddChild(new Decorator(ret => Unit.IsCrowdControlled(StyxWoW.Me),
+                                            Item.UseEquippedTrinket(TrinketUsage.CrowdControlled)));
             }
 
-            if (SingularSettings.IsTrinketUsageWanted(TrinketUsage.CrowdControlledSilenced ))
+            if (SingularSettings.IsTrinketUsageWanted(TrinketUsage.CrowdControlledSilenced))
             {
-                ps.AddChild( new Decorator( ret => StyxWoW.Me.Silenced && Unit.IsCrowdControlled( StyxWoW.Me),
+                ps.AddChild(new Decorator(ret => StyxWoW.Me.Silenced && Unit.IsCrowdControlled(StyxWoW.Me),
                                             Item.UseEquippedTrinket(TrinketUsage.CrowdControlledSilenced)));
             }
 
@@ -106,20 +107,21 @@ namespace Singular.ClassSpecific
 
             if (SpellManager.HasSpell("Stoneform"))
             {
-                pri.AddChild(                         
+                pri.AddChild(
                     new Decorator(
-                        ret => {
-                            if ( !Spell.CanCastHack("Stoneform") )
+                        ret =>
+                        {
+                            if (!Spell.CanCastHack("Stoneform"))
                                 return false;
-                            if ( StyxWoW.Me.GetAllAuras().Any(a => a.Spell.Mechanic == WoWSpellMechanic.Bleeding || a.Spell.DispelType == WoWDispelType.Disease || a.Spell.DispelType == WoWDispelType.Poison))
+                            if (StyxWoW.Me.GetAllAuras().Any(a => a.Spell.Mechanic == WoWSpellMechanic.Bleeding || a.Spell.DispelType == WoWDispelType.Disease || a.Spell.DispelType == WoWDispelType.Poison))
                                 return true;
                             if (Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 2)
                                 return true;
                             if (StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid && StyxWoW.Me.CurrentTarget.MaxHealth > (StyxWoW.Me.MaxHealth * 2))
                                 return true;
                             return false;
-                            },
-                        Spell.OffGCD( Spell.BuffSelf("Stoneform"))
+                        },
+                        Spell.OffGCD(Spell.BuffSelf("Stoneform"))
                         )
                     );
             }
@@ -127,36 +129,36 @@ namespace Singular.ClassSpecific
             if (SpellManager.HasSpell("Escape Artist"))
             {
                 pri.AddChild(
-                    Spell.OffGCD( Spell.BuffSelf("Escape Artist", req => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared)))
+                    Spell.OffGCD(Spell.BuffSelf("Escape Artist", req => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared)))
                     );
             }
 
             if (SpellManager.HasSpell("Gift of the Naaru"))
             {
                 pri.AddChild(
-                    Spell.OffGCD( Spell.BuffSelf("Gift of the Naaru", req => StyxWoW.Me.HealthPercent < SingularSettings.Instance.GiftNaaruHP))
+                    Spell.OffGCD(Spell.BuffSelf("Gift of the Naaru", req => StyxWoW.Me.HealthPercent < SingularSettings.Instance.GiftNaaruHP))
                     );
             }
 
             if (SpellManager.HasSpell("Shadowmeld"))
             {
                 pri.AddChild(
-                    Spell.OffGCD( Spell.BuffSelf("Shadowmeld", ret => NeedShadowmeld()) )
+                    Spell.OffGCD(Spell.BuffSelf("Shadowmeld", ret => NeedShadowmeld()))
                     );
             }
 
             // add racials cast within range during Combat
             Composite combatRacials = CreateCombatRacialInRangeBehavior();
             if (combatRacials != null)
-                pri.AddChild( combatRacials);
+                pri.AddChild(combatRacials);
 
             // just fail if no combat racials
-            if ( !SingularSettings.Instance.UseRacials || !pri.Children.Any() )
+            if (!SingularSettings.Instance.UseRacials || !pri.Children.Any())
                 return new ActionAlwaysFail();
 
             return new Throttle(
-                TimeSpan.FromMilliseconds(250), 
-                new Decorator( req => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(), pri )
+                TimeSpan.FromMilliseconds(250),
+                new Decorator(req => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(), pri)
                 );
         }
 
@@ -206,10 +208,10 @@ namespace Singular.ClassSpecific
 
         private static bool NeedShadowmeld()
         {
-            if ( !SingularSettings.Instance.ShadowmeldThreatDrop || StyxWoW.Me.Race != WoWRace.NightElf )
+            if (!SingularSettings.Instance.ShadowmeldThreatDrop || StyxWoW.Me.Race != WoWRace.NightElf)
                 return false;
 
-            if ( !Spell.CanCastHack("Shadowmeld") )
+            if (!Spell.CanCastHack("Shadowmeld"))
                 return false;
 
             if (StyxWoW.Me.IsInGroup())
@@ -243,64 +245,73 @@ namespace Singular.ClassSpecific
             return Item.CreateUsePotionAndHealthstone(SingularSettings.Instance.PotionHealth, SingularSettings.Instance.PotionMana);
         }
 
-        // [Behavior(BehaviorType.Combat, priority: 998)]
         public static Composite CreateGarrisonAbilityBehaviour()
         {
             const string GARRISON_ABILITY = "Garrison Ability";
-            SpellFindResults sfr;
-            PrioritySelector pri = new PrioritySelector();
-            if (!SpellManager.FindSpell(GARRISON_ABILITY, out sfr))
-                ;
-            else if (sfr.Override == null)
-                ;
-            else if (!usableGarrisonAbility.Contains(sfr.Override.Name))
-                ;
-            else
-            {
-                pri.AddChild(
-                    new Decorator(
-                        ret =>
+            const string ARTILLERY_STRIKE = "Artillery Strike";
+
+            return new PrioritySelector(
+                ctx =>
+                {
+                    SpellFindResults sfr;
+                    if (SpellManager.FindSpell(GARRISON_ABILITY, out sfr))
+                    {
+                        if (sfr.Override != null && usableGarrisonAbility.Contains(sfr.Override.Name))
                         {
-                            if (!Unit.ValidUnit(StyxWoW.Me.CurrentTarget))
-                                return false;
-                            if (!Spell.CanCastHack("Garrison Ability", StyxWoW.Me.CurrentTarget))
-                                return false;
+                            return sfr.Override;
+                        }
+                    }
+                    return null;
+                },
 
-                            int mobCount = Unit.UnitsInCombatWithUsOrOurStuff(15).Count();
-                            if (mobCount > 0)
-                            {
-                                if (mobCount >= SingularSettings.Instance.GarrisonAbilityMobCount)
-                                    return true;
-
-                                if (StyxWoW.Me.HealthPercent < SingularSettings.Instance.GarrisonAbilityHealth)
-                                {
-                                    if (mobCount > 1)
-                                        return true;
-                                    if (StyxWoW.Me.CurrentTarget.TimeToDeath(-1) > 10)
-                                        return true;
-                                    if (StyxWoW.Me.CurrentTarget.IsPlayer)
-                                        return true;
-                                    if (StyxWoW.Me.CurrentTarget.MaxHealth > (StyxWoW.Me.MaxHealth * 2))
-                                        return true;
-                                    if (StyxWoW.Me.CurrentTarget.TappedByAllThreatLists)
-                                        return true;
-                                }
-                            }
-
+                new Decorator(
+                    req =>
+                    {
+                        if (req == null)
                             return false;
-                        },
-                        new Throttle(
-                            2,
-                            new Sequence(
-                                new Action( r => Logger.Write(LogColor.Hilite, "^Garrison Ability: using now")),
-                                Spell.Cast("Garrison Ability"),
-                                new Action( r => Logger.WriteDiagnostic("Garrison Ability: successfully used"))
-                                )
+                        if (!Unit.ValidUnit(StyxWoW.Me.CurrentTarget))
+                            return false;
+                        if (!Spell.CanCastHack(GARRISON_ABILITY, StyxWoW.Me.CurrentTarget))
+                            return false;
+
+                        int mobCount = Unit.UnitsInCombatWithUsOrOurStuff(15).Count();
+                        if (mobCount > 0)
+                        {
+                            if (mobCount >= SingularSettings.Instance.GarrisonAbilityMobCount)
+                                return true;
+
+                            if (StyxWoW.Me.HealthPercent < SingularSettings.Instance.GarrisonAbilityHealth)
+                            {
+                                if (mobCount > 1)
+                                    return true;
+                                if (StyxWoW.Me.CurrentTarget.TimeToDeath(-1) > 10)
+                                    return true;
+                                if (StyxWoW.Me.CurrentTarget.IsPlayer)
+                                    return true;
+                                if (StyxWoW.Me.CurrentTarget.MaxHealth > (StyxWoW.Me.MaxHealth * 2))
+                                    return true;
+                                if (StyxWoW.Me.CurrentTarget.TappedByAllThreatLists)
+                                    return true;
+                            }
+                        }
+
+                        return false;
+                    },
+                    new Throttle(
+                        2,
+                        new Sequence(
+                            new Action(r => Logger.Write(LogColor.Hilite, "^Garrison Ability: using now")),
+                            new PrioritySelector(
+                                Spell.Cast(GARRISON_ABILITY, req => ((WoWSpell)req).Name != ARTILLERY_STRIKE),
+                                Spell.CastOnGround(ARTILLERY_STRIKE, on => StyxWoW.Me.CurrentTarget, req => ((WoWSpell)req).Name != ARTILLERY_STRIKE),
+                                new Action(r => { Logger.Write(LogColor.Hilite, "^Garrison Ability: cast failed"); return RunStatus.Failure; })
+                                ),
+                            new Action(r => Logger.WriteDiagnostic("Garrison Ability: successfully used"))
                             )
                         )
-                    );
-            }
-            return pri;
+                    )
+                );
+
         }
 
         private static List<string> usableGarrisonAbility = new List<string>()
@@ -318,8 +329,8 @@ namespace Singular.ClassSpecific
     {
         public static Composite CreateDoNothingBehavior()
         {
-            return new Throttle( 15,
-                new Action( r => Logger.Write( "No Context Available - do nothing while we wait"))
+            return new Throttle(15,
+                new Action(r => Logger.Write("No Context Available - do nothing while we wait"))
                 );
         }
     }

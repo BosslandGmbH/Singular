@@ -67,5 +67,9 @@ namespace Singular
         {
             return new Version("4.0.0.$WCREV$");
         }
+        public static string GetSingularBuildTime()
+        {
+            return "$WCNOW$";
+        }
     }
 }

@@ -195,7 +195,7 @@ namespace Singular
         { 
             get
             {
-                return Me.Fleeing || Me.Stunned;
+                return Me.Fleeing || Me.Stunned || Me.IsSilenced();
             } 
         }
 
@@ -345,7 +345,7 @@ namespace Singular
                         }),
                         new ThrottlePasses(1, 1, new Decorator(ret => Me.Fleeing, new Action(r => { Logger.Write( LogColor.Hilite, "FLEEING! (loss of control)"); return RunStatus.Failure; }))),
                         new ThrottlePasses(1, 1, new Decorator(ret => Me.Stunned, new Action(r => { Logger.Write( LogColor.Hilite, "STUNNED! (loss of control)"); return RunStatus.Failure; }))),
-                        new ThrottlePasses(1, 1, new Decorator(ret => Me.Silenced, new Action(r => { Logger.Write( LogColor.Hilite, "SILENCED! (loss of control)"); return RunStatus.Failure; }))),
+                        new ThrottlePasses(1, 1, new Decorator(ret => Me.IsSilenced(), new Action(r => { Logger.Write( LogColor.Hilite, "SILENCED! (loss of control)"); return RunStatus.Failure; }))),
                         new Throttle(1,
                             new PrioritySelector(
                                 composite ?? new ActionAlwaysFail(),

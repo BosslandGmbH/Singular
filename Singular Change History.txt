@@ -2,6 +2,55 @@
 
 General
 
+change- Class Config now displays Singular version and Singular Build Date
+
+fixed - bug in some self-buffing code
+
+fixed - Singular now detects when a change to available spells has occurred and rebuilds behaviors.  Previously only detectected spec change, new level, or entry/exit to instance.
+
+
+
+Priest
+
+change- All Specs - Dispersion now cast if movement impair detected in Loss of Control behavior
+
+*new* - Shadow - Added support for Shackle Undead on Adds while solo
+
+change- All Specs - Psychic Horror Health setting renamed to Crowd Control Health and is used by Psychic Horror and Shackle Undead.
+
+change- Shadow - will now suppress Flash Heal and Prayer of Mending if Vampiric Embrace is active and attackable mobs in range
+
+change- Shadow - Flash Heal / Prayer of Mending cast if no enemies attack the Priest. Previously checked if attack anyone in group 
+
+fixed - Shadow - Mind Blast was attempting several casts in quick succession because of the queueing mechanism in Singular (beginning a cast before the current one has ended.) Mind Blast properly handles this now
+
+change- Shadow - Solo: Power Infusion is now cast if Vampiric Embrace is active to maximize damage (and resulting healing)
+
+change- Shadow - Solo - AOE: Multi-dotting with Shadow Word: Pain and Vampiric Touch now higher priority
+
+change- Shadow - Solo - AOE: Mind Blast and Shadow Word: Death are cast on lowest health targets (to reduce enemy count and damage taken.) 
+
+change- Shadow - Solo - Single Target: simplified priority and move Shadow World: Pain and Vampiric Touch higher
+
+fixed - Shadow - Solo - AOE: targets considered for AOE were limited to 10yds of current target simplifying Mind Sear logic, but limiting AOE damage.  Now considers all within range
+
+fixed - Shadow - Solo - Insanity was nor being properly recognized
+
+
+Warrior
+
+fixed - All Specs - now correctly sets appropriate stance
+
+fixed - Fury - low-rage generation was severely limiting damage at levels below 26. Revised priority to include non-optimal spells that do some damage to improve results while leveling in this range
+
+fixed - All Specs - Warrior DPS Stance still displays Berserker but this equates to Battle Stance.  Handled this way for now to support users that upgrade an existing installation since removing would result in exception at settings file load time otherwise.
+
+
+
+--- Release 4.0.0.3991 ---
+
+General
+
 fixed - Garrison Abilities - added an internally maintained list of which ones Singular will cast.  Limited to those which inflict damage only
 
 change- Solo Combat for Casters - will no longer move to the side to keep mobs in front.  This was less of a benefit to casters and introduced short delays where they couldn't ABC (Always Be Casting)

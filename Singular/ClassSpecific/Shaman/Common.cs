@@ -550,6 +550,29 @@ namespace Singular.ClassSpecific.Shaman
         #endregion
 
 
+        public static Composite CastElementalBlast( UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate requirements = null, SimpleBooleanDelegate cancel = null)
+        {
+            const string ELEMENTAL_BLAST = "Elemental Blast";
+            UnitSelectionDelegate ondel = onUnit ?? (o => Me.CurrentTarget);
+            SimpleBooleanDelegate reqdel = requirements ?? (r => true);
+            SimpleBooleanDelegate candel = cancel ?? (c => false);
+
+            // we do a doublecast check with Me as the target
+            // .. since the buff appears on us -- a different model requiring custom handling below
+            return new Decorator(
+                req => {
+                    if ( Spell.DoubleCastContains(Me, ELEMENTAL_BLAST))
+                        return false;
+                    if ( !Me.HasAuraExpired(ELEMENTAL_BLAST, 0, myAura:true))
+                        return false;
+                    return true;
+                    },
+                new Sequence(
+                    Spell.Cast(ELEMENTAL_BLAST, ondel, reqdel, candel),
+                    new Action( r => Spell.UpdateDoubleCast(ELEMENTAL_BLAST, Me, 750))
+                    )
+                );
+        }
     }
 
     public enum ShamanTalents

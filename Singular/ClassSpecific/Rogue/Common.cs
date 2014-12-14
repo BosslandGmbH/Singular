@@ -109,15 +109,15 @@ namespace Singular.ClassSpecific.Rogue
                     new Sequence(
                         new DecoratorContinue(
                             ret => !Me.Disarmed && !Common.HasDaggerInMainHand && SpellManager.HasSpell("Dispatch"),
-                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a dagger in mainhand to cast Dispatch", TalentManager.CurrentSpec.ToString().CamelToSpaced()))
+                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a dagger in mainhand to cast Dispatch", SingularRoutine.SpecName()))
                             ),
                         new DecoratorContinue(
                             ret => !Me.Disarmed && !Common.HasTwoDaggers && SpellManager.HasSpell("Mutilate"),
-                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires two daggers equipped to cast Mutilate", TalentManager.CurrentSpec.ToString().CamelToSpaced()))
+                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires two daggers equipped to cast Mutilate", SingularRoutine.SpecName()))
                             ),
                         new DecoratorContinue(
                             ret => !Me.Disarmed && !Common.HasDaggerInMainHand && SpellManager.HasSpell("Backstab"),
-                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a dagger in mainhand to cast Backstab", TalentManager.CurrentSpec.ToString().CamelToSpaced()))
+                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a dagger in mainhand to cast Backstab", SingularRoutine.SpecName()))
                             ),
                         new ActionAlwaysFail()
                         )
@@ -777,8 +777,9 @@ namespace Singular.ClassSpecific.Rogue
 
         public static int AoeCount { get; set; }
 
-        public static Action CreateActionCalcAoeCount()
+        public static Action CreateActionCalcAoeCount( SimpleFloatDelegate aoeEnemyRange = null)
         {
+            SimpleFloatDelegate enemyRange = aoeEnemyRange ?? (er => ((WoWUnit)er).MeleeDistance() + 3);
             return new Action(ret =>
             {
                 if (!Spell.UseAOE || Battlegrounds.IsInsideBattleground || Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Me.CurrentTargetGuid && u.IsCrowdControlled()))
@@ -786,7 +787,7 @@ namespace Singular.ClassSpecific.Rogue
                 else if (DateTime.Now < (EventHandlers.LastAttackedByEnemyPlayer + TimeSpan.FromSeconds(30)))
                     AoeCount = 1;
                 else
-                    AoeCount = Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 3));
+                    AoeCount = Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < enemyRange(u));
                 return RunStatus.Failure;
             });
         }

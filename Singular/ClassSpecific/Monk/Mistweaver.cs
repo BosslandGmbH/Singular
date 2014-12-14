@@ -25,6 +25,9 @@ namespace Singular.ClassSpecific.Monk
     {
         private const int SOOTHING_MIST = 115175;
 
+        const ShapeshiftForm WISE_SERPENT = (ShapeshiftForm)20;
+        const ShapeshiftForm SPIRITED_CRANE = (ShapeshiftForm)9;
+
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk(); } }
         public static bool HasTalent(MonkTalents tal) { return TalentManager.IsSelected((int)tal); }
@@ -114,7 +117,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateMonkPreCombatBuffsSolo()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Stance of the Spirited Crane", 0),
+                Spell.BuffSelf("Stance of the Spirited Crane", req => Me.Shapeshift != SPIRITED_CRANE, 0),
                 PartyBuff.BuffGroup("Legacy of the Emperor")
                 );
         }
@@ -123,7 +126,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateMonkPreCombatBuffsGroup()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Stance of the Wise Serpent", 0),
+                Spell.BuffSelf("Stance of the Wise Serpent", req => Me.Shapeshift != WISE_SERPENT, 0),
                 PartyBuff.BuffGroup("Legacy of the Emperor")
                 );
         }
@@ -135,7 +138,7 @@ namespace Singular.ClassSpecific.Monk
 
                 // common Monk group buffs applied in Common.CreateMonkPreCombatBuffs
                 // common Monk personal buffs applied in Common.CreateMonkCombatBuffs
-                Spell.BuffSelf("Stance of the Spirited Crane"),
+                Spell.BuffSelf("Stance of the Spirited Crane", req => Me.Shapeshift != SPIRITED_CRANE, 0),
 
                 // cast Mana Tea if low on Mana
                 CreateManaTeaBehavior()
@@ -149,7 +152,7 @@ namespace Singular.ClassSpecific.Monk
 
                 // common Monk group buffs applied in Common.CreateMonkPreCombatBuffs
                 // common Monk personal buffs applied in Common.CreateMonkCombatBuffs
-                Spell.BuffSelf("Stance of the Wise Serpent"),
+                Spell.BuffSelf("Stance of the Wise Serpent", req => Me.Shapeshift != WISE_SERPENT, 0),
 
                 // cast Mana Tea if low on Mana
                 CreateManaTeaBehavior()
@@ -696,7 +699,7 @@ namespace Singular.ClassSpecific.Monk
                             Spell.OffGCD(Spell.BuffSelf("Thunder Focus Tea")),
                             new PrioritySelector(
                                 Spell.Cast("Surging Mist", on => (WoWUnit)on),
-                                Spell.Cast("Enveloping Mist", on => (WoWUnit)on)
+                                Spell.Cast("Enveloping Mist", mov => false, on => (WoWUnit)on, req => true)
                                 )
                             )
                         )
@@ -1082,11 +1085,28 @@ namespace Singular.ClassSpecific.Monk
                 );
 
             behavs.AddBehavior(
+                HealthToPriority(MonkSettings.MistHealSettings.SurgingMist),
+                String.Format("Surging Mist @ {0}%", MonkSettings.MistHealSettings.SurgingMist),
+                "Surging Mist",
+                new Decorator(
+                    req => ((WoWUnit)req).PredictedHealthPercent() < MonkSettings.MistHealSettings.SurgingMist
+                        && Spell.CanCastHack("Enveloping Mist", (WoWUnit) req),
+                    new Sequence(
+                        EnsureSoothingMistOnTarget(on => on as WoWUnit),
+                        Spell.Cast("Surging Mist", on => (WoWUnit)on)
+                        )
+                    )
+                );
+
+            behavs.AddBehavior(
                 HealthToPriority(MonkSettings.MistHealSettings.EnvelopingMist),
                 String.Format("Enveloping Mist @ {0}%", MonkSettings.MistHealSettings.EnvelopingMist),
                 "Enveloping Mist",
                 new Decorator(
-                    req => Me.CurrentChi >= 3 && ((WoWUnit)req).HasAuraExpired("Enveloping Mist") && ((WoWUnit)req).PredictedHealthPercent() < MonkSettings.MistHealSettings.EnvelopingMist,
+                    req => Me.CurrentChi >= 3 
+                        && ((WoWUnit)req).HasAuraExpired("Enveloping Mist") 
+                        && ((WoWUnit)req).PredictedHealthPercent() < MonkSettings.MistHealSettings.EnvelopingMist
+                        && Spell.CanCastHack("Enveloping Mist", (WoWUnit) req),
                     new Sequence(
                         EnsureSoothingMistOnTarget(on => on as WoWUnit),
                         Spell.Cast("Enveloping Mist", on => (WoWUnit)on)
@@ -1420,7 +1440,7 @@ namespace Singular.ClassSpecific.Monk
                     mov => !glyphedManaTea,
                     on => Me,
                     req =>  {
-                        if (!Me.HasAura("Stance of the Wise Serpent"))
+                        if (Me.Shapeshift != WISE_SERPENT)
                             return false;
 
                         uint stacks = Me.GetAuraStacks("Mana Tea");

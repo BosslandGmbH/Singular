@@ -133,7 +133,7 @@ namespace Singular
             }
 
             if (_lastContext != WoWContext.Normal)
-                Logger.Write( LogColor.Hilite, "Context: using Normal (SOLO) behaviors since we are not in a group");
+                Logger.Write( LogColor.Hilite, "Context: using Normal (SOLO) behaviors since not in group");
 
             return WoWContext.Normal;
         }
@@ -257,13 +257,13 @@ namespace Singular
 
         public static void DescribeContext()
         {
-            string sRace = Me.Race.ToString().CamelToSpaced();
+            string sRace = RaceName();
             if (Me.Race == WoWRace.Pandaren)
                 sRace = " " + Me.FactionGroup.ToString() + sRace;
 
             Logging.Write(" "); // spacer before prior log text
 
-            Logger.Write(Color.LightGreen, "Your Level {0}{1} {2} {3} Build is", Me.Level, sRace, SpecializationName(), Me.Class.ToString() );
+            Logger.Write(Color.LightGreen, "Your Level {0}{1}{2} Build is", Me.Level, SingularRoutine.RaceName(), SingularRoutine.SpecAndClassName());
 
             Logger.Write(Color.LightGreen, "... running the {0} bot in {1} {2}",
                  GetBotName(),
@@ -362,17 +362,32 @@ namespace Singular
                 Logger.Write( LogColor.Hilite, "your Pull Distance is {0:F0} yds which is low for any class!!!", Styx.CommonBot.Targeting.PullDistance);
         }
 
-        private static string SpecializationName()
+        public static string RaceName()
+        {
+            return Me.Race.ToString().CamelToSpaced();
+        }
+        public static string ClassName()
+        {
+            return Me.Class.ToString().CamelToSpaced();
+        }
+        public static string SpecName()
         {
             if (TalentManager.CurrentSpec == WoWSpec.None)
-                return "Lowbie";
+                return Me.Level <= 10 ? "Lowbie" : "Non-specialized";
 
-            string spec = TalentManager.CurrentSpec.ToString().CamelToSpaced();
-            int idxLastSpace = spec.LastIndexOf(' ');
-            if (idxLastSpace >= 0 && ++idxLastSpace < spec.Length)
-                spec = spec.Substring(idxLastSpace);
+            string spec = TalentManager.CurrentSpec.ToString();
+            spec = spec.Substring(  Me.Class.ToString().Length );
+            return  " " + spec; // simulate CamelToSpaced() leading blank
+        }
 
-            return spec;
+        public static string SpecAndClassName()
+        {
+            return SpecName() + Me.Class.ToString().CamelToSpaced();
+        }
+
+        public static string ClassAndSpecName()
+        {
+            return Me.Class.ToString().CamelToSpaced() + SpecName();
         }
 
         public static string GetBotName()

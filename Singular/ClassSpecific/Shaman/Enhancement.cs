@@ -182,7 +182,7 @@ namespace Singular.ClassSpecific.Shaman
                         // pull more logic (use instants first, then ranged pulls if possible)
 
 
-                        Spell.Cast("Elemental Blast"),
+                        Common.CastElementalBlast(),
                         Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
 
                         Spell.Cast("Stormstrike"),
@@ -248,7 +248,7 @@ namespace Singular.ClassSpecific.Shaman
                         // Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
                         Spell.BuffSelf("Feral Spirit", ret => !Unit.IsTrivial(Me.CurrentTarget) && NeedFeralSpirit),
 
-                        Spell.Cast("Elemental Blast"),
+                        Common.CastElementalBlast(),
                         Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
 
                         Spell.Cast("Stormstrike"),
@@ -321,7 +321,7 @@ namespace Singular.ClassSpecific.Shaman
                             ),
 
                         Spell.Cast("Lightning Bolt", ret => !ShamanSettings.AvoidMaelstromDamage && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
-                        Spell.Cast("Elemental Blast"),
+                        Common.CastElementalBlast(),
                         Spell.Cast("Stormstrike"),
                         Spell.Buff(
                             "Flame Shock", 

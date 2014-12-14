@@ -335,7 +335,7 @@ namespace Singular.ClassSpecific.Warrior
                     new Sequence(
                         new DecoratorContinue(
                             ret => !Me.Disarmed && !HasShieldInOffHand && SpellManager.HasSpell("Shield Slam"),
-                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a Shield in offhand to cast Shield Slam", TalentManager.CurrentSpec.ToString().CamelToSpaced()))
+                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a Shield in offhand to cast Shield Slam", SingularRoutine.SpecName()))
                             ),
                         new ActionAlwaysFail()
                         )

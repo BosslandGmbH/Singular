@@ -535,6 +535,7 @@ namespace Singular.ClassSpecific.Druid
                                     && !Me.Mounted
                                     && !Me.IsSwimming
                                     && !Me.HasAnyShapeshift(ShapeshiftForm.Travel, ShapeshiftForm.FlightForm, ShapeshiftForm.EpicFlightForm)
+                                    && !Me.HasAura("Darkflight")
                                     && SpellManager.HasSpell("Cat Form")
                                     && IsBotPoiWithinMovementBuffRange(),
                                 new Sequence(

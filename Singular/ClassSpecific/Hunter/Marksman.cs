@@ -65,7 +65,7 @@ namespace Singular.ClassSpecific.Hunter
 
                         // AoE Rotation
                         new Decorator(
-                            ret => Spell.UseAOE && !(Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer) && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
+                            ret => Spell.UseAOE && Me.GotTarget && !(Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer) && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
                             new PrioritySelector(
                                 ctx => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Where(u => u.InLineOfSpellSight).OrderByDescending(u => (uint) u.HealthPercent).FirstOrDefault(),
                                 Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), req => Me.HealthPercent < 85),
@@ -76,7 +76,7 @@ namespace Singular.ClassSpecific.Hunter
                             ),
 
                         // Single Target Rotation
-                        Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
+                        Spell.Cast("Kill Shot", ctx => Me.GotTarget && Me.CurrentTarget.HealthPercent < 20),
                         Spell.Cast("Chimaera Shot"),
                         Spell.Cast("Aimed Shot", ret => Me.CurrentFocus > 60),
                         Common.CastSteadyShot(on => Me.CurrentTarget)

@@ -49,7 +49,7 @@ namespace Singular.GUI
             //HealTargeting.Instance.OnTargetListUpdateFinished += new Styx.Logic.TargetListUpdateFinishedDelegate(Instance_OnTargetListUpdateFinished);
             pgGeneral.SelectedObject = SingularSettings.Instance;
 
-            tabClass.Text = StyxWoW.Me.Class.ToString().CamelToSpaced().Substring(1) + " Specific";
+            tabClass.Text = SingularRoutine.ClassName().Substring(1) + " Specific";
             
             Styx.Helpers.Settings toSelect = null;
             switch (StyxWoW.Me.Class)

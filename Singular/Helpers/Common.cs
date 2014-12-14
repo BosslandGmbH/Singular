@@ -425,7 +425,7 @@ namespace Singular.Helpers
             return new Decorator(
                 ret => StyxWoW.Me.Mounted 
                     && !MovementManager.IsMovementDisabled 
-                    && !(StyxWoW.Me.ZoneId == ZONE_NAGRAND && Me.HasAura( Me.IsHorde ? SPELL_FROSTWOLF_WAR_WOLF : SPELL_TELAARI_TALBUK)),
+                    && (StyxWoW.Me.ZoneId != ZONE_NAGRAND || !Me.HasAura( Me.IsHorde ? SPELL_FROSTWOLF_WAR_WOLF : SPELL_TELAARI_TALBUK)),
                 new Sequence(
                     new DecoratorContinue(ret => StyxWoW.Me.IsFlying,
                         new Sequence(

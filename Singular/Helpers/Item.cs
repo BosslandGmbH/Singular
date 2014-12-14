@@ -186,7 +186,7 @@ namespace Singular.Helpers
                         new Decorator(
                             ret => ret != null,
                             new Sequence(
-                                new Action(ret => Logger.Write(String.Format("Using {0} @ {1:F1}% Health", ((WoWItem)ret).Name, StyxWoW.Me.HealthPercent ))),
+                                new Action(ret => Logger.Write(LogColor.SpellHeal, "/use {0} @ {1:F1}% Health", ((WoWItem)ret).Name, StyxWoW.Me.HealthPercent )),
                                 new Action(ret => ((WoWItem)ret).UseContainerItem()),
                                 Helpers.Common.CreateWaitForLagDuration()))
                         )),
@@ -197,7 +197,7 @@ namespace Singular.Helpers
                         new Decorator(
                             ret => ret != null,
                             new Sequence(
-                                new Action(ret => Logger.Write(String.Format("Using {0} @ {1:F1}% Mana", ((WoWItem)ret).Name, StyxWoW.Me.ManaPercent ))),
+                                new Action(ret => Logger.Write(LogColor.Hilite, "/use {0} @ {1:F1}% Mana", ((WoWItem)ret).Name, StyxWoW.Me.ManaPercent )),
                                 new Action(ret => ((WoWItem)ret).UseContainerItem()),
                                 Helpers.Common.CreateWaitForLagDuration()))))
                 );
@@ -715,12 +715,13 @@ namespace Singular.Helpers
         public static WoWItem FindBestBandage()
         {
             return Me.CarriedItems
-                .Where(b => b.ItemInfo.ItemClass == WoWItemClass.Consumable 
-                    && b.ItemInfo.ContainerClass == WoWItemContainerClass.Bandage
-                    && b.ItemInfo.RecipeClass == WoWItemRecipeClass.FirstAid
-                    && Me.GetSkill(SkillLine.FirstAid).CurrentValue >= b.ItemInfo.RequiredSkillLevel
+                .Where(b => b.ItemInfo.ItemClass == WoWItemClass.Consumable
+                    && b.ItemInfo.ConsumableClass == WoWItemConsumableClass.Bandage
+                    && (b.ItemInfo.RequiredSkillId == 0 || Me.GetSkill(b.ItemInfo.RequiredSkillId).CurrentValue >= b.ItemInfo.RequiredSkillLevel)
+                    && b.ItemInfo.RequiredLevel <= Me.Level
                     && CanUseItem(b))
-                .OrderByDescending(b => b.ItemInfo.RequiredSkillLevel)
+                .OrderBy(b => b.ItemInfo.Level)
+                .ThenByDescending(b => b.ItemInfo.RequiredSkillLevel)
                 .FirstOrDefault();
         }
 

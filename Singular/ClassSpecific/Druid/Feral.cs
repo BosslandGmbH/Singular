@@ -98,7 +98,9 @@ namespace Singular.ClassSpecific.Druid
                                         );
                                     return RunStatus.Failure;
                                 }),
-                                Common.CreateFaerieFireBehavior(on => Me.CurrentTarget, req => Me.CurrentTarget.Distance < 35),
+
+                                CreateFeralFaerieFireBehavior(),
+
                                 Spell.Cast("Moonfire", ret => Me.CurrentTarget.Distance < 40),
                                 Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 27f, 22f)
                                 )
@@ -131,6 +133,20 @@ namespace Singular.ClassSpecific.Druid
                 Common.CreateMoveBehindTargetWhileProwling(),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
+        }
+
+        private static Composite CreateFeralFaerieFireBehavior()
+        {
+            return Common.CreateFaerieFireBehavior(
+                                                on => Me.CurrentTarget,
+                                                req => Me.CurrentTarget != null
+                                                    && Me.CurrentTarget.IsPlayer
+                                                    && (Me.CurrentTarget.Class == WoWClass.Rogue || Me.CurrentTarget.Shapeshift == ShapeshiftForm.Cat)
+                                                    && !Me.CurrentTarget.HasAnyAura("Faerie Fire", "Faerie Swarm")
+                                                    && Me.CurrentTarget.SpellDistance() < 35
+                                                    && Me.IsSafelyFacing(Me.CurrentTarget)
+                                                    && Me.CurrentTarget.InLineOfSpellSight
+                                                );
         }
 
         private static Throttle CreateFeralWildChargeBehavior()
@@ -233,7 +249,7 @@ namespace Singular.ClassSpecific.Druid
                         CreateFeralAoeCombat(),
 
                         //Single target
-                        Common.CreateFaerieFireBehavior( on => Me.CurrentTarget, req => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
+                        CreateFeralFaerieFireBehavior(),
 
                         ///
                         /// Savage Roar - original spell id = 52610, override is 127538.  both spells valid but there is not an obvious need for the
@@ -310,9 +326,6 @@ namespace Singular.ClassSpecific.Druid
                         Helpers.Common.CreateInterruptBehavior(),
 
                         CreateFeralAoeCombat(),
-
-                        // 1. Keep Faerie Fire up (if no other armor debuff).
-                        Common.CreateFaerieFireBehavior(),
 
                         new Decorator(
                             ret => Me.GotTarget

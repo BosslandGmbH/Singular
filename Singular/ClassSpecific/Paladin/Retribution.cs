@@ -44,17 +44,24 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreatePaladinRetributionHeal()
         {
             return new PrioritySelector(
+
                 Spell.BuffSelf("Devotion Aura", req => Me.Silenced),
+
                 Spell.Cast("Lay on Hands",
                     mov => false,
                     on => Me,
                     req => Me.PredictedHealthPercent(includeMyHeals: true) <= PaladinSettings.SelfLayOnHandsHealth),
+
                 Common.CreateWordOfGloryBehavior(on => Me),
+
                 Spell.Cast("Flash of Light",
                     mov => false,
                     on => Me,
-                    req => Me.PredictedHealthPercent(includeMyHeals: true) <= PaladinSettings.SelfFlashOfLightHealth,
-                    cancel => Me.HealthPercent > PaladinSettings.SelfFlashOfLightHealth)
+                    req => Me.PredictedHealthPercent(includeMyHeals: true) <= PaladinSettings.SelfFlashOfLightHealth
+                        || (Me.HasAura("Divine Shield") && Me.PredictedHealthPercent(includeMyHeals: true) <= 90),
+                    cancel => (!Me.HasAura("Divine Shield") && Me.HealthPercent > PaladinSettings.SelfFlashOfLightHealth)
+                        || (Me.PredictedHealthPercent(includeMyHeals: true) > 90)
+                    )
                 );
         }
 
@@ -107,7 +114,7 @@ namespace Singular.ClassSpecific.Paladin
                                                                   WoWSpellMechanic.Slowed,
                                                                   WoWSpellMechanic.Snared)),
 
-                        Spell.BuffSelf("Divine Shield", ret => Me.HealthPercent <= 20 && !Me.HasAura("Forbearance") && (!Me.HasAura("Horde Flag") || !Me.HasAura("Alliance Flag"))),
+                        Spell.BuffSelf("Divine Shield", ret => Me.HealthPercent <= 20 && !Me.HasAura("Forbearance") && !Me.HasAnyAura("Horde Flag", "Alliance Flag")),
                         Spell.BuffSelf("Divine Protection", ret => Me.HealthPercent <= PaladinSettings.DivineProtectionHealthProt),
 
                         Common.CreatePaladinSealBehavior(),
@@ -115,17 +122,30 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.Cast( "Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal ),
 
                         //7	Blow buffs seperatly.  No reason for stacking while grinding.
-                        Spell.Cast("Guardian of Ancient Kings", ret => PaladinSettings.RetAvengAndGoatK && (_mobCount >= 4 || Me.GotTarget && Me.CurrentTarget.TimeToDeath() > 30)),
-                        Spell.Cast("Holy Avenger", ret => PaladinSettings.RetAvengAndGoatK && _mobCount < 4),
-                        Spell.BuffSelf("Avenging Wrath", 
-                            ret => PaladinSettings.RetAvengAndGoatK
-                                && (_mobCount >= 4 || Me.GotTarget && Me.CurrentTarget.TimeToDeath() > 30 || (!Me.HasAura("Holy Avenger") && Spell.GetSpellCooldown("Holy Avenger").TotalSeconds > 10))),
+                        Spell.BuffSelf(
+                            "Holy Avenger", 
+                            req => PaladinSettings.RetAvengAndGoatK
+                                && Me.GotTarget
+                                && Me.CurrentTarget.IsWithinMeleeRange && !Me.CurrentTarget.IsTrivial()
+                                && (_mobCount > 1 || Me.CurrentTarget.TimeToDeath() > 25)
+                                && (!Me.HasAura("Avenging Wrath") && Spell.GetSpellCooldown("Avenging Wrath").TotalSeconds > 1)
+                            ),
+
+                        Spell.BuffSelf(
+                            "Avenging Wrath", 
+                            req => PaladinSettings.RetAvengAndGoatK
+                                && Me.GotTarget
+                                && Me.CurrentTarget.IsWithinMeleeRange && !Me.CurrentTarget.IsTrivial()
+                                && (_mobCount > 1 || Me.CurrentTarget.TimeToDeath() > 25)
+                                && (!Me.HasAura("Holy Avenger") && Spell.GetSpellCooldown("Holy Avenger").TotalSeconds > 1)
+                            ),
 
                         Spell.Cast("Execution Sentence", ret => Me.CurrentTarget.TimeToDeath() > 15),
                         Spell.Cast("Holy Prism", on => Group.Tanks.FirstOrDefault(t => t.IsAlive && t.Distance < 40)),
 
+                        // lowbie farming priority
                         new Decorator(
-                            ret => _mobCount >= 2 && Spell.UseAOE && Me.CurrentTarget.IsTrivial(),
+                            ret => _mobCount > 1 && Spell.UseAOE && Me.CurrentTarget.IsTrivial(),
                             new PrioritySelector(
                                 // Bobby53: Inq > 5HP DS > Exo > HotR > 3-4HP DS
                                 Spell.Cast("Divine Storm", ret => Me.CurrentHolyPower == 5),
@@ -259,7 +279,8 @@ namespace Singular.ClassSpecific.Paladin
                         new Decorator(
                             ret => Me.GetAuraTimeLeft("Divine Purpose", true).TotalSeconds > 0,
                             new PrioritySelector(
-                                Spell.Cast("Templar's Verdict")
+                                Spell.Cast("Templar's Verdict", req => _mobCount <= 3),
+                                Spell.Cast("Divine Storm")
                                 )
                             ),
 

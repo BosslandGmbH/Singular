@@ -337,11 +337,12 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Cast("Starsurge", on => Me.CurrentTarget, req => Me.ActiveAuras.ContainsKey("Shooting Stars"), cancel => false),
 
                         // Spread MF/IS on Rouges / Feral Druids first
+                        /*
                         Common.CreateFaerieFireBehavior(
                             on => (WoWUnit)Unit.NearbyUnfriendlyUnits.FirstOrDefault(p => (p.Class == WoWClass.Rogue || p.Shapeshift == ShapeshiftForm.Cat) && !p.HasAnyAura("Faerie Swarm") && p.Distance < 38 && Me.IsSafelyFacing(p) && p.InLineOfSpellSight), 
                             req => true
                             ),
-
+                        */
                         // More DoTs!!  Dot EVERYTHING (including pets) to boost Shooting Stars proc chance
                         new PrioritySelector(
                             ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => !u.HasAllMyAuras( "Moonfire", "Sunfire") && Me.IsSafelyFacing(u) && u.InLineOfSpellSight ),

@@ -41,7 +41,7 @@ namespace Singular
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
-        public CapabilityFlags SupportedCapabilities
+        public override CapabilityFlags SupportedCapabilities
         {
             get
             {
@@ -142,7 +142,7 @@ namespace Singular
             {
                 StopBot(e.ToString());
             }
-            Logger.Write("Current spec is " + TalentManager.CurrentSpec.ToString().CamelToSpaced());
+            Logger.Write("Current spec is " + SpecName());
 
             // write current settings to log file... only written at startup and when Save press in Settings UI
             SingularSettings.Instance.LogSettings();
@@ -202,7 +202,7 @@ namespace Singular
         private static void WriteSupportInfo()
         {
             string singularName = GetSingularRoutineName();  // "Singular v" + GetSingularVersion();
-            Logger.Write("Starting " + singularName);
+            Logger.Write( LogColor.Hilite, "Starting " + singularName);
 
             // save some support info in case we need
             Logger.WriteFile("{0:F1} days since Windows was restarted", TimeSpan.FromMilliseconds(Environment.TickCount).TotalHours / 24.0);
@@ -381,7 +381,7 @@ namespace Singular
 
         static DateTime _nextNotInGameMsgAllowed = DateTime.MinValue;
         static DateTime _nextNotInWorldMsgAllowed = DateTime.MinValue;
-        static DateTime _nextCombatDisabledMsgAllowed = DateTime.MinValue;
+        static bool _lastCombatDisabledState = false;
 
         static int _pulsePhase = 0;
 
@@ -430,17 +430,16 @@ namespace Singular
                 MonitorBehaviorFlags();
 
                 // now if combat disabled, bail out 
-                if (Bots.Grind.BehaviorFlags.Combat != (Bots.Grind.LevelBot.BehaviorFlags & Bots.Grind.BehaviorFlags.Combat))
+                bool combatDisabled = Bots.Grind.BehaviorFlags.Combat != (Bots.Grind.LevelBot.BehaviorFlags & Bots.Grind.BehaviorFlags.Combat);
+                if (combatDisabled != _lastCombatDisabledState)
                 {
-                    if (DateTime.Now > _nextCombatDisabledMsgAllowed)
-                    {
-                        _nextCombatDisabledMsgAllowed = DateTime.Now + TimeSpan.FromSeconds(30);
-                        Logger.Write(Color.HotPink, "info: botbase disabled BehaviorFlags.Combat");
-                    }
-
-                    return;
+                    _lastCombatDisabledState = combatDisabled;
+                    Logger.Write(Color.HotPink, 
+                        combatDisabled 
+                            ? "info: botbase disabled BehaviorFlags.Combat"
+                            : "info: botbase enabled BehaviorFlags.Combat"
+                        );
                 }
-                _nextCombatDisabledMsgAllowed = DateTime.MinValue;
 
                 // check time since last call and be sure user knows if Singular isn't being called
                 if (SingularSettings.Debug)

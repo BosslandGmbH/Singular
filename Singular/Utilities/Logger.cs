@@ -22,7 +22,7 @@ namespace Singular
         public static Color Debug = Color.Orange;
         public static Color Diagnostic = Color.Yellow;
         public static Color Cancel = Color.OrangeRed;
-        public static Color Init = Color.LightCyan;
+        public static Color Init = Color.Cyan;
     }
 
     public static class Logger
@@ -163,8 +163,8 @@ namespace Singular
         /// <param name="message">message text with embedded parameters</param>
         /// <param name="args">replacement parameter values</param>
         public static void WriteDiagnostic(Color clr, string message, params object[] args)
-        {           
-            if (SingularSettings.Instance.DebugOutput == DebugOutputDest.WindowAndFile)
+        {
+            if (SingularSettings.Instance != null && SingularSettings.Instance.DebugOutput == DebugOutputDest.WindowAndFile)
             {
                 System.Windows.Media.Color newColor = System.Windows.Media.Color.FromArgb(clr.A, clr.R, clr.G, clr.B); 
                 Logging.Write(newColor, "(Singular) " + message, args);

@@ -111,13 +111,19 @@ namespace Singular.Managers
             }
         }
 
+        private static WoWGuid lastPetAttack = WoWGuid.Empty;
         public static bool Attack(WoWUnit unit)
         {
-            if ( unit == null || StyxWoW.Me.Pet == null || StyxWoW.Me.Pet.CurrentTargetGuid == unit.Guid)
+            if ( unit == null || StyxWoW.Me.Pet == null || StyxWoW.Me.Pet.CurrentTargetGuid == unit.Guid || lastPetAttack == unit.Guid )
                 return false;
 
-            Logger.Write( LogColor.Hilite, "/petattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
-            PetManager.CastPetAction("Attack", unit);
+            if (lastPetAttack != unit.Guid)
+            {
+                lastPetAttack = unit.Guid;
+                Logger.Write( LogColor.Hilite, "/petattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
+                PetManager.CastPetAction("Attack", unit);
+            }
+
             return true;
         }
 

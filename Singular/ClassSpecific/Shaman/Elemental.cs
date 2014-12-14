@@ -188,7 +188,7 @@ namespace Singular.ClassSpecific.Shaman
                                 )
                             ),
 
-                        Spell.Cast("Elemental Blast", on => Me.CurrentTarget, req => true, cancel => false),
+                        Common.CastElementalBlast(),
 
                         Spell.Buff("Flame Shock", true, req => SpellManager.HasSpell("Lava Burst") || Me.CurrentTarget.TimeToDeath(-1) > 30),
 
@@ -236,7 +236,7 @@ namespace Singular.ClassSpecific.Shaman
                             ret => Me.GotTarget && Me.CurrentTarget.SpellDistance() < 40 && Me.HasAura("Lightning Shield", 7) && Spell.GetSpellCooldown("Earth Shock") == TimeSpan.Zero,
                             new PrioritySelector(
                                 new Action( r => { Logger.Write( LogColor.Hilite, "Burst Rotation"); return RunStatus.Failure;} ),
-                                Spell.Cast( "Elemental Blast"),
+                                Common.CastElementalBlast(),
                                 Spell.Cast( "Lava Burst"),
                                 Spell.BuffSelf("Ascendance", req => ShamanSettings.UseAscendance),       // this is more to buff following sequence since we leave burst after Earth Shock
                                 Spell.Cast( "Earth Shock")
@@ -273,7 +273,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         // Else cast freely
 
-                        Spell.Cast("Elemental Blast", ret => !Me.HasAura("Lightning Shield", 5)),
+                        Common.CastElementalBlast( on => Me.CurrentTarget, req => !Me.HasAura("Lightning Shield", 5)),
                         Spell.Buff("Flame Shock", 9, on => Me.CurrentTarget, req => true),
                         Spell.Buff("Flame Shock", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => Me.IsSafelyFacing(u) && u.InLineOfSpellSight), req => Spell.GetSpellCastTime("Lava Burst") != TimeSpan.Zero),
                         Spell.Cast("Lava Burst"),
@@ -352,7 +352,7 @@ namespace Singular.ClassSpecific.Shaman
                             ret => Me.HasAura("Lightning Shield", 12) 
                                 && Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),
 
-                        Spell.Cast("Elemental Blast", on => Me.CurrentTarget, req => true, cancel => false),
+                        Common.CastElementalBlast(),
 
                         Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
                         Spell.Cast("Lightning Bolt")

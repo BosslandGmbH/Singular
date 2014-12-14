@@ -9,6 +9,7 @@ using System.Drawing;
 using Styx.CommonBot;
 using Styx.Common.Helpers;
 using Styx.CommonBot.Routines;
+using Styx.CommonBot.CharacterManagement;
 
 namespace Singular.Managers
 {
@@ -179,6 +180,10 @@ namespace Singular.Managers
             {
                 CurrentSpec = StyxWoW.Me.Specialization;
 
+                var GlobalClassProfile = CharacterManager.ClassProfiles.FirstOrDefault( prf => prf.GetSpec() == CurrentSpec);
+                if (GlobalClassProfile != null)
+                    CharacterManager.SetClassProfile(GlobalClassProfile); 
+
                 Talents.Clear();
                 TalentId = new int[7];
 
@@ -228,7 +233,7 @@ namespace Singular.Managers
                 {
                     CurrentSpec = StyxWoW.Me.Specialization;
                     RebuildNeeded = true;
-                    Logger.Write( LogColor.Hilite, "TalentManager: Your character changed specializations to {0}", CurrentSpec.ToString().CamelToSpaced());
+                    Logger.Write( LogColor.Hilite, "TalentManager: spec is now to {0}", SingularRoutine.SpecName());
                 }
             }
 

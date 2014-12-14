@@ -16,6 +16,8 @@ using System;
 using Action = Styx.TreeSharp.Action;
 using System.Drawing;
 using Singular.Managers;
+using Singular.Utilities;
+using Styx.CommonBot.Routines;
 
 namespace Singular.Helpers
 {
@@ -172,7 +174,8 @@ namespace Singular.Helpers
 
                 // Make sure we're a class with mana, if not, just ignore drinking all together! Other than that... same for food.
                         new Decorator(
-                            ret => !Me.IsSwimming && (Me.PowerType == WoWPowerType.Mana || Me.Class == WoWClass.Druid)
+                            ret => !Me.Combat
+                                && !Me.IsSwimming && (Me.PowerType == WoWPowerType.Mana || Me.Class == WoWClass.Druid)
                                 && Me.ManaPercent <= SingularSettings.Instance.MinMana
                                 && !Me.HasAura("Drink") && Consumable.GetBestDrink(false) != null,
                             new PrioritySelector(
@@ -194,7 +197,8 @@ namespace Singular.Helpers
 
                 // Check if we're allowed to eat (and make sure we have some food. Don't bother going further if we have none.
                         new Decorator(
-                            ret => !Me.IsSwimming
+                            ret => !Me.Combat 
+                                && !Me.IsSwimming
                                 && Me.PredictedHealthPercent(includeMyHeals: true) <= SingularSettings.Instance.MinHealth
                                 && !Me.HasAura("Food") && Consumable.GetBestFood(false) != null,
                             new PrioritySelector(
@@ -294,6 +298,10 @@ namespace Singular.Helpers
         {
             // never wait in a battleground
             if (Me.CurrentMap.IsBattleground)
+                return false;
+
+            // don't wait if we are combat bugged (or could be mob in combat with pet at distance)
+            if (Me.Combat)
                 return false;
 
             // always wait for health to regen

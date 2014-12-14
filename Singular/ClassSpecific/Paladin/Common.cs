@@ -190,8 +190,8 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.Cast(
                         "Eternal Flame",
                         on => (WoWUnit) on,
-                        ret => StyxWoW.Me.CurrentHolyPower >= 3 && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().SelfEternalFlameHealth)
-
+                        ret => (Me.CurrentHolyPower >= 3 || Me.GetAuraTimeLeft("Divine Purpose", true).TotalSeconds > 0)
+                            && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().SelfEternalFlameHealth)
                     );
             }
 

@@ -134,6 +134,21 @@ namespace Singular.Dynamics
                         if (SingularSettings.Trace)
                             comp = new CallTrace( name, comp);
 
+                        if (matchedMethods.ContainsKey(attribute))
+                        {
+                            Logger.Write(LogColor.Hilite, "Internal Error:  method '{0}' has attribute that already exists", name);
+                            Logger.WriteDiagnostic(" ");
+                            Logger.WriteDiagnostic("Dump Methods");
+                            Logger.WriteDiagnostic("===========================");
+                            foreach (var v in matchedMethods)
+                            {
+                                Logger.WriteDiagnostic("{0} {1} {2} {3}", v.Key.SpecificClass, v.Key.SpecificSpec, v.Key.SpecificContext, v.Key.PriorityLevel);
+                            }
+                            Logger.WriteDiagnostic("===========================");
+                            Logger.WriteDiagnostic("{0} {1} {2} {3}  == add  attempt for {4}", attribute.SpecificClass, attribute.SpecificSpec, attribute.SpecificContext, attribute.PriorityLevel, name);
+                            Logger.WriteDiagnostic(" ");
+                        }
+
                         matchedMethods.Add(attribute, comp);
 
                         CurrentBehaviorType = 0;

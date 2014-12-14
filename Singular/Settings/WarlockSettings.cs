@@ -87,7 +87,14 @@ namespace Singular.Settings
         [Category("Common")]
         [DisplayName("Drain Life%")]
         [Description("Health % which we should Drain Life")]
-        public int DrainLifePercentage { get; set; }
+        public int DrainLifeCastPct { get; set; }
+
+        [Setting]
+        [DefaultValue(30)]
+        [Category("Common")]
+        [DisplayName("Drain Life Cancel %")]
+        [Description("Health % which we should /cancel Drain Life")]
+        public int DrainLifeCancelPct { get; set; }
 
         [Setting]
         [DefaultValue(true)]

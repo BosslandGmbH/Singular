@@ -30,6 +30,7 @@ using Singular.ClassSpecific.Monk;
 //using Styx.CommonBot.Profiles.Quest.Order;
 using Styx.WoWInternals.WoWCache;
 using Styx.CommonBot.Profiles;
+using Singular.Utilities;
 
 
 namespace Singular
@@ -133,7 +134,7 @@ namespace Singular
                 if (_restBehavior != null)
                     sMsg += (!string.IsNullOrEmpty(sMsg) ? "," : "") + " Rest";
 
-                Logger.Write(Color.LightGreen, "Loaded{0} behaviors for {1}: {2}", TalentManager.CurrentSpec.ToString().CamelToSpaced(), context.ToString(), sMsg);
+                Logger.Write(Color.LightGreen, "Loaded{0} behaviors for {1}: {2}", SpecName(), context.ToString(), sMsg);
             }
 #endif
             if (!silent)
@@ -229,8 +230,8 @@ namespace Singular
                     _inQuestVehicle = Me.InVehicle; 
                     if (_inQuestVehicle )
                     {
-                        Logger.Write( LogColor.Hilite, "Singular is {0} while in a Quest Vehicle", SingularSettings.Instance.DisableInQuestVehicle ? "Disabled" : "Enabled");
-                        Logger.Write( LogColor.Hilite, "Change [Disable in Quest Vehicle] setting to '{0}' to change", !SingularSettings.Instance.DisableInQuestVehicle);
+                        Logger.WriteDiagnostic( LogColor.Hilite, "Singular is {0} while in a Quest Vehicle", SingularSettings.Instance.DisableInQuestVehicle ? "Disabled" : "Enabled");
+                        // Logger.Write( LogColor.Hilite, "Change [Disable in Quest Vehicle] setting to '{0}' to change", !SingularSettings.Instance.DisableInQuestVehicle);
                     }
                 }
 
@@ -402,7 +403,26 @@ namespace Singular
 
 //                                TestDynaWait(),
 
-                                combatInRestCheck,
+                                new Decorator(
+                                    req => ShouldWeFightDuringRest(),
+                                    new PrioritySelector(
+                                        Safers.EnsureTarget(),
+                                        new Decorator(
+                                            req => Unit.ValidUnit(Me.CurrentTarget) && Me.CurrentTarget.SpellDistance() < 45,
+                                            new PrioritySelector(
+                                                new ThrottlePasses(
+                                                    1, TimeSpan.FromSeconds(15), RunStatus.Failure,
+                                                    new Action(r => Logger.WriteDiagnostic(LogColor.Hilite, "Forcing combat from Rest Behavior")),
+                                                    new ActionAlwaysFail()
+                                                    ),
+                                                SingularRoutine.Instance.HealBehavior,
+                                                SingularRoutine.Instance.CombatBuffBehavior,
+                                                SingularRoutine.Instance.CombatBehavior,
+                                                new ActionAlwaysSucceed()
+                                                )
+                                            )
+                                        )
+                                    ),
 
                                 // new Action(r => { _guidLastTarget = 0; return RunStatus.Failure; }),
                                 new Decorator(
@@ -459,6 +479,7 @@ namespace Singular
                     new CallWatch("PreCombat",
                         new Decorator(  // suppress non-combat buffing if standing around waiting on DungeonBuddy or BGBuddy queues
                             ret => !Me.Mounted
+                                && !Me.HasAnyAura("Darkflight")
                                 && !SingularSettings.Instance.DisableNonCombatBehaviors
                                 && AllowNonCombatBuffing(),
                             new PrioritySelector(
@@ -606,6 +627,44 @@ namespace Singular
             return composite;
         }
 
+        private static bool ShouldWeFightDuringRest()
+        {
+            if (!Me.Combat)
+                return false;
+
+            if (!SingularSettings.Instance.RestCombatAllowed)
+                return false;
+
+            if (Unit.ValidUnit(EventHandlers.AttackingEnemyPlayer) && (DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer) < TimeSpan.FromSeconds(25))
+                return true;
+
+            if (Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any())
+                return true;
+
+            return false;
+        }
+        private static Composite CreateRestForceCombat()
+        {
+            return new Decorator(
+                req => ShouldWeFightDuringRest(),
+                new PrioritySelector(
+                    Safers.EnsureTarget(),
+                    new Decorator(
+                        req => Unit.ValidUnit(Me.CurrentTarget) && Me.CurrentTarget.SpellDistance() < 45,
+                        new PrioritySelector(
+                            new ThrottlePasses(
+                                1, TimeSpan.FromSeconds(15), RunStatus.Failure,
+                                new Action(r => Logger.WriteDiagnostic(LogColor.Hilite, "Forcing combat from Rest Behavior"))
+                                ),
+                            SingularRoutine.Instance.HealBehavior,
+                            SingularRoutine.Instance.CombatBuffBehavior,
+                            SingularRoutine.Instance.CombatBehavior,
+                            new ActionAlwaysSucceed()
+                            )
+                        )
+                    )
+                );
+        }
         public static void ResetCurrentTargetTimer()
         {
             _timerLastTarget.Reset();
@@ -628,7 +687,7 @@ namespace Singular
                     // .. tries to handle by only checking CurrentTarget reference and treating null as guid = 0
                     if (Me.CurrentTargetGuid != _guidLastTarget)
                     {
-                        if (!Me.CurrentTargetGuid.IsValid)
+                        if (!Me.CurrentTargetGuid.IsValid || Me.CurrentTarget == null)
                         {
                             if (_guidLastTarget.IsValid)
                             {
@@ -725,7 +784,7 @@ namespace Singular
             if (_prevBehaviorFlags != Bots.Grind.LevelBot.BehaviorFlags)
             {
                 _prevBehaviorFlags = Bots.Grind.LevelBot.BehaviorFlags;
-                Logger.WriteDiagnostic(Color.HotPink, "info: BehaviorFlags changed to [{0}] by {1}, Plug-in or Profile", _prevBehaviorFlags.ToString(), GetBotName());
+                Logger.WriteDiagnostic(Color.HotPink, "info: Behavior Flags set to [{0}] by {1}, Plug-in or Profile", _prevBehaviorFlags.ToString(), GetBotName());
             }
         }
 
@@ -780,13 +839,22 @@ namespace Singular
             IsPullMoreActive = IsPullMoreAllowed();
 
             if (false == IsPullMoreActive)
-                Logger.Write(LogColor.Init, "Pull More: not active, Singular will not pull additional mobs during Combat");
+            {
+                if (Me.Specialization == WoWSpec.None)
+                    Logger.Write(LogColor.Init, "Pull More: not active, Singular disables until Specialization selected");
+                else if (string.IsNullOrEmpty(PullMoreNeedSpell))
+                    Logger.Write(LogColor.Init, "Pull More: always disabled for{0}", SpecAndClassName());
+                else if (!SpellManager.HasSpell(PullMoreNeedSpell))
+                    Logger.Write(LogColor.Init, "Pull More: not active, Singular disables for{0} until learning '{1}'", SpecAndClassName(), PullMoreNeedSpell);
+                else
+                    Logger.Write(LogColor.Init, "Pull More: not active, Singular will one mob at a time");
+            }
             else
             {
                 _rangePullMore = Me.IsMelee() ? SingularSettings.Instance.PullMoreDistMelee : SingularSettings.Instance.PullMoreDistRanged;
-                Logger.Write(LogColor.Init, "Pull More: Singular will pull up to {0} from mob types=[{1}] within {2} yds during Combat", 
+                Logger.Write(LogColor.Init, "Pull More: will up to {0} mobs of type=[{1}]",
                     SingularSettings.Instance.PullMoreMobCount,
-                    SingularSettings.Instance.UsePullMore != PullMoreUsageType.Auto 
+                    SingularSettings.Instance.UsePullMore != PullMoreUsageType.Auto
                         ? SingularSettings.Instance.PullMoreTargetType.ToString()
                         : (SingularRoutine.IsQuestBotActive ? "Quest" : "Grind"),
                     _rangePullMore
@@ -812,103 +880,110 @@ namespace Singular
             }
         }
 
+        private static string PullMoreNeedSpell { get; set; }
         private static bool IsPullMoreAllowed()
         {
-            string needSpell = "";
+            PullMoreNeedSpell = "";
             switch (TalentManager.CurrentSpec)
             {
                 case WoWSpec.DeathKnightBlood:
                 case WoWSpec.DeathKnightFrost:
                 case WoWSpec.DeathKnightUnholy:
-                    needSpell = "Blood Boil";       // 56
+                    PullMoreNeedSpell = "Blood Boil";       // 56
                     break;
 
                 case WoWSpec.DruidBalance:
-                    needSpell = "Sunfire";          // 18
+                    PullMoreNeedSpell = "Sunfire";          // 18
                     break;
 
                 case WoWSpec.DruidFeral:
                 case WoWSpec.DruidGuardian:
-                    needSpell = "Thrash";            // 14
+                    PullMoreNeedSpell = "Thrash";            // 14
                     break;
 
                 case WoWSpec.DruidRestoration:
-                    needSpell = "Hurricane";        // 42
+                    // needSpell = "Hurricane";        // 42
                     break;
 
                 case WoWSpec.HunterBeastMastery:
                 case WoWSpec.HunterMarksmanship:
                 case WoWSpec.HunterSurvival:
-                    needSpell = "Multi-Shot";       // 24
+                    PullMoreNeedSpell = "Multi-Shot";       // 24
                     break;
 
                 case WoWSpec.MageArcane:
                 case WoWSpec.MageFire:
                 case WoWSpec.MageFrost:
-                    needSpell = "Arcane Explosion"; // 18
+                    PullMoreNeedSpell = "Arcane Explosion"; // 18
                     break;
 
                 case WoWSpec.MonkBrewmaster:
-                    needSpell = "Breath of Fire";   // 18
+                    PullMoreNeedSpell = "Breath of Fire";   // 18
                     break;
 
                 case WoWSpec.MonkMistweaver:
-                    needSpell = "Spinning Crane Kick";  // 46
+                    // needSpell = "Spinning Crane Kick";  // 46
                     break;
 
                 case WoWSpec.MonkWindwalker:
-                    needSpell = "Fists of Fury";  // 10
+                    PullMoreNeedSpell = "Fists of Fury";  // 10
                     break;
 
                 case WoWSpec.PaladinHoly:
-                    needSpell = "Holy Prism";   // 90
+                    // needSpell = "Holy Prism";   // 90
                     break;
 
                 case WoWSpec.PaladinProtection:
-                    needSpell = "Avenger's Shield"; // 10
+                    PullMoreNeedSpell = "Avenger's Shield"; // 10
                     break;
 
                 case WoWSpec.PaladinRetribution:
-                    needSpell = "Hammer of the Righteous";  // 20
+                    PullMoreNeedSpell = "Hammer of the Righteous";  // 20
                     break;
 
                 case WoWSpec.PriestDiscipline:
                 case WoWSpec.PriestHoly:
+                    // none
+                    break;
+
                 case WoWSpec.PriestShadow:
-                    needSpell = "Shadow Word: Pain";    // 3 (10 since specialization needed)
+                    PullMoreNeedSpell = "Shadow Word: Pain";    // 3 (10 since specialization needed)
                     break;
 
                 case WoWSpec.RogueCombat:
-                    needSpell = "Blade Flurry"; // 10
+                    PullMoreNeedSpell = "Blade Flurry"; // 10
                     break;
 
                 case WoWSpec.RogueAssassination:
                 case WoWSpec.RogueSubtlety:
-                    needSpell = "Fan of Knives";    // 66
+                    PullMoreNeedSpell = "Fan of Knives";    // 66
                     break;
 
                 case WoWSpec.ShamanElemental:
+                    PullMoreNeedSpell = "Chain Lightning";  // 28
+                    break;
+
                 case WoWSpec.ShamanRestoration:
-                    needSpell = "Chain Lightning";  // 28
+                    // none
                     break;
 
                 case WoWSpec.ShamanEnhancement:
-                    needSpell = "Flame Shock";  // 12 (this comes after Lava Lash)
+                    PullMoreNeedSpell = "Flame Shock";  // 12 (this comes after Lava Lash)
                     break;
 
                 case WoWSpec.WarlockAffliction:
                 case WoWSpec.WarlockDemonology:
                 case WoWSpec.WarlockDestruction:
-                    needSpell = "Corruption";   // 3 (10 since specialization needed)
+                    PullMoreNeedSpell = "Corruption";   // 3 (10 since specialization needed)
                     break;
 
                 case WoWSpec.WarriorArms:
                 case WoWSpec.WarriorProtection:
-                    needSpell = "Thunder Clap"; // 20
+                    PullMoreNeedSpell = "Thunder Clap"; // 20
                     break;
 
                 case WoWSpec.WarriorFury:
-                    needSpell = "Whirlwind";    // 26
+                    PullMoreNeedSpell = "Whirlwind";    // 26
                     break;
             }
 
@@ -951,10 +1026,10 @@ namespace Singular
                 allow = false;
                 Logger.WriteDiagnostic("Pull More: disabled for Lowbie characters (no specialization)");
             }
-            else if (!SpellManager.HasSpell(needSpell))
+            else if (string.IsNullOrEmpty(PullMoreNeedSpell) || !SpellManager.HasSpell(PullMoreNeedSpell))
             {
                 allow = false;
-                Logger.WriteDiagnostic("Pull More: disabled for{0} characters until [{1}] is learned", TalentManager.CurrentSpec.ToString().CamelToSpaced(), needSpell);
+                Logger.WriteDiagnostic("Pull More: disabled for{0} characters until [{1}] is learned", SpecName(), PullMoreNeedSpell);
             }
 
             return allow;
@@ -1511,7 +1586,157 @@ namespace Singular
             return u => _pmEntrys.Contains(u.Entry) || _pmFactions.Contains(u.FactionId);
         }
 
+        public static void BestPullMoreSettingsForToon( WoWSpec spec, out int mobCount, out int distMelee, out int distRanged, out int minHealth)
+        {
+            mobCount = 0;
+            distMelee = 30;
+            distRanged = 55;
+            minHealth = 60;
 
+
+            switch (spec)
+            {
+                case WoWSpec.None:
+                    break;
+
+                case WoWSpec.DeathKnightBlood:
+                    mobCount = 3;
+                    minHealth = 60;
+                    break;
+                case WoWSpec.DeathKnightFrost:
+                    mobCount = 2;
+                    minHealth = 75;
+                    break;
+                case WoWSpec.DeathKnightUnholy:
+                    mobCount = 2;
+                    minHealth = 75;
+                    break;
+                case WoWSpec.DruidBalance:
+                    mobCount = 2;
+                    minHealth = 60;
+                    break;
+                case WoWSpec.DruidFeral:
+                    mobCount = 2;
+                    minHealth = 75;
+                    break;
+                case WoWSpec.DruidGuardian:
+                    mobCount = 3;
+                    minHealth = 60;
+                    break;
+                case WoWSpec.DruidRestoration:
+                    mobCount = 0;
+                    break;
+                case WoWSpec.HunterBeastMastery:
+                    mobCount = 3;
+                    minHealth = 60;
+                    break;
+                case WoWSpec.HunterMarksmanship:
+                    mobCount = 3;
+                    minHealth = 60;
+                    break;
+                case WoWSpec.HunterSurvival:
+                    mobCount = 3;
+                    minHealth = 60;
+                    break;
+                case WoWSpec.MageArcane:
+                    mobCount = 3;
+                    minHealth = 60;
+                    break;
+                case WoWSpec.MageFire:
+                    mobCount = 3;
+                    minHealth = 60;
+                    break;
+                case WoWSpec.MageFrost:
+                    mobCount = 3;
+                    minHealth = 60;
+                    break;
+                case WoWSpec.MonkBrewmaster:
+                    mobCount = 3;
+                    minHealth = 60;
+                    break;
+                case WoWSpec.MonkMistweaver:
+                    mobCount = 2;
+                    minHealth = 80;
+                    break;
+                case WoWSpec.MonkWindwalker:
+                    mobCount = 3;
+                    minHealth = 60;
+                    break;
+                case WoWSpec.PaladinHoly:
+                    mobCount = 3;
+                    minHealth = 60;
+                    break;
+                case WoWSpec.PaladinProtection:
+                    mobCount = 3;
+                    minHealth = 60;
+                    break;
+                case WoWSpec.PaladinRetribution:
+                    mobCount = 3;
+                    minHealth = 60;
+                    break;
+                case WoWSpec.PriestDiscipline:
+                    mobCount = 0;
+                    minHealth = 100;
+                    break;
+                case WoWSpec.PriestHoly:
+                    mobCount = 0;
+                    minHealth = 100;
+                    break;
+                case WoWSpec.PriestShadow:
+                    mobCount = 2;
+                    minHealth = 75;
+                    break;
+                case WoWSpec.RogueAssassination:
+                    mobCount = 0;
+                    minHealth = 75;
+                    break;
+                case WoWSpec.RogueCombat:
+                    mobCount = 0;
+                    minHealth = 75;
+                    break;
+                case WoWSpec.RogueSubtlety:
+                    mobCount = 0;
+                    minHealth = 75;
+                    break;
+                case WoWSpec.ShamanElemental:
+                    mobCount = 2;
+                    minHealth = 75;
+                    break;
+                case WoWSpec.ShamanEnhancement:
+                    mobCount = 2;
+                    minHealth = 75;
+                    break;
+                case WoWSpec.ShamanRestoration:
+                    mobCount = 0;
+                    minHealth = 100;
+                    break;
+                case WoWSpec.WarlockAffliction:
+                    mobCount = 2;
+                    minHealth = 80;
+                    break;
+                case WoWSpec.WarlockDemonology:
+                    mobCount = 2;
+                    minHealth = 80;
+                    break;
+                case WoWSpec.WarlockDestruction:
+                    mobCount = 2;
+                    minHealth = 80;
+                    break;
+                case WoWSpec.WarriorArms:
+                    mobCount = 2;
+                    minHealth = 75;
+                    break;
+                case WoWSpec.WarriorFury:
+                    mobCount = 2;
+                    minHealth = 75;
+                    break;
+                case WoWSpec.WarriorProtection:
+                    mobCount = 3;
+                    minHealth = 60;
+                    break;
+            }
+            return;
+        }
 
         #endregion
 
@@ -1678,7 +1903,7 @@ namespace Singular
             {
                 TimeSpan since = TimeSpanSinceLastCall;
                 if (since.TotalSeconds > SecondsBetweenWarnings && LastCallToSingular != DateTime.MinValue)
-                    Logger.WriteDebug(Color.HotPink, "info: {0:F1} seconds since BotBase last called Singular (now in {1})", since.TotalSeconds, Name);
+                    Logger.WriteDiagnostic(Color.HotPink, "info: {0:F1} seconds since BotBase last called Singular (now in {1})", since.TotalSeconds, Name);
             }
 
             if (!SingularSettings.Trace )

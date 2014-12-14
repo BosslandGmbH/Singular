@@ -14,6 +14,7 @@ using Singular.Helpers;
 using Styx.CommonBot;
 using Styx.WoWInternals;
 using System.Drawing;
+using Styx.CommonBot.CharacterManagement;
 
 namespace Singular.Settings
 {
@@ -108,6 +109,7 @@ namespace Singular.Settings
         public SingularSettings()
             : base(Path.Combine(CharacterSettingsPath, "SingularSettings.xml"))
         {
+            // changing how we are initialize the _instance pointer
             entrycount++;
             if (entrycount != 1)
             {
@@ -126,12 +128,16 @@ namespace Singular.Settings
                 _instance = this;
 
                 bool fileExists = ConfigVersion != null;
+                bool weSetPullMoreValues = false;
                 Version verSourceCode = SingularRoutine.GetSingularVersion();
                 Version verConfigFile = null;
 
                 // if version is null, set to current value
                 if (ConfigVersion == null)
-                    ConfigVersion = verSourceCode.ToString();
+                {
+                    verConfigFile = verSourceCode;
+                    ConfigVersion = verConfigFile.ToString();
+                }
 
                 try
                 {
@@ -144,35 +150,46 @@ namespace Singular.Settings
 
                 if (verConfigFile < verSourceCode)
                 {
-                    Logger.WriteFile("Settings: updating config file from verion {0}", ConfigVersion.ToString());
-                    if (new Version("3.0.0.3080") < verSourceCode)
+                    Logger.WriteDiagnostic(LogColor.Init, "Settings: updating config file from verion {0}", verConfigFile.ToString());
+                    if (verConfigFile < new Version("3.0.0.3080"))
                     {
-                        Logger.WriteFile("Settings: applying {0} related changes", new Version("3.0.0.3080").ToString());
+                        Logger.Write(LogColor.Init, "Settings: applying {0} related changes", new Version("3.0.0.3080").ToString());
                         UseFrameLock = true;
                         DisableInQuestVehicle = false;
                     }
 
-                    if (new Version("3.0.0.3173") < verSourceCode)
+                    if (verConfigFile < new Version("3.0.0.3173"))
                     {
-                        Logger.WriteFile("Settings: applying {0} related changes", new Version("3.0.0.3173").ToString());
+                        Logger.WriteDiagnostic(LogColor.Init, "Settings: applying {0} related changes", new Version("3.0.0.3173").ToString());
                         if ( MinHealth == 65)
                             MinHealth = 60;
                         if (MinMana == 65)
                             MinMana = 50;
                     }
 
-                    ConfigVersion = verSourceCode.ToString();
-                    Logger.WriteFile("Settings: config file upgrade to {0} complete", ConfigVersion.ToString());
-
-                    // now handle any calculated default values
-                    if (!fileExists)
+                    if (verConfigFile < new Version("4.0.0.4000"))
                     {
-                        if (StyxWoW.Me.Class == WoWClass.DeathKnight)
-                        {
-                            MinHealth = 50;
-                            Logger.WriteFile("Settings: applying Death Knight specific Default MinHealth = {0}", MinHealth);
-                        }
+                        weSetPullMoreValues = true;
+                        SetDefaultPullMoreSettingValues();
                     }
+
+                    ConfigVersion = verSourceCode.ToString();
+                    Logger.WriteDiagnostic(LogColor.Init, "Settings: config file upgrade to {0} complete", ConfigVersion.ToString());
+                }
+
+                // Pull More settings should be overwritten if !fileExist or last config saved was before selecting Specialization 
+                if (!weSetPullMoreValues)
+                    SetDefaultPullMoreSettingValues();
+
+                // set calculated default values if file did not exist
+                if (!fileExists)
+                {
+                    if (StyxWoW.Me.Class == WoWClass.DeathKnight)
+                    {
+                        this.MinHealth = 50;
+                        Logger.Write(LogColor.Init, "Settings: default Min Health to {0}% since Death Knight", this.MinHealth);
+                    }
+
                 }
             }
 
@@ -181,9 +198,39 @@ namespace Singular.Settings
             StayNearTankRangeCombat = Validate.IntValue("StayNearTankRangeCombat", 5, 100, StayNearTankRangeCombat );
             StayNearTankRangeRest = Validate.IntValue("StayNearTankRangeRest", 5, 100, StayNearTankRangeRest);
 
-
-
             entrycount--;
+        }
+
+        /// <summary>
+        /// sets values for Pull More based upon current WoWSpec of character.  will set temporary defaults   
+        /// </summary>
+        private void SetDefaultPullMoreSettingValues()
+        {
+            if (PullMoreSpecDefaultsSaved)
+                return;
+
+            WoWSpec spec = StyxWoW.Me.Specialization;
+            if (spec == WoWSpec.None && CharacterManager.CurrentClassProfile != null)
+                spec =  CharacterManager.CurrentClassProfile.GetSpec();
+
+            int mobCount, distMelee, distRanged, minHealth;
+
+            SingularRoutine.BestPullMoreSettingsForToon(spec, out mobCount, out distMelee, out distRanged, out minHealth);
+
+            if (StyxWoW.Me.Specialization != WoWSpec.None)
+            {
+                if (this.PullMoreMobCount != mobCount)
+                    Logger.Write(LogColor.Init, "Settings: default Pull More Count to {0} mobs for{1}", mobCount, SingularRoutine.SpecAndClassName());
+                if (PullMoreMinHealth != minHealth)
+                    Logger.Write(LogColor.Init, "Settings: default Pull More Health to {0}% for{1}", minHealth, SingularRoutine.SpecAndClassName());
+
+                PullMoreSpecDefaultsSaved = true;
+            }
+
+            this.PullMoreDistMelee = distMelee;
+            this.PullMoreDistRanged = distRanged;
+            this.PullMoreMinHealth = minHealth;
+            this.PullMoreMobCount = mobCount;
         }
 
         public static string GlobalSettingsPath
@@ -1004,13 +1051,19 @@ namespace Singular.Settings
 
         #endregion
 
-        #region Category: Enemy - Pull More
+        #region Category: Enemy Control
 
         private PullMoreUsageType _PullMoreAllowed = PullMoreUsageType.Auto;
 
-        [Setting,ReadOnly(false)]
+        [DefaultValue(8)]
+        [Category("Enemy Control")]
+        [DisplayName("Evade Attacks Allowed")]
+        [Description("# of Evaded attacks allowed before mob is blacklisted as Evade Bugged")]
+        public int EvadedAttacksAllowed { get; set; }
+
+        [Setting, ReadOnly(false)]
         [DefaultValue(PullMoreUsageType.Auto)]
-        [Category("Enemy Control - Pull More!")]
+        [Category("Enemy Control")]
         [DisplayName("Pull More Allowed")]
         [Description("Auto: enable the feature only with Questing and Grind Bot; Enable: pull adds based upon settings; None: disable pull more feature")]
         public PullMoreUsageType UsePullMore
@@ -1036,7 +1089,7 @@ namespace Singular.Settings
         [Setting,ReadOnly(false)]
         
         [DefaultValue(PullMoreTargetType.LikeCurrent)]
-        [Category("Enemy Control - Pull More!")]
+        [Category("Enemy Control")]
         [DisplayName("Pull More Target Type")]
         [Description("None: disabled, Current: like CurrentTarget; Hostile: any hostile target; Any: any nearby valid target")]
         public PullMoreTargetType PullMoreTargetType { get; set; }
@@ -1044,7 +1097,7 @@ namespace Singular.Settings
         [Setting,ReadOnly(false)]
         
         [DefaultValue(3)]
-        [Category("Enemy Control - Pull More!")]
+        [Category("Enemy Control")]
         [DisplayName("Pull More Count")]
         [Description("Pull more until in combat with this many, then finish them off before acquiring more")]
         public int PullMoreMobCount { get; set; }
@@ -1052,7 +1105,7 @@ namespace Singular.Settings
         [Setting,ReadOnly(false)]
         
         [DefaultValue(35)]
-        [Category("Enemy Control - Pull More!")]
+        [Category("Enemy Control")]
         [DisplayName("Pull More Dist Melee")]
         [Description("For Melee Characters: Maximum distance of adds which will be pulled")]
         public int PullMoreDistMelee { get; set; }
@@ -1060,7 +1113,7 @@ namespace Singular.Settings
         [Setting,ReadOnly(false)]
         
         [DefaultValue(55)]
-        [Category("Enemy Control - Pull More!")]
+        [Category("Enemy Control")]
         [DisplayName("Pull More Dist Ranged")]
         [Description("For Ranged Characters: Maximum distance of adds which will be pulled")]
         public int PullMoreDistRanged { get; set; }
@@ -1068,7 +1121,7 @@ namespace Singular.Settings
         [Setting,ReadOnly(false)]
         
         [DefaultValue(60)]
-        [Category("Enemy Control - Pull More!")]
+        [Category("Enemy Control")]
         [DisplayName("Pull More Health %")]
         [Description("Pull more unless Health % below this")]
         public int PullMoreMinHealth { get; set; }
@@ -1076,24 +1129,35 @@ namespace Singular.Settings
         [Setting,ReadOnly(false)]
         
         [DefaultValue(12)]
-        [Category("Enemy Control - Pull More!")]
+        [Category("Enemy Control")]
         [DisplayName("Pull More Tagged Timeout (secs)")]
         [Description("Pull more will timeout an individual pull if not tagged by this many seconds")]
         public int PullMoreTimeOut { get; set; }
 
-        [Setting,ReadOnly(false)]
-        
+        [Setting, ReadOnly(false)]
+
         [DefaultValue(45)]
-        [Category("Enemy Control - Pull More!")]
+        [Category("Enemy Control")]
         [DisplayName("Pull More Max Time (secs)")]
         [Description("Pull more for this duration, then suppress Pull More behavior until no longer in combat")]
         public int PullMoreMaxTime { get; set; }
+
+        [Setting, ReadOnly(false), Browsable(false)]
+        [DefaultValue(false)]
+        public bool PullMoreSpecDefaultsSaved { get; set; }
 
         #endregion
 
         #region Category: Enemy Control
 
-        [Setting,ReadOnly(false)]
+        [Setting, ReadOnly(false)]
+        [DefaultValue(true)]
+        [Category("Enemy Control")]
+        [DisplayName("Rest: Fight if Attacked")]
+        [Description("True: fight if attacked even if BotBase does not, False: leave decision to fight to BotBase")]
+        public bool RestCombatAllowed { get; set; }
+
+        [Setting, ReadOnly(false)]
         [DefaultValue(CheckTargets.Current)]
         [Category("Enemy Control")]
         [DisplayName("Purge Targets")]

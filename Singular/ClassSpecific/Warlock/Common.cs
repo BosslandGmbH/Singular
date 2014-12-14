@@ -100,7 +100,7 @@ namespace Singular.ClassSpecific.Warlock
 
                 //new ThrottlePasses(5, new Action(r => { Logger.Write("in PreCombatBuff()"); return RunStatus.Failure; })),
                 CreateWarlockSummonPet(),
-                Spell.BuffSelf("Soul Link", ret => !Me.HasAura("Soul Link") && Me.GotAlivePet && PetManager.PetSummonAfterDismountTimer.IsFinished ),
+                // Spell.BuffSelf("Soul Link", ret => Me.GotAlivePet && PetManager.PetSummonAfterDismountTimer.IsFinished ),
 
                 new PrioritySelector(
                     new Decorator(
@@ -199,9 +199,6 @@ namespace Singular.ClassSpecific.Warlock
                 new Decorator(
                     req => !Unit.IsTrivial( Me.CurrentTarget),
                     new PrioritySelector(
-                        // 
-                        Spell.BuffSelf("Twilight Ward", ret => NeedTwilightWard ),
-
                         // 
                         Spell.BuffSelf( "Ember Tap", ret => Me.HealthPercent < 80),
 
@@ -310,17 +307,6 @@ namespace Singular.ClassSpecific.Warlock
 
                         Spell.BuffSelf("Dark Bargain", ret => Me.HealthPercent < 50),
                         Spell.BuffSelf("Sacrificial Pact", ret => Me.HealthPercent < 60 && GetCurrentPet() != WarlockPet.None && GetCurrentPet() != WarlockPet.Other && Me.Pet.HealthPercent > 50),
-
-                        new Decorator(
-                            ret => Me.HealthPercent < WarlockSettings.DrainLifePercentage && !Group.AnyHealerNearby,
-                            new Sequence(
-                                new PrioritySelector(
-                                    CreateCastSoulburn( ret => Spell.CanCastHack("Drain Life", Me.CurrentTarget)),
-                                    new ActionAlwaysSucceed()
-                                    ),
-                                Spell.Cast("Drain Life")
-                                )
-                            ),
 
                         new Decorator(
                             ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3
@@ -449,7 +435,7 @@ namespace Singular.ClassSpecific.Warlock
                     && SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.PetSummoning) 
                     && !Me.HasAura( "Grimoire of Sacrifice")        // don't summon pet if this buff active
                     && GetBestPet() != GetCurrentPet()
-                    && Spell.CanCastHack( "Summon Imp"), 
+                    && Spell.CanCastHack( "Summon " + GetBestPet()), 
 
                 new Sequence(
                     // wait for possible auto-spawn if supposed to have a pet and none present
@@ -560,10 +546,7 @@ namespace Singular.ClassSpecific.Warlock
 
         public static Composite CreateCastSoulburn(SimpleBooleanDelegate requirements)
         {
-            return new Sequence(
-                Spell.BuffSelf("Soulburn", ret => Me.CurrentSoulShards > 0 && requirements(ret)),
-                new Wait(TimeSpan.FromMilliseconds(500), ret => Me.HasAura("Soulburn"), new Action(ret => { return RunStatus.Success; }))
-                );
+            return Spell.BuffSelfAndWait(sp => "Soulburn", req => Me.CurrentSoulShards > 0 && requirements(req));
         }
 
         #region Pet Support
@@ -720,38 +703,6 @@ namespace Singular.ClassSpecific.Warlock
             return cast;
         }
 
-        /// <summary>
-        /// True: if appears Twilight Ward should be buffed.  checks possible classes of players attacking in pvp as 
-        /// well as to mitigate some damage experienced due to defensive cooldowns that cause Shadow dmg (Soul Link, Dark Bargain)
-        /// </summary>
-        private static bool NeedTwilightWard
-        {
-            get
-            {
-                if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-                {
-                    if (Unit.NearbyUnfriendlyUnits.Any(u => u.IsPlayer && u.CurrentTargetGuid == Me.Guid && (u.Class == WoWClass.Priest || u.Class == WoWClass.Warlock)))
-                    {
-                        return true;
-                    }
-                }
-                else
-                {
-                    if (Me.GotAlivePet && Me.HasAura("Soul Link"))
-                    {
-                        return true;
-                    }
-                }
-
-                if ( Me.HasAura("Dark Bargain"))
-                {
-                    return true;
-                }
-
-                return false;
-            }
-        }
-
         public static Composite CreatWarlockHealthFunnelBehavior(int petMinHealth, int petMaxHealth = 99)
         {
             return new Decorator(
@@ -767,19 +718,6 @@ namespace Singular.ClassSpecific.Warlock
                         // glyph of health funnel prevents Soulburn: Health Funnel from being used
                         new Decorator( ret => TalentManager.HasGlyph("Health Funnel"), new ActionAlwaysSucceed()),
 
-                        CreateCastSoulburn(ret => {
-                            if (TalentManager.CurrentSpec == WoWSpec.WarlockAffliction)
-                            {
-                                if (Me.CurrentSoulShards > 0 && Spell.CanCastHack("Soulburn", Me))
-                                {
-                                    Logger.WriteDebug("Soulburn should follow to make instant health funnel");
-                                    return true;
-                                }
-                                Logger.WriteDebug("soulburn not available, shards={0}", Me.CurrentSoulShards);
-                            }
-                            return false;
-                            }),
-
                         // neither of instant funnels available, so stop moving
                         new Sequence(
                             new Action(ctx => StopMoving.Now()),
@@ -787,10 +725,15 @@ namespace Singular.ClassSpecific.Warlock
                             )
                         ),
                     new Decorator( ret => Spell.CanCastHack( "Health Funnel", Me.Pet), new ActionAlwaysSucceed()),
-                    new PrioritySelector(
-                        Spell.Cast(ret => "Health Funnel", mov => false, on => Me.Pet, req => Me.HasAura( "Soulburn") || TalentManager.HasGlyph("Health Funnel")),
-                        Spell.Cast(ret => "Health Funnel", mov => true, on => Me.Pet, req => true, cancel => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth)
+
+                    Spell.Cast(
+                        ret => "Health Funnel", 
+                        mov => !TalentManager.HasGlyph("Health Funnel"), 
+                        on => Me.Pet, 
+                        req => true, 
+                        cancel => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth
                         ),
+
                     Helpers.Common.CreateWaitForLagDuration()
                     // new WaitContinue(TimeSpan.FromMilliseconds(500), ret => !Me.IsCasting && Me.GotAlivePet && Me.Pet.HealthPercent < petMaxHealth && Me.HealthPercent > 50, new ActionAlwaysSucceed())
                     )

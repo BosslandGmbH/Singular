@@ -1045,9 +1045,10 @@ namespace Singular.Helpers
                 string guidString = entry.Key.Substring(0, index);
                 string spellName = entry.Key.Substring(index + 1);
                 WoWGuid guid;
-                WoWGuid.TryParseFriendly(spellName, out guid);
+                WoWGuid.TryParseFriendly(guidString, out guid);
                 WoWUnit unit = ObjectManager.GetObjectByGuid<WoWUnit>(guid);
-                Logger.WriteDebug("   {0} {1:HH:mm:ss.fff} {2}", unit.SafeName().AlignLeft(25), expires, spellName);
+                string safeName = unit == null ? guidString : unit.SafeName();
+                Logger.WriteDebug("   {0} {1:HH:mm:ss.fff} {2}", safeName.AlignLeft(25), expires, spellName);
             }
             if (count > 0)
                 Logger.WriteDebug("DumpDoubleCast: =======================");
@@ -1252,19 +1253,30 @@ namespace Singular.Helpers
                     if (!SpellManager.FindSpell(_buffName, out sfr))
                         return false;
 
-                    _buffName = (sfr.Override ?? sfr.Original).Name;
+                    WoWSpell spell = sfr.Override ?? sfr.Original;
+                    _buffName = spell.Name;
                     if (DoubleCastContains(_buffUnit, _buffName))
                         return false;
+                    
+                    if (!spell.CanCast && (sfr.Override == null || !sfr.Original.CanCast))
+                    {
+                        if (SingularSettings.DebugSpellCasting)
+                            Logger.WriteFile("BuffCanCast[{0}]: spell specific CanCast failed (#{1})", spell.Name, spell.Id);
 
-                    if (Spell.GetSpellCooldown(_buffName) > TimeSpan.Zero)
                         return false;
+                    }
 
                     bool hasExpired;
                     if (!buffNames.Any())
                     {
                         hasExpired = _buffUnit.HasAuraExpired(_buffName, expires, myBuff);
-                        if (hasExpired && SingularSettings.DebugSpellCasting)
-                            Logger.WriteDebug("Spell.Buff(r=>'{0}')={1}: hasspell={2}, auraleft={3:F1} secs", _buffName, hasExpired, SpellManager.HasSpell(_buffName).ToYN(), _buffUnit.GetAuraTimeLeft(_buffName, true).TotalSeconds);
+                        if (SingularSettings.DebugSpellCasting)
+                        {
+                            if (hasExpired )
+                                Logger.WriteDebug("Buff=expired: '{0}')={1}: hasspell={2}, auraleft={3:F1} secs", _buffName, hasExpired, SpellManager.HasSpell(_buffName).ToYN(), _buffUnit.GetAuraTimeLeft(_buffName, true).TotalSeconds);
+                            else
+                                Logger.WriteDebug("Buff=present: '{0}')={1}: hasspell={2}, auraleft={3:F1} secs", _buffName, hasExpired, SpellManager.HasSpell(_buffName).ToYN(), _buffUnit.GetAuraTimeLeft(_buffName, true).TotalSeconds);
+                        }
 
                         return hasExpired;
                     }
@@ -1341,7 +1353,7 @@ namespace Singular.Helpers
                 BuffSelf( name, requirements, expirSecs),
                 new DynaWait( 
                     time => TimeSpan.FromMilliseconds(Me.Combat ? 500 : 1000),
-                    until => StyxWoW.Me.HasAura( until as string),
+                    until => StyxWoW.Me.HasAura( name(until)),
                     new ActionAlwaysSucceed()
                     )
                 );
@@ -1857,7 +1869,7 @@ namespace Singular.Helpers
                     if (DoubleCastContains(Me, spell))
                         return false;
 
-                    DumpDoubleCast();
+                    // DumpDoubleCast();
 
                     if (CanCastHack(spell, Me)) // Spell.CanCastHack(spell, Me))
                     {

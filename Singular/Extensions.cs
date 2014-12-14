@@ -149,6 +149,8 @@ namespace Singular
             ClassSpecific.Shaman.Totems.ToSpellId(WoWTotem.HealingStream),
             ClassSpecific.Shaman.Totems.ToSpellId(WoWTotem.HealingTide),
             ClassSpecific.Shaman.Totems.ToSpellId(WoWTotem.SpiritLink),
+            124682, // Enveloping Mist
+            116694, // Surging Mist
         };
 
         public static bool IsHeal(this WoWSpell spell)

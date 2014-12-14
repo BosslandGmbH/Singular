@@ -137,7 +137,7 @@ namespace Singular.ClassSpecific.Warlock
 
                         Spell.Cast("Fel Flame", ret => Me.IsMoving && Me.CurrentTarget.GetAuraTimeLeft("Immolate").TotalMilliseconds.Between(300, 3000)),
 
-                        Spell.Cast("Drain Life", ret => Me.HealthPercent <= WarlockSettings.DrainLifePercentage && !Group.AnyHealerNearby),
+                        Spell.Cast("Drain Life", ret => Me.HealthPercent <= WarlockSettings.DrainLifeCastPct && !Group.AnyHealerNearby),
                         Spell.Cast("Shadow Bolt")
                         )
                     )
@@ -246,7 +246,7 @@ namespace Singular.ClassSpecific.Warlock
                                 )
                             ),
 
-                        Spell.Cast("Drain Life", ret => Me.HealthPercent <= WarlockSettings.DrainLifePercentage && !Group.AnyHealerNearby),
+                        Spell.Cast("Drain Life", ret => Me.HealthPercent <= WarlockSettings.DrainLifeCastPct && !Group.AnyHealerNearby),
                         Spell.Cast("Shadow Bolt")
                         )
                     )

@@ -117,7 +117,7 @@ namespace Singular.ClassSpecific.Mage
                                     if (!Spell.CanCastHack("Ice Lance", Me.CurrentTarget))
                                         return false;
 
-                                    Logger.WriteDiagnostic("Ice Lance: casting for fast pull");
+                                    Logger.Write("^Fast Pull: casting Ice Lance for instant cast pull");
                                     return true;
                                 }),
                                 Spell.Cast("Fire Blast", req => !SpellManager.HasSpell("Ice Lance"))
@@ -187,12 +187,10 @@ namespace Singular.ClassSpecific.Mage
                     // req => Spell.CanCastHack("Ice Lance", (req as ILInfo).Unit) && ((req as ILInfo).Unit != null && ((req as ILInfo).StacksOfFOF > 0 || (req as ILInfo).Unit.IsTrivial())),
                     req => ILInfo.Ref(req).Unit != null && ILInfo.Ref(req).StacksOfFOF > 0 && Spell.CanCastHack("Ice Lance", ILInfo.Ref(req).Unit),
                     new Sequence(
-                        new Action(r => { if (SingularSettings.Debug) Logger.WriteDebug("Ice Lance: casting since FoFStks={0} and MobTrivial={1}", ILInfo.Ref(r).StacksOfFOF, ILInfo.Ref(r).Unit.IsTrivial().ToYN()); }),
+                        new Action(r => Logger.Write( LogColor.Hilite, "^Fingers of Frost: casting buffed Ice Lance", ILInfo.Ref(r).StacksOfFOF)),
                         Spell.Cast("Ice Lance", on),    // ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) < 4),
                         Helpers.Common.CreateWaitForLagDuration(
-                            until => ILInfo.Ref(until).StacksOfFOF == 0
-                                || ILInfo.Ref(until).StacksOfFOF != Me.GetAuraStacks(FINGERS_OF_FROST)
-                                || (ILInfo.Ref(until).Unit != null && ILInfo.Ref(until).Unit.IsTrivial())
+                            until => ILInfo.Ref(until).StacksOfFOF != Me.GetAuraStacks(FINGERS_OF_FROST)
                             )
                         )
                     )

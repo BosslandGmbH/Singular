@@ -146,16 +146,23 @@ namespace Singular.Helpers
                                     else
                                     {
                                         unit = BotPoi.Current.AsObject.ToUnit();
-                                        if (Unit.ValidUnit(unit, showReason: true))
+                                        if (unit != null && !unit.IsAlive)
+                                        {
+                                            Logger.WriteDiagnostic(targetColor, "BotPOI " + unit.SafeName() + " is dead --- clearing");
+                                            BotPoi.Clear(string.Format("Singular: {0} is dead", unit.SafeName()));
+                                        }
+                                        else if (!Unit.ValidUnit(unit, showReason: true))
+                                        {
+                                            Logger.Write(targetColor, "BotPOI " + unit.SafeName() + " not valid --- clearing");
+                                            BotPoi.Clear(string.Format("Singular: {0} invalid target", unit.SafeName()));
+                                        }
+                                        else
                                         {
                                             if (StyxWoW.Me.CurrentTargetGuid != unit.Guid)
                                                 Logger.Write(targetColor, "Switching to BotPoi: " + unit.SafeName() + "!");
 
                                             return unit;
                                         }
-
-                                        Logger.Write(targetColor, "BotPOI " + unit.SafeName() + " not valid --- clearing");
-                                        BotPoi.Clear(string.Format("Singular: {0} invalid target", unit.SafeName()));
                                     }
                                 }
 #endif

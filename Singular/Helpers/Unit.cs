@@ -527,7 +527,7 @@ namespace Singular.Helpers
 
         public static bool HasAllMyAuras(this WoWUnit unit, params string[] auras)
         {
-            return auras.All(unit.HasMyAura);
+            return !auras.Any( a => !unit.HasMyAura(a));
         }
 
         /// <summary>

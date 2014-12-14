@@ -189,7 +189,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         Totems.CreateTotemsBehavior(),
 
-                        Spell.Cast("Elemental Blast"),
+                        Common.CastElementalBlast(),
                         Spell.Buff("Flame Shock", 3, on => Me.CurrentTarget, req => true),
                         Spell.Cast("Lava Burst"),
                         Spell.Cast("Frost Shock"),
@@ -238,7 +238,7 @@ namespace Singular.ClassSpecific.Shaman
 
                                 Totems.CreateTotemsBehavior(),
 
-                                Spell.Cast("Elemental Blast"),
+                                Common.CastElementalBlast(),
                                 Spell.Buff("Flame Shock", 3, on => Me.CurrentTarget, req => true ),
                                 Spell.Cast("Lava Burst"),
                                 Spell.Cast("Frost Shock"),
@@ -323,7 +323,8 @@ namespace Singular.ClassSpecific.Shaman
                             ret => !Spell.IsGlobalCooldown(),
                             new PrioritySelector(
                                 Helpers.Common.CreateInterruptBehavior(),
-                                Spell.Cast("Elemental Blast", on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS()),
+
+                                Common.CastElementalBlast( cancel: c => HealerManager.CancelHealerDPS()),
                                 Spell.Buff("Flame Shock", 3, on => Me.CurrentTarget, req => true),
                                 Spell.Cast("Lava Burst", on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS()),
                                 Spell.Cast("Frost Shock"),

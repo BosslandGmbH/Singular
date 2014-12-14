@@ -42,6 +42,9 @@ namespace Singular.ClassSpecific.Priest
         const int SPIRIT_SHELL_ABSORB = 114908;
         private static bool HasSpiritShellAbsorb(WoWUnit u) { return u.HasAura(SPIRIT_SHELL_ABSORB); }
 
+        private static bool HasReflectiveShield = false;
+
+        
         private static bool SkipForSpiritShell(WoWUnit u)
         {
             if (IsSpiritShellEnabled())
@@ -55,6 +58,15 @@ namespace Singular.ClassSpecific.Priest
         }
 
         #endregion 
+
+        [Behavior(BehaviorType.Initialize, WoWClass.Priest, WoWSpec.PriestDiscipline)]
+        public static Composite CreateDiscInitialize()
+        {
+            HasReflectiveShield = TalentManager.HasGlyph("Reflective Shield");
+            if (HasReflectiveShield)
+                Logger.Write(LogColor.Init, "[Glyph of Reflective Shield] will prioritize Power Word: Shield on self if we are being attacked");
+            return null;
+        }
 
         [Behavior(BehaviorType.Rest, WoWClass.Priest, WoWSpec.PriestDiscipline)]
         public static Composite CreateDiscRest()
@@ -204,6 +216,7 @@ namespace Singular.ClassSpecific.Priest
                         Logger.WriteDebug("Buffing Power Word: Shield ON TANK: {0}", unit.SafeName());
                         return unit;
                     }
+
                     return null;
                 })
                 );
@@ -342,6 +355,13 @@ namespace Singular.ClassSpecific.Priest
             #endregion
 
             #region Direct Heals
+
+            if (HasReflectiveShield)
+            {
+                behavs.AddBehavior(100 + PriSingleBase, "Power Word: Shield Self (Glyph of Reflective Shield)", "Power Word: Shield",
+                    Spell.BuffSelf("Power Word: Shield", req => CanWePwsUnit(Me) && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any())
+                    );
+            }
 
             if (PriestSettings.DiscHeal.PowerWordShield != 0)
             {
@@ -502,7 +522,7 @@ namespace Singular.ClassSpecific.Priest
                 ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
                 new PrioritySelector(
                     Spell.Cast("Desperate Prayer", ret => Me, ret => Me.Combat && Me.HealthPercent < PriestSettings.DesperatePrayerHealth),
-                    Spell.BuffSelf("Power Word: Shield", ret => Me.Combat && Me.HealthPercent < PriestSettings.PowerWordShield && CanWePwsUnit((WoWUnit) ret)),
+                    Spell.BuffSelf("Power Word: Shield", ret => Me.Combat && Me.HealthPercent < PriestSettings.PowerWordShield && CanWePwsUnit( Me)),
 
                     // keep heal buffs on if glyphed
                     Spell.BuffSelf("Prayer of Mending", ret => Me.Combat && Me.HealthPercent <= 90),
@@ -531,6 +551,11 @@ namespace Singular.ClassSpecific.Priest
                         Common.CreateFadeBehavior(),
 
                         Spell.BuffSelf("Desperate Prayer", ret => StyxWoW.Me.HealthPercent <= PriestSettings.DesperatePrayerHealth),
+                        
+                        Spell.BuffSelf("Power Word: Shield", 
+                            req => HasReflectiveShield 
+                                && SingularRoutine.CurrentWoWContext == WoWContext.Normal
+                            ),
 
                         Common.CreateShadowfiendBehavior(),
 
@@ -558,7 +583,7 @@ namespace Singular.ClassSpecific.Priest
                     new PrioritySelector(
                         CreateDiscDiagnosticOutputBehavior(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),
 
-                        Spell.BuffSelf("Power Word: Shield", ret => PriestSettings.UseShieldPrePull && !Me.HasAura("Weakened Soul")),
+                        Spell.BuffSelf("Power Word: Shield", ret => PriestSettings.UseShieldPrePull && CanWePwsUnit(Me)),
                         Helpers.Common.CreateInterruptBehavior(),
                         Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
                         Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => !Unit.NearbyUnfriendlyUnits.Any(u => u.Aggro), cancel => false),

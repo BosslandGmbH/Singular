@@ -94,7 +94,10 @@ namespace Singular.ClassSpecific.Paladin
 
                         Spell.BuffSelf(
                             "Guardian of Ancient Kings",
-                            ret => Me.HealthPercent <= PaladinSettings.GoAKHealth),
+                            ret => Me.GotTarget
+                                && Me.CurrentTarget.IsWithinMeleeRange
+                                && (Me.HealthPercent <= PaladinSettings.GoAKHealth || _aoeCount > 3)
+                            ),
 
                         Spell.BuffSelf(
                             "Ardent Defender",
@@ -120,8 +123,10 @@ namespace Singular.ClassSpecific.Paladin
                     new PrioritySelector(
 
                         Spell.BuffSelf("Avenging Wrath", 
-                            ret => (Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange && (Me.CurrentTarget.TimeToDeath() > 25) || _aoeCount > 1))
-
+                            ret => Me.GotTarget 
+                                && Me.CurrentTarget.IsWithinMeleeRange 
+                                && (Me.CurrentTarget.TimeToDeath() > 25 || _aoeCount > 1)
+                            )
                         )
                     )
                 );

@@ -1,3 +1,128 @@
+--- Release 4.0.0.4064 ---
+
+General
+
+*new* - Rest - added [Rest: Fight if Attacked] Class Config setting in Enemy Control section to control whether Singular fights back when attacked during Rest.  Some BotBases do not call the CombatBehavior in this circumstance, so this setting controls whether Singular does on its behalf
+
+fixed - Non-Combat Buffs - fixed check to consider Darkflight as being mounted to prevent casting abilities which cancel this aura for Worgen
+
+fixed - Target Change detection - fixed occurrences when targeting something which is not a WoWUnit (non NPCs, non Players)
+
+change- Pull More - more granular messaging describing to user when it is disabled automatically (based on context) and why.  
+
+change- Pull More - disabled for Restoration Druid, Holy Paladin, Discipline Priest, Holy Priest, Mistweaver Monks, and Restoration Shaman
+
+*new* - Pull More - specialization specific defaults.  Will now set the default max mob count allowed with Pull More based upon specialization ( 3 for tanking specs, 2 for most dps specs, 1 for rogues).  These are defaults only and user setting will override.
+
+fixed - First Aid - the Use Bandages ability now correctly detects new bandage types introduced with WoD
+
+change- Debug Messages - have throttled some of the messages which were spammed to decrease overhead of logging 
+
+fixed - Position Mobs in Front - corrected so only invoked for melee toons when more than one melee attacker
+
+fixed - Rest while Combat Bugged - will now suppress Eating /Drinking while in Combat
+
+fixed - Debug Exception - error occurring while debug enabled causing large amount of log output and slower performance
+
+fixed - Buff Logic - fixed error in Buff Casting logic which was causing some opportunities for Buff and Debuff casts to be missed.  Most noticeable with Affliction Warlocks, to a lesser extent Shadow Priests
+
+change- Auto Manual Movement Bot Detection - Enyo now detected as a manual movement bot
+
+change- Pet Attack messages - reduced these when attacking same target.  Additional work to come here to reduce chattiness of log window
+
+fixed - Settings File Upgrade - now correctly detects past versions of log files and invokes upgrade logic to perform various setting adjustmetns, etc based upon new logic.  Affects those upgrading from a past version
+
+*new* - Evade Attacks Allowed - new setting (default 8) controls number of attacks on an NPC which miss due to Evading before the mob is considered Evade Bugged and blacklisted
+
+change- Evade Missed Attack message - now clearly states that mob is not blacklisted  and only counting Evades until exceeding previously described setting
+
+*new* - Rest Combat Allowed - in Normal Context (Solo) when in the Rest behavior (non-Combat) most botbases do not consider being attacked by an Enemy Player to be in Combat and do not invoke the Combat Behavior.  By default Singular will, but this setting allows you to disable
+
+
+Druids
+
+fixed - Feral - now only casts Faerie Fire on enemy Rogues and Druids in Cat Form
+
+fixed - Worgen - Darkflight fix: will no longer cast Cat Form when Darkflight active until ready to Pull or attacked
+
+
+Hunter
+
+fixed - Marksman - fixed exceptions occurring when no current target selected
+
+
+Monk
+
+fixed - MistWeaver - no longer spams Stance of the Wise Serpent
+
+fixed - MistWeaver - no longer spams Stance of the Spirited Crane
+
+fixed - MistWeaver - added support for standard unbuffed Surging Mist in rotation.  This was inadvertent deletion in WoD work which significantly impacted lower level Mistweavers and PVP
+
+
+Paladin
+
+fixed - All Specs - added support for Divine Purpose with Eternal Flame
+
+fixed - Protection - prevent cast of Guardian of Ancient Kings unless in melee range of target
+
+fixed - Protection - prevent cast of Avenging Wrath unless in melee range of target
+
+fixed - Retribution - when Divine Shield active, will spam Flash of Light until buff ends or health above 90
+
+fixed - Retribution - revised Holy Avenger and Avenging Wrath to not stack in Normal context (Solo)
+
+fixed - Retribution - changed Divine Purpose handling to cast Divine Storm rather than Templar's Verdict when more than 3 mobs in range
+
+
+Priest
+
+fixed - Discipline - Solo: fixed so PW:S is reapplied during combat
+
+change- Discipline - Group: if Glyph of Reflective Shield equipped, change targeting priority for PW:S to Tanks > Self > Healers > DPS if Priest has aggro
+
+
+Shaman
+
+fixed - All Specs - Elemental Blast: prevent second cast being queued immediately after first cast but before buff was applied or cooldown initiated
+
+
+Warlock
+
+fixed - Affliction - now correctly applies and maintains Corruption, Agony, and Unstable Affliction
+
+fixed - Affliction - AOE now correctly applies and maintains Corruption and Agony on multiple mobs
+
+fixed - Affliction - Soulburn / Soul Swap now corrected to treat this as a 2 Shard sequence
+
+fixed - Affliction - Solo: Haunt how cast only if all DoTs exist on target and more than 2 Shards
+
+fixed - Affliction - Drain Soul now correctly cast regardless of target health
+
+fixed - Affliction - Shadow Bolt now correctly cast if Drain Soul not known
+
+fixed - Affliction - Drain Life if health below configured value
+
+*new* - Affliction - Drain Life Cancel % setting added to control at what Health % a Drain Life in progress is cancelled
+
+fixed - All Specs - Soul Link no longer cast (since now a Passive ability)
+
+change - All Specs - Drain Life for Healing is now only cast in Normal (Solo) and Battleground (PVP) contexts
+
+fixed - Affliction - removed Soulburn for buffed Health Funnel (WoD)
+
+fixed - Affliction - removed Soulburn for buffed Drain Life (WoD)
+
+fixed - All Specs - error occurring in Pet Summon logic which prevented summoning demon
+
+
+
+
+
+
+
+
+
 --- Release 4.0.0.4014 ---
 
 General

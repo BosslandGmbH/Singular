@@ -652,10 +652,13 @@ namespace Singular.ClassSpecific.Mage
             return new PrioritySelector(
                 ctx => SafeArea.NearestEnemyMobAttackingMe,
                 new Action( ret => {
-                    if (ret == null)
-                        Logger.WriteDebug("SlowMelee: no nearest mob found");
-                    else
-                        Logger.WriteDebug("SlowMelee: crowdcontrolled: {0}, slowed: {1}", ((WoWUnit)ret).IsCrowdControlled(), ((WoWUnit)ret).IsSlowed());
+                    if (SingularSettings.Debug)
+                    {
+                        if (ret == null)
+                            Logger.WriteDebug("SlowMelee: no nearest mob found");
+                        else
+                            Logger.WriteDebug("SlowMelee: crowdcontrolled: {0}, slowed: {1}", ((WoWUnit)ret).IsCrowdControlled(), ((WoWUnit)ret).IsSlowed());
+                    }
                     return RunStatus.Failure;
                     }),
                 new Decorator(
@@ -669,7 +672,7 @@ namespace Singular.ClassSpecific.Mage
                                     new Action(r => Logger.WriteDebug("SlowMelee: target already crowd controlled"))
                                     ),
                                 new Decorator(
-                                    req => ((WoWUnit)req).IsSlowed(60),
+                                    req => ((WoWUnit)req).IsSlowed(50),
                                     new Action(r => Logger.WriteDebug("SlowMelee: target already slowed at least 50%"))
                                     ),
                                 new Decorator(

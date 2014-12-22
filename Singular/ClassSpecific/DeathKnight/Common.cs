@@ -117,7 +117,7 @@ namespace Singular.ClassSpecific.DeathKnight
             glyphEmpowerment = TalentManager.HasGlyph("Empowerment") && (Me.Specialization == WoWSpec.DeathKnightFrost || Me.Specialization == WoWSpec.DeathKnightUnholy);
             if (glyphEmpowerment)
             {
-                Logger.Write(LogColor.Init, "Glyph of Empowerment: Empower Rune Weapon heals for 30%range of Blood Boil extended to {0}", BloodBoilRange);
+                Logger.Write(LogColor.Init, "Glyph of Empowerment: Empower Rune Weapon heals for 30%");
             }
 
             BloodBoilRangeSqr = BloodBoilRange * BloodBoilRange;
@@ -315,7 +315,7 @@ namespace Singular.ClassSpecific.DeathKnight
                             )
                         ),
 
-                    Spell.BuffSelf("Hand of Freedom", req => Me.IsRooted() || Me.IsSlowed()),
+                    Spell.BuffSelf("Hand of Freedom", req => Me.IsRooted() || Me.IsSlowed(30)),
 
 
                     // *** Defensive Cooldowns ***

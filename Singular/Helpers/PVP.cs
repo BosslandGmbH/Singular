@@ -71,24 +71,57 @@ namespace Singular.Helpers
 
         private static WoWGuid lastIsSlowedTarget = WoWGuid.Empty;
         private static bool lastIsSlowedResult = false;
-        public static bool IsSlowed(this WoWUnit unit, uint slowedPct = 30)
+        private static int lastIsSlowedSpellId = 0;
+
+        /// <summary>
+        /// determines if an Aura with any slowing effect matching 
+        /// slowedPct or greater is affecting unit
+        /// </summary>
+        /// <param name="unit">WoWUnit to check</param>
+        /// <param name="slowedPct">% slowing required for true</param>
+        /// <returns>true: if slowed by slowedPct or more, false: if not slowed as much as specified</returns>
+        public static bool IsSlowed(this WoWUnit unit, uint slowedPct = 50)
         {
+            if (unit == null)
+                return false;
+
             int slowedCompare = -(int)slowedPct;
-            WoWAura aura = unit.GetAllAuras().FirstOrDefault(a => a.Spell.SpellEffects.Any(e => e.AuraType == WoWApplyAuraType.ModDecreaseSpeed && e.BasePoints <= slowedCompare));
-            if (SingularSettings.Debug)
+            WoWAura foundAura = null;
+            Styx.WoWInternals.DBC.SpellEffect foundSE = null;
+            int foundSpellId = 0;
+
+            foreach (WoWAura aura in unit.GetAllAuras())
             {
-                bool result = aura != null;
-                if (result != lastIsSlowedResult || lastIsSlowedTarget != unit.Guid)
+                foreach (Styx.WoWInternals.DBC.SpellEffect se in aura.Spell.SpellEffects)
                 {
-                    lastIsSlowedResult = result;
-                    lastIsSlowedTarget = unit.Guid;
-                    Styx.WoWInternals.DBC.SpellEffect se = aura.Spell.SpellEffects.FirstOrDefault(e => e.AuraType == WoWApplyAuraType.ModDecreaseSpeed);
-                    if (se != null)
-                        Logger.WriteDebug("IsSlowed: target {0} slowed {1}% with [{2}] #{3}", unit.SafeName(), se.BasePoints, aura.Name, aura.SpellId);
+                    if (se != null && se.AuraType == WoWApplyAuraType.ModDecreaseSpeed && se.BasePoints <= slowedCompare)
+                    {
+                        foundAura = aura;
+                        foundSE = se;
+                        foundSpellId = aura.SpellId;
+                        break;
+                    }
                 }
             }
 
-            return aura != null;
+            if (SingularSettings.Debug)
+            {
+                if ((foundAura != null) == lastIsSlowedResult || lastIsSlowedTarget != unit.Guid || lastIsSlowedSpellId != foundSpellId)
+                {
+                    lastIsSlowedResult = (foundAura != null);
+                    lastIsSlowedTarget = unit.Guid;
+                    lastIsSlowedSpellId = foundSpellId;
+                    if (foundAura != null)
+                    {
+                        if (foundSE != null)
+                        {
+                            Logger.WriteDebug("IsSlowed: target {0} slowed {1}% with [{2}] #{3}", unit.SafeName(), foundSE.BasePoints, foundAura.Name, foundSpellId);
+                        }
+                    }
+                }
+            }
+
+            return foundSE != null;
         }
 
 #region Battleground Start Timer

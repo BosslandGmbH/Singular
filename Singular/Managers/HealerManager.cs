@@ -771,6 +771,69 @@ namespace Singular.Managers
                 );
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="gapCloser"></param>
+        /// <returns></returns>
+        public static Composite CreateRangedHealerMovementBehavior(Composite gapCloser = null)
+        {
+            int moveNearTank;
+            int stopNearTank;
+
+            if (SingularRoutine.CurrentWoWContext != WoWContext.Instances)
+                return new ActionAlwaysFail();
+
+            if (!SingularSettings.Instance.StayNearTank)
+                return Movement.CreateMoveBehindTargetBehavior();
+
+            if (gapCloser == null)
+                gapCloser = new ActionAlwaysFail();
+
+            bool incombat = (Dynamics.CompositeBuilder.CurrentBehaviorType & BehaviorType.InCombat) != (BehaviorType)0;
+            if (incombat)
+            {
+                moveNearTank = Math.Max(5, SingularSettings.Instance.StayNearTankRangeCombat);
+                stopNearTank = Math.Max(moveNearTank / 2, moveNearTank - 5);
+            }
+            else
+            {
+                moveNearTank = Math.Max(5, SingularSettings.Instance.StayNearTankRangeRest);
+                stopNearTank = Math.Max(moveNearTank / 2, moveNearTank - 5);
+            }
+
+            return new PrioritySelector(
+                ctx => (Me.Combat && Me.CurrentTarget != null && Unit.ValidUnit(Me.CurrentTarget))
+                    ? Me.CurrentTarget
+                    : null,
+                new Decorator(
+                    ret => ret != null,
+                    new Sequence(
+                        new PrioritySelector(
+                            gapCloser,
+                            Movement.CreateMoveToLosBehavior(),
+                            Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 30, 25),
+                            Movement.CreateEnsureMovementStoppedBehavior(25f),
+                // to account for Mistweaver Monks facing Soothing Mist target automatically
+                            new Decorator(
+                                req => !Spell.IsChannelling(),
+                                Movement.CreateFaceTargetBehavior()
+                                )
+                            ),
+                        new ActionAlwaysFail()
+                        )
+                    ),
+                new Decorator(
+                    ret => ret == null,
+                    new Sequence(
+                        CreateStayNearTankBehavior(gapCloser),
+                        new ActionAlwaysFail()
+                        )
+                    )
+                );
+        }
+
         public static Composite CreateAttackEnsureTarget()
         {
             if (SingularSettings.DisableAllTargeting || SingularRoutine.CurrentWoWContext != WoWContext.Instances)

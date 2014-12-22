@@ -12,7 +12,8 @@ using Styx.TreeSharp;
 using CommonBehaviors.Actions;
 using Styx.WoWInternals.WoWObjects;
 
-using System.Drawing;using Action = Styx.TreeSharp.Action;
+using System.Drawing;
+using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 
 

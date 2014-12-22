@@ -248,7 +248,7 @@ namespace Singular.ClassSpecific
         public static Composite CreateGarrisonAbilityBehaviour()
         {
             const string GARRISON_ABILITY = "Garrison Ability";
-            const string ARTILLERY_STRIKE = "Artillery Strike";
+            const int ARTILLERY_STRIKE = 162075;
 
             return new PrioritySelector(
                 ctx =>
@@ -300,10 +300,10 @@ namespace Singular.ClassSpecific
                     new Throttle(
                         2,
                         new Sequence(
-                            new Action(r => Logger.Write(LogColor.Hilite, "^Garrison Ability: using now")),
+                            new Action(r => Logger.Write(LogColor.Hilite, "^Garrison Ability: using {0} #{1} now", ((WoWSpell)r).Name, ((WoWSpell)r).Id)),
                             new PrioritySelector(
-                                Spell.Cast(GARRISON_ABILITY, req => ((WoWSpell)req).Name != ARTILLERY_STRIKE),
-                                Spell.CastOnGround(ARTILLERY_STRIKE, on => StyxWoW.Me.CurrentTarget, req => ((WoWSpell)req).Name != ARTILLERY_STRIKE),
+                                Spell.Cast(GARRISON_ABILITY, req => ((WoWSpell)req).Id != ARTILLERY_STRIKE),
+                                Spell.CastOnGround(GARRISON_ABILITY, on => StyxWoW.Me.CurrentTarget, req => ((WoWSpell)req).Id == ARTILLERY_STRIKE),
                                 new Action(r => { Logger.Write(LogColor.Hilite, "^Garrison Ability: cast failed"); return RunStatus.Failure; })
                                 ),
                             new Action(r => Logger.WriteDiagnostic("Garrison Ability: successfully used"))
@@ -318,7 +318,7 @@ namespace Singular.ClassSpecific
         {
             "Call to Arms",
             "Champion's Honor",
-            "Artillery Strike",
+            "Artillery Strike",             
             "Guardian Orb"
         };
 

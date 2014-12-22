@@ -69,15 +69,23 @@ namespace Singular.Helpers
             return unit.Silenced || unit.HasAuraWithEffect(WoWApplyAuraType.ModSilence, WoWApplyAuraType.ModPacifySilence);
         }
 
+        private static WoWGuid lastIsSlowedTarget = WoWGuid.Empty;
+        private static bool lastIsSlowedResult = false;
         public static bool IsSlowed(this WoWUnit unit, uint slowedPct = 30)
         {
             int slowedCompare = -(int)slowedPct;
             WoWAura aura = unit.GetAllAuras().FirstOrDefault(a => a.Spell.SpellEffects.Any(e => e.AuraType == WoWApplyAuraType.ModDecreaseSpeed && e.BasePoints <= slowedCompare));
-            if (aura != null && SingularSettings.Debug)
+            if (SingularSettings.Debug)
             {
-                Styx.WoWInternals.DBC.SpellEffect se = aura.Spell.SpellEffects.FirstOrDefault(e => e.AuraType == WoWApplyAuraType.ModDecreaseSpeed);
-                if (se != null)
-                    Logger.WriteDebug("IsSlowed: target {0} slowed {1}% with [{2}] #{3}", unit.SafeName(), se.BasePoints, aura.Name, aura.SpellId);
+                bool result = aura != null;
+                if (result != lastIsSlowedResult || lastIsSlowedTarget != unit.Guid)
+                {
+                    lastIsSlowedResult = result;
+                    lastIsSlowedTarget = unit.Guid;
+                    Styx.WoWInternals.DBC.SpellEffect se = aura.Spell.SpellEffects.FirstOrDefault(e => e.AuraType == WoWApplyAuraType.ModDecreaseSpeed);
+                    if (se != null)
+                        Logger.WriteDebug("IsSlowed: target {0} slowed {1}% with [{2}] #{3}", unit.SafeName(), se.BasePoints, aura.Name, aura.SpellId);
+                }
             }
 
             return aura != null;

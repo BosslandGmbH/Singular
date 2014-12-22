@@ -29,6 +29,22 @@ namespace Singular.ClassSpecific.Warrior
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior(); } }
+
+        private static bool GladiatorStance { get; set; }
+
+        [Behavior(BehaviorType.Rest, WoWClass.Warrior, WoWSpec.WarriorProtection)]
+        public static Composite CreateWarriorRest()
+        {
+            return new PrioritySelector(
+
+                Common.CheckIfWeShouldCancelBladestorm(),
+
+                Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
+
+                ClassSpecific.Warrior.Protection.CheckThatShieldIsEquippedIfNeeded()
+                );
+        }
+
         [Behavior(BehaviorType.Pull, WoWClass.Warrior, WoWSpec.WarriorProtection, WoWContext.All)]
         public static Composite CreateProtectionNormalPull()
         {
@@ -169,8 +185,16 @@ namespace Singular.ClassSpecific.Warrior
                             CreateTauntBehavior()
                             ),
 
-                        Spell.Buff("Piercing Howl", ret => Me.CurrentTarget.SpellDistance() < 15 && Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows),
-                        Spell.Buff("Hamstring", ret => Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows),
+                        new Sequence(
+                            new Decorator(
+                                ret => Common.IsSlowNeeded(Me.CurrentTarget),
+                                new PrioritySelector(
+                                    Spell.Buff("Hamstring")
+                                    )
+                                ),
+                            new Wait(TimeSpan.FromMilliseconds(500), until => !Common.IsSlowNeeded(Me.CurrentTarget), new ActionAlwaysSucceed())
+                            ),
+
 
                         Common.CreateDisarmBehavior(),
 
@@ -335,7 +359,7 @@ namespace Singular.ClassSpecific.Warrior
                     new Sequence(
                         new DecoratorContinue(
                             ret => !Me.Disarmed && !HasShieldInOffHand && SpellManager.HasSpell("Shield Slam"),
-                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a Shield in offhand to cast Shield Slam", SingularRoutine.SpecName()))
+                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a Shield in offhand to cast Shield Slam", SingularRoutine.SpecAndClassName()))
                             ),
                         new ActionAlwaysFail()
                         )
@@ -356,6 +380,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             return hand != null && hand.ItemInfo.ItemClass == WoWItemClass.Armor && hand.ItemInfo.InventoryType == InventoryType.Shield;
         }
+
 
         private static Composite CreateDiagnosticOutputBehavior()
         {

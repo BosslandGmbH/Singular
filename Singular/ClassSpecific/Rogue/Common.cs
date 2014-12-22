@@ -1102,34 +1102,35 @@ namespace Singular.ClassSpecific.Rogue
 
         private static Dictionary<uint, int> _boxes = new Dictionary<uint, int>()
         {
-            { 4632, 0 },     // Ornate Bronze Lockbox
-            { 6354, 0 },	    // Small Locked Chest
-            { 16882, 0 },	// Battered Junkbox
-            { 4633, 0 },	    // Heavy Bronze Lockbox
-            { 4634, 0 },	    // Iron Lockbox
-            { 6355, 0 },	    // Sturdy Locked Chest
-            { 16883, 0 },	// Worn Junkbox
-            { 4636, 0 },	    // Strong Iron Lockbox
-            { 4637, 0 },	    // Steel Lockbox
-            { 16884, 0 },	// Sturdy Junkbox
-            { 4638, 0 },	    // Reinforced Steel Lockbox
-            { 13875, 0 },	// Ironbound Locked Chest
-            { 5758, 0 },	    // Mithril Lockbox
-            { 5759, 0 },	    // Thorium Lockbox
-            { 13918, 0 },	// Reinforced Locked Chest
-            { 5760, 0 },	    // Eternium Lockbox
-            { 12033, 0 },	// Thaurissan Family Jewels
-            { 16885, 0 },    // Heavy Junkbox
-            { 29569, 0 },	// Strong Junkbox
-            { 31952, 0 },	// Khorium Lockbox
-            { 43575, 0 },	// Reinforced Junkbox
-            { 43622, 0 },	// Froststeel Lockbox
-            { 43624, 400 },	// Titanium Lockbox
-            { 45986, 0 },	// Tiny Titanium Lockbox
-            { 63349, 0 },	// Flame-Scarred Junkbox
-            { 68729, 0 },	// Elementium Lockbox
-            { 88567, 0 },	// Ghost Iron Lockbox
-            { 88165, 0 }	// Vine-Cracked Junkbox
+            { 4632, 1 },        // Ornate Bronze Lockbox
+            { 6354, 1 },	    // Small Locked Chest
+            { 16882, 1 },	    // Battered Junkbox
+            { 4633, 25 },	    // Heavy Bronze Lockbox
+            { 4634, 70 },	    // Iron Lockbox
+            { 6355, 30 },	    // Sturdy Locked Chest
+            { 16883, 70 },	    // Worn Junkbox
+            { 4636, 125 },	    // Strong Iron Lockbox
+            { 4637, 175 },	    // Steel Lockbox
+            { 16884, 175 },	    // Sturdy Junkbox
+            { 4638, 225 },	    // Reinforced Steel Lockbox
+            { 13875, 175 },	    // Ironbound Locked Chest
+            { 5758, 225 },	    // Mithril Lockbox
+            { 5759, 225 },	    // Thorium Lockbox
+            { 13918, 250 },	    // Reinforced Locked Chest
+            { 5760, 225 },	    // Eternium Lockbox
+            { 12033, 275 },     // Thaurissan Family Jewels
+            { 16885, 250 },     // Heavy Junkbox
+            { 29569, 300 },	    // Strong Junkbox
+            { 31952, 325 },	    // Khorium Lockbox
+            { 43575, 350 },	    // Reinforced Junkbox
+            { 43622, 375 },	    // Froststeel Lockbox
+            { 43624, 400 },	    // Titanium Lockbox
+            { 45986, 400 },	    // Tiny Titanium Lockbox
+            { 63349, 400 },	    // Flame-Scarred Junkbox
+            { 68729, 425 },	    // Elementium Lockbox
+            { 88567, 450 },	    // Ghost Iron Lockbox
+            { 88165, 450 },	    // Vine-Cracked Junkbox
+            { 116920, 500 },    // True Steel Lockbox
         };
 
 

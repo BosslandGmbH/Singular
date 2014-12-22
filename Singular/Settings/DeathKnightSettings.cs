@@ -121,6 +121,12 @@ namespace Singular.Settings
         [Description("Health percent when to use Lichborne + Death Coil for healing.")]
         public int LichbornePercent { get; set; }
 
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Common")]
+        [DisplayName("Empower Rune Weapon Percent")]
+        [Description("Cast when our Health % falls below this setting")]
+        public int EmpowerRuneWeaponPercent { get; set; }
 
         #endregion
 
@@ -153,13 +159,6 @@ namespace Singular.Settings
         [DisplayName("Death Pact Exclusive")]
         [Description("False: Raise Ally as needed for Death Pact, True: Raise Ally for Death Pact only if no active Bone Shield, Vampiric Blood, Dancing Rune Weapon, Lichborne, Icebound Fortitude")]
         public bool DeathPactExclusive { get; set; }
-
-        [Setting]
-        [DefaultValue(60)]
-        [Category("Blood")]
-        [DisplayName("Empower Rune Weapon Percent")]
-        [Description("Cast when our Health % falls below this setting")]
-        public int EmpowerRuneWeaponPercent { get; set; }
 
         [Setting]
         [DefaultValue(false)]

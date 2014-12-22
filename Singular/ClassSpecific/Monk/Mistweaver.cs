@@ -84,7 +84,7 @@ namespace Singular.ClassSpecific.Monk
         {
             return new PrioritySelector(
 
-                CreateMistweaverWaitForCast(),
+                CancelSoothingMistAsNeeded(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -265,7 +265,7 @@ namespace Singular.ClassSpecific.Monk
 
                 new PrioritySelector(
 
-                    CreateMistweaverWaitForCast(),
+                    CancelSoothingMistAsNeeded(),
 
                     CreateMistweaverMoveToEnemyTarget(),
 
@@ -336,7 +336,7 @@ namespace Singular.ClassSpecific.Monk
 
                     CreateMistWeaverDiagnosticOutputBehavior(on => MyHealTarget ),
 
-                    CreateMistweaverWaitForCast(),
+                    CancelSoothingMistAsNeeded(),
 
                     HealerManager.CreateMeleeHealerMovementBehavior(),
 
@@ -357,7 +357,6 @@ namespace Singular.ClassSpecific.Monk
                                         ),
 
                                     Helpers.Common.CreateInterruptBehavior(),
-                                    Dispelling.CreatePurgeEnemyBehavior("Detox"),
 
                                     Common.CastTouchOfDeath(),
 
@@ -427,123 +426,133 @@ namespace Singular.ClassSpecific.Monk
         {
             return new PrioritySelector(
 
-                CreateMistweaverWaitForCast(),
+                CancelSoothingMistAsNeeded(),
                 CreateMistWeaverDiagnosticOutputBehavior(on => MyHealTarget),
 
-
-                HealerManager.CreateMeleeHealerMovementBehavior( Common.CreateMonkCloseDistanceBehavior( min => 10, on => (WoWUnit) on)),
-/*
-                    new Decorator(
-                        unit => MovementManager.IsClassMovementAllowed
-                            && !MonkSettings.DisableRoll
-                            && (unit as WoWUnit).SpellDistance() > 10
-                            && Me.IsSafelyFacing(unit as WoWUnit, 5f),
-                        Spell.Cast("Roll")
-                        )
-                    ),
-*/
                 new Decorator(
-                    ret => Me.Combat && HealerManager.AllowHealerDPS(),
+                    req => !IsChannelingSoothingMist(),
                     new PrioritySelector(
-
-                        CreateMistweaverMoveToEnemyTarget(),
-                        new Decorator(
-                            req => Me.GotTarget && Me.CurrentTarget.IsAlive && !IsChannelingSoothingMist(),
-                            Movement.CreateFaceTargetBehavior()
+                        // HealerManager.CreateMeleeHealerMovementBehavior( Common.CreateMonkCloseDistanceBehavior( min => 30, on => (WoWUnit) on)),
+                        HealerManager.CreateStayNearTankBehavior(Common.CreateMonkCloseDistanceBehavior(min => 30, on => (WoWUnit)on)),
+        /*
+                            new Decorator(
+                                unit => MovementManager.IsClassMovementAllowed
+                                    && !MonkSettings.DisableRoll
+                                    && (unit as WoWUnit).SpellDistance() > 10
+                                    && Me.IsSafelyFacing(unit as WoWUnit, 5f),
+                                Spell.Cast("Roll")
+                                )
                             ),
-
-                        Spell.WaitForCastOrChannel(),
-
-            #region Spinning Crane Kick progress handler
-
+        */
                         new Decorator(
-                            req => Me.HasAura("Spinning Crane Kick"),   // don't wait for Rushing Jade Wind since we can cast
+                            ret => Me.Combat && HealerManager.AllowHealerDPS(),
                             new PrioritySelector(
-                                new Action(r =>
-                                {
-                                    Logger.WriteFile( SpinningCraneKick + ": in progress with {0} ms left", (long)Me.GetAuraTimeLeft(SpinningCraneKick).TotalMilliseconds);
-                                    return RunStatus.Failure;
-                                }),
+
+                                CreateMistweaverMoveToEnemyTarget(),
                                 new Decorator(
-                                    req =>
-                                    {
-                                        if (Me.GetAuraTimeLeft(SpinningCraneKick).TotalMilliseconds < 333)
-                                            return false;
+                                    req => Me.GotTarget && Me.CurrentTarget.IsAlive && !IsChannelingSoothingMist(),
+                                    Movement.CreateFaceTargetBehavior()
+                                    ),
 
-                                        int countFriendly = Unit.NearbyGroupMembersAndPets.Count(u => u.SpellDistance() <= 8);
-                                        if (countFriendly >= 3)
-                                            return false;
+                                Spell.WaitForCastOrChannel(),
 
-                                        if (HealerManager.CancelHealerDPS())
+                    #region Spinning Crane Kick progress handler
+
+                                new Decorator(
+                                    req => Me.HasAura("Spinning Crane Kick"),   // don't wait for Rushing Jade Wind since we can cast
+                                    new PrioritySelector(
+                                        new Action(r =>
                                         {
-                                            Logger.Write(LogColor.Cancel, "/cancel {0} since only {1} friendly targets hit and cannot DPS", SpinningCraneKick, countFriendly);
-                                            return true;
-                                        }
+                                            Logger.WriteFile( SpinningCraneKick + ": in progress with {0} ms left", (long)Me.GetAuraTimeLeft(SpinningCraneKick).TotalMilliseconds);
+                                            return RunStatus.Failure;
+                                        }),
+                                        new Decorator(
+                                            req =>
+                                            {
+                                                if (Me.GetAuraTimeLeft(SpinningCraneKick).TotalMilliseconds < 333)
+                                                    return false;
 
-                                        int countEnemy = Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() <= 8);
-                                        if ((countFriendly + countEnemy) < 3)
-                                        {
-                                            Logger.Write(LogColor.Cancel, "/cancel {0} since only {1} friendly and {2} enemy targets hit", SpinningCraneKick, countFriendly, countEnemy);
-                                            return true;
-                                        }
-                                        return false;
-                                    },
-                                    new Sequence(
-                                        new Action(r => Me.CancelAura(SpinningCraneKick)),
-                                        new Wait( 1, until => !Me.HasAura(SpinningCraneKick), new ActionAlwaysFail())
+                                                int countFriendly = Unit.NearbyGroupMembersAndPets.Count(u => u.SpellDistance() <= 8);
+                                                if (countFriendly >= 3)
+                                                    return false;
+
+                                                if (HealerManager.CancelHealerDPS())
+                                                {
+                                                    Logger.Write(LogColor.Cancel, "/cancel {0} since only {1} friendly targets hit and cannot DPS", SpinningCraneKick, countFriendly);
+                                                    return true;
+                                                }
+
+                                                int countEnemy = Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() <= 8);
+                                                if ((countFriendly + countEnemy) < 3)
+                                                {
+                                                    Logger.Write(LogColor.Cancel, "/cancel {0} since only {1} friendly and {2} enemy targets hit", SpinningCraneKick, countFriendly, countEnemy);
+                                                    return true;
+                                                }
+                                                return false;
+                                            },
+                                            new Sequence(
+                                                new Action(r => Me.CancelAura(SpinningCraneKick)),
+                                                new Wait( 1, until => !Me.HasAura(SpinningCraneKick), new ActionAlwaysFail())
+                                                )
+                                            ),
+
+                                        // dont go past here if SCK active
+                                        new ActionAlwaysSucceed()
+                                        )
+                                    ),
+                    #endregion
+
+                                new Decorator(
+                                    ret => !Spell.IsGlobalCooldown(),
+                                    new PrioritySelector(
+
+                                        new Decorator(
+                                            req => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
+                                            Helpers.Common.CreateAutoAttack(true)
+                                            ),
+
+                                        // I WANT CHI!!!
+                                        Spell.Cast("Expel Harm", on => Common.BestExpelHarmTarget(), ret => Me.CurrentChi < Me.MaxChi),
+
+                                        //        
+                                        Helpers.Common.CreateInterruptBehavior(),
+                                        Common.CastTouchOfDeath(),
+
+                                        Spell.Cast("Leg Sweep", ret => Spell.UseAOE && SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.CurrentTarget.IsWithinMeleeRange),
+
+                                        Spell.Cast(
+                                            SpinningCraneKick,
+                                            ret => Spell.UseAOE && HealerManager.AllowHealerDPS() && Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() <= 8) >= MonkSettings.SpinningCraneKickCnt
+                                            ),
+
+                                        // chi dump
+                                        Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
+                                        Spell.Cast("Rising Sun Kick", ret => Me.CurrentChi >= 2),
+                                        Spell.Cast("Blackout Kick", ret => Me.CurrentChi >= 2),
+
+                                        Spell.Cast(
+                                            "Crackling Jade Lightning",
+                                            mov => true,
+                                            on => Unit.NearbyUnitsInCombatWithUsOrOurStuff
+                                                .Where(u => u.IsAlive && u.SpellDistance() < 40 && Me.IsSafelyFacing(u))
+                                                .OrderByDescending(u => u.HealthPercent)
+                                                .FirstOrDefault(),
+                                            req => Me.GotTarget && !Me.CurrentTarget.IsWithinMeleeRange && HealerManager.AllowHealerDPS(),
+                                            cancel => HealerManager.CancelHealerDPS()
+                                            ),
+
+                                        Spell.Cast("Jab", ret => Me.CurrentChi < Me.MaxChi)
                                         )
                                     ),
 
-                                // dont go past here if SCK active
-                                new ActionAlwaysSucceed()
+                                Spell.Cast("Roll", 
+                                    req => Me.Shapeshift == SPIRITED_CRANE 
+                                        && MovementManager.IsClassMovementAllowed 
+                                        && !MonkSettings.DisableRoll 
+                                        && Me.CurrentTarget.Distance > minDistRollAllowed
+                                    )
                                 )
-                            ),
-            #endregion
-
-                        new Decorator(
-                            ret => !Spell.IsGlobalCooldown(),
-                            new PrioritySelector(
-
-                                new Decorator(
-                                    req => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
-                                    Helpers.Common.CreateAutoAttack(true)
-                                    ),
-
-                                // I WANT CHI!!!
-                                Spell.Cast("Expel Harm", on => Common.BestExpelHarmTarget(), ret => Me.CurrentChi < Me.MaxChi),
-
-                                //        
-                                Helpers.Common.CreateInterruptBehavior(),
-                                Common.CastTouchOfDeath(),
-
-                                Spell.Cast("Leg Sweep", ret => Spell.UseAOE && SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.CurrentTarget.IsWithinMeleeRange),
-
-                                Spell.Cast(
-                                    SpinningCraneKick,
-                                    ret => Spell.UseAOE && HealerManager.AllowHealerDPS() && Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() <= 8) >= MonkSettings.SpinningCraneKickCnt
-                                    ),
-
-                                // chi dump
-                                Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
-                                Spell.Cast("Rising Sun Kick", ret => Me.CurrentChi >= 2),
-                                Spell.Cast("Blackout Kick", ret => Me.CurrentChi >= 2),
-
-                                Spell.Cast(
-                                    "Crackling Jade Lightning",
-                                    mov => true,
-                                    on => Unit.NearbyUnitsInCombatWithUsOrOurStuff
-                                        .Where(u => u.IsAlive && u.SpellDistance() < 40 && Me.IsSafelyFacing(u))
-                                        .OrderByDescending(u => u.HealthPercent)
-                                        .FirstOrDefault(),
-                                    req => Me.GotTarget && !Me.CurrentTarget.IsWithinMeleeRange && HealerManager.AllowHealerDPS(),
-                                    cancel => HealerManager.CancelHealerDPS()
-                                    ),
-
-                                Spell.Cast("Jab", ret => Me.CurrentChi < Me.MaxChi)
-                                )
-                            ),
-
-                        Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > minDistRollAllowed)
+                            )
                         )
                     ),
 
@@ -551,9 +560,14 @@ namespace Singular.ClassSpecific.Monk
                     ret => !Spell.IsGlobalCooldown() && Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
                     new PrioritySelector(
                         CreateMistweaverMonkHealing(selfOnly: false),
-                        Helpers.Common.CreateInterruptBehavior()
+                        new Decorator(
+                            req => !IsChannelingSoothingMist(),
+                            Helpers.Common.CreateInterruptBehavior()
+                            )
                         )
-                    )
+                    ),
+
+                Spell.WaitForCastOrChannel()
                 );
 
         }
@@ -581,8 +595,7 @@ namespace Singular.ClassSpecific.Monk
 
             int dispelPriority = (SingularSettings.Instance.DispelDebuffs == RelativePriority.HighPriority) ? 999 : -999;
             if (SingularSettings.Instance.DispelDebuffs != RelativePriority.None)
-                behavs.AddBehavior(dispelPriority, "Detox", null, Dispelling.CreateDispelBehavior());
-
+                behavs.AddBehavior(dispelPriority, "Detox", "Detox", Dispelling.CreateDispelBehavior());
 
             CreateMistweaverHealingRotation(selfOnly, behavs);
 
@@ -612,30 +625,6 @@ namespace Singular.ClassSpecific.Monk
 
                                 behavs.GenerateBehaviorTree(),
 
-#if false                  
-                            ,
-                            new Sequence(
-                                new Action(ret => Logger.WriteDebug(Color.LightGreen, "No Action - stunned:{0} silenced:{1}"
-                                    , Me.Stunned || Me.IsStunned() 
-                                    , Me.Silenced 
-                                    )),
-                                new Action(ret => { return RunStatus.Failure; })
-                                )
-                            ,
-
-                            new Decorator(
-                                ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid),
-                                new PrioritySelector(
-                                    Movement.CreateMoveToLosBehavior(),
-                                    Movement.CreateFaceTargetBehavior(),
-                                    Helpers.Common.CreateInterruptBehavior(),
-
-                                    Spell.Cast("Earth Shock"),
-                                    Spell.Cast("Lightning Bolt"),
-                                    Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
-                                    )
-                                )
-#endif
                                 new Decorator(
                                     ret => moveInRange,
                                     new Sequence(
@@ -658,6 +647,7 @@ namespace Singular.ClassSpecific.Monk
             CreateMistweaverHealingWowhead(selfOnly, behavs);
         }
 
+        /*
         private static void CreateMistweaverHealingCustom(bool selfOnly, PrioritizedBehaviorList behavs)
         {
             #region Cast On Cooldown
@@ -675,18 +665,7 @@ namespace Singular.ClassSpecific.Monk
             #endregion
 
             #region Save the Group
-            /*
-            behavs.AddBehavior(HealthToPriority(MonkSettings.MistHealSettings.SpiritLinkTotem) + 600, "Spirit Link Totem", "Spirit Link Totem",
-                new Decorator(
-                    ret => Me.Combat && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid),
-                    Spell.Cast(
-                        "Spirit Link Totem", ret => (WoWUnit)ret,
-                        ret => HealerManager.Instance.TargetList.Count(
-                            p => p.PredictedHealthPercent() < MonkSettings.MistHealSettings.SpiritLinkTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.SpiritLink)) >= MonkSettings.MistHealSettings.MinSpiritLinkCount
-                        )
-                    )
-                );
-*/
+
             if (!selfOnly)
             {
                 behavs.AddBehavior(HealthToPriority(MonkSettings.MistHealSettings.ThunderFocusHealSingle) + 600,
@@ -839,13 +818,11 @@ namespace Singular.ClassSpecific.Monk
                         new PrioritySelector(
                             Spell.Cast("Enveloping Mist", on => (WoWUnit)on),
                             Spell.Cast("Surging Mist", on => (WoWUnit)on, req => {
-                                if (Spell.IsSpellOnCooldown("Enveloping Mist"))
-                                    Logger.WriteDebug("EnvelopingMist: on cooldown, so casting Surging Mist", Me.CurrentChi);
-                                else if (Me.CurrentChi < 3)
-                                    Logger.WriteDebug("EnvelopingMist: casting Surging Mist since only {0} Chi", Me.CurrentChi);
+                                if (Me.CurrentChi < 3)
+                                    Logger.WriteDebug("CantCastEnvelopingMist: casting Surging Mist since only {0} Chi", Me.CurrentChi);
                                 else
                                 {
-                                    Logger.WriteDebug("EnvelopingMist: no idea why I cannot cast");
+                                    Logger.WriteDebug("CantCastEnvelopingMist: no idea why I cannot cast");
                                     return false;
                                 }
                                 return true;
@@ -870,7 +847,7 @@ namespace Singular.ClassSpecific.Monk
 
             #endregion
         }
-
+*/
         private static void CreateMistweaverHealingWowhead(bool selfOnly, PrioritizedBehaviorList behavs)
         {
             // save a group
@@ -915,7 +892,8 @@ namespace Singular.ClassSpecific.Monk
                     "Summon Jade Serpent Statue",
                     "Summon Jade Serpent Statue",
                     new Decorator(
-                        req => Group.Tanks.Any(t => t.Combat && !t.IsMoving && t.GotTarget && t.CurrentTarget.IsHostile && t.SpellDistance(t.CurrentTarget) < 10),
+                        req => !IsChannelingSoothingMist() 
+                            && Group.Tanks.Any(t => t.Combat && !t.IsMoving && t.GotTarget && t.CurrentTarget.IsHostile && t.SpellDistance(t.CurrentTarget) < 10),
                         CreateSummonJadeSerpentStatueBehavior()
                         )
                     );
@@ -956,7 +934,10 @@ namespace Singular.ClassSpecific.Monk
                     HealthToPriority(100) + 700,
                     String.Format("Roll Renewing Mist on at least {0} targets", MonkSettings.MistHealSettings.RollRenewingMistCount),
                     "Renewing Mist",
-                    CreateMistweaverRollRenewingMist()
+                    new Decorator(
+                        req => !IsChannelingSoothingMist(),
+                        CreateMistweaverRollRenewingMist()
+                        )
                     );
             }
 
@@ -965,7 +946,8 @@ namespace Singular.ClassSpecific.Monk
                 String.Format("Chi Wave on {0} targets @ {1}%", MonkSettings.MistHealSettings.CountChiWave, MonkSettings.MistHealSettings.ChiWave),
                 "Chi Wave",
                 new Decorator(
-                    req => (req as WoWUnit).PredictedHealthPercent() < MonkSettings.MistHealSettings.ChiWave,
+                    req => !IsChannelingSoothingMist()
+                        && (req as WoWUnit).PredictedHealthPercent() < MonkSettings.MistHealSettings.ChiWave,
                     Spell.Cast("Chi Wave", on => GetBestChiWaveTarget())
                     )
                 );
@@ -984,7 +966,11 @@ namespace Singular.ClassSpecific.Monk
                 HealthToPriority(1) + 500,
                 "Expel Harm in Combat for Chi",
                 "Expel Harm",
-                Spell.Buff("Expel Harm", on => Common.BestExpelHarmTarget(), req => Me.Combat && Me.CurrentChi < Me.MaxChi)
+                Spell.Buff("Expel Harm", on => Common.BestExpelHarmTarget(), 
+                    req => !IsChannelingSoothingMist()
+                        && Me.Combat 
+                        && Me.CurrentChi < Me.MaxChi
+                    )
                 );
 
             if (!selfOnly)
@@ -1002,6 +988,9 @@ namespace Singular.ClassSpecific.Monk
                             on => on as WoWUnit,
                             req =>
                             {
+                                if (IsChannelingSoothingMist())
+                                    return false;
+
                                 int count = HealerManager.Instance.TargetList.Count(p => !p.HasAuraExpired("Renewing Mist", TimeSpan.FromMilliseconds(150)) && p.PredictedHealthPercent() < MonkSettings.MistHealSettings.UpliftGroup);
                                 if (count >= MonkSettings.MistHealSettings.CountUpliftGroup)
                                 {
@@ -1080,7 +1069,8 @@ namespace Singular.ClassSpecific.Monk
                     "Soothing Mist",
                     mov => true,
                     on => (WoWUnit)on,
-                    req => !Me.IsMoving && !IsChannelingSoothingMist((WoWUnit)req) && ((WoWUnit)req).PredictedHealthPercent() < MonkSettings.MistHealSettings.SoothingMist
+                    req => !IsChannelingSoothingMist() 
+                        && !Me.IsMoving && !IsChannelingSoothingMist((WoWUnit)req) && ((WoWUnit)req).PredictedHealthPercent() < MonkSettings.MistHealSettings.SoothingMist
                     )
                 );
 
@@ -1090,10 +1080,24 @@ namespace Singular.ClassSpecific.Monk
                 "Surging Mist",
                 new Decorator(
                     req => ((WoWUnit)req).PredictedHealthPercent() < MonkSettings.MistHealSettings.SurgingMist
-                        && Spell.CanCastHack("Enveloping Mist", (WoWUnit) req),
+                        && Spell.CanCastHack("Surging Mist", (WoWUnit)req),
                     new Sequence(
-                        EnsureSoothingMistOnTarget(on => on as WoWUnit),
-                        Spell.Cast("Surging Mist", on => (WoWUnit)on)
+                        new PrioritySelector(
+                            EnsureSoothingMistOnTarget(on => on as WoWUnit),
+                            new Action(r =>
+                            {
+                                Logger.WriteDebug("SurgingMist: failed to ensure Soothing Mist first");
+                                return RunStatus.Failure;
+                            })
+                            ),
+                        new PrioritySelector(                           
+                            Spell.Cast("Surging Mist", on => (WoWUnit)on),
+                            new Action(r =>
+                            {
+                                Logger.WriteDebug("SurgingMist: failed to ensure Soothing Mist first");
+                                return RunStatus.Failure;
+                            })
+                            )
                         )
                     )
                 );
@@ -1108,8 +1112,22 @@ namespace Singular.ClassSpecific.Monk
                         && ((WoWUnit)req).PredictedHealthPercent() < MonkSettings.MistHealSettings.EnvelopingMist
                         && Spell.CanCastHack("Enveloping Mist", (WoWUnit) req),
                     new Sequence(
-                        EnsureSoothingMistOnTarget(on => on as WoWUnit),
-                        Spell.Cast("Enveloping Mist", on => (WoWUnit)on)
+                        new PrioritySelector(
+                            EnsureSoothingMistOnTarget(on => on as WoWUnit),
+                            new Action(r =>
+                            {
+                                Logger.WriteDebug("EnvelopingMist: failed to ensure Soothing Mist first");
+                                return RunStatus.Failure;
+                            })
+                            ),
+                        new PrioritySelector(
+                            Spell.Cast("Enveloping Mist", on => (WoWUnit)on),
+                            new Action(r =>
+                            {
+                                Logger.WriteDebug("EnvelopingMist: failed to ensure Soothing Mist first");
+                                return RunStatus.Failure;
+                            })
+                            )
                         )
                     )
                 );
@@ -1175,12 +1193,18 @@ namespace Singular.ClassSpecific.Monk
 
                 new Decorator(
                     req => IsChannelingSoothingMist(req as WoWUnit),
-                    new Action( r => Logger.WriteDiagnostic("EnsureSmoothingMist: already being cast on {0}", (r as WoWUnit).SafeName()))
+                    new Action( r => Logger.WriteDiagnostic("EnsureSmoothingMist: channel object is {0}", (r as WoWUnit).SafeName()))
                     ),
 
                 new Sequence(
-                    new Action( r => Logger.WriteDebug("EnsureSmoothingMist: about to cast Soothing Mist on {0}", (r as WoWUnit).SafeName())),
-                    Spell.Cast("Soothing Mist", mov => true, on => on as WoWUnit, req => !Me.IsMoving),
+                    Spell.Cast("Soothing Mist", mov => true, on => on as WoWUnit, 
+                        req => 
+                        {
+                            if (Me.IsMoving || !Spell.CanCastHack("Soothing Mist", (WoWUnit)req))
+                                return false;
+                            Logger.WriteDebug("EnsureSmoothingMist: about to cast Soothing Mist on {0}", (req as WoWUnit).SafeName());
+                            return true;
+                        }),
                     new Action(r => Logger.WriteDebug("EnsureSmoothingMist: wait until channeling Soothing Mist active")),
                     new Wait(TimeSpan.FromMilliseconds(500), until => IsChannelingSoothingMist(), new ActionAlwaysSucceed()),
                     new Action(r => Logger.WriteDebug("EnsureSmoothingMist: wait until GCD completes")),
@@ -1291,7 +1315,7 @@ namespace Singular.ClassSpecific.Monk
 
         #region Mistweaver Helpers
 
-        private static Composite CreateMistweaverWaitForCast()
+        private static Composite CancelSoothingMistAsNeeded()
         {
             return new Sequence(
 
@@ -1303,7 +1327,7 @@ namespace Singular.ClassSpecific.Monk
 
                 // cancel channel if Soothing Mist and its our heal target and they are healed up
                 new DecoratorContinue(
-                    req => Me.ChanneledCastingSpellId == SOOTHING_MIST,
+                    req => IsChannelingSoothingMist(),
                     new Sequence(
                         ctx => Me.ChannelObject,
 
@@ -1314,7 +1338,7 @@ namespace Singular.ClassSpecific.Monk
                                 // output message at most once per second
                                 new Decorator(
                                     req => SingularSettings.Debug,
-                                    new ThrottlePasses(1, TimeSpan.FromSeconds(1), RunStatus.Success,
+                                    new ThrottlePasses(1, TimeSpan.FromMilliseconds(500), RunStatus.Success,
                                         new Action(u => Logger.WriteDebug(System.Drawing.Color.White, "MonkWaitForCast: {0} on {1} @ {2:F1}", "Soothing Mist", (u as WoWUnit).SafeName(), (u as WoWUnit).HealthPercent))
                                         )
                                     ),
@@ -1391,8 +1415,8 @@ namespace Singular.ClassSpecific.Monk
                         )
                     ),
 
-                // otherwise allow success here
-                new ActionAlwaysSucceed()
+                // force failure here to continue
+                new ActionAlwaysFail()
                 );
         }
 
@@ -1418,11 +1442,14 @@ namespace Singular.ClassSpecific.Monk
                 new Decorator(
                     req => RangedAttacks,
                     Helpers.Common.EnsureReadyToAttackFromLongRange()
-                    ),
+                    )
+/*
+                ,
                 new Decorator(
                     req => !RangedAttacks,
                     Helpers.Common.EnsureReadyToAttackFromMelee()
                     )
+ */ 
                 );
         }
 
@@ -1587,7 +1614,7 @@ namespace Singular.ClassSpecific.Monk
 
         private static WoWUnit ChooseBestMonkHealTarget(WoWUnit unit)
         {
-            if (Me.ChanneledCastingSpellId == SOOTHING_MIST)
+            if (IsChannelingSoothingMist())
             {
                 WoWObject channelObj = Me.ChannelObject;
                 if (channelObj != null)

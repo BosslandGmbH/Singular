@@ -447,7 +447,10 @@ namespace Singular.Utilities
                     {
                         foreach (var target in Targeting.Instance.TargetList)
                         {
-                            if (target.IsAlive && Unit.ValidUnit(target) && !Blacklist.Contains(target, BlacklistFlags.Combat))
+                            if ( Unit.ValidUnit(target) 
+                                && !Blacklist.Contains(target.Guid, BlacklistFlags.Pull | BlacklistFlags.Combat)
+                                && unit.EvadedAttacksCount() < SingularSettings.Instance.EvadedAttacksAllowed
+                               )
                             {
                                 Logger.Write(Color.Pink, "Setting target to {0} to get off evade bugged mob!", target.SafeName());
                                 target.Target();
@@ -464,6 +467,14 @@ namespace Singular.Utilities
 
             /// line below was originally in Evade logic, but commenting to avoid Sleeps
             // StyxWoW.SleepForLagDuration();
+        }
+
+        public static int EvadedAttacksCount( this WoWUnit unit)
+        {
+            if (!MobsThatEvaded.ContainsKey(unit.Guid))
+                return 0;
+
+            return MobsThatEvaded[unit.Guid];
         }
 
         private static void HandleErrorMessage(object sender, LuaEventArgs args)

@@ -516,8 +516,9 @@ namespace Singular.Helpers
             if (Me.Class == WoWClass.Druid)
                 compClass = new Decorator(
                     req => SpellManager.HasSpell("Prowl"),
-                    new PrioritySelector(
+                    new Sequence(
                         Spell.BuffSelfAndWait(sp => "Prowl"),
+                        new Action(r => clearStealthAfterRezSickness = "Prowl"),
                         new Action(r => Logger.Write(LogColor.Hilite, "^Prowl: maintain while waiting out Rez Sickness"))
                         )
                     );
@@ -527,11 +528,14 @@ namespace Singular.Helpers
                     req => SpellManager.HasSpell("Stealth"),
                     new Sequence(
                         Spell.BuffSelfAndWait( sp =>"Stealth"),
+                        new Action(r => clearStealthAfterRezSickness = "Stealth"),
                         new Action(r => Logger.Write(LogColor.Hilite, "^Stealth: maintain while waiting out Rez Sickness"))
                         )
                     );
 
             return new PrioritySelector(
+
+                // behavior for waiting on Rez Sickness after it expires ( clearStealth will be non-null )
                 new Decorator(
                     req => SingularSettings.Instance.ResSicknessWait && !string.IsNullOrEmpty(clearStealthAfterRezSickness) && !StyxWoW.Me.HasAura("Resurrection Sickness"),
                     new Sequence(
@@ -544,20 +548,26 @@ namespace Singular.Helpers
                                 new Wait(TimeSpan.FromMilliseconds(500), ret => !Me.HasAura(clearStealthAfterRezSickness), new ActionAlwaysSucceed())
                                 )
                             ),
-                        new Action( r => clearStealthAfterRezSickness = string.Empty )
+                        new Action( r => clearStealthAfterRezSickness = null )
                         )
                     ),
+
+                // behavior for while we have Rez Sickness
                 new Decorator(
                     ret => SingularSettings.Instance.ResSicknessWait && StyxWoW.Me.HasAura("Resurrection Sickness"),
                     new PrioritySelector(
                         new Throttle(TimeSpan.FromMinutes(1), new Action(r => Logger.Write("Waiting out Resurrection Sickness (expires in {0:F0} seconds)", StyxWoW.Me.GetAuraTimeLeft("Resurrection Sickness", false).TotalSeconds))),
-                        new PrioritySelector(
-                            compClass,
-                            new Decorator(
-                                req => SingularSettings.Instance.UseRacials && SpellManager.HasSpell("Shadowmeld"),
-                                new Sequence(
-                                    Spell.BuffSelfAndWait(sp => "Shadowmeld"),
-                                    new Action(r => Logger.Write(LogColor.Hilite, "^Shadowmeld: maintain while waiting out Rez Sickness"))
+                        new Decorator(
+                            req => !Me.HasAnyAura("Stealth", "Prowl", "Shadowmeld"),
+                            new PrioritySelector(
+                                compClass,
+                                new Decorator(
+                                    req => SingularSettings.Instance.UseRacials && SpellManager.HasSpell("Shadowmeld"),
+                                    new Sequence(
+                                        Spell.BuffSelfAndWait(sp => "Shadowmeld"),
+                                        new Action(r => clearStealthAfterRezSickness = "Shadowmeld"),
+                                        new Action(r => Logger.Write(LogColor.Hilite, "^Shadowmeld: maintain while waiting out Rez Sickness"))
+                                        )
                                     )
                                 )
                             ),

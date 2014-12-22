@@ -508,7 +508,7 @@ namespace Singular.ClassSpecific.Druid
                     return RunStatus.Failure;
                     }),
 
-                new Decorator(ret => Spell.UseAOE && _aoeCount >= 5 && Me.Level >= 22,
+                new Decorator(ret => Spell.UseAOE && _aoeCount > 1 && Me.Level >= 22,
 
                     new PrioritySelector(
 
@@ -521,32 +521,36 @@ namespace Singular.ClassSpecific.Druid
                                 && !Me.ActiveAuras.ContainsKey("Clearcasting")
                                 && !Me.HasAura("Berserk")),
 
-                        Spell.BuffSelf("Berserk", ret => Me.HasAura("Tiger's Fury") && SingularRoutine.CurrentWoWContext != WoWContext.Instances),
-
-                        // bite if rip good for awhile or target dying soon
-                        Spell.Cast("Ferocious Bite",
-                            ret => (Me.ComboPoints >= 5 && !Me.CurrentTarget.HasAuraExpired("Rip", 6))
-                                || Me.ComboPoints >= _currTargetTimeToDeath),
+                        Spell.BuffSelf("Berserk", ret => _aoeCount >= 3 && Me.HasAura("Tiger's Fury") && SingularRoutine.CurrentWoWContext != WoWContext.Instances),
 
                         Spell.Cast("Rip",
-                            ret => Me.ComboPoints >= 5
-                                && _currTargetTimeToDeath >= 8
-                                && Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds < 1),
+                            on => _currTargetTimeToDeath >= 8 && Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds < 1
+                                ? Me.CurrentTarget 
+                                : _aoeColl
+                                    .Where( u => u.Guid != Me.CurrentTargetGuid && u.GetAuraTimeLeft("Rip", true).TotalSeconds < 1 && u.IsWithinMeleeRange && Me.IsSafelyFacing(u) && u.InLineOfSpellSight )
+                                    .OrderByDescending( u => u.MaxHealth )
+                                    .FirstOrDefault()
+                            ),
 
-                        Spell.Cast("Swipe", ret => Me.CurrentTarget.IsWithinMeleeRange),
+                        Spell.Cast("Ferocious Bite", ret => Me.ComboPoints >= 5),
+
+                        Spell.Cast("Swipe", ret => Me.CurrentTarget.IsWithinMeleeRange && _aoeCount > 4),
+
+                        // otherwise, try and keep Rake up on mobs allowing some AoE dmg without breaking CC
+                        Spell.Cast( "Rake", 
+                            ret => _aoeColl
+                                .FirstOrDefault(
+                                    m => !m.HasMyAura("Rake")
+                                        && !m.IsCrowdControlled()
+                                        && m.IsWithinMeleeRange
+                                        && Me.IsSafelyFacing(m)
+                                        && m.InLineOfSpellSight
+                                )
+                            ),
 
                         Movement.CreateMoveToMeleeBehavior(true)
                         )
-                    ),
-
-                // otherwise, try and keep Rake up on mobs allowing some AoE dmg without breaking CC
-                Spell.Cast( "Rake", 
-                    ret => _aoeColl.FirstOrDefault( 
-                        m => m.Guid != Me.CurrentTargetGuid 
-                            && m.IsWithinMeleeRange 
-                            && !m.HasMyAura("Rake") 
-                            && Me.IsSafelyFacing(m) 
-                            && !m.IsCrowdControlled()))
+                    )
                 );
         }
 
@@ -557,7 +561,7 @@ namespace Singular.ClassSpecific.Druid
                 _aoeColl = new List<WoWUnit>(){ Me.CurrentTarget };
             else
             {
-                _aoeColl = Unit.UnfriendlyUnits(8);
+                _aoeColl = Unit.UnitsInCombatWithUsOrOurStuff(8);
                 if (_aoeColl.Any(m => m.IsCrowdControlled()))
                 {
                     _aoeColl = new List<WoWUnit>() { Me.CurrentTarget };

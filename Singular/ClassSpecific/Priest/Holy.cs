@@ -47,96 +47,10 @@ namespace Singular.ClassSpecific.Priest
         }
 
         private static WoWUnit _lightwellTarget = null;
-
-        public static Composite CreateHolyHealOnlyBehavior(bool selfOnly, bool moveInRange)
-        {
-            return CreateRestoPriestHealingOnlyBehavior(selfOnly, moveInRange);
-/*
-            HealerManager.NeedHealTargeting = true;
-            WoWUnit healTarget = null;
-            return new
-                PrioritySelector(
-                ret => healTarget = selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
-                    new Decorator(
-                        ret => healTarget != null && (moveInRange || healTarget.InLineOfSpellSight && healTarget.DistanceSqr < 40 * 40),
-                        new PrioritySelector(
-                        Spell.WaitForCast(),
-                        new Decorator(
-                            ret => moveInRange,
-                            Movement.CreateMoveToLosBehavior(ret => healTarget)),
-                // use fade to drop aggro.
-                        Spell.Cast("Fade", ret => (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid) && StyxWoW.Me.CurrentMap.IsInstance && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 30) > 0),
-
-                        Spell.Cast("Mindbender", ret => StyxWoW.Me.ManaPercent <= 80 && StyxWoW.Me.GotTarget),
-                        Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= 80 && StyxWoW.Me.GotTarget),
-
-                        Spell.BuffSelf("Desperate Prayer", ret => StyxWoW.Me.HealthPercent <= 50),
-                        Spell.BuffSelf("Divine Hymn", ret => Unit.NearbyFriendlyPlayers.Count(p => p.HealthPercent <= SingularSettings.Instance.Priest().DivineHymnHealth) >= SingularSettings.Instance.Priest().DivineHymnCount),
-
-                        Spell.Cast(
-                            "Prayer of Mending",
-                            ret => healTarget,
-                            ret => ret is WoWPlayer && Group.Tanks.Contains((WoWPlayer)ret) && !((WoWUnit)ret).HasMyAura("Prayer of Mending", 3) &&
-                                   Group.Tanks.Where(t => t != healTarget).All(p => !p.HasMyAura("Prayer of Mending"))),
-                        Spell.Cast(
-                            "Renew",
-                            ret => healTarget,
-                            ret => healTarget is WoWPlayer && Group.Tanks.Contains(healTarget) && !healTarget.HasMyAura("Renew")),
-                        Spell.Cast("Prayer of Healing",
-                            ret => healTarget,
-                            ret => StyxWoW.Me.HasAura("Serendipity", 2) && Unit.NearbyFriendlyPlayers.Count(p => p.HealthPercent <= SingularSettings.Instance.Priest().PrayerOfHealingSerendipityHealth) >= SingularSettings.Instance.Priest().PrayerOfHealingSerendipityCount),
-                        Spell.Cast("Circle of Healing",
-                            ret => healTarget,
-                            ret => Unit.NearbyFriendlyPlayers.Count(p => p.HealthPercent <= SingularSettings.Instance.Priest().CircleOfHealingHealth) >= SingularSettings.Instance.Priest().CircleOfHealingCount),
-                        Spell.CastOnGround(
-                            "Holy Word: Sanctuary",
-                            ret => Clusters.GetBestUnitForCluster(Unit.NearbyFriendlyPlayers.Select(p => p.ToUnit()), ClusterType.Radius, 10f).Location,
-                            ret => Clusters.GetClusterCount(healTarget,
-                                                            Unit.NearbyFriendlyPlayers.Select(p => p.ToUnit()),
-                                                            ClusterType.Radius, 10f) >= 4 ),
-                        Spell.Cast(
-                            "Holy Word: Serenity",
-                            ret => healTarget,
-                            ret => ret is WoWPlayer && Group.Tanks.Contains(healTarget)),
-
-                        Spell.Buff("Guardian Spirit",
-                            ret => healTarget,
-                            ret => healTarget.HealthPercent <= 10),
-
-                        Spell.CastOnGround("Lightwell",ret => WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, healTarget.Location, 5f)),
-
-                        Spell.Cast("Power Infusion", ret => healTarget.HealthPercent < 40 || StyxWoW.Me.ManaPercent <= 20),
-                        Spell.Cast(
-                            "Flash Heal",
-                            ret => healTarget,
-                            ret => StyxWoW.Me.HasAura("Surge of Light") && healTarget.HealthPercent <= 90),
-                        Spell.Cast(
-                            "Flash Heal",
-                            ret => healTarget,
-                            ret => healTarget.HealthPercent < SingularSettings.Instance.Priest().HolyFlashHeal),
-                        Spell.Cast(
-                            "Heal",
-                            ret => healTarget,
-                            ret => healTarget.HealthPercent < SingularSettings.Instance.Priest().HolyHeal),
-                        new Decorator(
-                            ret => moveInRange,
-                            Movement.CreateMoveToTargetBehavior(true, 35f, ret => healTarget))
-
-                        // Divine Hymn
-                // Desperate Prayer
-                // Prayer of Mending
-                // Prayer of Healing
-                // Power Word: Barrier
-                // TODO: Add smite healing. Only if Atonement is talented. (Its useless otherwise)
-                        )));
- */
-        }
-
         private static WoWUnit _moveToHealTarget = null;
         private static WoWUnit _lastMoveToTarget = null;
 
-        // temporary lol name ... will revise after testing
-        public static Composite CreateRestoPriestHealingOnlyBehavior(bool selfOnly, bool moveInRange)
+        public static Composite CreateHolyHealOnlyBehavior(bool selfOnly, bool moveInRange)
         {
             if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
                 return new ActionAlwaysFail();
@@ -645,46 +559,72 @@ VoidShift               Void Shift
 
         private static Composite CreateHolyDiagnosticOutputBehavior( string context)
         {
-            return new Sequence(
-                new Decorator(
-                    ret => SingularSettings.Debug,
-                    new ThrottlePasses(1, 1,
-                        new Action(ret =>
+            if (!SingularSettings.Debug)
+                return new ActionAlwaysFail();
+
+            return new ThrottlePasses( 1, TimeSpan.FromSeconds(1), RunStatus.Failure,
+                new Action(ret =>
+                {
+                    WoWAura chakra = Me.GetAllAuras().Where(a => a.Name.Contains("Chakra")).FirstOrDefault();
+
+                    string line = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, combat={3}, {4}, surge={5}, serendip={6}",
+                        context,
+                        Me.HealthPercent,
+                        Me.ManaPercent,
+                        Me.Combat.ToYN(),
+                        chakra == null ? "(null)" : chakra.Name,
+                        (long)Me.GetAuraTimeLeft("Surge of Light").TotalMilliseconds,
+                        (long)Me.GetAuraTimeLeft("Serendipity").TotalMilliseconds
+                        );
+
+                    WoWUnit healTarget = HealerManager.Instance == null ? null : HealerManager.Instance.FirstUnit;
+                    if (!HealerManager.NeedHealTargeting)
+                        line += ", healTargeting=disabled";
+                    else if (Me.IsInGroup() || (Me.FocusedUnitGuid.IsValid && healTarget == Me.FocusedUnit))
+                    {
+                        if (healTarget == null || !healTarget.IsValid)
+                            line += ", target=(null)";
+                        else
                         {
-                            WoWAura chakra = Me.GetAllAuras().Where(a => a.Name.Contains("Chakra")).FirstOrDefault();
+                            line += string.Format(", target={0} th={1:F1}%/{2:F1}%,  @ {3:F1} yds, combat={4}, tloss={5}, pw:s={6}, renew={7}",
+                                healTarget.SafeName(),
+                                healTarget.HealthPercent,
+                                healTarget.PredictedHealthPercent(includeMyHeals: true),
+                                healTarget.Distance,
+                                healTarget.Combat.ToYN(),
+                                healTarget.InLineOfSpellSight,
+                                (long)healTarget.GetAuraTimeLeft("Power Word: Shield").TotalMilliseconds,
+                                (long)healTarget.GetAuraTimeLeft("Renew").TotalMilliseconds
+                                );
+                        }
 
-                            string line = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, combat={3}, {4}, surge={5}, serendip={6}",
-                                context,
-                                Me.HealthPercent,
-                                Me.ManaPercent,
-                                Me.Combat.ToYN(),
-                                chakra == null ? "(null)" : chakra.Name,
-                                (long)Me.GetAuraTimeLeft("Surge of Light").TotalMilliseconds,
-                                (long)Me.GetAuraTimeLeft("Serendipity").TotalMilliseconds
-                               );
-
-                            if (HealerManager.Instance == null || HealerManager.Instance.FirstUnit == null || !HealerManager.Instance.FirstUnit.IsValid )
-                                line += ", target=(null)";
+                        if (SingularSettings.Instance.StayNearTank)
+                        {
+                            WoWUnit tank = HealerManager.TankToStayNear;
+                            if (tank == null)
+                                line += ",tank=(null)";
+                            else if (!tank.IsAlive)
+                                line += ",tank=(dead)";
                             else
                             {
-                                WoWUnit healtarget = HealerManager.Instance.FirstUnit;
-                                line += string.Format(", target={0} th={1:F1}%/{2:F1}%,  @ {3:F1} yds, combat={4}, tloss={5}, pw:s={6}, renew={7}",
-                                    healtarget.SafeName(),
-                                    healtarget.HealthPercent,
-                                    healtarget.PredictedHealthPercent(includeMyHeals: true),
-                                    healtarget.Distance,
-                                    healtarget.Combat.ToYN(),
-                                    healtarget.InLineOfSpellSight,
-                                    (long)healtarget.GetAuraTimeLeft("Power Word: Shield").TotalMilliseconds,
-                                    (long)healtarget.GetAuraTimeLeft("Renew").TotalMilliseconds
+                                float hh = (float)tank.HealthPercent;
+                                float hph = tank.PredictedHealthPercent();
+                                line += string.Format(",tank={0} {1:F1}% @ {2:F1} yds,tph={3:F1}%,tcombat={4},tmove={5},tloss={6}",
+                                    tank.SafeName(),
+                                    hh,
+                                    tank.SpellDistance(),
+                                    hph,
+                                    tank.Combat.ToYN(),
+                                    tank.IsMoving.ToYN(),
+                                    tank.InLineOfSpellSight.ToYN()
                                     );
                             }
+                        }
+                    }
 
-                            Logger.WriteDebug(Color.LightGreen, line);
-                            return RunStatus.Failure;
-                        }))
-                    )
-                );
+                    Logger.WriteDebug(Color.LightGreen, line);
+                    return RunStatus.Failure;
+                }));
         }
 
         #endregion

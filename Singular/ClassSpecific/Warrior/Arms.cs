@@ -35,6 +35,21 @@ namespace Singular.ClassSpecific.Warrior
         private static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior(); } }
         private static bool HasTalent(WarriorTalents tal) { return TalentManager.IsSelected((int)tal); }
 
+
+        [Behavior(BehaviorType.Rest, WoWClass.Warrior, WoWSpec.WarriorArms)]
+        public static Composite CreateArmsRest()
+        {
+            return new PrioritySelector(
+
+                Common.CheckIfWeShouldCancelBladestorm(),
+
+                Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
+
+                CheckThatWeaponIsEquipped()
+                );
+        }
+
+
         [Behavior(BehaviorType.Pull, WoWClass.Warrior, WoWSpec.WarriorArms, WoWContext.All)]
         public static Composite CreateArmsNormalPull()
         {
@@ -155,13 +170,20 @@ namespace Singular.ClassSpecific.Warrior
 
                         new Throttle(
                             new Decorator(
-                                ret => Me.HasAura("Glyph of Incite"),
+                                ret => Me.HasAura("Glyph of Cleave"),
                                 Spell.Cast("Heroic Strike")
                                 )
                             ),
 
-                        Spell.Buff("Piercing Howl", ret => Me.CurrentTarget.Distance < 10 && Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows),
-                        Spell.OffGCD( Spell.Buff("Hamstring", ret => Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows) ),
+                        new Sequence(
+                            new Decorator(
+                                req => Common.IsSlowNeeded(Me.CurrentTarget),
+                                new PrioritySelector(
+                                    Spell.Buff("Hamstring")
+                                    )
+                                ),
+                            new Wait(TimeSpan.FromMilliseconds(500), until => !Common.IsSlowNeeded(Me.CurrentTarget), new ActionAlwaysSucceed())
+                            ),
 
                         CreateArmsAoeCombat(ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 1))),
 
@@ -232,109 +254,6 @@ namespace Singular.ClassSpecific.Warrior
                                         Spell.Cast("Thunder Clap", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8)
                                         )
                                     )
-                                )
-                            ),
-
-
-                        new Decorator(
-                            ret => false, // WarriorSettings.ArmsSpellPriority == Singular.Settings.WarriorSettings.SpellPriority.IcyVeins,
-                            new PrioritySelector(
-                                // Icy-Veins
-                                //-------------------------------
-                                // 1.    Use Mortal Strike on cooldown.
-                                Spell.Cast("Mortal Strike"),
-
-                                // 2.    Use Colossus Smash
-                                //           If the Colossus Smash debuff is not active, or if it has less than 1.5 seconds remaining on the target.
-                                Spell.Cast("Colossus Smash", ret => Me.CurrentTarget.GetAuraTimeLeft("Colossus Smash").TotalMilliseconds < 1500),
-
-                                // 3.    Use Heroic Strike (remember that it is not on the global cooldown).
-                                //           If the debuff applied by Colossus Smash is active and you have 70 or more rage OR
-                                //           If you cannot use Execute Icon Execute (the target is above 20% health) and you have 85 or more rage.
-                                //           added case of Colossus Smash not trained -OR- target will die soon
-                                new Sequence(
-                                    Spell.Cast("Heroic Strike", req => NeedHeroicStrikeDumpIcyVeins),
-                                    new ActionAlwaysFail()
-                                    ),
-
-                                // 4.    Use Execute
-                                //           If the target is below 20% health (it is not available otherwise) AND
-                                //           If the debuff applied by Colossus Smash is active.
-                                Spell.Cast("Execute", ret => Me.CurrentTarget.HasAura("Colossus Smash")),
-
-                                // 5.    Use abilities that cost no rage, such as your tier 4 talents or Impending Victory Icon Impending Victory.
-                                new Decorator(
-                                    ret => Spell.UseAOE && Me.GotTarget && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss()) && Me.CurrentTarget.Distance < 8,
-                                    new PrioritySelector(
-                                        Spell.Cast("Storm Bolt"),
-                                        Spell.BuffSelf("Bladestorm"),
-                                        Spell.Cast("Shockwave"),
-                                        Spell.Cast("Dragon Roar")
-                                        )
-                                    ),
-
-                                // 6.    Use Execute.
-                                Spell.Cast("Execute"),
-
-                                // 7.    Use Slam
-                                //           If you cannot use Execute Icon Execute (the target is above 20% health) AND
-                                //           If you have 90 or more rage.
-                                Spell.Cast("Slam", ret => Me.RagePercent >= 90 && Me.CurrentTarget.HealthPercent > 20),
-                        
-                                // 8.    Use Overpower (remember that it is free of rage cost for 10 seconds after using Execute Icon Execute).
-                                Spell.Cast("Overpower"),
-
-                                // 9.    Use Slam
-                                //           If you cannot use Execute Icon Execute (the target is above 20% health) AND
-                                //           If you have 40 or more rage.
-                                Spell.Cast("Slam", ret => Me.RagePercent >= 40 && Me.CurrentTarget.HealthPercent > 20)
-
-                                )
-                            ),
-
-                        new Decorator(
-                            ret => false, // WarriorSettings.ArmsSpellPriority == Singular.Settings.WarriorSettings.SpellPriority.ElitistJerks,
-                            new PrioritySelector(
-        #region EXECUTE AVAILABLE
-                                new Decorator( ret => Me.CurrentTarget.HealthPercent <= 20,
-                                    new PrioritySelector(
-                                        Spell.Cast("Colossus Smash"),
-                                        Spell.Cast("Execute"),
-                                        Spell.Cast("Mortal Strike"),
-                                        Spell.Cast("Overpower"),
-                                        Spell.Cast("Storm Bolt"),
-                                        Spell.Cast("Dragon Roar", ret => (Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances) && (Me.CurrentTarget.Distance <= 8 || Me.CurrentTarget.IsWithinMeleeRange)),
-                                        Spell.Cast("Slam")
-                                        )
-                                    ),
-        #endregion
-
-        #region EXECUTE NOT AVAILABLE
-                                new Decorator(ret => Me.CurrentTarget.HealthPercent > 20,
-                                    new PrioritySelector(
-                                        // Only drop DC if we need to use HS for TFB. This lets us avoid breaking HS as a rage dump, when we don't want it to be one.
-                                        // Spell.Cast("Deadly Calm", ret => NeedTasteForBloodDump),
-
-                                        new Sequence(
-                                            Spell.Cast("Heroic Strike", ret => NeedHeroicStrikeDumpIcyVeins ),
-                                            new ActionAlwaysFail()
-                                            ),
-
-                                        Spell.Cast("Colossus Smash", ret => !StyxWoW.Me.CurrentTarget.HasAura("Colossus Smash")),
-                                        Spell.Cast("Execute"),
-                                        Spell.Cast("Mortal Strike"),
-
-                                        //HeroicLeap(),
-
-                                        Spell.Cast("Storm Bolt"),
-                                        Spell.Cast("Dragon Roar", ret => (Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances) && (Me.CurrentTarget.SpellDistance() <= 8 || Me.CurrentTarget.IsWithinMeleeRange)),
-                                        Spell.Cast("Overpower"),
-
-                                        // Rage dump!
-                                        Spell.Cast("Slam", ret => (StyxWoW.Me.RagePercent >= 50 || StyxWoW.Me.CurrentTarget.HasAura("Colossus Smash")) && StyxWoW.Me.CurrentTarget.HealthPercent > 20)
-                                        )
-                                    )
-        #endregion
                                 )
                             ),
 
@@ -449,25 +368,16 @@ namespace Singular.ClassSpecific.Warrior
             #region Slow
 
                 // slow them down
-                        new Decorator(
-                            ret => WarriorSettings.UseWarriorSlows
-                                && Me.CurrentTarget.IsPlayer
-                                && !Me.CurrentTarget.Stunned
-                                && !Me.CurrentTarget.IsCrowdControlled()
-                                && !Me.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModDecreaseSpeed),
-                            new PrioritySelector(
-                                Spell.Buff("Piercing Howl", req => Me.CurrentTarget.Distance < 15),
-                                Spell.Buff("Hamstring")
-                                )
+                        new Sequence(
+                            new Decorator(
+                                ret => Common.IsSlowNeeded(Me.CurrentTarget),
+                                new PrioritySelector(
+                                    Spell.Buff("Hamstring")
+                                    )
+                                ),  
+                            new Wait( TimeSpan.FromMilliseconds(500), until => !Common.IsSlowNeeded(Me.CurrentTarget), new ActionAlwaysSucceed())
                             ),
 
-                        Spell.Cast("Staggering Shout",
-                            ret => Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.DistanceSqr < 20 * 20
-                                && !Me.CurrentTarget.Stunned
-                                && !Me.CurrentTarget.IsCrowdControlled()
-                                && Me.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModDecreaseSpeed)),
-
-                        Common.CreateDisarmBehavior(),
             #endregion
 
             #region Damage
@@ -486,9 +396,7 @@ namespace Singular.ClassSpecific.Warrior
                             req => {
                                 if (Me.CurrentTarget.SpellDistance() <= 8)
                                 {
-                                    if (Me.CurrentTarget.IsMelee() && !Me.CurrentTarget.HasAura("Weakened Blows"))
-                                        return true;
-
+                                    // cast only if out of melee or behind us
                                     if (!Me.CurrentTarget.IsWithinMeleeRange || !Me.IsSafelyFacing(Me.CurrentTarget))
                                         return true;
                                 }
@@ -498,7 +406,7 @@ namespace Singular.ClassSpecific.Warrior
 
             #endregion
 
-)
+                        )
                     ),
 
                 Movement.CreateMoveToMeleeBehavior(true)
@@ -679,5 +587,29 @@ namespace Singular.ClassSpecific.Warrior
         }
 
         #endregion
+
+        private static Composite _checkWeapons = null;
+        public static Composite CheckThatWeaponIsEquipped()
+        {
+            if (_checkWeapons == null)
+            {
+                _checkWeapons = new ThrottlePasses(60,
+                    new Sequence(
+                        new DecoratorContinue(
+                            ret => !Me.Disarmed && !IsWeapon2H(Me.Inventory.Equipped.MainHand),
+                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a Two Handed Weapon equipped to be effective", SingularRoutine.SpecAndClassName()))
+                            ),
+                        new ActionAlwaysFail()
+                        )
+                    );
+            }
+            return _checkWeapons;
+        }
+        public static bool IsWeapon2H(WoWItem hand)
+        {
+            return hand != null 
+                && hand.ItemInfo.ItemClass == WoWItemClass.Weapon
+                && hand.ItemInfo.InventoryType == InventoryType.TwoHandWeapon;
+        }
     }
 }

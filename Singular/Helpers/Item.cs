@@ -131,7 +131,7 @@ namespace Singular.Helpers
 
         private static void UseItem(WoWItem item)
         {
-            Logger.Write( LogColor.Hilite, "/use " + item.Name);
+            Logger.Write( LogColor.Hilite, "/use {0}", item.Name);
             item.Use();
         }
 
@@ -208,9 +208,9 @@ namespace Singular.Helpers
         /// </summary>
         /// <returns></returns>
 
-        public static Composite CreateUseAlchemyBuffsBehavior()
+        public static Composite CreateUseFlasksBehavior()
         {
-            if (!SingularSettings.Instance.UseAlchemyFlasks)
+            if (!SingularSettings.Instance.UseAlchemyFlasks || Me.Level < 85)
                 return new ActionAlwaysFail();
 
             return new ThrottlePasses(
@@ -218,60 +218,71 @@ namespace Singular.Helpers
                 TimeSpan.FromSeconds(5),
                 RunStatus.Failure,
                 new Decorator(
-                    req => !StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") && !aura.Key.StartsWith("Flask of ") || aura.Key != "Visions of Insanity"), 
-                    new Sequence(
-                        new PrioritySelector(
-                            new Decorator(
-                                req => StyxWoW.Me.GetSkill(SkillLine.Alchemy) != null && StyxWoW.Me.GetSkill(SkillLine.Alchemy).CurrentValue >= 400,
-                                new PrioritySelector(
-                                    ctx => StyxWoW.Me.CarriedItems.FirstOrDefault(i => i.Entry == 75525),
-                                    // Alchemist's Flask
-                                    new Decorator(
-                                        ret => ret != null,
-                                        new PrioritySelector(
-                                            new Decorator(
-                                                req => CanUseItem((WoWItem)req),
-                                                new Sequence(
-                                                    new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
-                                                    new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                                    Helpers.Common.CreateWaitForLagDuration(stopIf => StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") || aura.Key.StartsWith("Flask of ")))
-                                                    )
-                                                ),
-                                            new ActionAlwaysSucceed()
-                                            )
-                                        )
-                                    )
-                                ),
-                            new Decorator(
-                                ret => Me.Level >= 85,
-                                new PrioritySelector(
-                                    ctx => StyxWoW.Me.CarriedItems.FirstOrDefault(i => i.Entry == 86569),
-                                    // Crystal of Insanity
-                                    new Decorator(
-                                        ret => ret != null,
-                                        new PrioritySelector(
-                                            new Decorator( 
-                                                req => CanUseItem((WoWItem)req),
-                                                new Sequence(
-                                                    new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
-                                                    new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                                    Helpers.Common.CreateWaitForLagDuration(stopIf => StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") || aura.Key.StartsWith("Flask of ")))
-                                                    )
-                                                ),
-
-                                            new ActionAlwaysSucceed()
-                                            )
-                                        )
+                    req => !StyxWoW.Me.Auras
+                        .Any(aura => 
+                            !aura.Key.StartsWith("Flask of ")
+                            && !aura.Key.StartsWith("Enhanced ")
+                            && !flaskAura.Contains( aura.Value.SpellId )
+                            ), 
+                    new PrioritySelector(
+                        // save highest priority WoWItem to use
+                        ctx => flaskItem
+                            .Select( f => StyxWoW.Me.CarriedItems
+                                .FirstOrDefault( 
+                                    i => f == i.Entry
+                                        && (i.ItemInfo.RequiredSkillId == 0 || Me.GetSkill(i.ItemInfo.RequiredSkillId).CurrentValue >= i.ItemInfo.RequiredSkillLevel)
                                     )
                                 )
-                            ),
-
-                        // force this behavior to continue
-                        new ActionAlwaysFail()
+                            .FirstOrDefault(),
+                        new Decorator(
+                            req => req != null && CanUseItem((WoWItem)req),
+                            new Sequence(
+                                new Action(r => Logger.Write(LogColor.Hilite, "/use flask: {0}", ((WoWItem)r).Name)),
+                                new Action(r => ((WoWItem)r).UseContainerItem()),
+                                new PrioritySelector(
+                                    new DynaWait( 
+                                        ts => TimeSpan.FromMilliseconds(Math.Max(500, SingularRoutine.Latency * 2)),
+                                        until => StyxWoW.Me.Auras
+                                            .Any(aura => 
+                                                aura.Key.StartsWith("Flask of ")
+                                                || aura.Key.StartsWith("Enhanced ")
+                                                || flaskAura.Contains( aura.Value.SpellId )
+                                                ),
+                                        new ActionAlwaysSucceed()
+                                        ),
+                                    new Action( r => {
+                                        Logger.WriteDiagnostic("UseFlasks: do not see an aura from item [{0}]");
+                                        return RunStatus.Failure;
+                                        })
+                                    )
+                                )
+                            )
                         )
                     )
                 );
         }
+
+        /// <summary>
+        /// list of items which provide Flask like buffs.  must appear in 
+        /// order of priority to use
+        /// </summary>
+        private static List<uint> flaskItem = new List<uint>()
+        {
+            118922,     // Oralius' Whispering Crystal (item)
+            86569,      // Crystal of Insanity (item)
+            75525,      // Alchemist's Flask (item)
+        };
+
+        /// <summary>
+        /// do use a flaskItem if one of these auras is present
+        /// note: do not list flasks here
+        /// </summary>
+        private static HashSet<int> flaskAura = new HashSet<int>()
+        {
+            176151,     // Whispers of Insanity (aura)
+            127230,     // Visions of Insanity (aura)
+            105617,     // Alchemist's Flask (aura)
+        };
 
         private static DateTime suppressScrollsUntil = DateTime.MinValue;
 
@@ -676,13 +687,14 @@ namespace Singular.Helpers
 
         public static Composite CreateUseBandageBehavior()
         {
-            return new Decorator( 
+            return new Decorator(
 
-                ret => SingularSettings.Instance.UseBandages && Me.PredictedHealthPercent(includeMyHeals: true) < 95 && SpellManager.HasSpell( "First Aid") && !Me.HasAura( "Recently Bandaged") && !Me.ActiveAuras.Any( a => a.Value.IsHarmful ),
+                ret => SingularSettings.Instance.UseBandages && Me.PredictedHealthPercent(includeMyHeals: true) < 95 && SpellManager.HasSpell("First Aid") && !Me.HasAura("Recently Bandaged") && !Me.ActiveAuras.Any(a => a.Value.IsHarmful),
 
                 new PrioritySelector(
 
-                    new Action( ret => {
+                    new Action(ret =>
+                    {
                         bandage = FindBestBandage();
                         return RunStatus.Failure;
                     }),
@@ -691,14 +703,18 @@ namespace Singular.Helpers
                         ret => bandage != null && !Me.IsMoving,
 
                         new Sequence(
-                            new Action(ret => UseItem(bandage)),
-                            new WaitContinue( new TimeSpan(0,0,0,0,750), ret => Me.IsCasting || Me.IsChanneling, new ActionAlwaysSucceed()),
+                            new Action(ret =>
+                            {
+                                Logger.Write(LogColor.Hilite, "/use {0} @ {1:F1}%", bandage.Name, Me.HealthPercent);
+                                bandage.Use();
+                            }),
+                            new WaitContinue(new TimeSpan(0, 0, 0, 0, 750), ret => Me.IsCasting || Me.IsChanneling, new ActionAlwaysSucceed()),
                             new WaitContinue(8, ret => (!Me.IsCasting && !Me.IsChanneling) || Me.HealthPercent > 99, new ActionAlwaysSucceed()),
                             new DecoratorContinue(
                                 ret => Me.IsCasting || Me.IsChanneling,
                                 new Sequence(
-                                    new Action( r => Logger.Write( LogColor.Cancel, "/cancel First Aid @ {0:F0}%", Me.HealthPercent )),
-                                    new Action( r => SpellManager.StopCasting() )
+                                    new Action(r => Logger.Write(LogColor.Cancel, "/cancel First Aid @ {0:F0}%", Me.HealthPercent)),
+                                    new Action(r => SpellManager.StopCasting())
                                     )
                                 )
                             )

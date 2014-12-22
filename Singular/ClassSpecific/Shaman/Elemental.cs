@@ -177,12 +177,15 @@ namespace Singular.ClassSpecific.Shaman
                             new PrioritySelector(
                                 new Action( act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
 
-                                Spell.CastOnGround("Earthquake", 
-                                    on => StyxWoW.Me.CurrentTarget,
-                                    req => StyxWoW.Me.CurrentTarget != null 
-                                        && StyxWoW.Me.CurrentTarget.Distance < 34
-                                        && (StyxWoW.Me.ManaPercent > 60 || StyxWoW.Me.HasAura( "Clearcasting")) 
-                                        && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 6),
+                                new Sequence(
+                                    Spell.CastOnGround("Earthquake", 
+                                        on => StyxWoW.Me.CurrentTarget,
+                                        req => StyxWoW.Me.CurrentTarget != null 
+                                            && StyxWoW.Me.CurrentTarget.Distance < 34
+                                            && (StyxWoW.Me.ManaPercent > 60 || StyxWoW.Me.HasAura( "Clearcasting")) 
+                                            && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 6),
+                                    new Wait( TimeSpan.FromMilliseconds(500), until => Me.CurrentTarget.HasMyAura("Earthquake"), new ActionAlwaysSucceed())
+                                    ),
 
                                 Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
                                 )
@@ -314,10 +317,13 @@ namespace Singular.ClassSpecific.Shaman
                             ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled()),
                             new PrioritySelector(
                                 new Action(act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
-                                Spell.CastOnGround(
-                                    "Earthquake", 
-                                    on => Me.CurrentTarget,
-                                    req => Me.CurrentTarget.SpellDistance() < 35
+                                new Sequence(
+                                    Spell.CastOnGround(
+                                        "Earthquake", 
+                                        on => Me.CurrentTarget,
+                                        req => Me.CurrentTarget.SpellDistance() < 35
+                                        ),
+                                    new Wait(TimeSpan.FromMilliseconds(500), until => Me.CurrentTarget.HasMyAura("Earthquake"), new ActionAlwaysSucceed())
                                     ),
                                 Spell.Cast(
                                     "Earth Shock", 

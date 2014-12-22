@@ -11,6 +11,7 @@ using Action = Styx.TreeSharp.Action;
 using Styx.WoWInternals.WoWObjects;
 using System.Drawing;
 using Styx.WoWInternals;
+using CommonBehaviors.Actions;
 
 namespace Singular.ClassSpecific.Hunter
 {
@@ -49,7 +50,7 @@ namespace Singular.ClassSpecific.Hunter
 
                         Common.CreateHunterNormalCrowdControl(),
 
-                        Spell.Cast("Tranquilizing Shot", ctx => Me.CurrentTarget.HasAura("Enraged")),
+                        Spell.Cast("Tranquilizing Shot", req => Me.GetAllAuras().Any(a => a.Spell.DispelType == WoWDispelType.Enrage)),
 
                         Spell.Buff("Concussive Shot",
                             ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
@@ -119,9 +120,9 @@ namespace Singular.ClassSpecific.Hunter
 
                         Helpers.Common.CreateInterruptBehavior(),
 
-                        Common.CreateHunterPvpCrowdControl(),                      
+                        Common.CreateHunterPvpCrowdControl(),
 
-                        Spell.Cast("Tranquilizing Shot", ctx => Me.CurrentTarget.HasAura("Enraged")),
+                        Spell.Cast("Tranquilizing Shot", req => Me.GetAllAuras().Any(a => a.Spell.DispelType == WoWDispelType.Enrage)),
 
                         Spell.Buff("Concussive Shot",
                             ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
@@ -149,39 +150,39 @@ namespace Singular.ClassSpecific.Hunter
 
         private static Composite CreateSurvivalDiagnosticOutputBehavior()
         {
-            return new Decorator(
-                ret => SingularSettings.Debug,
-                new Throttle( 1,
-                    new Action(ret =>
+            if (!SingularSettings.Debug)
+                return new ActionAlwaysFail();
+
+            return new ThrottlePasses( 1,
+                new Action(ret =>
+                {
+                    string sMsg;
+                    sMsg = string.Format(".... h={0:F1}%, focus={1:F1}, moving={2}",
+                        Me.HealthPercent,
+                        Me.CurrentFocus,
+                        Me.IsMoving
+                        );
+
+                    if ( !Me.GotAlivePet)
+                        sMsg += ", no pet";
+                    else
+                        sMsg += string.Format( ", peth={0:F1}%", Me.Pet.HealthPercent);
+
+                    WoWUnit target = Me.CurrentTarget;
+                    if (target != null)
                     {
-                        string sMsg;
-                        sMsg = string.Format(".... h={0:F1}%, focus={1:F1}, moving={2}",
-                            Me.HealthPercent,
-                            Me.CurrentFocus,
-                            Me.IsMoving
+                        sMsg += string.Format(
+                            ", {0}, {1:F1}%, {2:F1} yds, loss={3}",
+                            target.SafeName(),
+                            target.HealthPercent,
+                            target.Distance,
+                            target.InLineOfSpellSight
                             );
+                    }
 
-                        if ( !Me.GotAlivePet)
-                            sMsg += ", no pet";
-                        else
-                            sMsg += string.Format( ", peth={0:F1}%", Me.Pet.HealthPercent);
-
-                        WoWUnit target = Me.CurrentTarget;
-                        if (target != null)
-                        {
-                            sMsg += string.Format(
-                                ", {0}, {1:F1}%, {2:F1} yds, loss={3}",
-                                target.SafeName(),
-                                target.HealthPercent,
-                                target.Distance,
-                                target.InLineOfSpellSight
-                                );
-                        }
-
-                        Logger.WriteDebug(Color.LightYellow, sMsg);
-                        return RunStatus.Failure;
-                    })
-                    )
+                    Logger.WriteDebug(Color.LightYellow, sMsg);
+                    return RunStatus.Failure;
+                })
                 );
         }
 

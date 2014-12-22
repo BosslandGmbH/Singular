@@ -14,6 +14,7 @@ using Styx.WoWInternals.WoWObjects;
 
 using Action = Styx.TreeSharp.Action;
 using System.Drawing;
+using CommonBehaviors.Actions;
 
 namespace Singular.ClassSpecific.Warrior
 {
@@ -23,7 +24,20 @@ namespace Singular.ClassSpecific.Warrior
         private static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior(); } }
         private static bool HasTalent(WarriorTalents tal) { return TalentManager.IsSelected((int)tal); }
 
-        private static string[] _slows;
+
+        [Behavior(BehaviorType.Rest, WoWClass.Warrior, WoWSpec.WarriorFury)]
+        public static Composite CreateFuryRest()
+        {
+            return new PrioritySelector(
+
+                Common.CheckIfWeShouldCancelBladestorm(),
+
+                Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
+
+                CheckThatWeaponsAreEquipped()
+                );
+        }
+
 
         #region Normal
         [Behavior(BehaviorType.Pull, WoWClass.Warrior, WoWSpec.WarriorFury)]
@@ -107,7 +121,6 @@ namespace Singular.ClassSpecific.Warrior
         [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorFury)]
         public static Composite CreateFuryNormalCombat()
         {
-            _slows = new[] { "Hamstring", "Piercing Howl", "Crippling Poison", "Hand of Freedom", "Infected Wounds" };
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
@@ -142,13 +155,16 @@ namespace Singular.ClassSpecific.Warrior
                             ret => WarriorSettings.UseWarriorCloser && MovementManager.IsClassMovementAllowed && StyxWoW.Me.CurrentTarget.Distance > 9 && PreventDoubleIntercept, 
                             false),
 
-                        // ranged slow
-                        Spell.Buff("Piercing Howl", 
-                            ret => StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior().UseWarriorSlows),
-
-                        // melee slow
-                        Spell.Buff("Hamstring", 
-                            ret => StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior().UseWarriorSlows),
+                        new Sequence(
+                            new Decorator(
+                                ret => Common.IsSlowNeeded(Me.CurrentTarget),
+                                new PrioritySelector(
+                                    Spell.Buff("Piercing Howl", ret => Me.CurrentTarget.SpellDistance().Between(8, 15)),
+                                    Spell.Buff("Hamstring")
+                                    )
+                                ),
+                            new Wait(TimeSpan.FromMilliseconds(500), until => !Common.IsSlowNeeded(Me.CurrentTarget), new ActionAlwaysSucceed())
+                            ),
 
                         //Interupts
                         Helpers.Common.CreateInterruptBehavior(),
@@ -324,6 +340,34 @@ namespace Singular.ClassSpecific.Warrior
         }
 
         #endregion
+
+        private static Composite _checkWeapons = null;
+
+        public static Composite CheckThatWeaponsAreEquipped()
+        {
+            if (_checkWeapons == null)
+            {
+                _checkWeapons = new ThrottlePasses(60,
+                    new Sequence(
+                        new DecoratorContinue(
+                            ret => !Me.Disarmed && !IsWeapon(Me.Inventory.Equipped.MainHand),
+                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a Main Hand Weapon equipped to be effective", SingularRoutine.SpecAndClassName()))
+                            ),
+                        new DecoratorContinue(
+                            ret => !Me.Disarmed && !IsWeapon(Me.Inventory.Equipped.OffHand) && SpellManager.HasSpell("Wild Strike"),
+                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires an Off Hand Weapon to cast Wild Strike", SingularRoutine.SpecAndClassName()))
+                            ),
+                        new ActionAlwaysFail()
+                        )
+                    );
+            }
+            return _checkWeapons;
+        }
+
+        public static bool IsWeapon(WoWItem hand)
+        {
+            return hand != null && hand.ItemInfo.ItemClass == WoWItemClass.Weapon;
+        }
 
         #region Diagnostics 
 

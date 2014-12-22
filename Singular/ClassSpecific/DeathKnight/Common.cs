@@ -22,6 +22,8 @@ namespace Singular.ClassSpecific.DeathKnight
     {
         internal const uint Ghoul = 26125;
 
+        public static bool glyphEmpowerment { get; set; }
+
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static DeathKnightSettings Settings { get { return SingularSettings.Instance.DeathKnight(); } }
 
@@ -105,14 +107,17 @@ namespace Singular.ClassSpecific.DeathKnight
         [Behavior(BehaviorType.Initialize, WoWClass.DeathKnight)]
         public static Composite DeathKnightInitializeBehavior()
         {
-            if (!TalentManager.HasGlyph("Blood Boil"))
-            {
-                BloodBoilRange = 10;
-            }
-            else
+            BloodBoilRange = 10;
+            if (TalentManager.HasGlyph("Blood Boil"))
             {
                 BloodBoilRange = 15;
                 Logger.Write(LogColor.Init, "Glyph of Blood Boil: range of Blood Boil extended to {0}", BloodBoilRange);
+            }
+
+            glyphEmpowerment = TalentManager.HasGlyph("Empowerment") && (Me.Specialization == WoWSpec.DeathKnightFrost || Me.Specialization == WoWSpec.DeathKnightUnholy);
+            if (glyphEmpowerment)
+            {
+                Logger.Write(LogColor.Init, "Glyph of Empowerment: Empower Rune Weapon heals for 30%range of Blood Boil extended to {0}", BloodBoilRange);
             }
 
             BloodBoilRangeSqr = BloodBoilRange * BloodBoilRange;
@@ -314,7 +319,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
 
                     // *** Defensive Cooldowns ***
-                    // Anti-magic shell - no cost and doesnt trigger GCD 
+                // Anti-magic shell - no cost and doesnt trigger GCD 
                         Spell.BuffSelf(
                             "Anti-Magic Shell",
                             req => Unit.NearbyUnfriendlyUnits.Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == Me.Guid)
@@ -322,13 +327,13 @@ namespace Singular.ClassSpecific.DeathKnight
 
                     // we want to make sure our primary target is within melee range so we don't run outside of anti-magic zone.
                         Spell.CastOnGround(
-                            "Anti-Magic Zone", 
+                            "Anti-Magic Zone",
                             on => Me,
-                            req => Common.HasTalent( DeathKnightTalents.AntiMagicZone) 
-                                && !Me.HasAura("Anti-Magic Shell") 
+                            req => Common.HasTalent(DeathKnightTalents.AntiMagicZone)
+                                && !Me.HasAura("Anti-Magic Shell")
                                 && Unit.NearbyUnfriendlyUnits
-                                    .Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == Me.Guid) 
-                                && Targeting.Instance.FirstUnit != null 
+                                    .Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == Me.Guid)
+                                && Targeting.Instance.FirstUnit != null
                                 && Targeting.Instance.FirstUnit.IsWithinMeleeRange
                             ),
 
@@ -336,22 +341,41 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Spell.BuffSelf("Lichborne", req => Me.IsCrowdControlled()),
 
-                        Spell.BuffSelf("Desecrated Ground", req => Common.HasTalent( DeathKnightTalents.DesecratedGround) && Me.IsCrowdControlled()),
-                    
+                        Spell.BuffSelf("Desecrated Ground", req => Common.HasTalent(DeathKnightTalents.DesecratedGround) && Me.IsCrowdControlled()),
+
                         Helpers.Common.CreateCombatRezBehavior("Raise Ally", req => ((WoWUnit)req).SpellDistance() < 40 && ((WoWUnit)req).InLineOfSpellSight),
 
                         // *** Offensive Cooldowns ***
 
+                        // I need to use Empower Rune Weapon to use Death Strike
+                        Spell.BuffSelf("Empower Rune Weapon",
+                            req =>
+                            {
+                                if (StyxWoW.Me.HealthPercent <= Settings.EmpowerRuneWeaponPercent)
+                                {
+                                    if (glyphEmpowerment)
+                                        return true;
+
+                                    if (Me.CurrentTarget != null
+                                        && Me.CurrentTarget.IsWithinMeleeRange
+                                        && Me.IsSafelyFacing(Me.CurrentTarget)
+                                        && Me.CurrentTarget.InLineOfSpellSight
+                                        && !Spell.CanCastHack("Death Strike"))
+                                        return true;
+                                }
+                                return false;
+                            }),
+
                         // I'm unholy and I don't have a pet or I am blood/frost and I am using pet as dps bonus
                         Spell.BuffSelf("Raise Dead",
                             req => TalentManager.CurrentSpec == WoWSpec.DeathKnightUnholy
-                                && SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.PetSummoning) 
+                                && SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.PetSummoning)
                                 && !Me.GotAlivePet
                             ),
 
                         // never use army of the dead in instances if not blood specced unless you have the army of the dead glyph to take away the taunting
-                        Spell.BuffSelf("Army of the Dead", 
-                            req => Settings.UseArmyOfTheDead 
+                        Spell.BuffSelf("Army of the Dead",
+                            req => Settings.UseArmyOfTheDead
                                 && Helpers.Common.UseLongCoolDownAbility
                                 && (SingularRoutine.CurrentWoWContext != WoWContext.Instances || TalentManager.HasGlyph("Army of the Dead"))),
 
@@ -359,9 +383,9 @@ namespace Singular.ClassSpecific.DeathKnight
                                 req => Helpers.Common.UseLongCoolDownAbility && Me.RunicPowerPercent < 70 && ActiveRuneCount == 0),
 
                         Spell.BuffSelf("Death's Advance",
-                            req => Common.HasTalent( DeathKnightTalents.DeathsAdvance) 
-                                && Me.GotTarget 
-                                && (!Spell.CanCastHack("Death Grip") || SingularRoutine.CurrentWoWContext == WoWContext.Instances) 
+                            req => Common.HasTalent(DeathKnightTalents.DeathsAdvance)
+                                && Me.GotTarget
+                                && (!Spell.CanCastHack("Death Grip") || SingularRoutine.CurrentWoWContext == WoWContext.Instances)
                                 && Me.CurrentTarget.DistanceSqr > 10 * 10),
 
                         Spell.BuffSelf("Blood Tap", req => Common.NeedBloodTap()),
@@ -477,8 +501,8 @@ namespace Singular.ClassSpecific.DeathKnight
             // user wants to cast on cooldown without regard to health
             // we have aura AND (target is about to die OR aura expires in less than 3 secs)
             return new Decorator(
-                req => Me.HasAura("Dark Succor") 
-                    && (Me.HealthPercent < 80 || Me.HasAuraExpired("Dark Succor", 3) || (Me.GotTarget && Me.CurrentTarget.TimeToDeath() < 6) 
+                req => Me.GetAuraTimeLeft("Dark Succor").TotalMilliseconds > 250
+                    && (Me.HealthPercent < 80 || Me.GetAuraTimeLeft("Dark Succor").TotalMilliseconds < 3000 || (Me.GotTarget && Me.CurrentTarget.TimeToDeath() < 6) 
                     && Me.CurrentTarget.InLineOfSpellSight 
                     && Me.IsSafelyFacing( Me.CurrentTarget)
                     && Spell.CanCastHack("Death Strike", Me.CurrentTarget)),

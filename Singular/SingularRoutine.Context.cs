@@ -15,6 +15,8 @@ using Styx.Common;
 using Styx.Plugins;
 using System.Dynamic;
 using Singular.Managers;
+using Styx.TreeSharp;
+using Action = Styx.TreeSharp.Action;
 
 namespace Singular
 {
@@ -39,6 +41,8 @@ namespace Singular
         private static WoWContext _lastContext = WoWContext.None;
         private static uint _lastMapId = 0;
 
+        internal static CombatScenario FightNearMe { get; set; }
+        internal static CombatScenario FightNearTarget { get; set; }
         internal static WoWContext ForcedContext { get; set; }
 
         internal static bool IsQuestBotActive { get; set; }
@@ -514,6 +518,24 @@ namespace Singular
         {
             bool inCin = Lua.GetReturnVal<bool>("return InCinematic()", 0);
             return inCin;
+        }
+
+        public static Composite DetectFightingNearMe(int range)
+        {
+            return new Action(r =>
+            {
+                FightNearMe = CombatScenario.Detect(StyxWoW.Me, range);
+                return RunStatus.Failure;
+            });
+        }
+
+        public static Composite DetectFightingNearTarget(int range)
+        {
+            return new Action(r =>
+            {
+                FightNearTarget = CombatScenario.Detect(StyxWoW.Me.CurrentTarget, range);
+                return RunStatus.Failure;
+            });
         }
     }
 

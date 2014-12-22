@@ -193,33 +193,36 @@ namespace Singular.Helpers
         ///   includes all unfriendly units
         /// </summary>
         /// <value>The nearby unfriendly units.</value>
-        public static IEnumerable<WoWUnit> UnfriendlyUnits(int maxSpellDist = -1)
+        public static IEnumerable<WoWUnit> UnfriendlyUnits(int maxSpellDist = -1, WoWUnit origin = null )
         {
-            bool useTargeting = (SingularRoutine.IsDungeonBuddyActive || (SingularRoutine.IsQuestBotActive && StyxWoW.Me.IsInInstance));
+            if (origin == null)
+                origin = StyxWoW.Me;
 
+            // need to use TargetList for this if in Dungeon
+            bool useTargeting = (SingularRoutine.IsDungeonBuddyActive || (SingularRoutine.IsQuestBotActive && StyxWoW.Me.IsInInstance));
             if (useTargeting)
             {
                 if ( maxSpellDist == -1)
                     return Targeting.Instance.TargetList.Where(u => u != null && ValidUnit(u));
-                return Targeting.Instance.TargetList.Where(u => u != null && ValidUnit(u) && u.SpellDistance() < maxSpellDist);
+                return Targeting.Instance.TargetList.Where(u => u != null && ValidUnit(u) && origin.SpellDistance(u) < maxSpellDist);
             }
 
-            Type typeWoWUnit = typeof(WoWUnit);
-            Type typeWoWPlayer = typeof(WoWPlayer);
             List<WoWUnit> list = new List<WoWUnit>();
             List<WoWObject> objectList = ObjectManager.ObjectList;
+           
             for (int i = 0; i < objectList.Count; i++)
             {
                 Type type = objectList[i].GetType();
-                if (type == typeWoWUnit || type == typeWoWPlayer)
+                if (type == typeof(WoWUnit) || type == typeof(WoWPlayer))
                 {
                     WoWUnit t = objectList[i] as WoWUnit;
-                    if (t != null && ValidUnit(t) && (maxSpellDist == -1 || t.SpellDistance() < maxSpellDist ))
+                    if (t != null && ValidUnit(t) && (maxSpellDist == -1 || origin.SpellDistance(t) < maxSpellDist ))
                     {
                         list.Add(t);
                     }
                 }
             }
+
             return list;
         }
 
@@ -1390,6 +1393,96 @@ namespace Singular.Helpers
             return canAttack;
         }
     }
+
+    public class CombatScenario
+    {
+        /// <summary>
+        /// spell distance from Me to check
+        /// </summary>
+        public int Range { get; set; }
+
+        /// <summary>
+        /// count of mobs attacking within range.  will be forced to
+        /// 1 if world pvp is recent
+        /// </summary>
+        public int MobCount { get; set; }
+
+        /// <summary>
+        /// flag indicating determined best approach is to suppress AOE abilities
+        /// multi-target combat can ensure (typically through DoTs)
+        /// </summary>
+        public bool AvoidAOE { get; set; }
+
+        /// <summary>
+        /// flag indicating determined best approach is to suppress AOE abilities
+        /// multi-target combat can ensure (typically through DoTs)
+        /// </summary>
+        public bool WorldPvpRecently { get; set; }
+
+
+        /// <summary>
+        /// list of Mobs within AOE range
+        /// </summary>
+        public List<WoWUnit> Mobs { get; set; }
+
+        public static CombatScenario Detect(WoWUnit origin, int range)
+        {
+            return new CombatScenario(origin, range);
+        }
+
+        private CombatScenario(WoWUnit origin, int range)
+        {
+            Range = range;
+
+            if (StyxWoW.Me.CurrentTarget != null)
+                StyxWoW.Me.TimeToDeath();
+
+            bool worldPvp = (DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 15;
+            if (!Spell.UseAOE || worldPvp )
+            {
+                WorldPvpRecently = worldPvp;
+                AvoidAOE = true;
+                Mobs = !Unit.ValidUnit(StyxWoW.Me.CurrentTarget)
+                    ? new List<WoWUnit>()
+                    : new List<WoWUnit>(new[] { StyxWoW.Me.CurrentTarget });
+                MobCount = Mobs.Any() ? 1 : 0;
+            }
+            else
+            {
+                WorldPvpRecently = false;
+                AvoidAOE = false;
+                MobCount = 0;
+
+                Mobs = Unit.UnfriendlyUnits(range, origin)
+                    .Where(u =>
+                    {
+                        if (u == null || !u.IsValid)
+                            return false;
+
+                        if (!AvoidAOE)
+                        {
+                            if (u.IsCrowdControlled())
+                                AvoidAOE = true;
+
+                            if (u.IsPlayer)
+                                AvoidAOE = true;
+                            else if (u.IsNeutral && !u.Combat)
+                                AvoidAOE = true;
+                        }
+
+                        if (u == StyxWoW.Me.CurrentTarget || u.Aggro || u.TaggedByMe)
+                        {
+                            MobCount++;
+                            return true;
+                        }
+
+                        return false;
+                    })
+                    .ToList();
+            }
+        }
+    }
+
 
     // following class should probably be in Unit, but made a separate 
     // .. extension class to separate the private property names.

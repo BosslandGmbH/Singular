@@ -97,7 +97,40 @@ namespace Singular.ClassSpecific.Mage
 
 						Common.CreateMagePullBuffs(),
 
-            #region PULL WITH INSTANT IF NEEDED
+            #region TRIVIAL MOB FARM SUPPORT
+                        new Decorator(
+                            ret => {
+                                if (!SpellManager.HasSpell("Cone of Cold"))
+                                    return false;
+                                WoWUnit careful = Unit.UnfriendlyUnits(50)
+                                    .Where(u => !u.IsPlayer && u.IsTrivial())
+                                    .OrderByDescending(u => u.MaxHealth)
+                                    .FirstOrDefault();
+                                return careful == null;
+                            },
+                            new PrioritySelector(
+                                Spell.Cast("Cone of Cold", mov => false, on => Me.CurrentTarget, req => {
+                                    int count = Clusters.GetClusterCount(Me.CurrentTarget, Unit.UnfriendlyUnits(12), ClusterType.Cone, 12);
+                                    if (count > 1 && Spell.CanCastHack("Cone of Cold", Me.CurrentTarget))
+                                    {
+                                        Logger.Write("^AOE Trivial Pull: casting Cone of Cold");
+                                        return true;
+                                    }
+                                    return false;
+                                }),
+                                CreateIceLanceBehavior( on => Me.CurrentTarget, req =>
+                                {
+                                    if (!Spell.CanCastHack("Ice Lance", Me.CurrentTarget))
+                                        return false;
+
+                                    Logger.Write("^Trivial Pull: casting Ice Lance");
+                                    return true;
+                                })
+                                )
+                            ),
+            #endregion  
+
+            #region FAST PULL SUPPORT
                         new Decorator(
                             ret =>
                             {
@@ -164,10 +197,12 @@ namespace Singular.ClassSpecific.Mage
         {
             public WoWUnit Unit;
             public uint StacksOfFOF;
-            public ILInfo( WoWUnit u, uint i)
+            public object SaveContext;
+            public ILInfo( WoWUnit u, uint i, object ctx)
             {
                 Unit = u;
                 StacksOfFOF = i;
+                SaveContext = ctx;
             }
 
             public static ILInfo Ref(object o)
@@ -175,22 +210,52 @@ namespace Singular.ClassSpecific.Mage
                 return (o as ILInfo);
             }
         }
-
-        private static Sequence CreateIceLanceFoFBehavior(UnitSelectionDelegate on = null)
+        /// <summary>
+        /// cast Ice Lance only if FoF active.  waits after cast until FoF stack count changes
+        /// to ensure we don't double cast Ice Lance (since we queue spells)
+        /// </summary>
+        /// <param name="on"></param>
+        /// <returns></returns>
+        private static Sequence CreateIceLanceFoFBehavior(UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate requirements = null)
         {
-            if (on == null)
-                on = u => Me.CurrentTarget;
+            UnitSelectionDelegate ondel = onUnit ?? (o => Me.CurrentTarget);
+            SimpleBooleanDelegate reqdel = requirements ?? (req => true);
 
             return new Sequence(
-                ctx => new ILInfo( on(ctx), Me.GetAuraStacks(FINGERS_OF_FROST)),
+                ctx => new ILInfo(ondel(ctx), Me.GetAuraStacks(FINGERS_OF_FROST), ctx),
                 new Decorator(
-                    // req => Spell.CanCastHack("Ice Lance", (req as ILInfo).Unit) && ((req as ILInfo).Unit != null && ((req as ILInfo).StacksOfFOF > 0 || (req as ILInfo).Unit.IsTrivial())),
+                // req => Spell.CanCastHack("Ice Lance", (req as ILInfo).Unit) && ((req as ILInfo).Unit != null && ((req as ILInfo).StacksOfFOF > 0 || (req as ILInfo).Unit.IsTrivial())),
                     req => ILInfo.Ref(req).Unit != null && ILInfo.Ref(req).StacksOfFOF > 0 && Spell.CanCastHack("Ice Lance", ILInfo.Ref(req).Unit),
                     new Sequence(
-                        new Action(r => Logger.Write( LogColor.Hilite, "^Fingers of Frost: casting buffed Ice Lance", ILInfo.Ref(r).StacksOfFOF)),
-                        Spell.Cast("Ice Lance", on),    // ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) < 4),
+                        new Action(r => Logger.Write(LogColor.Hilite, "^Fingers of Frost: casting buffed Ice Lance", ILInfo.Ref(r).StacksOfFOF)),
+                        Spell.Cast("Ice Lance", mov => false, o => ILInfo.Ref(o).Unit, r => reqdel(ILInfo.Ref(r).SaveContext)),    // ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) < 4),
                         Helpers.Common.CreateWaitForLagDuration(
                             until => ILInfo.Ref(until).StacksOfFOF != Me.GetAuraStacks(FINGERS_OF_FROST)
+                            )
+                        )
+                    )
+                );
+        }
+
+        /// <summary>
+        /// cast Ice Lance without requiring FoF, but if FoF active wait until buff stack count updated
+        /// to ensure we don't break other Ice Lance logic that depends on FoF being accurate
+        /// </summary>
+        /// <param name="on"></param>
+        /// <returns></returns>
+        private static Sequence CreateIceLanceBehavior(UnitSelectionDelegate on = null, SimpleBooleanDelegate requirements = null)
+        {
+            UnitSelectionDelegate ondel = on ?? (o => Me.CurrentTarget);
+            SimpleBooleanDelegate reqdel = requirements ?? (req => true);
+
+            return new Sequence(
+                ctx => new ILInfo(ondel(ctx), Me.GetAuraStacks(FINGERS_OF_FROST), ctx),
+                new Decorator(
+                    req => ILInfo.Ref(req).Unit != null && (ILInfo.Ref(req).StacksOfFOF > 0 || ILInfo.Ref(req).Unit.IsTrivial()) && Spell.CanCastHack("Ice Lance", ILInfo.Ref(req).Unit),
+                    new Sequence(
+                        Spell.Cast("Ice Lance", o => ((ILInfo)o).Unit, r => reqdel(ILInfo.Ref(r).SaveContext)),
+                        Helpers.Common.CreateWaitForLagDuration(
+                            until => ILInfo.Ref(until).StacksOfFOF != Me.GetAuraStacks(FINGERS_OF_FROST) || Me.GetAuraStacks(FINGERS_OF_FROST) == 0
                             )
                         )
                     )

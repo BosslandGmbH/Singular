@@ -74,23 +74,6 @@ namespace Singular.ClassSpecific.Warrior
             return null;
         }
 
-        [Behavior(BehaviorType.Rest, WoWClass.Warrior, WoWSpec.WarriorArms, WoWContext.All)]
-        [Behavior(BehaviorType.Rest, WoWClass.Warrior, WoWSpec.WarriorFury, WoWContext.All)]
-        public static Composite CreateWarriorRest()
-        {
-            return new PrioritySelector(
-
-                CheckIfWeShouldCancelBladestorm(),
-
-                Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
-
-                new Decorator(
-                    req => TalentManager.CurrentSpec == WoWSpec.WarriorProtection,
-                    ClassSpecific.Warrior.Protection.CheckThatShieldIsEquippedIfNeeded()
-                    )
-                );
-        }
-
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warrior)]
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Warrior, priority: 999)]
@@ -445,8 +428,12 @@ namespace Singular.ClassSpecific.Warrior
             return Spell.Buff( "Vigilance",  onUnit);
         }
 
-
-
+        public static bool IsSlowNeeded(WoWUnit unit)
+        {
+            if (!WarriorSettings.UseWarriorSlows || unit == null || !unit.IsPlayer)
+                return false;
+            return !unit.IsCrowdControlled() && !unit.IsSlowed(50) && !unit.HasAura("Hand of Freedom");
+        }
     }
 
     enum WarriorTalents

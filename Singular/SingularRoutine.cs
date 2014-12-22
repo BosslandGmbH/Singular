@@ -606,8 +606,9 @@ namespace Singular
                             );
                     }
 
-                    Logger.WriteDebug(description + ": changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, boss={5}, trivial={6}, player={7}, attackable={8}, neutral={9}, hostile={10}, entry={11}, faction={12}, loss={13}, facing={14}, blacklist={15}, combat={16}, flying={17}, abovgrnd={18}" + info,
+                    Logger.WriteDebug(description + ": changed to: {0} lvl={1} h={2:F1}%, maxh={3}, d={4:F1} yds, box={5:F1}, boss={6}, trivial={7}, player={8}, attackable={9}, neutral={10}, hostile={11}, entry={12}, faction={13}, loss={14}, facing={15}, blacklist={16}, combat={17}, flying={18}, abovgrnd={19}" + info,
                         unit.SafeName(),
+                        unit.Level,
                         unit.HealthPercent,
                         unit.MaxHealth,
                         unit.Distance,

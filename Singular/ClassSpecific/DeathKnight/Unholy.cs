@@ -12,6 +12,10 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Styx.CommonBot;
 using System;
+using System.Drawing;
+
+using Action = Styx.TreeSharp.Action;
+using Rest = Singular.Helpers.Rest;
 
 namespace Singular.ClassSpecific.DeathKnight
 {
@@ -57,6 +61,9 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Spell.Cast("Summon Gargoyle", req => DeathKnightSettings.UseSummonGargoyle && Helpers.Common.UseLongCoolDownAbility),
 
+                        // SingularRoutine.DetectFightingNearMe(TalentManager.HasGlyph("Blood Boil") ? 15 : 10),
+                        // SingularRoutine.DetectFightingNearTarget(TalentManager.HasGlyph("Blood Boil") ? 15 : 10),
+
                         // aoe
                         new Decorator(
                             req => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(12f).Count() >= DeathKnightSettings.DeathAndDecayCount,
@@ -70,35 +77,35 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         // Single target rotation.
 
-                        // Target < 35%, Soul Reaper
-                        Spell.Cast("Soul Reaper", req => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
+                        // Target < 45%, Soul Reaper
+                        Spell.Cast("Soul Reaper", req => Me.CurrentTarget.HealthPercent < 45),
 
                         // Diseases
                         Common.CreateApplyDiseases(),
+
+                        // Dark Transformation
+                        Spell.Cast("Dark Transformation",
+                            req => Me.GotAlivePet
+                                && !Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")
+                                && Me.HasAura("Shadow Infusion", 5)),
 
                         // Scourge Strike/Death and Decay*(Unholy/Death Runes are Capped)
                         new Decorator(
                             req => Common.UnholyRuneSlotsActive >= 2,
                             new PrioritySelector(
                                 Spell.CastOnGround("Death and Decay",
-                                    on => StyxWoW.Me.CurrentTarget,
+                                    on => Me.CurrentTarget,
                                     req => Spell.UseAOE,
                                     false),
                                 Spell.Cast("Scourge Strike")
                                 )
                             ),
 
-                        // Dark Transformation
-                        Spell.Cast("Dark Transformation",
-                            req => StyxWoW.Me.GotAlivePet
-                                && !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")
-                                && StyxWoW.Me.HasAura("Shadow Infusion", 5)),
-                        
                         // Death Coil (Sudden Doom, high RP)
                         Spell.Cast("Death Coil", req => Me.HasAura(SuddenDoom) || Me.CurrentRunicPower >= 80),                        
 
                         // Festering Strike (BB and FF are up)
-                        Spell.Cast("Festering Strike", req => StyxWoW.Me.BloodRuneCount == 2 && StyxWoW.Me.FrostRuneCount == 2),
+                        Spell.Cast("Festering Strike", req => Me.BloodRuneCount == 2 && Me.FrostRuneCount == 2),
                         
                         // Scourge Strike
                         Spell.Cast("Scourge Strike"),
@@ -139,39 +146,39 @@ namespace Singular.ClassSpecific.DeathKnight
                 Common.CreateApplyDiseases(),
 
                 Spell.Cast("Dark Transformation",
-                    req => StyxWoW.Me.GotAlivePet
-                        && !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")
-                        && StyxWoW.Me.HasAura("Shadow Infusion", 5)),
+                    req => Me.GotAlivePet
+                        && !Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")
+                        && Me.HasAura("Shadow Infusion", 5)),
 
             // spread the disease around.
                 new Throttle( TimeSpan.FromSeconds(1.5f),
                     Spell.Cast("Blood Boil",
-                        req => StyxWoW.Me.CurrentTarget.DistanceSqr <= 10 * 10
-                            && !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases
+                        req => Me.CurrentTarget.DistanceSqr <= 10 * 10
+                            && !Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases
                         )
                     ),
 
                 Spell.CastOnGround(
                     "Death and Decay",
-                    on => StyxWoW.Me.CurrentTarget,
+                    on => Me.CurrentTarget,
                     req => Common.UnholyRuneSlotsActive >= 2,
                     false
                     ),
 
                 Spell.Cast("Blood Boil",
-                    req => StyxWoW.Me.CurrentTarget.DistanceSqr <= 10 * 10 && StyxWoW.Me.DeathRuneCount > 0 
-                        || (StyxWoW.Me.BloodRuneCount == 2 && StyxWoW.Me.FrostRuneCount == 2)
+                    req => Me.CurrentTarget.DistanceSqr <= 10 * 10 && Me.DeathRuneCount > 0 
+                        || (Me.BloodRuneCount == 2 && Me.FrostRuneCount == 2)
                         ),
 
-                Spell.Cast("Soul Reaper", req => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
+                Spell.Cast("Soul Reaper", req => Me.CurrentTarget.HealthPercent < 35),
 
-                Spell.Cast("Scourge Strike", req => StyxWoW.Me.UnholyRuneCount == 2),
+                Spell.Cast("Scourge Strike", req => Me.UnholyRuneCount == 2),
 
                 Spell.Cast("Death Coil",
-                    req => StyxWoW.Me.HasAura(SuddenDoom) 
-                        || StyxWoW.Me.RunicPowerPercent >= 80 
-                        || !StyxWoW.Me.GotAlivePet 
-                        || !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation"))
+                    req => Me.HasAura(SuddenDoom) 
+                        || Me.RunicPowerPercent >= 80 
+                        || !Me.GotAlivePet 
+                        || !Me.Pet.ActiveAuras.ContainsKey("Dark Transformation"))
                 );
         }
 
@@ -205,7 +212,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         // *** Cool downs ***
                         Spell.BuffSelf("Unholy Frenzy",
-                            ret => StyxWoW.Me.CurrentTarget.IsWithinMeleeRange 
+                            ret => Me.CurrentTarget.IsWithinMeleeRange 
                                 && !PartyBuff.WeHaveBloodlust 
                                 && Helpers.Common.UseLongCoolDownAbility
                                 ),
@@ -215,35 +222,35 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         // *** Single target rotation. ***
                         // Execute
-                        Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
+                        Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
 
                         // Diseases
                         Spell.Cast("Outbreak",
-                            ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") 
-                                || !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")
+                            ret => !Me.CurrentTarget.HasMyAura("Frost Fever") 
+                                || !Me.CurrentTarget.HasAura("Blood Plague")
                                 ),
 
-                        Spell.Buff("Icy Touch", true, ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), "Frost Fever"),
+                        Spell.Buff("Icy Touch", true, ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), "Frost Fever"),
 
                         Spell.Buff("Plague Strike", true, on => Me.CurrentTarget, req => true, "Blood Plague"),
 
                         Spell.Cast("Dark Transformation",
-                            ret => StyxWoW.Me.GotAlivePet 
-                                && !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation") 
-                                && StyxWoW.Me.HasAura("Shadow Infusion", 5)
+                            ret => Me.GotAlivePet 
+                                && !Me.Pet.ActiveAuras.ContainsKey("Dark Transformation") 
+                                && Me.HasAura("Shadow Infusion", 5)
                                 ),
                         Spell.CastOnGround(
                             "Death and Decay",
-                            on => StyxWoW.Me.CurrentTarget,
+                            on => Me.CurrentTarget,
                             req => Common.UnholyRuneSlotsActive >= 2, 
                             false
                             ),
-                        Spell.Cast("Scourge Strike", ret => StyxWoW.Me.UnholyRuneCount == 2 || StyxWoW.Me.DeathRuneCount > 0),
-                        Spell.Cast("Festering Strike", ret => StyxWoW.Me.BloodRuneCount == 2 && StyxWoW.Me.FrostRuneCount == 2),
-                        Spell.Cast("Death Coil", ret => StyxWoW.Me.HasAura(SuddenDoom) || StyxWoW.Me.CurrentRunicPower >= 80),
+                        Spell.Cast("Scourge Strike", ret => Me.UnholyRuneCount == 2 || Me.DeathRuneCount > 0),
+                        Spell.Cast("Festering Strike", ret => Me.BloodRuneCount == 2 && Me.FrostRuneCount == 2),
+                        Spell.Cast("Death Coil", ret => Me.HasAura(SuddenDoom) || Me.CurrentRunicPower >= 80),
                         Spell.Cast("Scourge Strike"),
                         Spell.Cast("Festering Strike"),
-                        Spell.Cast("Death Coil", ret => !StyxWoW.Me.GotAlivePet || !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation"))
+                        Spell.Cast("Death Coil", ret => !Me.GotAlivePet || !Me.Pet.ActiveAuras.ContainsKey("Dark Transformation"))
                         )
                     )
                 );
@@ -284,33 +291,33 @@ namespace Singular.ClassSpecific.DeathKnight
                                 // spread the disease around.
                                 new Throttle( 2, 
                                     Spell.Cast("Blood Boil",
-                                        ret => !StyxWoW.Me.HasAura("Unholy Blight") 
-                                            && StyxWoW.Me.CurrentTarget.DistanceSqr <= 10*10 
+                                        ret => !Me.HasAura("Unholy Blight") 
+                                            && Me.CurrentTarget.DistanceSqr <= 10*10 
                                             && Common.ShouldSpreadDiseases)
                                     ),
 
                                 Spell.Cast("Dark Transformation",
-                                    ret => StyxWoW.Me.GotAlivePet 
-                                        && !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation") 
+                                    ret => Me.GotAlivePet 
+                                        && !Me.Pet.ActiveAuras.ContainsKey("Dark Transformation") 
                                         && Me.HasAura("Shadow Infusion", 5) ),
 
                                 Spell.CastOnGround("Death and Decay",
-                                    loc => StyxWoW.Me.CurrentTarget,
+                                    loc => Me.CurrentTarget,
                                     req => Spell.UseAOE && Common.UnholyRuneSlotsActive >= 2, 
                                     false),
 
                                 Spell.Cast("Blood Boil",
-                                    ret => StyxWoW.Me.CurrentTarget.DistanceSqr <= 10*10 
-                                        && (StyxWoW.Me.DeathRuneCount > 0  || (StyxWoW.Me.BloodRuneCount == 2 && StyxWoW.Me.FrostRuneCount == 2))),
+                                    ret => Me.CurrentTarget.DistanceSqr <= 10*10 
+                                        && (Me.DeathRuneCount > 0  || (Me.BloodRuneCount == 2 && Me.FrostRuneCount == 2))),
 
                                 // Execute
-                                Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
-                                Spell.Cast("Scourge Strike", ret => StyxWoW.Me.UnholyRuneCount == 2),
+                                Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
+                                Spell.Cast("Scourge Strike", ret => Me.UnholyRuneCount == 2),
                                 Spell.Cast("Death Coil",
-                                    req => StyxWoW.Me.HasAura(SuddenDoom) 
-                                        || StyxWoW.Me.RunicPowerPercent >= 80 
-                                        || !StyxWoW.Me.GotAlivePet 
-                                        || !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")),
+                                    req => Me.HasAura(SuddenDoom) 
+                                        || Me.RunicPowerPercent >= 80 
+                                        || !Me.GotAlivePet 
+                                        || !Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")),
 
                                 Spell.Cast("Remorseless Winter", ret => Common.HasTalent( DeathKnightTalents.RemorselessWinter)),
 
@@ -323,21 +330,21 @@ namespace Singular.ClassSpecific.DeathKnight
                         // Single target rotation.
 
                         // Target < 35%, Soul Reaper
-                        Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
+                        Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
 
                         // Diseases
                         Common.CreateApplyDiseases(),
 
                         // Dark Transformation
                         Spell.Cast("Dark Transformation",
-                            ret => StyxWoW.Me.GotAlivePet
-                                && !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")
-                                && StyxWoW.Me.HasAura("Shadow Infusion", 5)),
+                            ret => Me.GotAlivePet
+                                && !Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")
+                                && Me.HasAura("Shadow Infusion", 5)),
 
                         // Death Coil if Dark Trans not active
                         Spell.Cast("Death Coil",
-                            req => !StyxWoW.Me.GotAlivePet
-                                || !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")
+                            req => !Me.GotAlivePet
+                                || !Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")
                             ),
 
                         // Scourge Strike on Death or Unholy Runes active
@@ -363,6 +370,72 @@ namespace Singular.ClassSpecific.DeathKnight
                     ),
 
                 Movement.CreateMoveToMeleeBehavior(true)
+                );
+        }
+
+        #endregion
+
+        #region Diagnostics
+
+        [Behavior(BehaviorType.Pull, WoWClass.DeathKnight, WoWSpec.DeathKnightUnholy, WoWContext.All, 99)]
+        [Behavior(BehaviorType.Heal, WoWClass.DeathKnight, WoWSpec.DeathKnightUnholy, WoWContext.All, 99)]
+        public static Composite CreateDeathKnightUnholyDiagnostic()
+        {
+            return CreateCombatDiagnosticOutputBehavior( 
+                Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull ? "PULL" : "COMBAT"
+                );
+        }
+
+       private static Composite CreateCombatDiagnosticOutputBehavior(string sState = "")
+        {
+            if (!SingularSettings.Debug)
+                return new Action(ret => { return RunStatus.Failure; });
+
+            return new Decorator(
+                req => !Spell.IsGlobalCooldown(),
+                new ThrottlePasses( TimeSpan.FromMilliseconds(900),
+                    new Action(ret =>
+                    {
+                        string sMsg;
+                        sMsg = string.Format(".... [{0}] h={1:F1}%, e={2:F1}%, runes(b{3} f{4} u{5} d{6}), moving={7}, how={8}",
+                            sState,
+                            Me.HealthPercent,
+                            Me.RunicPowerPercent,
+                            Me.BloodRuneCount,
+                            Me.FrostRuneCount,
+                            Me.UnholyRuneCount,
+                            Me.DeathRuneCount,
+                            Me.IsMoving,
+                            (int)Me.GetAuraTimeLeft("Horn of Winter", true).TotalSeconds
+                            );
+
+                        WoWUnit target = Me.CurrentTarget;
+                        if (target != null)
+                        {
+                            sMsg += string.Format(
+                                ", {0}, {1:F1}%, dies {2}, {3:F1} yds, inmelee={4}, loss={5}, shdwinfus={6}",
+                                target.SafeName(),
+                                target.HealthPercent,
+                                target.TimeToDeath(),
+                                target.Distance,
+                                target.IsWithinMeleeRange.ToYN(),
+                                target.InLineOfSpellSight,
+                                Me.GetAuraStacks("Shadow Infusion")
+                                );
+                        }
+
+                        if (!Me.GotAlivePet)
+                            sMsg += ", no pet";
+                        else
+                            sMsg += string.Format(", peth={0:F1}%, drktrns={1}", 
+                                Me.Pet.HealthPercent,
+                                Me.Pet.ActiveAuras.ContainsKey("Dark Transformation").ToYN()
+                                );
+
+                        Logger.WriteDebug(Color.LightYellow, sMsg);
+                        return RunStatus.Failure;
+                    })
+                    )
                 );
         }
 

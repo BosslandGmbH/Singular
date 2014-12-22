@@ -489,7 +489,7 @@ namespace Singular
                                     ),
                                 Helpers.Common.CreateUseTableBehavior(),
                                 Helpers.Common.CreateUseSoulwellBehavior(),
-                                Item.CreateUseAlchemyBuffsBehavior(),
+                                Item.CreateUseFlasksBehavior(),
                                 Item.CreateUseScrollsBehavior(),
                     // Generic.CreateFlasksBehaviour(),
                                 composite ?? new ActionAlwaysFail()
@@ -638,11 +638,9 @@ namespace Singular
             if (Unit.ValidUnit(EventHandlers.AttackingEnemyPlayer) && (DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer) < TimeSpan.FromSeconds(25))
                 return true;
 
-            if (Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any())
-                return true;
-
             return false;
         }
+
         private static Composite CreateRestForceCombat()
         {
             return new Decorator(

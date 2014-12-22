@@ -75,7 +75,12 @@ namespace Singular.ClassSpecific.DeathKnight
                     // I need to use Empower Rune Weapon to use Death Strike
                     Spell.BuffSelf("Empower Rune Weapon",
                         ret => StyxWoW.Me.HealthPercent < DeathKnightSettings.EmpowerRuneWeaponPercent
-                            && !Spell.CanCastHack("Death Strike")),
+                            && Me.CurrentTarget != null
+                            && Me.CurrentTarget.IsWithinMeleeRange
+                            && Me.IsSafelyFacing(Me.CurrentTarget)
+                            && Me.CurrentTarget.InLineOfSpellSight
+                            && !Spell.CanCastHack("Death Strike")
+                        ),
 
                     Helpers.Common.CreateCombatRezBehavior("Raise Ally", on => ((WoWUnit)on).SpellDistance() < 40 && ((WoWUnit)on).InLineOfSpellSight),
 

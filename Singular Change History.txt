@@ -1,3 +1,22 @@
+--- Release 4.0.0.4107 ---
+
+General 
+
+fixed - Snare detection logic causing exception 
+
+
+Death Knight
+
+fixed - Frost/Unholy - message for Glyph of Empowerment detection
+
+
+Mage
+
+change- All Specs - reduced snare detection for movement decreases of 50% (down from 60%) to allow for saving Mage snares 
+
+fixed - All Specs - exception occurring in snare detection
+
+
 --- Release 4.0.0.4101 ---
 
 General 

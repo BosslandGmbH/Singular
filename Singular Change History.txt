@@ -1,3 +1,76 @@
+--- Release 4.0.0.4101 ---
+
+General 
+
+fixed - Rest - bug in Combat during Rest logic when an Evade Bugged mob encountered
+
+fixed - Garrison Abilities - now correctly casts Artillery Strike on ground
+
+fixed - Wait for Rez Sickness - no longer spams message if maintaining Stealth or Prowl during wait
+	
+*new* - Oralius' Whispering Crystal - now supports applying this if Use Flasks is enabled
+
+fixed - IsSlowed - message no longer spammed when enemy is snared
+
+
+Death Knight
+
+fixed - Blood - now ensures target can be attacked with Death Strike before casting Empower Rune Weapon intended to allow Death Strike for healing
+
+*new* - Frost/Unholy - now does not require target to be within range prior to Empower Rune Weapon if glyphed (for 30% heal)
+
+fixed - All Specs - Dark Succor: presence of ability as a passive aura was causing Death Strike to be cast on cooldown and interfering with spell priorities.  Fixed to recognize Dark Succor proc aura only
+
+
+Druid
+
+fixed - Feral - AOE: will now correctly cast sooner (previously required 5 mobs for all abilities)
+
+
+Hunter
+
+fixed - All Specs - Tranquilizing Shot: now correctly detects Enrage auras
+
+
+Mage
+
+*new* - Frost - added Trivial Mob farming spell priority (Pull only)
+
+
+Monk
+
+fixed - Mistweaver - now correclty allows multiple casts of Surging Mist / Enveloping Mist while channelling Soothing Mist (previously was inadvertently limiting to one cast per channel.)
+
+change- Mistweaver - should now remain at ranged distance for healing in most cases
+
+fixed - Mistweaver - Detox: incorrectly being treated as an offensive dispel (Purge) now correctly cast as a defensive dispel (Cleanse)
+
+fixed - Windwalker - removed unnecessary cast of Crackling Jade Lightning during Pull
+
+
+Rogue
+
+fixed - All Specs - Pick Lock: now supports True Steel Lockbox
+
+
+Shaman
+
+fixed - Elemental - Earthquake: should no longer double cast this ability
+
+
+Warrior
+
+*new* - Arms - added check during Rest to notify user if 2H Weapon is not equipped
+
+*new* - Fury - added check during Rest to notify user if not dual-wielding
+
+fixed - Arms - now correctly check for Glyph of Cleave
+
+fixed - All Specs - refined Snare logic against enemy players
+
+fixed - Arms - was casting Thunder Clap on cooldown due to check for obsolete Weakened Blows debuff
+
+
 --- Release 4.0.0.4064 ---
 
 General

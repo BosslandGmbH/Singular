@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>12/22/2014 00:19:48</ScanTime>
+  <ScanTime>12/22/2014 11:25:00</ScanTime>
   <FileList>
     <File Hash="28136" Name="ClassSpecific\DeathKnight\Blood.cs" />
-    <File Hash="35189" Name="ClassSpecific\DeathKnight\Common.cs" />
+    <File Hash="35140" Name="ClassSpecific\DeathKnight\Common.cs" />
     <File Hash="23291" Name="ClassSpecific\DeathKnight\Frost.cs" />
     <File Hash="2579" Name="ClassSpecific\DeathKnight\Lowbie.cs" />
     <File Hash="20435" Name="ClassSpecific\DeathKnight\Unholy.cs" />
@@ -20,7 +20,7 @@
     <File Hash="8819" Name="ClassSpecific\Hunter\Marksman.cs" />
     <File Hash="8299" Name="ClassSpecific\Hunter\Survival.cs" />
     <File Hash="14448" Name="ClassSpecific\Mage\Arcane.cs" />
-    <File Hash="38413" Name="ClassSpecific\Mage\Common.cs" />
+    <File Hash="38524" Name="ClassSpecific\Mage\Common.cs" />
     <File Hash="17604" Name="ClassSpecific\Mage\Fire.cs" />
     <File Hash="43106" Name="ClassSpecific\Mage\Frost.cs" />
     <File Hash="5429" Name="ClassSpecific\Mage\Lowbie.cs" />
@@ -77,7 +77,7 @@
     <File Hash="48000" Name="Helpers\Movement.cs" />
     <File Hash="17285" Name="Helpers\Party.cs" />
     <File Hash="7864" Name="Helpers\Pet.cs" />
-    <File Hash="5773" Name="Helpers\PVP.cs" />
+    <File Hash="6909" Name="Helpers\PVP.cs" />
     <File Hash="18430" Name="Helpers\Rest.cs" />
     <File Hash="36131" Name="Helpers\Safers.cs" />
     <File Hash="114549" Name="Helpers\Spell.cs" />

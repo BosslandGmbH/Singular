@@ -135,7 +135,6 @@ namespace Singular.ClassSpecific.Shaman
 
                         Common.CreateShamanDpsShieldBehavior(),
 
-                        Helpers.Common.CreateAutoAttack(true),
                         Totems.CreateTotemsBehavior(),
 
                         Spell.Cast("Lightning Bolt", ret => !ShamanSettings.AvoidMaelstromDamage && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
@@ -164,11 +163,13 @@ namespace Singular.ClassSpecific.Shaman
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
-                Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         CreateEnhanceDiagnosticOutputBehavior(),
 
@@ -239,7 +240,6 @@ namespace Singular.ClassSpecific.Shaman
 
                         CreateEnhanceDiagnosticOutputBehavior(),
 
-                        Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
                         Dispelling.CreatePurgeEnemyBehavior("Purge"),
 
@@ -283,7 +283,6 @@ namespace Singular.ClassSpecific.Shaman
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
-                Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

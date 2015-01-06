@@ -149,7 +149,7 @@ namespace Singular.ClassSpecific.Mage
         public static Composite CreateMagePullBuffs()
         {
             return new Decorator(
-                req => Me.GotTarget && Me.CurrentTarget.SpellDistance() < 40,
+                req => Me.GotTarget() && Me.CurrentTarget.SpellDistance() < 40,
                 new PrioritySelector(
                     CreateMageRuneOfPowerBehavior()
                     )
@@ -215,7 +215,7 @@ namespace Singular.ClassSpecific.Mage
                     Spell.Buff("Frost Bomb", 0, on => Me.CurrentTarget, req => true),
 
                     Spell.Cast("Mirror Image", 
-                         req => Me.GotTarget &&  (Me.CurrentTarget.IsBoss() || (Me.CurrentTarget.Elite && SingularRoutine.CurrentWoWContext != WoWContext.Instances) || Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3)),
+                         req => Me.GotTarget() &&  (Me.CurrentTarget.IsBoss() || (Me.CurrentTarget.Elite && SingularRoutine.CurrentWoWContext != WoWContext.Instances) || Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3)),
 
                     Spell.BuffSelf("Time Warp", ret => MageSettings.UseTimeWarp && NeedToTimeWarp),
 
@@ -432,7 +432,7 @@ namespace Singular.ClassSpecific.Mage
         {
             if (SingularSettings.Instance.DispelTargets == CheckTargets.Current)
             {
-                if ( Me.GotTarget && null != GetSpellstealAura( Me.CurrentTarget))
+                if ( Me.GotTarget() && null != GetSpellstealAura( Me.CurrentTarget))
                 {
                     return Me.CurrentTarget;
                 }
@@ -496,7 +496,7 @@ namespace Singular.ClassSpecific.Mage
                 if (Battlegrounds.IsInsideBattleground && Shaman.Common.IsPvpFightWorthLusting) 
                     return true;
 
-                if (!Me.GroupInfo.IsInRaid && Me.GotTarget)
+                if (!Me.GroupInfo.IsInRaid && Me.GotTarget())
                 {
                     if (Me.CurrentTarget.IsBoss() || Me.CurrentTarget.TimeToDeath() > 45 || (Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile))
                     {
@@ -671,17 +671,17 @@ namespace Singular.ClassSpecific.Mage
                                     req => ((WoWUnit)req).IsCrowdControlled(),
                                     new Action(r => Logger.WriteDebug("SlowMelee: target already crowd controlled"))
                                     ),
-                                new Decorator(
-                                    req => ((WoWUnit)req).IsSlowed(50),
-                                    new Action(r => Logger.WriteDebug("SlowMelee: target already slowed at least 50%"))
-                                    ),
+                                Spell.CastOnGround("Ring of Frost", onUnit => (WoWUnit)onUnit, req => ((WoWUnit)req).SpellDistance() < 30, true),
+                                Spell.Cast("Frost Nova", mov => true, onUnit => (WoWUnit)onUnit, req => ((WoWUnit)req).SpellDistance() < 12, cancel => false),
                                 new Decorator(
                                     ret => TalentManager.CurrentSpec == WoWSpec.MageFrost,
                                     Mage.Frost.CastFreeze(on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.SpellDistance() < 8), ClusterType.Radius, 8))
                                     ),
-                                Spell.CastOnGround("Ring of Frost", onUnit => (WoWUnit)onUnit, req => ((WoWUnit)req).SpellDistance() < 30, true),
-                                Spell.Cast("Frost Nova", mov => true, onUnit => (WoWUnit)onUnit, req => ((WoWUnit)req).SpellDistance() < 12, cancel => false),
                                 Spell.Cast("Frostjaw", mov => true, onUnit => (WoWUnit)onUnit, req => true, cancel => false),
+                                new Decorator(
+                                    req => ((WoWUnit)req).IsSlowed(50),
+                                    new Action(r => Logger.WriteDebug("SlowMelee: target already slowed at least 50%"))
+                                    ),
                                 Spell.Cast("Cone of Cold", mov => true, onUnit => (WoWUnit)onUnit, req => true, cancel => false)
                                 )
                             )

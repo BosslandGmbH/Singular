@@ -19,11 +19,27 @@ using Styx.CommonBot.POI;
 using System.Text;
 using Singular.Managers;
 using Singular.Utilities;
+using Singular.Dynamics;
 
 namespace Singular.Helpers
 {
     internal static class Unit
     {
+        public static uint TrivialHealth    { get; set; }
+        public static uint SeriousHealth { get; set; }
+
+
+        [Behavior(BehaviorType.Initialize)]
+        public static Composite InitializeUnit()
+        {
+            TrivialHealth = (uint) (0.01f * SingularSettings.Instance.TrivialMaxHealthPcnt * StyxWoW.Me.MaxHealth);
+
+            Logger.WriteFile("  {0}: {1}", "TrivialHealth", Unit.TrivialHealth);
+            Logger.WriteFile("  {0}: {1}", "NeedTankTargeting", TankManager.NeedTankTargeting);
+            Logger.WriteFile("  {0}: {1}", "NeedHealTargeting", HealerManager.NeedHealTargeting);
+            return null;
+        }
+
         public static HashSet<uint> IgnoreMobs = new HashSet<uint>
             {
                 52288, // Venomous Effusion (NPC near the snake boss in ZG. Its the green lines on the ground. We want to ignore them.)
@@ -34,12 +50,29 @@ namespace Singular.Helpers
                 52387, // Cave in stalker - Kilnara
             };
 
+        /// <summary>
+        /// checks if unit has a current target.  Differs from WoWUnit.GotTarget since it
+        /// will only return true if targeting a WoWUnit
+        /// </summary>
+        /// <param name="unit">unit to check for a CurrentTarget</param>
+        /// <returns>false: if CurrentTarget == null, otherwise true</returns>
+        public static bool GotTarget(this WoWUnit unit)
+        {
+            return unit.CurrentTarget != null;
+        }
+
         public static bool IsUndeadOrDemon(this WoWUnit unit)
         {
             return unit.CreatureType == WoWCreatureType.Undead
                     || unit.CreatureType == WoWCreatureType.Demon;
         }
 
+        /// <summary>
+        /// determines if unit is a melee toon based upon .Class.  for Shaman and Druids 
+        /// will return based upon presence of aura 
+        /// </summary>
+        /// <param name="unit">unit to test for melee-ness</param>
+        /// <returns>true: melee toon, false: probably not</returns>
         public static bool IsMelee(this WoWUnit unit)
         {
             if (unit.Class == WoWClass.DeathKnight
@@ -250,7 +283,7 @@ namespace Singular.Helpers
                     p => p.Aggro
                         || (p.Combat
                             && (p.TaggedByMe
-                                || (p.GotTarget && p.IsTargetingMyStuff())
+                                || (p.GotTarget() && p.IsTargetingMyStuff())
                                 || (p == EventHandlers.AttackingEnemyPlayer && (DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 15)
                                 )
                             )
@@ -259,7 +292,7 @@ namespace Singular.Helpers
 
         public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithMeOrMyStuff
         {
-            get { return NearbyUnfriendlyUnits.Where(p => p.Aggro || (p.Combat && (p.TaggedByMe || (p.GotTarget && p.IsTargetingMyStuff())))); }
+            get { return NearbyUnfriendlyUnits.Where(p => p.Aggro || (p.Combat && (p.TaggedByMe || (p.GotTarget() && p.IsTargetingMyStuff())))); }
         }
 
         public static IEnumerable<WoWUnit> UnitsInCombatWithUsOrOurStuff(int maxSpellDist)
@@ -269,7 +302,7 @@ namespace Singular.Helpers
                     p => p.Aggro 
                         || (p.Combat 
                             && (p.TaggedByMe 
-                                || (p.GotTarget && p.IsTargetingUs()) 
+                                || (p.GotTarget() && p.IsTargetingUs()) 
                                 || (p == EventHandlers.AttackingEnemyPlayer && (DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 15)
                                 )
                             )
@@ -425,12 +458,6 @@ namespace Singular.Helpers
             return true;
         }
 
-        public static uint TrivialHealth()
-        {
-            float trivialHealth = (0.01f * SingularSettings.Instance.TrivialMaxHealthPcnt) * StyxWoW.Me.MaxHealth;
-            return (uint)trivialHealth;
-        }
-
         public static bool IsTrivial(this WoWUnit unit)
         {
             if (SingularRoutine.CurrentWoWContext != WoWContext.Normal)
@@ -440,7 +467,7 @@ namespace Singular.Helpers
                 return false;
 
             uint maxh = unit.MaxHealth;
-            return maxh <= TrivialHealth();
+            return maxh <= TrivialHealth;
         }
 
         public static WoWPlayer GetPlayerParent(WoWUnit unit)
@@ -961,9 +988,12 @@ namespace Singular.Helpers
             WoWGuid guid = unit == null ? WoWGuid.Empty : unit.Guid;
             if ( guid == _lastIsBossGuid )
                 return _lastIsBossResult;
-
+#if SINGULAR_BOSS_DETECT
             _lastIsBossGuid = guid;
             _lastIsBossResult = unit != null && (Lists.BossList.CurrentMapBosses.Contains(unit.Name) || Lists.BossList.BossIds.Contains(unit.Entry));
+#else
+            _lastIsBossResult = unit.IsBoss;
+#endif
             if (!_lastIsBossResult)
                 _lastIsBossResult = IsTrainingDummy(unit);
             return _lastIsBossResult;
@@ -989,7 +1019,7 @@ namespace Singular.Helpers
         {
             return u.IsTargetingMeOrPet 
                 || u.IsTargetingAnyMinion 
-                || (u.GotTarget && u.CurrentTarget.IsCompanion());
+                || (u.GotTarget() && u.CurrentTarget.IsCompanion());
         }
 
         public static bool IsCompanion(this WoWUnit u)
@@ -1319,7 +1349,7 @@ namespace Singular.Helpers
                 if (!StyxWoW.Me.CurrentTargetGuid.IsValid || guidLastMovingAwayCheck != StyxWoW.Me.CurrentTargetGuid)
                 {
                     lastMovingAwayAnswer = false;
-                    if (StyxWoW.Me.CurrentTarget == null)
+                    if (!StyxWoW.Me.GotTarget())
                         guidLastMovingAwayCheck = WoWGuid.Empty;
                     else
                     {
@@ -1434,7 +1464,7 @@ namespace Singular.Helpers
         {
             Range = range;
 
-            if (StyxWoW.Me.CurrentTarget != null)
+            if (StyxWoW.Me.GotTarget())
                 StyxWoW.Me.TimeToDeath();
 
             bool worldPvp = (DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 15;
@@ -1597,7 +1627,7 @@ namespace Singular.Helpers
             return new Action(
                 ret =>
                 {
-                    if (SingularSettings.Debug && StyxWoW.Me.CurrentTarget != null)
+                    if (SingularSettings.Debug && StyxWoW.Me.GotTarget())
                     {
                         long timeNow = StyxWoW.Me.CurrentTarget.TimeToDeath();
                         if (timeNow != lastReportedTime || guid != StyxWoW.Me.CurrentTargetGuid )

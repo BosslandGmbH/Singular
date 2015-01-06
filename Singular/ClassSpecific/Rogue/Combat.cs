@@ -40,7 +40,7 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget && Me.IsSafelyFacing(Me.CurrentTarget),
+                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget() && Me.IsSafelyFacing(Me.CurrentTarget),
                     new PrioritySelector(
 
                         CreateCombatDiagnosticOutputBehavior("Pull"),
@@ -72,6 +72,9 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
@@ -133,6 +136,10 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
 
                         Helpers.Common.CreateInterruptBehavior(),

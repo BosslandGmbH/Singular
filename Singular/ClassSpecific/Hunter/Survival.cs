@@ -58,10 +58,10 @@ namespace Singular.ClassSpecific.Hunter
 
                         // Defensive Stuff
                         Spell.Cast("Intimidation",
-                            ret => Me.GotTarget
+                            ret => Me.GotTarget()
                                 && Me.CurrentTarget.IsAlive
                                 && Me.GotAlivePet
-                                && (!Me.CurrentTarget.GotTarget || Me.CurrentTarget.CurrentTarget == Me)),
+                                && (!Me.CurrentTarget.GotTarget() || Me.CurrentTarget.CurrentTarget == Me)),
 
                         // AoE Rotation
                         new Decorator(
@@ -130,10 +130,10 @@ namespace Singular.ClassSpecific.Hunter
 
                         // Defensive Stuff
                         Spell.Cast("Intimidation",
-                            ret => Me.GotTarget
+                            ret => Me.GotTarget()
                                 && Me.CurrentTarget.IsAlive
                                 && Me.GotAlivePet
-                                && (!Me.CurrentTarget.GotTarget || Me.CurrentTarget.CurrentTarget == Me)),
+                                && (!Me.CurrentTarget.GotTarget() || Me.CurrentTarget.CurrentTarget == Me)),
 
                         // Single Target Rotation
                         Spell.Cast("Explosive Shot"),

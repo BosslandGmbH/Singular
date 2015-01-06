@@ -18,10 +18,20 @@ namespace Singular.Dynamics
     public static class CompositeBuilder
     {
         /// <summary>
-        /// allows generic behaviors to query current type of behavior
-        /// during behavior construction
+        /// current behavior type during behavior construction
         /// </summary>
         public static BehaviorType CurrentBehaviorType { get; set; }
+
+        /// <summary>
+        /// current method name during behavior construction
+        /// </summary>
+        public static string CurrentBehaviorName { get; set; }
+
+        /// <summary>
+        /// current method name during behavior construction
+        /// </summary>
+        public static int CurrentBehaviorPriority { get; set; }
+
         public static bool SilentBehaviorCreation { get; set; }
 
 
@@ -81,10 +91,15 @@ namespace Singular.Dynamics
             foreach (var kvp in matchedMethods.OrderByDescending(mm => mm.Key.PriorityLevel))
             {
                 CurrentBehaviorType = behavior;
+                CurrentBehaviorPriority = kvp.Key.PriorityLevel;
+                CurrentBehaviorName = kvp.Value.Name;
+                string invokeInfo = string.Format("{0} {1} {2}", kvp.Key.PriorityLevel.ToString().AlignRight(4), behavior.ToString().AlignLeft(15), kvp.Value.Name);
                 if (!silent)
-                    Logger.WriteFile("{0} {1} {2}", kvp.Key.PriorityLevel.ToString().AlignRight(4), behavior.ToString().AlignLeft(15), kvp.Value.Name);
+                    Logger.WriteFile(invokeInfo);
                 kvp.Value.Invoke(null, null);
                 CurrentBehaviorType = 0;
+                CurrentBehaviorPriority = 0;
+                CurrentBehaviorName = string.Empty;
             }
 
             return;
@@ -124,6 +139,8 @@ namespace Singular.Dynamics
                             Logger.WriteFile("{0} {1} {2}", attribute.PriorityLevel.ToString().AlignRight(4), behavior.ToString().AlignLeft(15), mi.Name);
 
                         CurrentBehaviorType = behavior;
+                        CurrentBehaviorPriority = attribute.PriorityLevel;
+                        CurrentBehaviorName = mi.Name;
 
                         // if it blows up here, you defined a method with the exact same attribute and priority as one already found
 
@@ -152,6 +169,8 @@ namespace Singular.Dynamics
                         matchedMethods.Add(attribute, comp);
 
                         CurrentBehaviorType = 0;
+                        CurrentBehaviorPriority = 0;
+                        CurrentBehaviorName = string.Empty;
                     }
                 }
             }

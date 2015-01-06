@@ -106,7 +106,7 @@ namespace Singular.Helpers
                                 if (SingularRoutine.CurrentWoWContext == WoWContext.Normal && SingularSettings.Instance.TargetWorldPvpRegardless)
                                 {
                                     // if on an enemy player, stay there
-                                    if (Me.GotTarget && Me.CurrentTarget.IsPlayer && Unit.ValidUnit(Me.CurrentTarget))
+                                    if (Me.GotTarget() && Me.CurrentTarget.IsPlayer && Unit.ValidUnit(Me.CurrentTarget))
                                         return Me.CurrentTarget;
 
                                     // if attacked in last 15 seconds, go after them
@@ -115,7 +115,7 @@ namespace Singular.Helpers
                                         WoWUnit ganker = EventHandlers.AttackingEnemyPlayer;
                                         if (Unit.ValidUnit(ganker))
                                         {
-                                            if (!Me.GotTarget || !Me.CurrentTarget.IsPlayer || !Unit.ValidUnit(Me.CurrentTarget))
+                                            if (!Me.GotTarget() || !Me.CurrentTarget.IsPlayer || !Unit.ValidUnit(Me.CurrentTarget))
                                             {
                                                 if (ganker != Me.CurrentTarget)
                                                 {
@@ -167,7 +167,7 @@ namespace Singular.Helpers
                                 }
 #endif
                                 // Go below if current target is null or dead. We have other checks to deal with that
-                                if (StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget.IsDead)
+                                if (!StyxWoW.Me.GotTarget() || StyxWoW.Me.CurrentTarget.IsDead)
                                     return null;
 
                                 // target not aggroed yet or out of range? check for adds in melee pounding us
@@ -265,7 +265,7 @@ namespace Singular.Helpers
                                 }
 
                                 // otherwise, let's get a new one
-                                Logger.WriteDebug(targetColor, "EnsureTarget: invalid target {0}, so forcing selection of a new one...", Me.CurrentTarget == null ? "(null)" : Me.CurrentTarget.SafeName());
+                                Logger.WriteDebug(targetColor, "EnsureTarget: invalid target {0}, so forcing selection of a new one...", !Me.GotTarget() ? "(null)" : Me.CurrentTarget.SafeName());
                                 return null;
                             },
 
@@ -282,7 +282,7 @@ namespace Singular.Helpers
                                         new Sequence(
                                             new Action(ret => { if (SingularSettings.Debug) Logger.WriteDebug(targetColor, "EnsureTarget: switching to target {0}", ((WoWUnit)ret).SafeName()); }),
                                             new Action(ret => ((WoWUnit)ret).Target()),
-                                            new WaitContinue(2, ret => StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget == (WoWUnit)ret, new ActionAlwaysSucceed()),
+                                            new WaitContinue(2, ret => StyxWoW.Me.GotTarget() && StyxWoW.Me.CurrentTarget == (WoWUnit)ret, new ActionAlwaysSucceed()),
                                             new Action(ret => TankManager.TargetingTimer.Reset())   // cheaper to just reset than to check if we need Tank Targeting
                                             )
                                         ),
@@ -306,7 +306,7 @@ namespace Singular.Helpers
                                         // If we have a RaF leader, then use its target.
                                         var rafLeader = RaFHelper.Leader;
                                         if (rafLeader != null && rafLeader.IsValid && !rafLeader.IsMe && rafLeader.Combat &&
-                                            rafLeader.CurrentTarget != null && rafLeader.CurrentTarget.IsAlive && !Blacklist.Contains(rafLeader.CurrentTarget, BlacklistFlags.Combat))
+                                            rafLeader.GotTarget() && rafLeader.CurrentTarget.IsAlive && !Blacklist.Contains(rafLeader.CurrentTarget, BlacklistFlags.Combat))
                                         {
                                             Logger.Write(targetColor, "Current target invalid. Switching to Tanks target " + rafLeader.CurrentTarget.SafeName() + "!");
                                             return rafLeader.CurrentTarget;
@@ -344,7 +344,7 @@ namespace Singular.Helpers
                                                 p => !Blacklist.Contains(p, BlacklistFlags.Combat)
                                                 && Unit.ValidUnit(p)
                                                     // && p.DistanceSqr <= 40 * 40  // dont restrict check to 40 yds
-                                                && (p.Aggro || p.PetAggro || (p.Combat && p.GotTarget && (p.IsTargetingMeOrPet || p.IsTargetingMyRaidMember))))
+                                                && (p.Aggro || p.PetAggro || (p.Combat && p.GotTarget() && (p.IsTargetingMeOrPet || p.IsTargetingMyRaidMember))))
                                             .OrderBy(u => u.IsPlayer)
                                             .ThenBy(u => CalcDistancePriority(u))
                                             .ThenBy(u => u.HealthPercent)
@@ -426,7 +426,7 @@ namespace Singular.Helpers
                                                 p => !Blacklist.Contains(p, BlacklistFlags.Combat)
                                                 && Unit.ValidUnit(p)
                                                     // && p.DistanceSqr <= 40 * 40  // dont restrict check to 40 yds
-                                                && (p.Aggro || p.PetAggro || (p.Combat && p.GotTarget && (p.IsTargetingMeOrPet || p.IsTargetingMyRaidMember))))
+                                                && (p.Aggro || p.PetAggro || (p.Combat && p.GotTarget() && (p.IsTargetingMeOrPet || p.IsTargetingMyRaidMember))))
                                             .OrderBy(u => u.IsPlayer)
                                             .ThenBy(u => CalcDistancePriority(u))
                                             .ThenBy(u => u.HealthPercent)
@@ -457,7 +457,7 @@ namespace Singular.Helpers
                                             CreateClearPendingCursorSpell(RunStatus.Success),
                                             new Action(ret => Logger.WriteDebug(targetColor, "EnsureTarget: set target to chosen target {0}", ((WoWUnit)ret).SafeName())),
                                             new Action(ret => ((WoWUnit)ret).Target()),
-                                            new WaitContinue(2, ret => StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTargetGuid == ((WoWUnit)ret).Guid, new ActionAlwaysSucceed())
+                                            new WaitContinue(2, ret => StyxWoW.Me.GotTarget() && StyxWoW.Me.CurrentTargetGuid == ((WoWUnit)ret).Guid, new ActionAlwaysSucceed())
                                             )
                                         ),
 
@@ -469,7 +469,7 @@ namespace Singular.Helpers
 
             #endregion
                         new Decorator(
-                            req => !Me.GotTarget || !Unit.ValidUnit(Me.CurrentTarget),
+                            req => !Me.GotTarget() || !Unit.ValidUnit(Me.CurrentTarget),
                             new Action(r =>
                             {
                                 if (_lastTargetMessageGuid != Me.CurrentTargetGuid || _nextTargetMessageTimer.IsFinished)

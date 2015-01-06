@@ -176,7 +176,7 @@ namespace Singular.ClassSpecific.Monk
 
                         new Decorator(
 
-                            req => (_statue == null || (Me.GotTarget && Me.CurrentTarget.Location.Distance(_statue.Location) > 35)),
+                            req => (_statue == null || (Me.GotTarget() && Me.CurrentTarget.Location.Distance(_statue.Location) > 35)),
 
                             new PrioritySelector(
                                 ctx => Clusters.GetBestUnitForCluster( Unit.GroupMembers.Where(g => g.IsAlive && g.Combat && g.IsMelee()), ClusterType.Radius, 30f),
@@ -270,8 +270,8 @@ namespace Singular.ClassSpecific.Monk
                     CreateMistweaverMoveToEnemyTarget(),
 
                     new Decorator(
-                        req => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
-                        Helpers.Common.CreateAutoAttack(true)
+                        req => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange,
+                        Helpers.Common.CreateAutoAttack()
                         ),
 
                     new Decorator(
@@ -352,8 +352,8 @@ namespace Singular.ClassSpecific.Monk
                                 new PrioritySelector(
 
                                     new Decorator(
-                                        req => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
-                                        Helpers.Common.CreateAutoAttack(true)
+                                        req => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange,
+                                        Helpers.Common.CreateAutoAttack()
                                         ),
 
                                     Helpers.Common.CreateInterruptBehavior(),
@@ -401,7 +401,7 @@ namespace Singular.ClassSpecific.Monk
                                     )
                                 ),
 
-                            Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > minDistRollAllowed)
+                            Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.GapCloser) && !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > minDistRollAllowed)
                             )
                         ),
 
@@ -450,7 +450,7 @@ namespace Singular.ClassSpecific.Monk
 
                                 CreateMistweaverMoveToEnemyTarget(),
                                 new Decorator(
-                                    req => Me.GotTarget && Me.CurrentTarget.IsAlive && !IsChannelingSoothingMist(),
+                                    req => Me.GotTarget() && Me.CurrentTarget.IsAlive && !IsChannelingSoothingMist(),
                                     Movement.CreateFaceTargetBehavior()
                                     ),
 
@@ -507,8 +507,8 @@ namespace Singular.ClassSpecific.Monk
                                     new PrioritySelector(
 
                                         new Decorator(
-                                            req => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
-                                            Helpers.Common.CreateAutoAttack(true)
+                                            req => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange,
+                                            Helpers.Common.CreateAutoAttack()
                                             ),
 
                                         // I WANT CHI!!!
@@ -537,7 +537,7 @@ namespace Singular.ClassSpecific.Monk
                                                 .Where(u => u.IsAlive && u.SpellDistance() < 40 && Me.IsSafelyFacing(u))
                                                 .OrderByDescending(u => u.HealthPercent)
                                                 .FirstOrDefault(),
-                                            req => Me.GotTarget && !Me.CurrentTarget.IsWithinMeleeRange && HealerManager.AllowHealerDPS(),
+                                            req => Me.GotTarget() && !Me.CurrentTarget.IsWithinMeleeRange && HealerManager.AllowHealerDPS(),
                                             cancel => HealerManager.CancelHealerDPS()
                                             ),
 
@@ -547,7 +547,8 @@ namespace Singular.ClassSpecific.Monk
 
                                 Spell.Cast("Roll", 
                                     req => Me.Shapeshift == SPIRITED_CRANE 
-                                        && MovementManager.IsClassMovementAllowed 
+                                        && MovementManager.IsClassMovementAllowed
+                                        && SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.GapCloser) 
                                         && !MonkSettings.DisableRoll 
                                         && Me.CurrentTarget.Distance > minDistRollAllowed
                                     )
@@ -616,7 +617,7 @@ namespace Singular.ClassSpecific.Monk
                     ret => ret != null 
                         && (Me.Combat || ((WoWUnit)ret).Combat || ((WoWUnit)ret).PredictedHealthPercent() <= 99),
                         // && HealerManager.SavingHealUnit == null
-                        // && (selfOnly || !MonkSettings.MistHealSettings.HealFromMelee || !Me.GotTarget || Me.CurrentTarget.IsWithinMeleeRange),
+                        // && (selfOnly || !MonkSettings.MistHealSettings.HealFromMelee || !Me.GotTarget() || Me.CurrentTarget.IsWithinMeleeRange),
 
                     new PrioritySelector(
                         new Decorator(
@@ -694,7 +695,7 @@ namespace Singular.ClassSpecific.Monk
                 "Summon Jade Serpent Statue",
                 "Summon Jade Serpent Statue",
                 new Decorator(
-                    req => Group.Tanks.Any(t => t.Combat && t.GotTarget && t.IsWithinMeleeRangeOf(t.CurrentTarget)),
+                    req => Group.Tanks.Any(t => t.Combat && t.GotTarget() && t.IsWithinMeleeRangeOf(t.CurrentTarget)),
                     CreateSummonJadeSerpentStatueBehavior()
                     )
                 );
@@ -893,7 +894,7 @@ namespace Singular.ClassSpecific.Monk
                     "Summon Jade Serpent Statue",
                     new Decorator(
                         req => !IsChannelingSoothingMist() 
-                            && Group.Tanks.Any(t => t.Combat && !t.IsMoving && t.GotTarget && t.CurrentTarget.IsHostile && t.SpellDistance(t.CurrentTarget) < 10),
+                            && Group.Tanks.Any(t => t.Combat && !t.IsMoving && t.GotTarget() && t.CurrentTarget.IsHostile && t.SpellDistance(t.CurrentTarget) < 10),
                         CreateSummonJadeSerpentStatueBehavior()
                         )
                     );

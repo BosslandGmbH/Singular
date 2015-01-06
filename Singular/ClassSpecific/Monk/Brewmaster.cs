@@ -130,7 +130,7 @@ namespace Singular.ClassSpecific.Monk
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkBrewmaster, WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkBrewmaster, WoWContext.Normal | WoWContext.Battlegrounds)]
         public static Composite CreateBrewmasterMonkNormalCombat()
         {
             return new PrioritySelector(
@@ -141,7 +141,10 @@ namespace Singular.ClassSpecific.Monk
                 new Decorator(
                     req => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Helpers.Common.CreateAutoAttack(true),
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+
                         Helpers.Common.CreateInterruptBehavior(),
 
                         // keep these auras up!
@@ -225,25 +228,6 @@ namespace Singular.ClassSpecific.Monk
         }
 
 
-        [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkBrewmaster, WoWContext.Battlegrounds)]
-        public static Composite CreateBrewmasterMonkPvpCombat()
-        {
-            return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
-                CreateCloseDistanceBehavior(),
-
-                Helpers.Common.CreateInterruptBehavior(),
-
-                // slow if current target running away
-                new Throttle( TimeSpan.FromMilliseconds(1500),                           
-                    Spell.CastOnGround("Dizzying Haze", on => Me.CurrentTarget, req => Me.CurrentTarget.IsMovingAway(), waitForSpell: false)
-                    ),
-                Spell.Cast("Tiger Palm", ret => Me.CurrentChi >= 1 && Me.HasKnownAuraExpired("Tiger Power")),
-                Spell.Cast("Blackout Kick", ret => Me.CurrentChi >= 2),
-                Spell.Cast("Jab")
-                );
-        }
-
         [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkBrewmaster, WoWContext.Instances)]
         public static Composite CreateBrewmasterMonkInstanceCombat()
         {
@@ -254,13 +238,15 @@ namespace Singular.ClassSpecific.Monk
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 CreateCloseDistanceBehavior(),
-                Helpers.Common.CreateAutoAttack(true),
 
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator(
                     req => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         Helpers.Common.CreateInterruptBehavior(),
 
@@ -352,7 +338,7 @@ namespace Singular.ClassSpecific.Monk
         {
             return new Throttle(TimeSpan.FromMilliseconds(1500),
                 new Decorator(
-                    ret => MovementManager.IsClassMovementAllowed && Me.GotTarget,
+                    ret => MovementManager.IsClassMovementAllowed && Me.GotTarget(),
                     new PrioritySelector(
                         ctx => Me.CurrentTarget,
                         new Decorator( 
@@ -386,7 +372,7 @@ namespace Singular.ClassSpecific.Monk
 
                         new Decorator(
 
-                            req => _statue == null || (Me.GotTarget && _statue.SpellDistance(on(req)) > 30),
+                            req => _statue == null || (Me.GotTarget() && _statue.SpellDistance(on(req)) > 30),
 
                             new Throttle(
                                 10,

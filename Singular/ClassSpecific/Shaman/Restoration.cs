@@ -39,7 +39,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
+                    ret => !StyxWoW.Me.HasAnyAura("Drink", "Food", "Refreshment"),
                     CreateRestoShamanCombatBuffs()    // call here so any Earth Shield done before we drink
                     ),
                 Singular.Helpers.Rest.CreateDefaultRestBehaviour("Healing Surge", "Ancestral Spirit"),
@@ -661,7 +661,7 @@ namespace Singular.ClassSpecific.Shaman
                             ,
 
                             new Decorator(
-                                ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid),
+                                ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget() && !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid),
                                 new PrioritySelector(
                                     Movement.CreateMoveToLosBehavior(),
                                     Movement.CreateFaceTargetBehavior(),

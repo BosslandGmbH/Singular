@@ -62,7 +62,7 @@ namespace Singular.ClassSpecific.Paladin
                                     && Me.CurrentTargetGuid != u.Guid
                                     && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
                                     && !u.IsCrowdControlled()
-                                    && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
+                                    && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget() || u.Location.Distance(Me.CurrentTarget.Location) > 10))
                             .OrderByDescending(u => u.Distance)
                             .FirstOrDefault()
                             )
@@ -254,7 +254,7 @@ namespace Singular.ClassSpecific.Paladin
             return new Throttle(
                 2,
                 new Decorator(
-                    req => Me.GotTarget
+                    req => Me.GotTarget()
                         && !Me.CurrentTarget.IsPlayer
                         && !Me.CurrentTarget.IsTagged
                         && !Me.CurrentTarget.IsWithinMeleeRange,

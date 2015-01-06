@@ -45,7 +45,6 @@ namespace Singular.ClassSpecific.Warlock
                 new Decorator(ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         CreateWarlockDiagnosticOutputBehavior( "Pull" ),
-                        Helpers.Common.CreateAutoAttack(true),
 
                         // grinding or questing, if target meets these cast Flame Shock if possible
                         // 1. mob is less than 12 yds, so no benefit from delay in Lightning Bolt missile arrival
@@ -114,8 +113,6 @@ namespace Singular.ClassSpecific.Warlock
 
                     new PrioritySelector(
 
-                        Helpers.Common.CreateAutoAttack(true),
-
                         Helpers.Common.CreateInterruptBehavior(),
 
                         new Action(ret =>
@@ -128,16 +125,16 @@ namespace Singular.ClassSpecific.Warlock
 
                         // Noxxic
                         Spell.Cast("Shadowburn", ret => Me.CurrentTarget.HealthPercent < 20),
-                        Spell.Buff("Immolate", 3, on => Me.CurrentTarget, ret => true),
-                        Spell.Cast("Conflagrate"),
+                        Spell.Buff("Immolate", 4, on => Me.CurrentTarget, ret => true),
+                        Spell.Cast("Conflagrate", req => Spell.GetCharges("Conflagrate") >= 2),
+                        Spell.Cast("Chaos Bolt", ret => Me.CurrentTarget.HealthPercent >= 20 && BackdraftStacks < 3),
+
                         Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => Spell.UseAOE && _InstantRoF && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire") && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => !u.Aggro || u.IsCrowdControlled()), false),
 
-                        Spell.Cast("Chaos Bolt", ret => Me.CurrentTarget.HealthPercent >= 20 && BackdraftStacks < 3),
                         Spell.Cast("Incinerate"),
 
                         Spell.Cast("Fel Flame", ret => Me.IsMoving && Me.CurrentTarget.GetAuraTimeLeft("Immolate").TotalMilliseconds.Between(300, 3000)),
 
-                        Spell.Cast("Drain Life", ret => Me.HealthPercent <= WarlockSettings.DrainLifeCastPct && !Group.AnyHealerNearby),
                         Spell.Cast("Shadow Bolt")
                         )
                     )
@@ -160,8 +157,6 @@ namespace Singular.ClassSpecific.Warlock
                 new Decorator(ret => !Spell.IsGlobalCooldown(),
 
                     new PrioritySelector(
-
-                        Helpers.Common.CreateAutoAttack(true),
 
                         Helpers.Common.CreateInterruptBehavior(),
 
@@ -246,7 +241,6 @@ namespace Singular.ClassSpecific.Warlock
                                 )
                             ),
 
-                        Spell.Cast("Drain Life", ret => Me.HealthPercent <= WarlockSettings.DrainLifeCastPct && !Group.AnyHealerNearby),
                         Spell.Cast("Shadow Bolt")
                         )
                     )

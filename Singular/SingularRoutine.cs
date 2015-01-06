@@ -64,9 +64,12 @@ namespace Singular
 
         public override void Initialize()
         {
-            TalentManager.Init();       // initializes CurrentSpec which is referenced everywhere
+            DateTime timeStart = DateTime.Now;
 
-            SingularSettings.Initialize();
+            Logger.WriteFile("Initialize: started");    // cannot call method which references SingularSettings
+
+            TalentManager.Init();           // initializes CurrentSpec which is referenced everywhere
+            SingularSettings.Initialize();  // loads Singular global and spec-specific settings (must determine spec first)
 
             WriteSupportInfo();
 
@@ -183,6 +186,7 @@ namespace Singular
 
             Logger.WriteDebug(Color.White, "Verified behaviors can be created!");
             Logger.Write("Initialization complete!");
+            Logger.WriteDiagnostic(Color.White, "Initialize: completed taking {0:F2} seconds", (DateTime.Now - timeStart).TotalSeconds);
         }
 
         private void PullMoreWeighTargetsFilter(List<Targeting.TargetPriority> units)
@@ -265,7 +269,7 @@ namespace Singular
         /// before tree is run
         /// </summary>
         /// <param name="reason">text to write to log as reason for Bot Stop request</param>
-        private static void StopBot(string reason)
+        public static void StopBot(string reason)
         {
             if (!TreeRoot.IsRunning)
                 reason = "Bot Cannot Run: " + reason;

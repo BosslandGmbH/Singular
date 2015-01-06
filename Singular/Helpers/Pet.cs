@@ -9,6 +9,7 @@ using System;
 using Styx.Helpers;
 using Styx.WoWInternals.World;
 using Styx.WoWInternals;
+using Styx.CommonBot.Routines;
 
 namespace Singular.Helpers
 {
@@ -18,7 +19,10 @@ namespace Singular.Helpers
         public static Composite CreateSummonPet(string petName)
         {
             return new Decorator(
-                ret => !SingularSettings.Instance.DisablePetUsage && !StyxWoW.Me.GotAlivePet && PetManager.PetSummonAfterDismountTimer.IsFinished,
+                ret => !SingularSettings.Instance.DisablePetUsage 
+                    && SingularRoutine.IsAllowed( CapabilityFlags.PetSummoning)
+                    && !StyxWoW.Me.GotAlivePet 
+                    && PetManager.PetSummonAfterDismountTimer.IsFinished,
                 new Sequence(
                     new Action(ret => PetManager.CallPet(petName)),
                     Helpers.Common.CreateWaitForLagDuration(),
@@ -106,7 +110,7 @@ namespace Singular.Helpers
         /// <param name="action"> The name of the pet spell that will be casted. </param>
         /// <param name="location"> The point to click. </param>
         /// <returns></returns>
-        public static Composite CastPetActionOnLocation(string action, LocationRetriever location)
+        public static Composite CastPetActionOnLocation(string action, SimpleLocationRetriever location)
         {
             return CastPetActionOnLocation(action, location, ret => true);
         }
@@ -119,7 +123,7 @@ namespace Singular.Helpers
         /// <param name="location"> The point to click. </param>
         /// <param name="extra"> Extra conditions that will be checked. </param>
         /// <returns></returns>
-        public static Composite CastPetActionOnLocation(string action, LocationRetriever location, SimpleBooleanDelegate extra)
+        public static Composite CastPetActionOnLocation(string action, SimpleLocationRetriever location, SimpleBooleanDelegate extra)
         {
             return new Decorator(
                 ret => StyxWoW.Me.GotAlivePet && extra(ret) && PetManager.CanCastPetAction(action),

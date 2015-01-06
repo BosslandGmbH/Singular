@@ -15,7 +15,6 @@ namespace Singular.ClassSpecific.Priest
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMediumRange(),
-                Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptBehavior(),
 
                 Spell.BuffSelf("Power Word: Shield", ret => !StyxWoW.Me.HasAura("Weakened Soul")),

@@ -32,7 +32,6 @@ namespace Singular.ClassSpecific.DeathKnight
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
 
                         // Anti-magic shell - no cost and doesnt trigger GCD 

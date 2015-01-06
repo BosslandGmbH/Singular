@@ -56,9 +56,8 @@ namespace Singular.ClassSpecific.Warlock
 
                         CreateWarlockDiagnosticOutputBehavior(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),
 
-                        Helpers.Common.CreateAutoAttack(true),
                         new Decorator(
-                            ret => Me.GotAlivePet && Me.GotTarget && Me.Pet.CurrentTarget != Me.CurrentTarget,
+                            ret => Me.GotAlivePet && Me.GotTarget() && Me.Pet.CurrentTarget != Me.CurrentTarget,
                             new Action(ret =>
                             {
                                 PetManager.CastPetAction("Attack");
@@ -70,7 +69,7 @@ namespace Singular.ClassSpecific.Warlock
 
                         // even though AOE spell, keep on CD for single target unless AoE turned off
                         new Decorator(
-                            ret => Spell.UseAOE && WarlockSettings.FelstormMobCount > 0 && Common.GetCurrentPet() == WarlockPet.Felguard && !Spell.IsSpellOnCooldown("Command Demon") && Me.Pet.GotTarget,
+                            ret => Spell.UseAOE && WarlockSettings.FelstormMobCount > 0 && Common.GetCurrentPet() == WarlockPet.Felguard && !Spell.IsSpellOnCooldown("Command Demon") && Me.Pet.GotTarget(),
                             new Sequence(
                                 new PrioritySelector(
                                     ctx =>
@@ -83,13 +82,13 @@ namespace Singular.ClassSpecific.Warlock
                                             {
                                                 if (Me.Pet.CurrentTargetGuid == Me.CurrentTargetGuid && !Me.CurrentTarget.IsPlayer && Me.CurrentTarget.TimeToDeath() < 6)
                                                 {
-                                                    Logger.WriteDebug("Felstorm: found {0} mobs within 8 yds of Pet, but saving Felstorm since it will die soon", mobCount, !Me.Pet.GotTarget ? -1f : Me.Pet.SpellDistance(Me.Pet.CurrentTarget));
+                                                    Logger.WriteDebug("Felstorm: found {0} mobs within 8 yds of Pet, but saving Felstorm since it will die soon", mobCount, !Me.Pet.GotTarget() ? -1f : Me.Pet.SpellDistance(Me.Pet.CurrentTarget));
                                                     return 0;
                                                 }
                                             }
 
                                             if (SingularSettings.Debug)
-                                                Logger.WriteDebug("Felstorm: found {0} mobs within 8 yds of Pet; Pet is {1:F1} yds from its target", mobCount, !Me.Pet.GotTarget ? -1f : Me.Pet.SpellDistance(Me.Pet.CurrentTarget));
+                                                Logger.WriteDebug("Felstorm: found {0} mobs within 8 yds of Pet; Pet is {1:F1} yds from its target", mobCount, !Me.Pet.GotTarget() ? -1f : Me.Pet.SpellDistance(Me.Pet.CurrentTarget));
                                         }
                                         return mobCount;
                                     },
@@ -98,7 +97,7 @@ namespace Singular.ClassSpecific.Warlock
                 /*
                                                     ,
                                                     new Decorator(
-                                                        req => Me.Pet.GotTarget && !Me.Pet.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModHealingReceived),
+                                                        req => Me.Pet.GotTarget() && !Me.Pet.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModHealingReceived),
                                                         new PrioritySelector(
                                                             Spell.Cast( "Mortal Cleave", req => (int)req < WarlockSettings.FelstormMobCount || Spell.IsSpellOnCooldown("Felstorm")),
                                                             Spell.Cast( "Legion Strike", req => (int) req < WarlockSettings.FelstormMobCount || Spell.IsSpellOnCooldown("Felstorm"))
@@ -115,7 +114,7 @@ namespace Singular.ClassSpecific.Warlock
             #region Felguard Use
 
  new Decorator(
-                            ret => Common.GetCurrentPet() == WarlockPet.Felguard && Me.GotTarget && Me.CurrentTarget.Fleeing,
+                            ret => Common.GetCurrentPet() == WarlockPet.Felguard && Me.GotTarget() && Me.CurrentTarget.Fleeing,
                             Pet.CastPetAction("Axe Toss")
                             ),
 
@@ -245,7 +244,7 @@ namespace Singular.ClassSpecific.Warlock
                     ret => Me.CurrentTarget.HasAuraExpired("Hand of Gul'dan", "Shadowflame", 1),
                     new PrioritySelector(
                         ctx => TalentManager.HasGlyph("Hand of Gul'dan"),
-                        Spell.CastOnGround("Hand of Gul'dan", on => Me.CurrentTarget, req => Me.GotTarget && (bool)req),
+                        Spell.CastOnGround("Hand of Gul'dan", on => Me.CurrentTarget, req => Me.GotTarget() && (bool)req),
                         Spell.Cast("Hand of Gul'dan", req => !(bool) req)
                         )
                     )
@@ -257,7 +256,7 @@ namespace Singular.ClassSpecific.Warlock
             bool hasAura = Me.HasAura("Metamorphosis");
             bool shouldCast = false;
 
-            if (!hasAura && Me.GotTarget)
+            if (!hasAura && Me.GotTarget())
             {
                 string msg = "";
                 // check if we need Doom and have enough fury for 2 secs in form plus cast
@@ -310,7 +309,7 @@ namespace Singular.ClassSpecific.Warlock
             bool hasAura = Me.HasAura("Metamorphosis");
             bool shouldCancel = false;
 
-            if (hasAura && Me.GotTarget)
+            if (hasAura && Me.GotTarget())
             {
                 string msg = "";
 
@@ -419,7 +418,7 @@ namespace Singular.ClassSpecific.Warlock
                                     ret => !Me.HasAura("Metamorphosis"),
                                     new PrioritySelector(
                                         Spell.Buff("Hand of Gul'dan", onUnit => (WoWUnit)onUnit, req => !TalentManager.HasGlyph("Hand of Gul'dan")),
-                                        Spell.CastOnGround("Hand of Gul'dan", on => (WoWUnit)on, req => Me.GotTarget && TalentManager.HasGlyph("Hand of Gul'dan"), false)
+                                        Spell.CastOnGround("Hand of Gul'dan", on => (WoWUnit)on, req => Me.GotTarget() && TalentManager.HasGlyph("Hand of Gul'dan"), false)
                                         )
                                     ),
                                 Spell.Buff("Mortal Coil", onUnit => (WoWUnit)onUnit),

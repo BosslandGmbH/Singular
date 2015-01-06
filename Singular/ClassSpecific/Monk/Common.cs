@@ -72,7 +72,7 @@ namespace Singular.ClassSpecific.Monk
                     req => !Unit.IsTrivial(Me.CurrentTarget),
                     new PrioritySelector(               
                         // check our individual buffs here
-                        Spell.Buff("Disable", ret => Me.GotTarget && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile && !Me.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModDecreaseSpeed)),
+                        Spell.Buff("Disable", ret => Me.GotTarget() && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile && !Me.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModDecreaseSpeed)),
                         Spell.Buff("Ring of Peace", onunitRop)
                         )
                     ),
@@ -87,7 +87,7 @@ namespace Singular.ClassSpecific.Monk
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
+                    ret => !StyxWoW.Me.HasAnyAura("Drink", "Food", "Refreshment"),
                     new PrioritySelector(
                         // pickup free heals from Life Spheres
                         new Decorator(
@@ -156,7 +156,13 @@ namespace Singular.ClassSpecific.Monk
                         new PrioritySelector(
 
                             // add buff / shield here
-
+                            Spell.OffGCD(
+                                new Throttle(
+                                    3, 
+                                    Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HealthPercent < MonkSettings.TigereyeBrewHealth && Me.HasAura("Tigereye Brew", 1))
+                                    )
+                                ),
+                            
                             // save myself if possible
                             new Decorator(
                                 ret => (!Me.IsInGroup() || Battlegrounds.IsInsideBattleground)
@@ -488,6 +494,9 @@ namespace Singular.ClassSpecific.Monk
                     ctx => onUnit(ctx),
                     new Decorator(
                         req => {
+                            if (!SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.GapCloser))
+                                return false;
+
                             if (!canReq(req))
                                 return false;
 

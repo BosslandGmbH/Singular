@@ -50,7 +50,7 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget && Me.IsSafelyFacing(Me.CurrentTarget),
+                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget() && Me.IsSafelyFacing(Me.CurrentTarget),
                     new PrioritySelector(
 
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
@@ -89,12 +89,13 @@ namespace Singular.ClassSpecific.Rogue
                 Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
-                Helpers.Common.CreateAutoAttack(true),
-
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
@@ -170,8 +171,11 @@ namespace Singular.ClassSpecific.Rogue
 
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
+                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget(),
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
@@ -203,11 +207,13 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Cast("Garrote", ret => Common.AreStealthAbilitiesAvailable && Me.CurrentTarget.MeIsBehind),
                         Spell.Buff("Vendetta",  ret => Me.CurrentTarget.IsBoss() &&  (Me.CurrentTarget.HealthPercent < 35 || TalentManager.IsSelected(13))),
 
-                        Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
-                        Spell.Buff("Rupture", true, ret => (Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 3)),
-                        Spell.Buff("Envenom", true, ret => (Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3 && Me.ComboPoints > 0) || Me.ComboPoints == 5),
-                        Spell.Cast("Dispatch", req => Common.HasDaggerInMainHand),
+                        // Spend Combo Points
+                        Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 3)),
+                        Spell.Cast("Rupture", req => Me.CurrentTarget.HasAuraExpired("Rupture", 7)),
+                        Spell.Buff("Envenom", true, ret => Me.ComboPoints == 5),
 
+                        // Build Combo Points
+                        Spell.Cast("Dispatch", req => Common.HasDaggerInMainHand && (Me.CurrentTarget.HealthPercent < 35 || Me.GetAuraTimeLeft("Blindside").TotalSeconds > 0)),
                         Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
                         Spell.Cast("Mutilate", req => Common.HasTwoDaggers),
 

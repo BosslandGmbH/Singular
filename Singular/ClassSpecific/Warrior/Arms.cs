@@ -55,7 +55,6 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(),
 
@@ -87,7 +86,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new Throttle(
                 new Decorator(
-                    ret => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange && !Unit.IsTrivial(Me.CurrentTarget),
+                    ret => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange && !Unit.IsTrivial(Me.CurrentTarget),
 
                     new PrioritySelector(
 
@@ -144,7 +143,6 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(FaceDuring.Yes),
 
@@ -154,14 +152,15 @@ namespace Singular.ClassSpecific.Warrior
                     ret => !Spell.IsGlobalCooldown(),
 
                     new PrioritySelector(
-                        
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+
                         CreateDiagnosticOutputBehavior("Combat"),
 
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateVictoryRushBehavior(),
-
-                        Common.CreateDisarmBehavior(),
 
                         // special "in combat" pull logic for mobs not tagged and out of melee range
                         Common.CreateWarriorCombatPullMore(),
@@ -190,11 +189,11 @@ namespace Singular.ClassSpecific.Warrior
                         // Noxxic
                         //----------------
                         new Decorator(
-                            ret => true, // WarriorSettings.ArmsSpellPriority == WarriorSettings.SpellPriority.Noxxic,
+                            ret => Me.GotTarget(), // WarriorSettings.ArmsSpellPriority == WarriorSettings.SpellPriority.Noxxic,
                             new PrioritySelector(
 
                                 new Decorator(
-                                    ret => Spell.UseAOE && Me.GotTarget && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss()) && Me.CurrentTarget.Distance < 8,
+                                    ret => Spell.UseAOE && Me.GotTarget() && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss()) && Me.CurrentTarget.SpellDistance() < 8,
                                     new PrioritySelector(
                                         Spell.Cast("Storm Bolt"),
                                         Spell.BuffSelf("Bladestorm"),
@@ -219,7 +218,7 @@ namespace Singular.ClassSpecific.Warrior
                                         Spell.Cast( "Colossus Smash"),
 
                                         // 5 Whirlwind as a filler ability when target is above 20% health.
-                                        Spell.Cast( "Whirlwind", req => Me.CurrentTarget.HealthPercent > 20 ),
+                                        Spell.Cast( "Whirlwind", req => Me.CurrentTarget.HealthPercent > 20 && Me.CurrentTarget.SpellDistance() < 8),
 
                                         // Done here
                                         new ActionAlwaysFail()
@@ -236,14 +235,14 @@ namespace Singular.ClassSpecific.Warrior
                                         Spell.Cast( "Mortal Strike", req => Me.HealthPercent > 20),
 
                                         // 3 Whirlwind as a filler ability when target is above 20% health.
-                                        Spell.Cast( "Whirlwind", req => Me.CurrentTarget.HealthPercent > 20 ),
+                                        Spell.Cast("Whirlwind", req => Me.CurrentTarget.HealthPercent > 20 && Me.CurrentTarget.SpellDistance() < 8),
 
                                         // Done here
                                         new ActionAlwaysFail()
                                         )
                                     ),
 
-                                Spell.Cast("Dragon Roar", req => Spell.UseAOE),
+                                Spell.Cast("Dragon Roar", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8),
                                 Spell.Cast("Storm Bolt"),
 
                                 // if we are low-level with low rage regen, do any damage we can
@@ -292,7 +291,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new Throttle(
                 new Decorator(
-                    ret => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
+                    ret => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange,
 
                     new PrioritySelector(
                         Spell.BuffSelf(Common.SelectedShoutAsSpellName),
@@ -330,7 +329,6 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(FaceDuring.Yes),
 
@@ -338,6 +336,9 @@ namespace Singular.ClassSpecific.Warrior
                     ret => !Spell.IsGlobalCooldown() && !StyxWoW.Me.HasAura("Bladestorm"),
 
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         CreateDiagnosticOutputBehavior(),
 
@@ -414,43 +415,6 @@ namespace Singular.ClassSpecific.Warrior
         }
 
 
-        private static Composite HeroicLeap()
-        {
-            return new Decorator(ret => Me.CurrentTarget.HasAura("Colossus Smash") && Spell.CanCastHack("Heroic Leap"),
-                new Sequence(
-                    new Action(ret =>
-                    {
-                        var tpos = StyxWoW.Me.CurrentTarget.Location;
-                        var trot = StyxWoW.Me.CurrentTarget.Rotation;
-                        var leapRight = WoWMathHelper.CalculatePointAtSide(tpos, trot, 5, true);
-                        var leapLeft = WoWMathHelper.CalculatePointAtSide(tpos, trot, 5, true);
-
-                        var myPos = StyxWoW.Me.Location;
-
-                        var leftDist = leapLeft.Distance(myPos);
-                        var rightDist = leapRight.Distance(myPos);
-
-                        var leapPos = WoWMathHelper.CalculatePointBehind(tpos, trot, 8);
-
-                        if (leftDist > rightDist && leftDist <= 40 && leftDist >= 8)
-                            leapPos = leapLeft;
-                        else if (rightDist > leftDist && rightDist <= 40 && rightDist >= 8)
-                            leapPos = leapRight;
-                        else
-                            return RunStatus.Failure;
-
-                        Spell.LogCast("Heroic Leap", Me.CurrentTarget);
-                        Spell.CastPrimative("Heroic Leap");
-                        SpellManager.ClickRemoteLocation(leapPos);
-                        return RunStatus.Success;
-                    }),
-
-                    Movement.CreateFaceTargetBehavior( 20f, true)
-                    )
-                );
-        }
-
-
         private static void UseTrinkets()
         {
             var firstTrinket = StyxWoW.Me.Inventory.Equipped.Trinket1;
@@ -508,7 +472,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             get
             {
-                if (Me.GotTarget && Me.RagePercent >= 70 && Spell.CanCastHack("Heroic Strike", Me.CurrentTarget, skipWowCheck: true))
+                if (Me.GotTarget() && Me.RagePercent >= 70 && Spell.CanCastHack("Heroic Strike", Me.CurrentTarget, skipWowCheck: true))
                 {
                     if (Me.RagePercent >= (Me.MaxRage - 15) && (Me.CurrentTarget.HealthPercent > 20 || !SpellManager.HasSpell("Colossus Smash")))
                     {
@@ -531,7 +495,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             get
             {
-                if (Me.GotTarget && Me.RagePercent >= 70 && Spell.CanCastHack("Heroic Strike", Me.CurrentTarget, skipWowCheck: true))
+                if (Me.GotTarget() && Me.RagePercent >= 70 && Spell.CanCastHack("Heroic Strike", Me.CurrentTarget, skipWowCheck: true))
                 {
                     if (Me.CurrentTarget.HasAura("Colossus Smash") || !SpellManager.HasSpell("Colossus Smash") || Me.CurrentTarget.TimeToDeath() < 8)
                     {

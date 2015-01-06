@@ -140,7 +140,7 @@ namespace Singular.Helpers
                     && Me.IsMoving
                     && InMoveToMeleeStopRange(Me.CurrentTarget),
                 new Sequence(
-                    new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStoppedWithinMelee: stopping because {0}", !Me.GotTarget ? "No CurrentTarget" : string.Format("target at {0:F1} yds", Me.CurrentTarget.Distance))),
+                    new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStoppedWithinMelee: stopping because {0}", !Me.GotTarget() ? "No CurrentTarget" : string.Format("target at {0:F1} yds", Me.CurrentTarget.Distance))),
                     new Action(ret => StopMoving.Now())
                     )
                 );
@@ -164,8 +164,7 @@ namespace Singular.Helpers
                 return new ActionAlwaysFail();
 
             return new Decorator(
-                ret => !MovementManager.IsMovementDisabled 
-                    && !MovementManager.IsFacingDisabled
+                ret => !MovementManager.IsFacingDisabled
                     && toUnit(ret) != null 
                     && !Me.IsMoving 
                     && !toUnit(ret).IsMe 
@@ -338,7 +337,7 @@ namespace Singular.Helpers
                             )
                         ),
                     new Decorator(
-                        ret => Me.CurrentTarget != null && Me.CurrentTarget.IsValid,
+                        ret => Me.GotTarget() && Me.CurrentTarget.IsValid,
                         new Sequence(
                             new Action(ret => Logger.WriteDebug(Color.White, "MoveToMelee: towards {0} @ {1:F1} yds", Me.CurrentTarget.SafeName(), Me.CurrentTarget.Distance)),
                             new Action(ret => Navigator.MoveTo(Me.CurrentTarget.Location)),
@@ -356,7 +355,7 @@ namespace Singular.Helpers
                     CreateMoveBehindTargetBehavior(ctx => ctx != null && ((WoWUnit)ctx).IsBoss() && !((WoWUnit)ctx).IsMoving)
                     ),
                 new Decorator(
-                    ret => !MovementManager.IsMovementDisabled && Me.CurrentTarget != null && !InMoveToMeleeStopRange(Me.CurrentTarget),
+                    ret => !MovementManager.IsMovementDisabled && Me.GotTarget() && !InMoveToMeleeStopRange(Me.CurrentTarget),
                     new Sequence(
                         ctx => new MoveContext(),
                         new DecoratorContinue(
@@ -515,7 +514,7 @@ namespace Singular.Helpers
         /// <param name = "stopInRange">true to stop in range.</param>
         /// <param name = "range">The range.</param>
         /// <returns>.</returns>
-        public static Composite CreateMoveToLocationBehavior(LocationRetriever location, bool stopInRange, DynamicRangeRetriever range)
+        public static Composite CreateMoveToLocationBehavior(SimpleLocationRetriever location, bool stopInRange, DynamicRangeRetriever range)
         {
             return new Decorator(
                 ret => !MovementManager.IsMovementDisabled,
@@ -613,7 +612,7 @@ namespace Singular.Helpers
                 return new ActionAlwaysFail();
 
             return new Decorator(
-                req => !MovementManager.IsMovementDisabled && Me.GotTarget && !Me.IsMoving,
+                req => !MovementManager.IsMovementDisabled && Me.GotTarget() && !Me.IsMoving,
                 new ThrottlePasses(
                     1,
                     TimeSpan.FromSeconds(2),
@@ -654,7 +653,7 @@ namespace Singular.Helpers
         {
             return new Decorator(
 
-                req => Me.GotTarget,
+                req => Me.GotTarget(),
                 
                 new Sequence(
 
@@ -1050,7 +1049,7 @@ namespace Singular.Helpers
     }
 
 
-    public delegate WoWPoint LocationRetriever(object context);
+    public delegate WoWPoint SimpleLocationRetriever(object context);
 
     public delegate float DynamicRangeRetriever(object context);
 }

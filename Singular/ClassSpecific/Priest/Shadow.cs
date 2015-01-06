@@ -196,7 +196,7 @@ namespace Singular.ClassSpecific.Priest
                                     ret => Me.ManaPercent < PriestSettings.DispersionMana
                                         || Me.HealthPercent < 40
                                         || (Me.ManaPercent < SingularSettings.Instance.MinMana && Me.IsSwimming)
-                                        || Unit.NearbyUnfriendlyUnits.Count(t => t.GotTarget && t.CurrentTarget.IsTargetingMyStuff()) >= 3),
+                                        || Unit.NearbyUnfriendlyUnits.Count(t => t.GotTarget() && t.CurrentTarget.IsTargetingMyStuff()) >= 3),
 
                                 Common.CreatePriestShackleUndeadAddBehavior(),
                                 Common.CreatePsychicScreamBehavior(),
@@ -349,7 +349,7 @@ namespace Singular.ClassSpecific.Priest
 
                         // Defensive stuff
                         Common.CreateFadeBehavior(),
-                        Spell.BuffSelf("Dispersion", ret => Me.HealthPercent < 40 || Unit.NearbyUnfriendlyUnits.Count(t => t.GotTarget && t.CurrentTarget.IsTargetingMyStuff()) >= 3),
+                        Spell.BuffSelf("Dispersion", ret => Me.HealthPercent < 40 || Unit.NearbyUnfriendlyUnits.Count(t => t.GotTarget() && t.CurrentTarget.IsTargetingMyStuff()) >= 3),
 
                         Common.CreatePsychicScreamBehavior(),
 

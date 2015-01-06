@@ -44,7 +44,6 @@ namespace Singular.ClassSpecific.Mage
 
                         CreateArcaneDiagnosticOutputBehavior(),
 
-                        Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateMagePullBuffs(),
@@ -118,7 +117,6 @@ namespace Singular.ClassSpecific.Mage
 
                         Common.CreateMageAvoidanceBehavior(),
 
-                        Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Spell.BuffSelf("Arcane Power"),
@@ -239,7 +237,6 @@ namespace Singular.ClassSpecific.Mage
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateMagePullBuffs(),

@@ -19,7 +19,6 @@ namespace Singular.ClassSpecific.Monk
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptBehavior(),
                 Spell.Cast("Tiger Palm", ret => !SpellManager.HasSpell("Blackout Kick") && StyxWoW.Me.CurrentChi >= 1),
                 Spell.Cast("Tiger Palm", ret => SpellManager.HasSpell("Blackout Kick") && StyxWoW.Me.CurrentChi >= 1 && StyxWoW.Me.HasKnownAuraExpired("Tiger Power")),

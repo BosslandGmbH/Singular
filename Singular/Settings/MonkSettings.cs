@@ -104,6 +104,13 @@ namespace Singular.Settings
         [DisplayName("Expel Harm Health")]
         public int ExpelHarmHealth { get; set; }
 
+        [Setting]
+        [DefaultValue(30)]
+        [Category("Windwalker")]
+        [DisplayName("Tigereye Brew Health")]
+        [Description("Health % to cast this ability at. Set to 100 to cast on cooldown, Set to 0 to disable.")]
+        public int TigereyeBrewHealth { get; set; }
+
         #endregion
 
         #region Mistweaver

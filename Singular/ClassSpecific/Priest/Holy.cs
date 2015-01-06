@@ -295,10 +295,10 @@ VoidShift               Void Shift
                 );
 
             string cmt = "";
-            int flashHealHealth = PriestSettings.DiscHeal.FlashHeal;
+            int flashHealHealth = PriestSettings.HolyHeal.FlashHeal;
             if (!SpellManager.HasSpell("Heal"))
             {
-                flashHealHealth = Math.Max(flashHealHealth, PriestSettings.DiscHeal.Heal);
+                flashHealHealth = Math.Max(flashHealHealth, PriestSettings.HolyHeal.Heal);
                 cmt = "(Adjusted for Heal)";
             }
 
@@ -314,7 +314,7 @@ VoidShift               Void Shift
 
             if (PriestSettings.HolyHeal.Heal != 0)
                 behavs.AddBehavior(HealthToPriority(PriestSettings.HolyHeal.Heal), "Heal @ " + PriestSettings.HolyHeal.Heal + "%", "Heal",
-                Spell.Cast( "Heal",
+                    Spell.Cast( sp => Me.GetAuraStacks("Serendipity") > 2 ? "Heal" : "Flash Heal",
                     mov => true,
                     on => (WoWUnit)on,
                     req => ((WoWUnit)req).HealthPercent < PriestSettings.HolyHeal.Heal,
@@ -375,15 +375,18 @@ VoidShift               Void Shift
                             {
                                 _lightwellTarget = Group.Tanks.FirstOrDefault(t =>
                                 {
-                                    if (t.IsAlive && t.Combat && t.GotTarget && t.CurrentTarget.IsBoss())
+                                    if (t.IsAlive && t.Combat && t.GotTarget() && t.CurrentTarget.IsBoss())
                                     {
-                                        if (t.Distance < 40 && t.SpellDistance(t.CurrentTarget) < 10)
+                                        if (t.Distance < 40 && t.SpellDistance(t.CurrentTarget) < 15)
                                         {
+                                            Logger.WriteDiagnostic("Lightwell: found target {0}", t.SafeName());
                                             return true;
                                         }
                                     }
                                     return false;
                                 });
+
+                                return _lightwellTarget == null ? RunStatus.Failure : RunStatus.Success;
                             }),
                             Spell.CastOnGround("Lightwell",
                                 location => WoWMathHelper.CalculatePointFrom(Me.Location, _lightwellTarget.Location, (float)Math.Min(10.0, _lightwellTarget.Distance / 2)),
@@ -492,9 +495,9 @@ VoidShift               Void Shift
 
                         Spell.Cast("Power Infusion", ret => StyxWoW.Me.ManaPercent <= 75 || HealerManager.Instance.TargetList.Any( h => h.HealthPercent < 40)),
 
-                        // Spell.Cast("Power Word: Solace", req => Me.GotTarget && Unit.ValidUnit(Me.CurrentTarget) && Me.IsSafelyFacing( Me.CurrentTarget) && Me.CurrentTarget.InLineOfSpellSight )
-                        // Spell.Cast(129250, req => Me.GotTarget && Unit.ValidUnit(Me.CurrentTarget) && Me.IsSafelyFacing(Me.CurrentTarget) && Me.CurrentTarget.InLineOfSpellSight),
-                        Spell.CastHack("Power Word: Solace", req => Me.GotTarget && Unit.ValidUnit(Me.CurrentTarget) && Me.IsSafelyFacing(Me.CurrentTarget) && Me.CurrentTarget.InLineOfSpellSight)
+                        // Spell.Cast("Power Word: Solace", req => Me.GotTarget() && Unit.ValidUnit(Me.CurrentTarget) && Me.IsSafelyFacing( Me.CurrentTarget) && Me.CurrentTarget.InLineOfSpellSight )
+                        // Spell.Cast(129250, req => Me.GotTarget() && Unit.ValidUnit(Me.CurrentTarget) && Me.IsSafelyFacing(Me.CurrentTarget) && Me.CurrentTarget.InLineOfSpellSight),
+                        Spell.CastHack("Power Word: Solace", req => Me.GotTarget() && Unit.ValidUnit(Me.CurrentTarget) && Me.IsSafelyFacing(Me.CurrentTarget) && Me.CurrentTarget.InLineOfSpellSight)
                         )
                     )
                 );

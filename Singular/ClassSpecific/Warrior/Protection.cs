@@ -50,7 +50,6 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(false),
 
                 Helpers.Common.CreateDismount("Pulling"),
 
@@ -132,7 +131,7 @@ namespace Singular.ClassSpecific.Warrior
                             ),
 
                         new Decorator(
-                            req => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
+                            req => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange,
                             new PrioritySelector(
                                 new Decorator(
                                     ret => Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (!Me.IsInGroup() && AoeCount >= 3),
@@ -165,7 +164,6 @@ namespace Singular.ClassSpecific.Warrior
                 ctx => TankManager.Instance.FirstUnit ?? Me.CurrentTarget,
 
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(true),
 
                 Spell.WaitForCast(FaceDuring.Yes),
 
@@ -175,6 +173,9 @@ namespace Singular.ClassSpecific.Warrior
                     ret => !Spell.IsGlobalCooldown(),
         
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         CreateDiagnosticOutputBehavior(),
 
@@ -194,9 +195,6 @@ namespace Singular.ClassSpecific.Warrior
                                 ),
                             new Wait(TimeSpan.FromMilliseconds(500), until => !Common.IsSlowNeeded(Me.CurrentTarget), new ActionAlwaysSucceed())
                             ),
-
-
-                        Common.CreateDisarmBehavior(),
 
                         CreateProtectionInterrupt(),
 
@@ -239,7 +237,7 @@ namespace Singular.ClassSpecific.Warrior
                         Common.CreateChargeBehavior(),
 
                         new Action( ret => {
-                            if ( Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange && Me.IsSafelyFacing(Me.CurrentTarget))
+                            if ( Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange && Me.IsSafelyFacing(Me.CurrentTarget))
                                 Logger.WriteDebug("--- we did nothing!");
                             return RunStatus.Failure;
                             })
@@ -310,7 +308,7 @@ namespace Singular.ClassSpecific.Warrior
         {            
             get
             {
-                if (Me.GotTarget && Me.CurrentTarget.IsPlayer)
+                if (Me.GotTarget() && Me.CurrentTarget.IsPlayer)
                     return false;
 
                 return AoeCount >= 2 && Spell.UseAOE;
@@ -393,11 +391,11 @@ namespace Singular.ClassSpecific.Warrior
                             Me.HealthPercent,
                             Me.CurrentRage,
                             HasUltimatum,
-                            !Me.GotTarget ? "(null)" : Me.CurrentTarget.SafeName(),
-                            !Me.GotTarget ? 0 : Me.CurrentTarget.HealthPercent,
-                            !Me.GotTarget ? 0 : Me.CurrentTarget.Distance,
-                            Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange ,
-                            Me.GotTarget && Me.IsSafelyFacing( Me.CurrentTarget  )
+                            !Me.GotTarget() ? "(null)" : Me.CurrentTarget.SafeName(),
+                            !Me.GotTarget() ? 0 : Me.CurrentTarget.HealthPercent,
+                            !Me.GotTarget() ? 0 : Me.CurrentTarget.Distance,
+                            Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange ,
+                            Me.GotTarget() && Me.IsSafelyFacing( Me.CurrentTarget  )
                             );
                         return RunStatus.Failure;
                         })

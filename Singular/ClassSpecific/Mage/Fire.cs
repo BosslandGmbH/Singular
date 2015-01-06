@@ -118,7 +118,6 @@ namespace Singular.ClassSpecific.Mage
 
                         Common.CreateMageAvoidanceBehavior(),
 
-                        Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
 
                         /*
@@ -259,7 +258,6 @@ namespace Singular.ClassSpecific.Mage
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateMagePullBuffs(),

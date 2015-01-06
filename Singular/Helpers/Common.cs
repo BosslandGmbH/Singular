@@ -17,6 +17,7 @@ using Styx.WoWInternals.WoWObjects;
 using Singular.ClassSpecific.Warlock;
 using System.Drawing;
 using Styx.CommonBot.POI;
+using Styx.CommonBot.Routines;
 
 namespace Singular.Helpers
 {
@@ -31,7 +32,7 @@ namespace Singular.Helpers
         {
             get
             {
-                if (!Me.GotTarget)
+                if (!Me.GotTarget())
                     return false;
 
                 if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
@@ -55,9 +56,11 @@ namespace Singular.Helpers
         /// </remarks>
         /// <param name="includePet"> This will also toggle pet auto attack. </param>
         /// <returns></returns>
-        public static Composite CreateAutoAttack(bool includePet)
+        public static Composite CreateAutoAttack()
         {
-            PrioritySelector prio = new PrioritySelector();
+            PrioritySelector aaprio = new PrioritySelector();
+            PrioritySelector saprio = new PrioritySelector();
+
             // const int spellIdAutoShot = 75;
             bool autoAttackMelee =
                    TalentManager.CurrentSpec == WoWSpec.None
@@ -74,91 +77,157 @@ namespace Singular.Helpers
 
             bool autoAttackRanged = Me.Class == WoWClass.Hunter;
 
-            if (autoAttackMelee)
-            {
-                prio.AddChild(
-                    new Throttle(TimeSpan.FromMilliseconds(500),
-                        new Decorator(
-                            ret => !StyxWoW.Me.IsAutoAttacking && Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange, // && StyxWoW.Me.AutoRepeatingSpellId != spellIdAutoShot,
-                            new Action(ret =>
+            saprio.AddChild(
+                new Decorator(
+                    req => !SingularRoutine.IsAllowed(CapabilityFlags.SpecialAttacks),
+                    new ThrottlePasses(
+                        1, TimeSpan.FromSeconds(1), RunStatus.Success,
+                        new Action(r =>
+                        {
+                            if (!StyxWoW.Me.IsAutoAttacking && Me.GotTarget() && Me.IsSafelyFacing(Me.CurrentTarget) && Me.CurrentTarget.IsWithinMeleeRange)
                             {
                                 WoWUnit unit = Me.CurrentTarget;
-                                Logger.Write( LogColor.Hilite, "/startattack on {0} @ {1:F1}% at {2:F1} yds", unit.SafeName(), unit.HealthPercent, unit.SpellDistance());
+                                Logger.Write(LogColor.Hilite, "/startattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
                                 Lua.DoString("StartAttack()");
-                                return RunStatus.Failure;
-                            })
-                            )
+                            }
+                            return RunStatus.Success;
+                        })
+                        )
+                    )
+                );
+
+            if (autoAttackMelee)
+            {
+                aaprio.AddChild(
+                    new Decorator(
+                        ret => !StyxWoW.Me.IsAutoAttacking && Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange, // && StyxWoW.Me.AutoRepeatingSpellId != spellIdAutoShot,
+                        new Action(ret =>
+                        {
+                            WoWUnit unit = Me.CurrentTarget;
+                            Logger.Write( LogColor.Hilite, "/startattack on {0} @ {1:F1}% at {2:F1} yds", unit.SafeName(), unit.HealthPercent, unit.SpellDistance());
+                            Lua.DoString("StartAttack()");
+                            return RunStatus.Failure;
+                        })
                         )
                     );
             }
 
             if (autoAttackRanged)
             {
-                prio.AddChild(
-                    new Throttle(TimeSpan.FromMilliseconds(500),
-                        new Decorator(
-                            ret => !StyxWoW.Me.IsAutoAttacking && Me.GotTarget && Me.CurrentTarget.SpellDistance() < 40, // && StyxWoW.Me.AutoRepeatingSpellId != spellIdAutoShot,
-                            new Action(ret =>
-                            {
-                                WoWUnit unit = Me.CurrentTarget;
-                                Logger.Write( LogColor.Hilite, "/startattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
-                                Lua.DoString("StartAttack()");
-                                return RunStatus.Failure;
-                            })
-                            )
+                aaprio.AddChild(
+                    new Decorator(
+                        ret => 
+                        {
+                            if (StyxWoW.Me.IsAutoAttacking)
+                                return false;
+                            if (!Me.GotTarget())
+                                return false;
+                            return Me.CurrentTarget.SpellDistance() < 40;
+                        },                                
+                        new Action(ret =>
+                        {
+                            WoWUnit unit = Me.CurrentTarget;
+                            Logger.Write( LogColor.Hilite, "/startattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
+                            Lua.DoString("StartAttack()");
+                            return RunStatus.Failure;
+                        })
                         )
                     );
             }
 
-            if (includePet)
+            return new PrioritySelector(
+                saprio,
+                new ThrottlePasses(
+                    TimeSpan.FromSeconds(1),
+                    aaprio
+                    )
+                );
+        }
+
+        /// <summary>
+        ///  Creates a behavior to start auto attacking to current target.
+        /// </summary>
+        /// <remarks>
+        ///  Created 23/05/2011
+        /// </remarks>
+        /// <param name="includePet"> This will also toggle pet auto attack. </param>
+        /// <returns></returns>
+        public static Composite CreatePetAttack()
+        {
+            PrioritySelector prio = new PrioritySelector();
+
+            if (SingularRoutine.CurrentWoWContext != WoWContext.Normal || !SingularSettings.Instance.PetTankAdds)
             {
-                if (SingularRoutine.CurrentWoWContext != WoWContext.Normal || !SingularSettings.Instance.PetTankAdds)
-                {
-                    // pet assist: always keep pet on my target
-                    prio.AddChild(
-                        new ThrottlePasses(
-                            1, 
-                            TimeSpan.FromMilliseconds(500),
-                            RunStatus.Failure,
-                            new Decorator(
-                        // check pet targeting same target as Me
-                                ret => Me.GotAlivePet && (!Me.Pet.GotTarget || Me.Pet.CurrentTargetGuid != Me.CurrentTargetGuid),
-                                new Action(delegate
+                // pet assist: always keep pet on my CurrentTarget
+                prio.AddChild(
+                    new ThrottlePasses(
+                        1,
+                        TimeSpan.FromMilliseconds(500),
+                        RunStatus.Failure,
+                        new Action( r => 
+                        {
+                            if (Me.GotAlivePet)
+                            {
+                                bool petUse = SingularRoutine.IsAllowed(CapabilityFlags.PetUse);
+                                if (!petUse)
+                                {
+                                    if (Me.Pet.GotTarget() && Me.Pet.Combat)
+                                    {
+                                        PetManager.CastAction("Passive");   // set to passive
+                                    }
+                                }
+                                else if (petUse)
+                                {
+                                    if (!Me.Pet.GotTarget() || Me.Pet.CurrentTargetGuid != Me.CurrentTargetGuid)
                                     {
                                         PetManager.Attack(Me.CurrentTarget);
-                                        return RunStatus.Failure;
-                                    })
-                                )
-                            )
-                        );
-                }
-                else
-                {
-                    // pet tank: if pet's target isn't targeting Me, check if we should switch to one that is targeting Me
-                    prio.AddChild(
-                        new ThrottlePasses(
-                            1,
-                            TimeSpan.FromMilliseconds(500),
-                            RunStatus.Failure,
-                            new Decorator(
-                                ret => Me.GotAlivePet && (!Me.Pet.GotTarget || Me.Pet.CurrentTarget.CurrentTargetGuid != Me.Guid),
-                                new PrioritySelector(
-                                    ctx => {
-                                        WoWUnit aggroedOnMe = 
-                                            Unit.NearbyUnfriendlyUnits
-                                                .Where(u => u.Combat && u.GotTarget && u.CurrentTarget.IsMe && !u.IsCrowdControlled())
-                                                .OrderBy(u => u.Location.DistanceSqr(Me.Pet.Location))
-                                                .FirstOrDefault(); 
-                                        return aggroedOnMe ?? Me.CurrentTarget;
-                                    },
-                                    new Decorator(
-                                        ret => ret != null && Me.Pet.CurrentTargetGuid != ((WoWUnit)ret).Guid,
-                                        new Action(r =>
+                                    }
+                                }                                
+                            }
+                        })
+                        )
+                    );
+            }
+            else
+            {
+                // pet tank: if pet's target isn't targeting Me, check if we should switch to one that is targeting Me
+                prio.AddChild(
+                    new ThrottlePasses(
+                        1,
+                        TimeSpan.FromMilliseconds(500),
+                        RunStatus.Failure,
+                        new Action( r =>
+                        {
+                            if (Me.GotAlivePet)
+                            {
+                                bool petUse = SingularRoutine.IsAllowed(CapabilityFlags.PetUse);
+                                if (!petUse)
+                                {
+                                    if (Me.Pet.GotTarget() && Me.Pet.Combat)
+                                    {
+                                        PetManager.CastAction("Passive");   // set to passive
+                                    }
+                                }
+                                else if (petUse)
+                                {
+                                    if (Me.Pet.CurrentTarget == null || !Me.Pet.CurrentTarget.CurrentTarget.IsMe)
+                                    {
+                                        // pickup aggroed mobs I'm not attacking (grab easy agro first)
+                                        WoWUnit aggroedOnMe = Unit.NearbyUnfriendlyUnits
+                                            .Where(u => u.Combat && u.GotTarget() && u.CurrentTarget.IsMe && u.Guid != Me.CurrentTargetGuid && !u.IsCrowdControlled())
+                                            .OrderBy(u => u.Location.DistanceSqr(Me.Pet.Location))
+                                            .FirstOrDefault();
+                                        
+                                        // otherwise, pickup My CurrentTarget
+                                        if (aggroedOnMe == null)
+                                            aggroedOnMe = Me.CurrentTarget;
+
+                                        if (aggroedOnMe != null)
                                         {
                                             if (SingularSettings.Debug)
                                             {
                                                 string reason;
-                                                if (Me.CurrentTarget != null && (r as WoWUnit).Guid == Me.CurrentTargetGuid && Me.CurrentTarget.CurrentTargetGuid != Me.Guid)
+                                                if (aggroedOnMe == Me.CurrentTarget)
                                                     reason = "MyCurrTarget";
                                                 else
                                                     reason = "PickupAggro";
@@ -166,15 +235,14 @@ namespace Singular.Helpers
                                                 Logger.WriteDebug("PetManager: [reason={0}] sending Pet at {1} @ {2:F1} yds from Pet", reason, (r as WoWUnit).SafeName(), Me.Pet.SpellDistance(r as WoWUnit));
                                             }
 
-                                            PetManager.Attack(r as WoWUnit);
-                                            return RunStatus.Failure;
-                                        })
-                                        )
-                                    )
-                                )
-                            )
-                        );
-                }
+                                            PetManager.Attack(aggroedOnMe);
+                                        }
+                                    }
+                                }                                
+                            }
+                        })
+                        )
+                    );
             }
 
             return prio;
@@ -584,19 +652,21 @@ namespace Singular.Helpers
             PrioritySelector prio = new PrioritySelector(
                 Movement.CreatePositionMobsInFront(),
                 Safers.EnsureTarget(),
+                Helpers.Common.CreatePetAttack(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 new Decorator(
-                    req => Me.GotTarget && Me.CurrentTarget.Distance < SingularSettings.Instance.MeleeDismountRange,
+                    req => Me.GotTarget() && Me.CurrentTarget.Distance < SingularSettings.Instance.MeleeDismountRange,
                     Helpers.Common.CreateDismount( Dynamics.CompositeBuilder.CurrentBehaviorType.ToString())   // should be Pull or Combat 99% of the time
-                    )
+                    ),
+                Helpers.Common.CreateAutoAttack()
                 );
 
             if (Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull)
             {
                 prio.AddChild(
                     new PrioritySelector(
-                        ctx => Me.GotTarget && Me.CurrentTarget.IsAboveTheGround(),
+                        ctx => Me.GotTarget() && Me.CurrentTarget.IsAboveTheGround(),
                         new Decorator(
                             req => (bool)req,
                             new PrioritySelector(
@@ -629,10 +699,12 @@ namespace Singular.Helpers
                 // Movement.CreatePositionMobsInFront(),
 
                 Safers.EnsureTarget(),
+                Helpers.Common.CreatePetAttack(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),   // should be Pull or Combat 99% of the time
                 Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 30, 25),
+                Helpers.Common.CreateAutoAttack(),
                 Movement.CreateEnsureMovementStoppedBehavior(25f)
                 );
         }
@@ -643,10 +715,12 @@ namespace Singular.Helpers
                 // Movement.CreatePositionMobsInFront(),
 
                 Safers.EnsureTarget(),
+                Helpers.Common.CreatePetAttack(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),   // should be Pull or Combat 99% of the time
                 Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 40, 36),
+                Helpers.Common.CreateAutoAttack(),
                 Movement.CreateEnsureMovementStoppedBehavior(36f)
                 );
         }

@@ -132,7 +132,7 @@ namespace Singular.Managers
             }
 
             /*
-            if (StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.IsFriendly && !StyxWoW.Me.CurrentTarget.IsPlayer)
+            if (StyxWoW.Me.GotTarget() && StyxWoW.Me.CurrentTarget.IsFriendly && !StyxWoW.Me.CurrentTarget.IsPlayer)
                 outgoingUnits.Add(StyxWoW.Me.CurrentTarget);
             */
             try
@@ -595,7 +595,7 @@ namespace Singular.Managers
                 ;
             else if (tank.IsMoving)
                 ;
-            else if (!tank.GotTarget || tank.SpellDistance(tank.CurrentTarget) > 8)
+            else if (!tank.GotTarget() || tank.SpellDistance(tank.CurrentTarget) > 8)
                 ;
             else
                 return true;
@@ -742,7 +742,7 @@ namespace Singular.Managers
             }
 
             return new PrioritySelector(
-                ctx => (Me.Combat && Me.CurrentTarget != null && Unit.ValidUnit(Me.CurrentTarget))
+                ctx => (Me.Combat && Me.GotTarget() && Unit.ValidUnit(Me.CurrentTarget))
                     ? Me.CurrentTarget
                     : null,
                 new Decorator(
@@ -804,7 +804,7 @@ namespace Singular.Managers
             }
 
             return new PrioritySelector(
-                ctx => (Me.Combat && Me.CurrentTarget != null && Unit.ValidUnit(Me.CurrentTarget))
+                ctx => (Me.Combat && Me.GotTarget() && Unit.ValidUnit(Me.CurrentTarget))
                     ? Me.CurrentTarget
                     : null,
                 new Decorator(
@@ -841,7 +841,7 @@ namespace Singular.Managers
 
             return new PrioritySelector(
                 new Decorator(
-                    req => Me.GotTarget && !Me.CurrentTarget.IsPlayer,
+                    req => Me.GotTarget() && !Me.CurrentTarget.IsPlayer,
                     new PrioritySelector(
                         ctx => Unit.HighestHealthMobAttackingTank(),
                         new Decorator(
@@ -858,7 +858,7 @@ namespace Singular.Managers
                         )
                     ),
                 new Decorator(
-                    req => !Me.GotTarget,
+                    req => !Me.GotTarget(),
                     new Sequence(
                         ctx => Unit.HighestHealthMobAttackingTank(),
                         new Action(on =>

@@ -30,7 +30,6 @@ namespace Singular.ClassSpecific.Monk
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(true),
 
                 Spell.WaitForCast(FaceDuring.Yes),
 
@@ -118,7 +117,7 @@ namespace Singular.ClassSpecific.Monk
                             "Invoke Xuen, the White Tiger",
                             ret =>
                             {
-                                if (Me.GotTarget)
+                                if (Me.GotTarget())
                                 {
                                     if (!Me.IsMoving && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 10) >= 3)
                                         return true;
@@ -138,21 +137,19 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateWindwalkerMonkCombatNormal()
         {
             return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
 
-                Helpers.Common.CreateAutoAttack(true),
-
-                Spell.Cast("Leg Sweep", ret => Spell.UseAOE && MonkSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.CurrentTarget.IsWithinMeleeRange),
-
-                new Decorator( 
-                    ret => StyxWoW.Me.HasAura( "Fists of Fury")
-                        && !Unit.NearbyUnfriendlyUnits.Any( u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)),
-                    new Action( ret => {
-                        Logger.WriteDebug( "cancelling Fists of Fury - no targets within range");
+                new Decorator(
+                    ret => StyxWoW.Me.HasAura("Fists of Fury")
+                        && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)),
+                    new Action(ret =>
+                    {
+                        Logger.WriteDebug("cancelling Fists of Fury - no targets within range");
                         SpellManager.StopCasting();
                         return RunStatus.Success;
-                        })
+                    })
                     ),
+
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                 Spell.WaitForCastOrChannel(FaceDuring.Yes),
 
@@ -160,9 +157,14 @@ namespace Singular.ClassSpecific.Monk
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+
                         CreateWindwalkerDiagnosticBehavior(),
 
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Spell.Cast("Leg Sweep", ret => Spell.UseAOE && MonkSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.CurrentTarget.IsWithinMeleeRange),
 
 #if USE_OLD_ROLL
                         new Decorator(
@@ -250,7 +252,6 @@ namespace Singular.ClassSpecific.Monk
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator(
                     ret => StyxWoW.Me.HasAura("Fists of Fury")
@@ -268,6 +269,9 @@ namespace Singular.ClassSpecific.Monk
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         CreateWindwalkerDiagnosticBehavior(),
 
@@ -339,7 +343,6 @@ namespace Singular.ClassSpecific.Monk
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(true),
 
                 Spell.WaitForCast(FaceDuring.Yes),
 
@@ -403,7 +406,7 @@ namespace Singular.ClassSpecific.Monk
                             Me.CurrentChi,
                             Me.HasAura("Tiger Power"),
                             Me.GetAuraTimeLeft("Tiger Power", true).TotalMilliseconds,
-                            Me.CurrentTarget == null ? 0f : Me.CurrentTarget.HealthPercent,
+                            !Me.GotTarget() ? 0f : Me.CurrentTarget.HealthPercent,
                             (Me.CurrentTarget ?? Me).Distance
                             );
                         return RunStatus.Failure;

@@ -76,7 +76,7 @@ namespace Singular.ClassSpecific.DeathKnight
             get
             {
                 // check talent only to avoid some unnecessary LUA if not needed
-                if (!HasTalent(DeathKnightTalents.PlagueLeech) || !Me.GotTarget)
+                if (!HasTalent(DeathKnightTalents.PlagueLeech) || !Me.GotTarget())
                     return false;
 
                 WoWAura auraFrostFever = Me.GetAllAuras().Where(a => a.Name == "Frost Fever" && a.TimeLeft.TotalMilliseconds > 250).FirstOrDefault();
@@ -260,7 +260,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                     Spell.Cast("Death Siphon",
                         req => Common.HasTalent( DeathKnightTalents.DeathSiphon) 
-                            && Me.GotTarget && Me.CurrentTarget.InLineOfSpellSight && Me.IsSafelyFacing(Me.CurrentTarget)
+                            && Me.GotTarget() && Me.CurrentTarget.InLineOfSpellSight && Me.IsSafelyFacing(Me.CurrentTarget)
                             && Me.HealthPercent < Settings.DeathSiphonPercent),
 
                     Spell.BuffSelf("Conversion",
@@ -281,7 +281,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     // following for DPS only -- let Blood fall through in instances
                     Spell.Cast("Death Strike",
                         req => (TalentManager.CurrentSpec != WoWSpec.DeathKnightBlood || SingularRoutine.CurrentWoWContext != WoWContext.Instances)
-                            && Me.GotTarget && Me.CurrentTarget.InLineOfSpellSight && Me.IsSafelyFacing(Me.CurrentTarget)
+                            && Me.GotTarget() && Me.CurrentTarget.InLineOfSpellSight && Me.IsSafelyFacing(Me.CurrentTarget)
                             && Me.HealthPercent < Settings.DeathStrikeEmergencyPercent),
 
                     // use it to heal with deathcoils.
@@ -303,7 +303,7 @@ namespace Singular.ClassSpecific.DeathKnight
         public static Composite CreateDeathKnightCombatBuffs()
         {
             return new Decorator(
-                req => !Me.GotTarget || !Me.CurrentTarget.IsTrivial(),
+                req => !Me.GotTarget() || !Me.CurrentTarget.IsTrivial(),
                 new PrioritySelector(
 
                     // *** Dark Simulacrum saved abilities ***
@@ -356,7 +356,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                     if (glyphEmpowerment)
                                         return true;
 
-                                    if (Me.CurrentTarget != null
+                                    if (Me.GotTarget()
                                         && Me.CurrentTarget.IsWithinMeleeRange
                                         && Me.IsSafelyFacing(Me.CurrentTarget)
                                         && Me.CurrentTarget.InLineOfSpellSight
@@ -384,7 +384,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Spell.BuffSelf("Death's Advance",
                             req => Common.HasTalent(DeathKnightTalents.DeathsAdvance)
-                                && Me.GotTarget
+                                && Me.GotTarget()
                                 && (!Spell.CanCastHack("Death Grip") || SingularRoutine.CurrentWoWContext == WoWContext.Instances)
                                 && Me.CurrentTarget.DistanceSqr > 10 * 10),
 
@@ -464,7 +464,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     CreateDeathGripBehavior(),
                     new Decorator(
                         req => {
-							if (!Me.GotTarget)
+							if (!Me.GotTarget())
 								return false;
 							if (!(Me.Combat || Me.CurrentTarget.Combat))
 								return false;
@@ -486,7 +486,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TaggedByMe || (!Me.CurrentTarget.TaggedByOther && Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull && SingularRoutine.CurrentWoWContext != WoWContext.Instances))
                     ),
                 new DecoratorContinue( req => Me.IsMoving, new Action(req => StopMoving.Now())),
-                new WaitContinue( 1, until => !Me.GotTarget || Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
+                new WaitContinue( 1, until => !Me.GotTarget() || Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
                 );
         }
 
@@ -502,7 +502,7 @@ namespace Singular.ClassSpecific.DeathKnight
             // we have aura AND (target is about to die OR aura expires in less than 3 secs)
             return new Decorator(
                 req => Me.GetAuraTimeLeft("Dark Succor").TotalMilliseconds > 250
-                    && (Me.HealthPercent < 80 || Me.GetAuraTimeLeft("Dark Succor").TotalMilliseconds < 3000 || (Me.GotTarget && Me.CurrentTarget.TimeToDeath() < 6) 
+                    && (Me.HealthPercent < 80 || Me.GetAuraTimeLeft("Dark Succor").TotalMilliseconds < 3000 || (Me.GotTarget() && Me.CurrentTarget.TimeToDeath() < 6) 
                     && Me.CurrentTarget.InLineOfSpellSight 
                     && Me.IsSafelyFacing( Me.CurrentTarget)
                     && Spell.CanCastHack("Death Strike", Me.CurrentTarget)),
@@ -543,7 +543,7 @@ namespace Singular.ClassSpecific.DeathKnight
             if (Settings.TargetWithDarkSimulacrum == DarkSimulacrumTarget.All || WoWContext.Normal == SingularRoutine.CurrentWoWContext)
                 onUnit = on =>
                 {
-                    if (Me.GotTarget && IsValidDarkSimulacrumTarget(Me.CurrentTarget))
+                    if (Me.GotTarget() && IsValidDarkSimulacrumTarget(Me.CurrentTarget))
                         return Me.CurrentTarget;
                     return Unit.NearbyUnitsInCombatWithUsOrOurStuff.FirstOrDefault(u => IsValidDarkSimulacrumTarget(u));
                 };
@@ -696,7 +696,7 @@ namespace Singular.ClassSpecific.DeathKnight
             return new Throttle(
                 2,
                 new Decorator(
-                    req => Me.GotTarget
+                    req => Me.GotTarget()
                         && !Me.CurrentTarget.IsPlayer
                         && !Me.CurrentTarget.IsTagged
                         && !Me.CurrentTarget.IsWithinMeleeRange,

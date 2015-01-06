@@ -213,7 +213,7 @@ namespace Singular.Helpers
                             new Decorator(ret => !StyxWoW.IsInGame, new Action(ret => EndKiting("BP: not in game so cancelling"))),
                             new Decorator(ret => !Me.IsAlive, new Action(ret => EndKiting("BP: i am dead so cancelling"))),
                             new Decorator(ret => timeOut < DateTime.Now, new Action(ret => EndKiting("BP: taking too long, so cancelling"))),
-                            new Decorator(ret => jumpturnAttack != null && !Me.GotTarget, new Action(ret => EndKiting("BP: attack behavior but no target, cancelling"))),
+                            new Decorator(ret => jumpturnAttack != null && !Me.GotTarget(), new Action(ret => EndKiting("BP: attack behavior but no target, cancelling"))),
 
                             new Decorator(ret => Me.Stunned || Me.IsStunned(), new Action(ret => EndKiting("BP: stunned, cancelling"))),
                             new Decorator(ret => Me.Rooted || Me.IsRooted(), new Action(ret => EndKiting("BP: rooted, cancelling"))),
@@ -384,6 +384,9 @@ namespace Singular.Helpers
 
         public static bool IsKitingPossible(int minScan = -1)
         {
+            if (!SingularRoutine.IsAllowed(CapabilityFlags.Kiting))
+                return false;
+
             // note:  PullDistance MUST be longer than our out of melee distance (DISTANCE_WE_NEED_TO_START_BACK_PEDDLING)
             // otherwise it will run back and forth
             if (IsKitingActive() || !Me.IsAlive || Spell.IsCasting())
@@ -710,7 +713,7 @@ namespace Singular.Helpers
                                 new Decorator(ret => stopKiting < DateTime.Now, new Action(ret => EndKiting("BPWJ: back peddle timed out, cancelling"))),
                                 new Decorator(ret => !StyxWoW.IsInGame, new Action(ret => EndKiting("BPWJ: not in game so cancelling"))),
                                 new Decorator(ret => !Me.IsAlive, new Action(ret => EndKiting("BPWJ: i am dead so cancelling"))),
-                                new Decorator(ret => !Me.GotTarget, new Action(ret => EndKiting("BPWJ: no target, cancelling"))),
+                                new Decorator(ret => !Me.GotTarget(), new Action(ret => EndKiting("BPWJ: no target, cancelling"))),
                                 new Decorator(ret => !Me.CurrentTarget.IsAlive, new Action(ret => EndKiting("BPWJ: target dead, cancelling"))),
 
                                 // new DecoratorContinue(ret => Me.IsMoving, new Action( a => movementCheck = DateTime.Now.Add(new TimeSpan(0, 0, 0, 0, 1000)))),
@@ -989,7 +992,7 @@ namespace Singular.Helpers
                         else if (SpellManager.HasSpell("Thunderstorm"))
                             RangeToLineOfSightMob = Styx.Helpers.CharacterSettings.Instance.PullDistance;
 
-                        CheckRangeToLineOfSightMob = Me.GotTarget && RangeToLineOfSightMob > 0;
+                        CheckRangeToLineOfSightMob = Me.GotTarget() && RangeToLineOfSightMob > 0;
             */
             ChooseSafestAvailable = true;
         }
@@ -1097,7 +1100,7 @@ namespace Singular.Helpers
             WoWPoint ptFurthest = WoWPoint.Empty;
             float facingFurthest = 0f;
 
-            bool reallyCheckRangeToLineOfSightMob = CheckRangeToLineOfSightMob && Me.GotTarget;
+            bool reallyCheckRangeToLineOfSightMob = CheckRangeToLineOfSightMob && Me.GotTarget();
             WoWPoint ptAdjOrigin = ptOrigin;
             // ptAdjOrigin.Z += 1f;   // comment out origin adjustment since using GetTraceLinePos()
 

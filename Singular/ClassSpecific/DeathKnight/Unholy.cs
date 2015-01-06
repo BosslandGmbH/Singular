@@ -39,7 +39,8 @@ namespace Singular.ClassSpecific.DeathKnight
                 new Decorator(
                     req => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Helpers.Common.CreateAutoAttack(true),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         Helpers.Common.CreateInterruptBehavior(),
 
@@ -115,7 +116,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         // post Single target
                         // attack at range if possible
-                        Spell.Cast("Death Coil", req => Me.GotTarget && !Me.CurrentTarget.IsWithinMeleeRange ),
+                        Spell.Cast("Death Coil", req => Me.GotTarget() && !Me.CurrentTarget.IsWithinMeleeRange ),
 
                         // attack with other abilities if we don't know scourge strike yet
                         new Decorator(
@@ -198,7 +199,8 @@ namespace Singular.ClassSpecific.DeathKnight
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Helpers.Common.CreateAutoAttack(true),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         Helpers.Common.CreateInterruptBehavior(),
 
@@ -271,7 +273,9 @@ namespace Singular.ClassSpecific.DeathKnight
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Helpers.Common.CreateAutoAttack(true),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+
                         Helpers.Common.CreateInterruptBehavior(),
 
                         // *** Cool downs ***
@@ -365,7 +369,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         // post Single target
                         // attack at range if possible
-                        Spell.Cast("Death Coil", req => Me.GotTarget && !Me.CurrentTarget.IsWithinMeleeRange )
+                        Spell.Cast("Death Coil", req => Me.GotTarget() && !Me.CurrentTarget.IsWithinMeleeRange )
                         )
                     ),
 

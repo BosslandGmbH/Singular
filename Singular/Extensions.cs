@@ -205,11 +205,26 @@ namespace Singular
         /// <returns>float.MinValue if can't determine, otherwise distance off ground</returns>
         public static float HeightOffTheGround(this WoWUnit u)
         {
-            var unitLoc = new WoWPoint( u.Location.X, u.Location.Y, u.Location.Z);         
-            var listMeshZ = Navigator.FindHeights( unitLoc.X, unitLoc.Y).Where( h => h <= unitLoc.Z + 2f);
+            var unitLoc = new WoWPoint(u.Location.X, u.Location.Y, u.Location.Z);
+            float zBelow = u.FindGroundBelow();
+            if (zBelow == float.MaxValue)
+                return float.MaxValue;
+
+            return unitLoc.Z - zBelow;
+        }
+
+        /// <summary>
+        /// calculate the Z of ground below unit.
+        /// </summary>
+        /// <param name="unit">unit to query</param>
+        /// <returns>float.MaxValue if non-deterministic, otherwise Z of ground</returns>
+        public static float FindGroundBelow(this WoWUnit unit)
+        {
+            var unitLoc = new WoWPoint(unit.Location.X, unit.Location.Y, unit.Location.Z);
+            var listMeshZ = Navigator.FindHeights(unitLoc.X, unitLoc.Y).Where(h => h <= unitLoc.Z + 2f);
             if (listMeshZ.Any())
-                return unitLoc.Z - listMeshZ.Max();
-            
+                return listMeshZ.Max();
+
             return float.MaxValue;
         }
 

@@ -92,14 +92,17 @@ namespace Singular.ClassSpecific.Paladin
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator( 
-                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget,
+                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget(),
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+
                         // aoe count
                         ActionAoeCount(),
 
                         CreateRetDiagnosticOutputBehavior(),
 
-                        Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreatePaladinPullMore(),
@@ -125,7 +128,7 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.BuffSelf(
                             "Holy Avenger", 
                             req => PaladinSettings.RetAvengAndGoatK
-                                && Me.GotTarget
+                                && Me.GotTarget()
                                 && Me.CurrentTarget.IsWithinMeleeRange && !Me.CurrentTarget.IsTrivial()
                                 && (_mobCount > 1 || Me.CurrentTarget.TimeToDeath() > 25)
                                 && (!Me.HasAura("Avenging Wrath") && Spell.GetSpellCooldown("Avenging Wrath").TotalSeconds > 1)
@@ -134,7 +137,7 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.BuffSelf(
                             "Avenging Wrath", 
                             req => PaladinSettings.RetAvengAndGoatK
-                                && Me.GotTarget
+                                && Me.GotTarget()
                                 && Me.CurrentTarget.IsWithinMeleeRange && !Me.CurrentTarget.IsTrivial()
                                 && (_mobCount > 1 || Me.CurrentTarget.TimeToDeath() > 25)
                                 && (!Me.HasAura("Holy Avenger") && Spell.GetSpellCooldown("Holy Avenger").TotalSeconds > 1)
@@ -221,14 +224,16 @@ namespace Singular.ClassSpecific.Paladin
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator( 
-                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget,
+                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget(),
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+
                         // aoe count
                         ActionAoeCount(),
 
                         CreateRetDiagnosticOutputBehavior(),
-
-                        Helpers.Common.CreateAutoAttack(true),
 
                         Helpers.Common.CreateInterruptBehavior(),
 

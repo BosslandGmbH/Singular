@@ -16,7 +16,6 @@ namespace Singular.ClassSpecific.Paladin
             return
                 new PrioritySelector(
                     Helpers.Common.EnsureReadyToAttackFromMelee(),
-                    Helpers.Common.CreateAutoAttack(true),
                     Helpers.Common.CreateInterruptBehavior(),
                     Spell.Cast("Crusader Strike"),
                     Spell.Cast("Judgment"),
@@ -29,7 +28,6 @@ namespace Singular.ClassSpecific.Paladin
             return
                 new PrioritySelector(
                     Helpers.Common.EnsureReadyToAttackFromMelee(),
-                    Helpers.Common.CreateAutoAttack(true),
                     Spell.Cast("Judgment"),
                     Movement.CreateMoveToMeleeBehavior(true)
                     );

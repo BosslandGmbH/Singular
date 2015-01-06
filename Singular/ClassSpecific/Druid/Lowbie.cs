@@ -26,7 +26,7 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => !Me.HasAura("Drink") && !Me.HasAura("Food")
+                    ret => !Me.HasAnyAura("Drink", "Food", "Refreshment")
                         && (Me.PredictedHealthPercent(includeMyHeals: true) < SingularSettings.Instance.MinHealth || (Me.Shapeshift == ShapeshiftForm.Normal && Me.PredictedHealthPercent(includeMyHeals: true) < 85))
                         && ((Me.HasAuraExpired("Rejuvenation", 1) && Spell.CanCastHack("Rejuvenation", Me))),
                     new PrioritySelector(
@@ -76,7 +76,6 @@ namespace Singular.ClassSpecific.Druid
                         new Decorator(
                             req => !Spell.IsGlobalCooldown(),
                             new PrioritySelector(
-                                Helpers.Common.CreateAutoAttack(true),
                                 Helpers.Common.CreateInterruptBehavior(),
                                 Spell.Cast("Rejuvenation", on => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= DruidSettings.SelfRejuvenationHealth && StyxWoW.Me.HasAuraExpired("Rejuvenation", 1)),
                                 Spell.Buff("Moonfire"),
@@ -106,7 +105,6 @@ namespace Singular.ClassSpecific.Druid
 
                         Common.CastForm("Cat Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
                         Helpers.Common.CreateInterruptBehavior(),
-                        Helpers.Common.CreateAutoAttack(true),
 
                         new Decorator(
                             ret => StyxWoW.Me.HasAura("Cat Form"),

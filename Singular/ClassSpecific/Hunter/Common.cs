@@ -21,6 +21,9 @@ using Styx.Common.Helpers;
 using System.Collections.Generic;
 using Styx.CommonBot.Routines;
 
+using LocationRetriever = Singular.Helpers.SimpleLocationRetriever;
+// using LocationRetriever = Styx.CommonBot.LocationRetriever;
+
 namespace Singular.ClassSpecific.Hunter
 {
     public class Common
@@ -83,12 +86,13 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Helpers.Common.CreateAutoAttack(true),
+                Helpers.Common.CreatePetAttack(),
                 Movement.CreateMoveToLosBehavior(),
                 Helpers.Common.CreateDismount(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),   // should be Pull or Combat 99% of the time
                 Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 40, 36),
                 Movement.CreateEnsureMovementStoppedBehavior(36f),
-                Movement.CreateFaceTargetBehavior()
+                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateAutoAttack()
                 );
         }
 
@@ -119,7 +123,7 @@ namespace Singular.ClassSpecific.Hunter
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         new Decorator(
-                            ret => !Me.HasAura("Drink") && !Me.HasAura("Food"),
+                            ret => !Me.HasAnyAura("Food", "Refreshment"),
                             new PrioritySelector(
                                 CreateHunterCallPetBehavior(true),
                                 Spell.Buff("Mend Pet", onUnit => Me.Pet, req => Me.GotAlivePet && Pet.HealthPercent < 85)
@@ -296,7 +300,7 @@ namespace Singular.ClassSpecific.Hunter
                     Spell.Cast("Stampede",
                         ret => PartyBuff.WeHaveBloodlust
                             || (!Me.IsInGroup() && SafeArea.AllEnemyMobsAttackingMe.Count() > 2)
-                            || (Me.GotTarget && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile)),
+                            || (Me.GotTarget() && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile)),
 
                     // Level 75 Talents
                     Spell.Cast("A Murder of Crows"),
@@ -318,6 +322,18 @@ namespace Singular.ClassSpecific.Hunter
                             )
                        ),
 
+                    new Decorator(
+                        req => (!Me.GotAlivePet || Me.Pet.HealthPercent < 20)
+                            && Me.GotTarget()
+                            && Me.CurrentTarget.SpellDistance().Between(15, 40),
+                        new PrioritySelector(
+                            // CreateHunterTrapBehavior("Freezing Trap", true, on => Me.CurrentTarget, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null),
+                            new PrioritySelector(
+                                ctx => WoWMathHelper.CalculatePointFrom( Me.Location, Me.CurrentTarget.Location, 12f + Me.CurrentTarget.CombatReach ),
+                                CreateHunterTrapBehavior("Ice Trap", loc => (WoWPoint) loc, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null)
+                                )
+                            )
+                        ),
 
                     new Decorator(
                         req => Me.GotAlivePet && PetManager.CanCastPetAction("Reflective Armor Plating") && Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Pet.Guid && Me.Pet.IsSafelyFacing(u, 75f)),
@@ -472,6 +488,26 @@ namespace Singular.ClassSpecific.Hunter
                             Logger.WriteDiagnostic("Trap: error occurred - unit went invalid while waiting to click 2");
                             return RunStatus.Failure;
                             })
+                        )
+                    )
+                );
+        }
+
+
+        public static Composite CreateHunterTrapBehavior(string trapName, SimpleLocationRetriever locrtrv, SimpleBooleanDelegate require = null)
+        {
+            if (locrtrv == null || require == null)
+                return new ActionAlwaysFail();
+
+            return new PrioritySelector(
+                new Decorator(
+                    ret => require(ret)
+                        && Me.Location.DistanceSqr(locrtrv(ret)) < (40 * 40)
+                        && SpellManager.HasSpell(trapName) && Spell.GetSpellCooldown(trapName) == TimeSpan.Zero
+                        && Me.HasAura("Trap Launcher"),
+                    new Sequence(
+                        ctx => locrtrv(ctx),
+                        Spell.CastOnGround( trapName, locrtrv, require)
                         )
                     )
                 );
@@ -746,6 +782,9 @@ namespace Singular.ClassSpecific.Hunter
 
         public static bool IsDisengageNeeded()
         {
+            if (!SingularRoutine.IsAllowed(CapabilityFlags.Kiting))
+                return false;
+
             if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
                 return false;
 

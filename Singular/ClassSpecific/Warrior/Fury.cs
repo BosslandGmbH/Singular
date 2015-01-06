@@ -45,7 +45,6 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(),
 
@@ -73,7 +72,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new Throttle(
                 new Decorator(
-                    ret => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange && !Unit.IsTrivial(Me.CurrentTarget),
+                    ret => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange && !Unit.IsTrivial(Me.CurrentTarget),
 
                     new PrioritySelector(
                         Common.CreateWarriorEnragedRegeneration(),
@@ -123,7 +122,6 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(FaceDuring.Yes),
 
@@ -132,6 +130,9 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown() && !StyxWoW.Me.HasAura("Bladestorm"),
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         CreateDiagnosticOutputBehavior("Combat"),
 
@@ -150,10 +151,7 @@ namespace Singular.ClassSpecific.Warrior
                             ),
 
                         //Heroic Leap
-                        Spell.CastOnGround("Heroic Leap",
-                            on => StyxWoW.Me.CurrentTarget, 
-                            ret => WarriorSettings.UseWarriorCloser && MovementManager.IsClassMovementAllowed && StyxWoW.Me.CurrentTarget.Distance > 9 && PreventDoubleIntercept, 
-                            false),
+                        Common.CreateHeroicLeapCloser(),
 
                         new Sequence(
                             new Decorator(
@@ -171,9 +169,6 @@ namespace Singular.ClassSpecific.Warrior
 
                         // Heal up in melee
                         Common.CreateVictoryRushBehavior(),
-
-                        // Disarm if setting enabled
-                        Common.CreateDisarmBehavior(),
 
                         Common.CreateExecuteOnSuddenDeath(),
 
@@ -271,14 +266,14 @@ namespace Singular.ClassSpecific.Warrior
                 // BR whenever we're not enraged, and can actually melee the target.
                 // Use abilities that cost no rage, such as your tier 4 talents, etc
                 new Decorator(
-                    ret => Spell.UseAOE && Me.GotTarget && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss()) && Me.CurrentTarget.Distance < 8,
+                    ret => Spell.UseAOE && Me.GotTarget() && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss()) && Me.CurrentTarget.Distance < 8,
                     new PrioritySelector(
                         Spell.BuffSelf("Bladestorm"),
                         Spell.Cast("Shockwave")
                         )
                     ),
 
-                Spell.Cast("Dragon Roar", req => Spell.UseAOE),
+                Spell.Cast("Dragon Roar", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8),
                 Spell.Cast("Storm Bolt"),
 
                 Spell.BuffSelf("Berserker Rage", ret => !IsEnraged && StyxWoW.Me.CurrentTarget.IsWithinMeleeRange)

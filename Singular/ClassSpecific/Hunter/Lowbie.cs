@@ -22,7 +22,6 @@ namespace Singular.ClassSpecific.Hunter
                 new Decorator( 
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Helpers.Common.CreateAutoAttack(false),
                         Helpers.Common.CreateInterruptBehavior(),
 
                         // Heal pet when below 70

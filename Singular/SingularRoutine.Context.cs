@@ -377,7 +377,7 @@ namespace Singular
         public static string SpecName()
         {
             if (TalentManager.CurrentSpec == WoWSpec.None)
-                return Me.Level <= 10 ? "Lowbie" : "Non-specialized";
+                return Me.Level <= 10 ? " Lowbie" : " Non-specialized";
 
             string spec = TalentManager.CurrentSpec.ToString();
             spec = spec.Substring(  Me.Class.ToString().Length );

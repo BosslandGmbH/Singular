@@ -60,14 +60,14 @@ namespace Singular.ClassSpecific.Hunter
 
                         // Defensive Stuff
                         Spell.Cast( "Intimidation", 
-                            ret => Me.GotTarget 
+                            ret => Me.GotTarget() 
                                 && Me.CurrentTarget.IsAlive 
                                 && Me.GotAlivePet 
-                                && (!Me.CurrentTarget.GotTarget || Me.CurrentTarget.CurrentTarget == Me)),
+                                && (!Me.CurrentTarget.GotTarget() || Me.CurrentTarget.CurrentTarget == Me)),
 
                         // AoE Rotation
                         new Decorator(
-                            ret => Spell.UseAOE && Me.GotTarget && !(Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer) && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
+                            ret => Spell.UseAOE && Me.GotTarget() && !(Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer) && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
                             new PrioritySelector(
                                 ctx => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Where(u => u.InLineOfSpellSight).OrderByDescending(u => (uint)u.HealthPercent).FirstOrDefault(),
                                 Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
@@ -127,10 +127,10 @@ namespace Singular.ClassSpecific.Hunter
 
                         // Defensive Stuff
                         Spell.Cast("Intimidation",
-                            ret => Me.GotTarget
+                            ret => Me.GotTarget()
                                 && Me.CurrentTarget.IsAlive
                                 && Me.GotAlivePet
-                                && (!Me.CurrentTarget.GotTarget || Me.CurrentTarget.CurrentTarget == Me)),
+                                && (!Me.CurrentTarget.GotTarget() || Me.CurrentTarget.CurrentTarget == Me)),
 
                         // snipe kills if possible
                         Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 5 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
@@ -138,7 +138,7 @@ namespace Singular.ClassSpecific.Hunter
                         Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
 
                         // Single Target Rotation (no AoE in PVP)
-                        Spell.CastHack("Kill Command", ctx => Me.Pet == null ? null : Me.Pet.CurrentTarget, ret => Me.GotAlivePet && Pet.GotTarget && Pet.Location.Distance(Pet.CurrentTarget.Location) < (Pet.MeleeDistance(Pet.CurrentTarget) + 20f)),
+                        Spell.CastHack("Kill Command", ctx => Me.Pet == null ? null : Me.Pet.CurrentTarget, ret => Me.GotAlivePet && Pet.GotTarget() && Pet.Location.Distance(Pet.CurrentTarget.Location) < (Pet.MeleeDistance(Pet.CurrentTarget) + 20f)),
                         Spell.BuffSelf("Focus Fire", ctx => Me.HasAura("Frenzy", 5) && !Me.HasAura("The Beast Within")),
 
                         Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 60 || Me.HasAnyAura("Thrill of the Hunt", "The Beast Within")),

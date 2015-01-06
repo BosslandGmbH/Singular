@@ -26,7 +26,6 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Helpers.Common.CreateAutoAttack(false),
                         Helpers.Common.CreateInterruptBehavior(),
                         Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5 || StyxWoW.Me.CurrentTarget.HealthPercent <= 40 && StyxWoW.Me.ComboPoints >= 2),
                         Spell.Cast("Sinister Strike")
@@ -45,13 +44,11 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget && Me.IsSafelyFacing(Me.CurrentTarget),
+                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget() && Me.IsSafelyFacing(Me.CurrentTarget),
                     new PrioritySelector(
                         Common.CreateStealthBehavior(),
                         Common.CreateRogueOpenerBehavior(),
-                        Spell.Cast("Sinister Strike"),
-                        Helpers.Common.CreateAutoAttack(true)
-                        )
+                        Spell.Cast("Sinister Strike")                        )
                     )
                 );
         }

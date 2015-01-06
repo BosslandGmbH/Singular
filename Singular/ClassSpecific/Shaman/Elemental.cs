@@ -141,7 +141,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         // we are moving so throw an instant of some type
                         Spell.Buff("Flame Shock", true, req => SpellManager.HasSpell("Lava Burst")),
-                        Spell.Buff("Lava Burst", true, req => Me.GotTarget && Me.CurrentTarget.HasMyAura("Flame Shock")),
+                        Spell.Buff("Lava Burst", true, req => Me.GotTarget() && Me.CurrentTarget.HasMyAura("Flame Shock")),
                         Spell.Cast("Earth Shock")
                         )
                     )
@@ -177,10 +177,23 @@ namespace Singular.ClassSpecific.Shaman
                             new PrioritySelector(
                                 new Action( act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
 
+                                new Decorator(
+                                    req => SpellManager.HasSpell("Improved Chain Lightning") 
+                                        && Me.HasAuraExpired("Improved Chain Lightning", 1)
+                                        && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,                                        
+                                    new Throttle(
+                                        3,
+                                        new Sequence(
+                                            Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12)),
+                                            new Wait( 1, until => !Me.HasAuraExpired("Improved Chain Lightning"), new ActionAlwaysSucceed())
+                                            )
+                                        )
+                                    ),
+
                                 new Sequence(
                                     Spell.CastOnGround("Earthquake", 
                                         on => StyxWoW.Me.CurrentTarget,
-                                        req => StyxWoW.Me.CurrentTarget != null 
+                                        req => StyxWoW.Me.GotTarget() 
                                             && StyxWoW.Me.CurrentTarget.Distance < 34
                                             && (StyxWoW.Me.ManaPercent > 60 || StyxWoW.Me.HasAura( "Clearcasting")) 
                                             && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 6),
@@ -236,7 +249,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         // Burst if 7 Stacks
                         new Decorator(
-                            ret => Me.GotTarget && Me.CurrentTarget.SpellDistance() < 40 && Me.HasAura("Lightning Shield", 7) && Spell.GetSpellCooldown("Earth Shock") == TimeSpan.Zero,
+                            ret => Me.GotTarget() && Me.CurrentTarget.SpellDistance() < 40 && Me.HasAura("Lightning Shield", 7) && Spell.GetSpellCooldown("Earth Shock") == TimeSpan.Zero,
                             new PrioritySelector(
                                 new Action( r => { Logger.Write( LogColor.Hilite, "Burst Rotation"); return RunStatus.Failure;} ),
                                 Common.CastElementalBlast(),
@@ -268,7 +281,7 @@ namespace Singular.ClassSpecific.Shaman
                                     ),
                                 Spell.Cast("Lava Burst", ret => Spell.GetSpellCastTime("Lava Burst") == TimeSpan.Zero),
                                 Spell.Cast("Lava Beam"),
-                                Spell.BuffSelf("Searing Totem", ret => Me.GotTarget && Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) && !Totems.Exist( WoWTotemType.Fire)),
+                                Spell.BuffSelf("Searing Totem", ret => Me.GotTarget() && Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) && !Totems.Exist( WoWTotemType.Fire)),
                                 Spell.BuffSelf("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Any( u => u.IsWithinMeleeRange )),
                                 Spell.Cast("Primal Strike") // might as well
                                 )
@@ -280,7 +293,7 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Buff("Flame Shock", 9, on => Me.CurrentTarget, req => true),
                         Spell.Buff("Flame Shock", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => Me.IsSafelyFacing(u) && u.InLineOfSpellSight), req => Spell.GetSpellCastTime("Lava Burst") != TimeSpan.Zero),
                         Spell.Cast("Lava Burst"),
-                        Spell.BuffSelf("Searing Totem", ret => Me.GotTarget && Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) && !Totems.Exist(WoWTotemType.Fire)),
+                        Spell.BuffSelf("Searing Totem", ret => Me.GotTarget() && Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) && !Totems.Exist(WoWTotemType.Fire)),
                         Spell.Cast("Lightning Bolt")
                         )
                     )
@@ -423,6 +436,19 @@ namespace Singular.ClassSpecific.Shaman
                             target.InLineOfSpellSight.ToYN(),
                             (long)target.GetAuraTimeLeft("Flame Shock").TotalMilliseconds
                             );
+
+                    
+                    if (Totems.Exist(WoWTotemType.Fire))
+                        line += ", fire=" + Totems.GetTotem(WoWTotemType.Fire).Name;
+
+                    if (Totems.Exist(WoWTotemType.Earth))
+                        line += ", earth=" + Totems.GetTotem(WoWTotemType.Earth).Name;
+
+                    if (Totems.Exist(WoWTotemType.Water))
+                        line += ", water=" + Totems.GetTotem(WoWTotemType.Water).Name;
+
+                    if (Totems.Exist(WoWTotemType.Air  ))
+                        line += ", air=" + Totems.GetTotem(WoWTotemType.Air).Name;
 
                     Logger.WriteDebug(Color.Yellow, line);
                     return RunStatus.Failure;

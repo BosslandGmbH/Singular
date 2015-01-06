@@ -60,7 +60,7 @@ namespace Singular.Helpers
                         new Decorator(
                             ret =>
                             {
-                                if (Me.HasAnyAura("Drink", "Food"))
+                                if (Me.HasAnyAura("Drink", "Food", "Refreshment"))
                                     return false;
                                 if (spellHeal == null || Me.HealthPercent > 85)
                                     return false;
@@ -177,7 +177,7 @@ namespace Singular.Helpers
                             ret => !Me.Combat
                                 && !Me.IsSwimming && (Me.PowerType == WoWPowerType.Mana || Me.Class == WoWClass.Druid)
                                 && Me.ManaPercent <= SingularSettings.Instance.MinMana
-                                && !Me.HasAura("Drink") && Consumable.GetBestDrink(false) != null,
+                                && !Me.HasAnyAura("Drink", "Refreshment") && Consumable.GetBestDrink(false) != null,
                             new PrioritySelector(
                                 Movement.CreateEnsureMovementStoppedBehavior(reason: "to drink"),
                                 new Sequence(
@@ -188,7 +188,7 @@ namespace Singular.Helpers
                                     }),
                                     Helpers.Common.CreateWaitForLagDuration(),
                                     new PrioritySelector(
-                                        new Wait(TimeSpan.FromMilliseconds(500), until => Me.HasAura("Drink"), new ActionAlwaysSucceed()),
+                                        new Wait(TimeSpan.FromMilliseconds(500), until => Me.HasAnyAura("Drink", "Refreshment"), new ActionAlwaysSucceed()),
                                         new Action(r => Logger.WriteDiagnostic("Drinking: failed to see 'Drink' aura"))
                                         )
                                     )
@@ -200,7 +200,7 @@ namespace Singular.Helpers
                             ret => !Me.Combat 
                                 && !Me.IsSwimming
                                 && Me.PredictedHealthPercent(includeMyHeals: true) <= SingularSettings.Instance.MinHealth
-                                && !Me.HasAura("Food") && Consumable.GetBestFood(false) != null,
+                                && !Me.HasAnyAura("Food", "Refreshment") && Consumable.GetBestFood(false) != null,
                             new PrioritySelector(
                                 Movement.CreateEnsureMovementStoppedBehavior(reason: "to eat"),
                                 new Sequence(
@@ -214,7 +214,7 @@ namespace Singular.Helpers
                                         }),
                                     Helpers.Common.CreateWaitForLagDuration(),
                                     new PrioritySelector(
-                                        new Wait( TimeSpan.FromMilliseconds(500), until => Me.HasAura("Food"), new ActionAlwaysSucceed()),
+                                        new Wait(TimeSpan.FromMilliseconds(500), until => Me.HasAnyAura("Food", "Refreshment"), new ActionAlwaysSucceed()),
                                         new Action( r => Logger.WriteDiagnostic("Eating: failed to see 'Food' aura"))
                                         )
                                     )
@@ -225,14 +225,14 @@ namespace Singular.Helpers
                 //  true: stay seated
                 //  false:  allow interruption of Drink
                         new Decorator(
-                            ret => Me.HasAura("Drink")
+                            ret => Me.HasAnyAura("Drink", "Refreshment")
                                 && (Me.PowerType == WoWPowerType.Mana || Me.Specialization == WoWSpec.DruidFeral)
                                 && Me.ManaPercent < 95,
                             new ActionAlwaysSucceed()
                             ),
 
                         new Decorator(
-                            req => Me.HasAura("Food") && Me.HealthPercent < 95,
+                            req => Me.HasAnyAura("Food", "Refreshment") && Me.HealthPercent < 95,
                             new PrioritySelector(
                                 new Decorator(
                                     req => spellHeal != null

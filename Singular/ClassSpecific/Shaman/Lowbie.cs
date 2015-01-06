@@ -73,7 +73,6 @@ namespace Singular.ClassSpecific.Shaman
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         CreateLowbieDiagnosticOutputBehavior(),
-                        Helpers.Common.CreateAutoAttack(true),
                         Spell.Cast("Earth Shock", req => Me.CurrentTarget.Distance < 15 || !Me.CurrentTarget.IsMoving  ),      // always use
                         Spell.Cast("Primal Strike"),    // always use
                         Spell.Cast("Lightning Bolt")

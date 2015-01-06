@@ -1919,7 +1919,7 @@ namespace Singular.Helpers
         /// <param name = "spell">The spell.</param>
         /// <param name = "onLocation">The on location.</param>
         /// <returns>.</returns>
-        public static Composite CastOnGround(string spell, LocationRetriever onLocation)
+        public static Composite CastOnGround(string spell, SimpleLocationRetriever onLocation)
         {
             return CastOnGround(spell, onLocation, ret => true);
         }
@@ -1973,7 +1973,7 @@ namespace Singular.Helpers
         /// <param name = "requirements">The requirements.</param>
         /// <param name="waitForSpell">Waits for spell to become active on cursor if true. </param>
         /// <returns>.</returns>
-        public static Composite CastOnGround(string spellName, LocationRetriever onLocRtrv,
+        public static Composite CastOnGround(string spellName, SimpleLocationRetriever onLocRtrv,
             SimpleBooleanDelegate requirements, bool waitForSpell = true, SimpleStringDelegate tgtDescRtrv = null)
         {
             if (spellName == null || onLocRtrv == null || requirements == null)
@@ -2003,8 +2003,9 @@ namespace Singular.Helpers
         /// <param name="waitForSpell"></param>
         /// <param name="tgtDescRtrv"></param>
         /// <returns></returns>
-        private static Composite ContextCastOnGround( SimpleBooleanDelegate requirements, bool waitForSpell = true)
+        private static Composite ContextCastOnGround( SimpleBooleanDelegate reqd, bool waitForSpell = true)
         {
+            SimpleBooleanDelegate requirements = reqd ?? (r => true);
             return new Decorator(
                 req => {
                     CogContext cog = req.CogContext();
@@ -2045,14 +2046,45 @@ namespace Singular.Helpers
                             )
                         ),
 
-                    new Action(ret => SpellManager.ClickRemoteLocation(ret.CogContext().loc)),
+                    new Action(ret => 
+                    {
+                        if (!SpellManager.ClickRemoteLocation(ret.CogContext().loc))
+                        {
+                            Logger.WriteDebug("CastOnGround: unable to click {0} for {1} cast on '{2}'", ret.CogContext().loc, ret.CogContext().name, ret.CogContext().targetDesc);
+                            return RunStatus.Failure;
+                        }
+
+                        return RunStatus.Success;
+                    }),
+
+                    new PrioritySelector(
+                        new Wait( 
+                            TimeSpan.FromMilliseconds(500), 
+                            until => Me.CurrentPendingCursorSpell == null,
+                            new Action(r => Logger.WriteDebug("CastOnGround: click successful"))
+                            ),
+                        new Action(ret =>
+                        {
+                            Logger.WriteDebug("CastOnGround({0}): at {1} failed -OR- Pending Cursor Spell API broken -- distance={2:F1} yds, loss={3}, face={4}",
+                                ret.CogContext().name,
+                                ret.CogContext().loc,
+                                StyxWoW.Me.Location.Distance(ret.CogContext().loc),
+                                GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), ret.CogContext().loc),
+                                StyxWoW.Me.IsSafelyFacing(ret.CogContext().loc)
+                                );
+                            Logger.WriteDebug("CastOnGround: error - Me.CurrentPendingCursorSpell = ", Me.CurrentPendingCursorSpell);
+                            // Pending Spell Cursor API is broken... seems like we can't really check at this point, so assume it failed and worked... uggghhh
+                            Lua.DoString("SpellStopTargeting()");
+                            return RunStatus.Failure;
+                        })
+                        ),
 
                     // check for we are done status
                     new PrioritySelector(
             // done if cursor doesn't have spell anymore
                         new Decorator(
-                            ret => !waitForSpell,
-                            new Action(r => Lua.DoString("SpellStopTargeting()"))   //just in case
+                            ret => !waitForSpell || ret.CogContext().spell.IsInstantCast(),
+                            new ActionAlwaysSucceed()
                             ),
 
                         new Wait(
@@ -2061,21 +2093,15 @@ namespace Singular.Helpers
                             new ActionAlwaysSucceed()
                             ),
 
-                        // otherwise cancel
-                        new Action(ret =>
-                        {
-                            Logger.WriteDebug("/cancel {0} - click {1} failed -OR- Pending Cursor Spell API broken -- distance={2:F1} yds, loss={3}, face={4}",
+                        new Action( ret => 
+                            Logger.WriteDebug("CastOnGround({0}): at {1} did not detect spell cast, will assume success -- distance={2:F1} yds, loss={3}, face={4}",
                                 ret.CogContext().name,
                                 ret.CogContext().loc,
                                 StyxWoW.Me.Location.Distance(ret.CogContext().loc),
                                 GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), ret.CogContext().loc),
                                 StyxWoW.Me.IsSafelyFacing(ret.CogContext().loc)
-                                );
-
-                            // Pending Spell Cursor API is broken... seems like we can't really check at this point, so assume it failed and worked... uggghhh
-                            Lua.DoString("SpellStopTargeting()");
-                            return RunStatus.Failure;
-                        })
+                                )
+                            )
                         )
                     )
                 );
@@ -2083,13 +2109,16 @@ namespace Singular.Helpers
 
         private static bool LocationInRange(string spellName, WoWPoint loc)
         {
-            SpellFindResults sfr;
-            if (SpellManager.FindSpell(spellName, out sfr))
+            if (loc != WoWPoint.Empty)
             {
-                WoWSpell spell = sfr.Override ?? sfr.Original;
-                if (spell.HasRange)
+                SpellFindResults sfr;
+                if (SpellManager.FindSpell(spellName, out sfr))
                 {
-                    return spell.MinRange <= Me.Location.Distance(loc) && Me.Location.Distance(loc) < spell.MaxRange;
+                    WoWSpell spell = sfr.Override ?? sfr.Original;
+                    if (spell.HasRange)
+                    {
+                        return spell.MinRange <= Me.Location.Distance(loc) && Me.Location.Distance(loc) < spell.MaxRange;
+                    }
                 }
             }
 
@@ -2619,7 +2648,7 @@ namespace Singular.Helpers
         internal object context;
 
         // always create passing the existing context so it is preserved for delegate usage
-        internal CogContext(object ctx, SpellFindDelegate ssd, LocationRetriever locrtrv, SimpleStringDelegate descrtrv)
+        internal CogContext(object ctx, SpellFindDelegate ssd, SimpleLocationRetriever locrtrv, SimpleStringDelegate descrtrv)
         {
 
             if (ssd(ctx, out sfr))

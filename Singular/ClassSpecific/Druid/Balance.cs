@@ -37,6 +37,8 @@ namespace Singular.ClassSpecific.Druid
         private static EclipseType eclipseLastCheck = EclipseType.None;
         public static bool newEclipseDotNeeded;
 
+        private static bool glyphFlappingOwl { get; set; }
+
         private static int StarfallRange { get { return TalentManager.HasGlyph("Focus") ? 20 : 40; } }
 
         private static int CurrentEclipse { get { return BitConverter.ToInt32(BitConverter.GetBytes(StyxWoW.Me.CurrentEclipse), 0); } }
@@ -65,6 +67,16 @@ namespace Singular.ClassSpecific.Druid
 
 
         private static WoWUnit _CrowdControlTarget;
+
+        [Behavior(BehaviorType.Initialize, WoWClass.Druid, WoWSpec.DruidBalance)]
+        public static Composite CreateDruidBalanceInitialize()
+        {
+            glyphFlappingOwl = TalentManager.HasGlyph("Flapping Owl");
+            if (glyphFlappingOwl)
+                Logger.Write(LogColor.Init, "Glyph of Flapping Owl: will [Flap] when falling");
+
+            return null;
+        }
 
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidBalance)]
         public static Composite CreateDruidBalanceHeal()
@@ -299,8 +311,6 @@ namespace Singular.ClassSpecific.Druid
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 // Ensure we do /petattack if we have treants up.
-                Helpers.Common.CreateAutoAttack(true),
-
                 Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
@@ -319,7 +329,7 @@ namespace Singular.ClassSpecific.Druid
                                     new ActionAlwaysSucceed()
                                     ),
                                 new PrioritySelector(
-                                    Spell.CastOnGround("Ursol's Vortex", on => (WoWUnit)on, req => Me.GotTarget, false),
+                                    Spell.CastOnGround("Ursol's Vortex", on => (WoWUnit)on, req => Me.GotTarget(), false),
                                     Spell.Cast("Entangling Roots", on => (WoWUnit)on),
                                     new ActionAlwaysSucceed()
                                     )
@@ -526,6 +536,14 @@ namespace Singular.ClassSpecific.Druid
         #endregion
 
 
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.All, 9)]
+        public static Composite CreateBalancePreCombatBuffs()
+        {
+            return new PrioritySelector(
+                Spell.BuffSelf("Flap", req => glyphFlappingOwl && Me.Shapeshift == ShapeshiftForm.Moonkin && Me.IsFalling)
+                );
+        }
+
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Battlegrounds | WoWContext.Instances, 2)]
         public static Composite CreateBalancePreCombatBuffBattlegrounds()
         {
@@ -557,7 +575,8 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateBalanceCombatBuffNormal()
         {
             return new PrioritySelector(
-                Common.CastForm("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
+                Common.CastForm("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
+                Spell.BuffSelf("Flap", req => glyphFlappingOwl && Me.Shapeshift == ShapeshiftForm.Moonkin && Me.IsFalling)
                 );
         }
 
@@ -565,8 +584,8 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateBalanceCombatBuffBattlegrounds()
         {
             return new PrioritySelector(
-                Common.CastForm("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
-
+                Common.CastForm("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
+                Spell.BuffSelf("Flap", req => glyphFlappingOwl && Me.Shapeshift == ShapeshiftForm.Moonkin && Me.IsFalling)
                 );
         }
 
@@ -599,7 +618,7 @@ namespace Singular.ClassSpecific.Druid
                                     req => (req as WoWUnit).IsCrowdControlled(),
                                     new Action(r => Logger.WriteDebug("SlowMelee: closest mob already crowd controlled"))
                                     ),
-                                Spell.CastOnGround("Ursol's Vortex", on => (WoWUnit)on, req => Me.GotTarget, false),
+                                Spell.CastOnGround("Ursol's Vortex", on => (WoWUnit)on, req => Me.GotTarget(), false),
                                 Spell.Buff("Disorienting Roar", onUnit => (WoWUnit)onUnit, req => true),
                                 Spell.Buff("Mass Entanglement", onUnit => (WoWUnit)onUnit, req => true),
                                 Spell.Buff("Mighty Bash", onUnit => (WoWUnit)onUnit, req => true),

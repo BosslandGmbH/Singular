@@ -40,7 +40,7 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.WaitForCastOrChannel(),
                     
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget && Me.IsSafelyFacing(Me.CurrentTarget),
+                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget() && Me.IsSafelyFacing(Me.CurrentTarget),
                     new PrioritySelector(
 
                         CreateSubteltyDiagnosticOutputBehavior("Pull"),
@@ -70,6 +70,9 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
@@ -102,7 +105,7 @@ namespace Singular.ClassSpecific.Rogue
                             ),
 
                         Spell.BuffSelf("Shadow Dance",
-                            ret => Me.GotTarget
+                            ret => Me.GotTarget()
                                 && !Common.AreStealthAbilitiesAvailable
                                 && !Me.HasAuraExpired("Slice and Dice", 3)
                                 && Me.ComboPoints < 2),
@@ -141,8 +144,11 @@ namespace Singular.ClassSpecific.Rogue
                 
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
-                    ret => Me.GotTarget && !Spell.IsGlobalCooldown(),
+                    ret => Me.GotTarget() && !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),

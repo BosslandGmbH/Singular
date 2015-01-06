@@ -39,7 +39,6 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 // Auto Attack
-                Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(FaceDuring.Yes),
 
@@ -98,12 +97,14 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 CreateGuardianWildChargeBehavior(),
-                Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(FaceDuring.Yes),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         Helpers.Common.CreateInterruptBehavior(),
 
@@ -202,7 +203,7 @@ namespace Singular.ClassSpecific.Druid
                 new Sequence(
                     Spell.CastHack("Wild Charge", onUnit ?? (on => Me.CurrentTarget), ret => MovementManager.IsClassMovementAllowed && (Me.CurrentTarget.Distance + Me.CurrentTarget.CombatReach).Between( 10, 25)),
                     new Action( ret => StopMoving.Clear() ),
-                    new Wait(1, until => !Me.GotTarget || Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
+                    new Wait(1, until => !Me.GotTarget() || Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
                     )
                 );
         }

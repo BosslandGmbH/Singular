@@ -69,7 +69,7 @@ namespace Singular.ClassSpecific.Warlock
                 //new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && Me.GotAlivePet,
                 //    new Action(ctx => Lua.DoString("PetDismiss()"))),
                 new Decorator(
-                    req => !Me.HasAura("Drink") && !Me.HasAura("Food") && !Me.Mounted,
+                    req => !Me.HasAnyAura("Drink", "Food", "Refreshment") && !Me.Mounted,
                     new PrioritySelector(
                         // new ThrottlePasses( 5, new Action( r => { Logger.Write( "in Rest()"); return RunStatus.Failure; } )),
                         new Sequence(
@@ -197,13 +197,13 @@ namespace Singular.ClassSpecific.Warlock
                     ),
 
                 new Decorator(
-                    req => !Unit.IsTrivial( Me.CurrentTarget),
+                    req => !Unit.IsTrivial(Me.CurrentTarget),
                     new PrioritySelector(
-                        // 
-                        Spell.BuffSelf( "Ember Tap", ret => Me.HealthPercent < 80),
+                // 
+                        Spell.BuffSelf("Ember Tap", ret => Me.HealthPercent < 80),
 
                         // need combat healing?  check here since mix of buffs and abilities
-                        // heal / shield self as needed
+                // heal / shield self as needed
                         Spell.BuffSelf("Dark Regeneration", ret => Me.HealthPercent < 45),
                         new Decorator(
                             ret => StyxWoW.Me.HealthPercent < 60 || Me.HasAura("Dark Regeneration"),
@@ -220,32 +220,33 @@ namespace Singular.ClassSpecific.Warlock
                             ),
 
 
-                        new Decorator( 
+                        new Decorator(
                             ret => Me.IsInGroup() && WarlockSettings.UseSoulstone != Soulstone.None && WarlockSettings.UseSoulstone != Soulstone.Self,
                             Helpers.Common.CreateCombatRezBehavior("Soulstone", on => true, requirements => true)
                             ),
 
 
                         // remove our banish if they are our CurrentTarget 
-                        new Throttle( 2, Spell.Cast("Banish", ret => {
-                            bool isBanished = Me.CurrentTarget.HasMyAura( "Banish");
+                        new Throttle(2, Spell.Cast("Banish", ret =>
+                        {
+                            bool isBanished = Me.CurrentTarget.HasMyAura("Banish");
                             if (isBanished)
                                 Logger.WriteDebug("Banish: attempting to remove from current target");
                             return isBanished;
-                            })),
-                            
+                        })),
+
                         // banish someone if they are not current target, attacking us, and 12 yds or more away
                         new PrioritySelector(
                             ctx => Unit.NearbyUnfriendlyUnits
                                 .Where(
                                     u => (u.CreatureType == WoWCreatureType.Elemental || u.CreatureType == WoWCreatureType.Demon)
                                         && Me.CurrentTargetGuid != u.Guid
-                                        && !u.IsBoss() 
+                                        && !u.IsBoss()
                                         && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
                                         && !u.IsCrowdControlled() && !u.HasAura("Banish")
-                                        && SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds 
+                                        && SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds
                                         && (!u.Elite || SingularRoutine.CurrentWoWContext == WoWContext.Instances)
-                                        && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
+                                        && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget() || u.Location.Distance(Me.CurrentTarget.Location) > 10))
                                 .OrderByDescending(u => u.Distance)
                                 .FirstOrDefault(),
                             Spell.Cast("Banish", onUnit => (WoWUnit)onUnit)
@@ -262,18 +263,18 @@ namespace Singular.ClassSpecific.Warlock
                             ),
 
                         new PrioritySelector(
-                            // find an add within 8 yds (not our current target)
+                // find an add within 8 yds (not our current target)
                             ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => (u.Combat || Battlegrounds.IsInsideBattleground) && !u.IsStunned() && u.CurrentTargetGuid == Me.Guid && Me.CurrentTargetGuid != u.Guid && u.SpellDistance() < 8),
 
-                            Spell.CastOnGround( "Shadowfury", on => (WoWUnit)on, ret => ret != null, true),
+                            Spell.CastOnGround("Shadowfury", on => (WoWUnit)on, ret => ret != null, true),
 
                             // treat as a heal, but we cast on what would be our fear target -- allow even when fear use disabled
                             Spell.Buff("Mortal Coil", on => (WoWUnit)on, ret => WarlockSettings.UseFear && !((WoWUnit)ret).IsUndead && Me.HealthPercent < 50),
-                            Spell.Buff("Mortal Coil", on => Me.CurrentTarget, ret => WarlockSettings.UseFear && Me.GotTarget && !Me.CurrentTarget.IsUndead && Me.HealthPercent < 50 && Me.HealthPercent < Me.CurrentTarget.HealthPercent ),
+                            Spell.Buff("Mortal Coil", on => Me.CurrentTarget, ret => WarlockSettings.UseFear && Me.GotTarget() && !Me.CurrentTarget.IsUndead && Me.HealthPercent < 50 && Me.HealthPercent < Me.CurrentTarget.HealthPercent),
 
                             // Howl of Terror if too m any mobs attacking us that arent' controlled
-                            Spell.Buff("Howl of Terror", 
-                                on => Me.CurrentTarget, 
+                            Spell.Buff("Howl of Terror",
+                                on => Me.CurrentTarget,
                                 ret => WarlockSettings.UseFear &&
                                 5 <= Unit.NearbyUnfriendlyUnits.Count(u => (Battlegrounds.IsInsideBattleground || u.CurrentTargetGuid == Me.Guid) && !u.IsStunned() && u.SpellDistance() < 10f)),
 
@@ -282,7 +283,7 @@ namespace Singular.ClassSpecific.Warlock
                             ),
 
                         new Decorator(
-                            ret => (Me.GotTarget && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss() || Me.CurrentTarget.TimeToDeath() > 20)) || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMyStuff()) >= 3,
+                            ret => (Me.GotTarget() && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss() || Me.CurrentTarget.TimeToDeath() > 20)) || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMyStuff()) >= 3,
                             new PrioritySelector(
                                 Spell.BuffSelf("Dark S  oul: Misery", ret => TalentManager.CurrentSpec == WoWSpec.WarlockAffliction),
                                 Spell.BuffSelf("Dark Soul: Instability", ret => TalentManager.CurrentSpec == WoWSpec.WarlockDestruction && Destruction.CurrentBurningEmbers >= 30),
@@ -294,15 +295,15 @@ namespace Singular.ClassSpecific.Warlock
 
                         // lower threat if tanks nearby to pickup
                         Spell.BuffSelf("Soulshatter",
-                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Instances 
+                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Instances
                                 && Group.AnyTankNearby
                                 && Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid)),
 
                         // lower threat if voidwalker nearby to pickup
                         Spell.BuffSelf("Soulshatter",
-                            ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds 
-                                && !Group.AnyTankNearby 
-                                && GetCurrentPet() == WarlockPet.Voidwalker 
+                            ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds
+                                && !Group.AnyTankNearby
+                                && GetCurrentPet() == WarlockPet.Voidwalker
                                 && Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid)),
 
                         Spell.BuffSelf("Dark Bargain", ret => Me.HealthPercent < 50),
@@ -311,22 +312,22 @@ namespace Singular.ClassSpecific.Warlock
                         new Decorator(
                             ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3
                                 || Me.CurrentTarget.IsBoss()
-                                || Unit.NearbyUnfriendlyUnits.Any( u => u.IsPlayer && u.IsTargetingMeOrPet ),
+                                || Unit.NearbyUnfriendlyUnits.Any(u => u.IsPlayer && u.IsTargetingMeOrPet),
                             new PrioritySelector(
                                 Spell.BuffSelf("Dark Soul: Misery"),
                                 Spell.BuffSelf("Unending Resolve"),
                                 new Decorator(
-                                    ret => HasTalent( WarlockTalents.GrimoireOfService),
+                                    ret => HasTalent(WarlockTalents.GrimoireOfService),
                                     new PrioritySelector(
                                         Spell.Cast("Grimoire: Felhunter", ret => SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds),
-                                        Spell.Cast("Grimoire: Voidwalker", ret => Common.GetCurrentPet() != WarlockPet.Voidwalker ),
-                                        Spell.Cast("Grimoire: Felhunter", ret => Common.GetCurrentPet() != WarlockPet.Felhunter )
+                                        Spell.Cast("Grimoire: Voidwalker", ret => Common.GetCurrentPet() != WarlockPet.Voidwalker),
+                                        Spell.Cast("Grimoire: Felhunter", ret => Common.GetCurrentPet() != WarlockPet.Felhunter)
                                         )
                                     )
                                 )
                             ),
 
-                        Common.CreatWarlockHealthFunnelBehavior( WarlockSettings.HealthFunnelCast, WarlockSettings.HealthFunnelCancel),
+                        Common.CreatWarlockHealthFunnelBehavior(WarlockSettings.HealthFunnelCast, WarlockSettings.HealthFunnelCancel),
 
                         Spell.BuffSelf("Life Tap",
                             ret => Me.ManaPercent < SingularSettings.Instance.PotionMana
@@ -335,12 +336,12 @@ namespace Singular.ClassSpecific.Warlock
                         PartyBuff.BuffGroup("Dark Intent"),
 
                         new Decorator(
-                            ret => Me.GotTarget 
+                            ret => Me.GotTarget()
                                 && Unit.ValidUnit(Me.CurrentTarget)
                                 && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TimeToDeath() > 45),
-                            new Throttle( 2,
+                            new Throttle(2,
                                 new PrioritySelector(
-                                    Spell.Buff( "Curse of the Elements", true,
+                                    Spell.Buff("Curse of the Elements", true,
                                         ret => !Me.CurrentTarget.HasMyAura("Curse of Enfeeblement")
                                             && !Me.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModDamageTaken)),
 
@@ -352,17 +353,26 @@ namespace Singular.ClassSpecific.Warlock
                             ),
 
                         // mana restoration - match against survival cooldowns
-                        new Decorator( 
+                        Me.Specialization == WoWSpec.WarlockDestruction
+                        ? (Composite) new ActionAlwaysFail()
+                        : (Composite) new Decorator(
                             ret => Me.ManaPercent < 60,
-                            new PrioritySelector(
-                                Spell.BuffSelf("Life Tap", ret => Me.HealthPercent > 50 && Me.HasAnyAura("Glyph of Healthstone")),
-                                Spell.BuffSelf("Life Tap", ret => Me.HealthPercent > 50 && Me.HasAnyAura("Unending Resolve")),
-                                Spell.BuffSelf("Life Tap", ret => Me.HasAnyAura("Sacrificial Pact")),
-                                Spell.BuffSelf("Life Tap", ret => Me.HasAnyAura("Dark Bargain")),
-                                Spell.BuffSelf("Life Tap", ret => Me.ManaPercent < 30 && Me.HealthPercent > 60)
-                                )
+                            Spell.BuffSelf("Life Tap", req =>
+                            {
+                                if (Me.HealthPercent > 50 && Me.HasAnyAura("Glyph of Healthstone"))
+                                    return true;
+                                if (Me.HealthPercent > 50 && Me.HasAnyAura("Unending Resolve"))
+                                    return true;
+                                if (Me.HasAnyAura("Sacrificial Pact"))
+                                    return true;
+                                if (Me.HasAnyAura("Dark Bargain"))
+                                    return true;
+                                if (Me.ManaPercent < 30 && Me.HealthPercent > 60)
+                                    return true;
+                                return false;
+                            })
                             )
-                    
+
                         // , Spell.BuffSelf("Kil'jaeden's Cunning", ret => Me.IsMoving && Me.Combat)
                         )
                     )
@@ -381,7 +391,7 @@ namespace Singular.ClassSpecific.Warlock
             if (!WarlockSettings.UseFear)
                 return null;
 
-            if (!Me.GotTarget)
+            if (!Me.GotTarget())
                 return null;
 
             // use a larger range than normal 40 yds to check Fear because of mechanic causing them to run

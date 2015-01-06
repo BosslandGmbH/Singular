@@ -37,7 +37,7 @@ namespace Singular.ClassSpecific.Priest
 
                     new Decorator(
                         ret => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.SpellDistance() < 8)
-                            && (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || (Me.GotTarget && Me.CurrentTarget.IsPlayer) || (SingularRoutine.CurrentWoWContext == WoWContext.Normal && (Me.HealthPercent < 50))),
+                            && (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || (Me.GotTarget() && Me.CurrentTarget.IsPlayer) || (SingularRoutine.CurrentWoWContext == WoWContext.Normal && (Me.HealthPercent < 50))),
                         CreatePriestAvoidanceBehavior()
                         )
 
@@ -280,7 +280,7 @@ namespace Singular.ClassSpecific.Priest
             if (SpellManager.HasSpell("Mindbender"))
                 return Spell.Cast("Mindbender",
                     ret => {
-                        if (!Me.GotTarget || !Unit.ValidUnit(Me.CurrentTarget))
+                        if (!Me.GotTarget() || !Unit.ValidUnit(Me.CurrentTarget))
                             return false;
 
                         if (Me.CurrentTarget.IsPlayer)
@@ -299,7 +299,7 @@ namespace Singular.ClassSpecific.Priest
             return Spell.Cast("Shadowfiend",
                     ret =>
                     {
-                        if (!Me.GotTarget || !Unit.ValidUnit(Me.CurrentTarget))
+                        if (!Me.GotTarget() || !Unit.ValidUnit(Me.CurrentTarget))
                             return false;
 
                         if (Me.CurrentTarget.IsPlayer)

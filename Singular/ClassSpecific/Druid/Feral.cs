@@ -51,10 +51,10 @@ namespace Singular.ClassSpecific.Druid
                         )
                     ),
 
-                Common.CreateProwlBehavior(ret => Me.HasAura("Drink") || Me.HasAura("Food")),
+                Common.CreateProwlBehavior(ret => Me.HasAnyAura("Drink", "Food", "Refreshment")),
 
                 new Decorator(
-                    ret => !Me.HasAura("Drink") && !Me.HasAura("Food")
+                    ret => !Me.HasAnyAura("Drink", "Food", "Refreshment")
                         && Me.HasAura("Predatory Swiftness")
                         && (Me.PredictedHealthPercent(includeMyHeals: true) < 95),
                     new PrioritySelector(
@@ -78,7 +78,6 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 CreateFeralDiagnosticOutputBehavior( "Pull" ),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(),
 
@@ -139,7 +138,7 @@ namespace Singular.ClassSpecific.Druid
         {
             return Common.CreateFaerieFireBehavior(
                                                 on => Me.CurrentTarget,
-                                                req => Me.CurrentTarget != null
+                                                req => Me.GotTarget()
                                                     && Me.CurrentTarget.IsPlayer
                                                     && (Me.CurrentTarget.Class == WoWClass.Rogue || Me.CurrentTarget.Shapeshift == ShapeshiftForm.Cat)
                                                     && !Me.CurrentTarget.HasAnyAura("Faerie Fire", "Faerie Swarm")
@@ -155,7 +154,7 @@ namespace Singular.ClassSpecific.Druid
             return new Throttle(7,
                 new Sequence(
                     Spell.CastHack("Wild Charge", ret => MovementManager.IsClassMovementAllowed && !Me.HasAura("Dash") && (Me.CurrentTarget.Distance + Me.CurrentTarget.CombatReach).Between(10, 25)),
-                    new Wait(1, until => !Me.GotTarget || Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
+                    new Wait(1, until => !Me.GotTarget() || Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
                     )
                 );
         }
@@ -233,13 +232,15 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(), 
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         // updated time to death tracking values before we need them
                         new Action( ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; } ),
@@ -267,7 +268,7 @@ namespace Singular.ClassSpecific.Druid
                         new Throttle( 
                             Spell.BuffSelf("Berserk", 
                                 ret => Me.HasAura("Tiger's Fury") 
-                                    && Me.GotTarget && (Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (SingularRoutine.CurrentWoWContext != WoWContext.Instances && Me.CurrentTarget.TimeToDeath() >= 20 ))
+                                    && Me.GotTarget() && (Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (SingularRoutine.CurrentWoWContext != WoWContext.Instances && Me.CurrentTarget.TimeToDeath() >= 20 ))
                                 )
                             ),
 
@@ -314,7 +315,6 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(FaceDuring.Yes),
 
@@ -322,13 +322,16 @@ namespace Singular.ClassSpecific.Druid
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+
                         // updated time to death tracking values before we need them
                         Helpers.Common.CreateInterruptBehavior(),
 
                         CreateFeralAoeCombat(),
 
                         new Decorator(
-                            ret => Me.GotTarget
+                            ret => Me.GotTarget()
                                 && Me.SpellDistance(Me.CurrentTarget) < 8,
 
                             new PrioritySelector(
@@ -338,7 +341,7 @@ namespace Singular.ClassSpecific.Druid
 #if INITIAL
                                 new Throttle(
                                     new Decorator(
-                                        req => Me.HasAura("Savage Roar") && Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
+                                        req => Me.HasAura("Savage Roar") && Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange,
                                         new Sequence(
                                             Spell.BuffSelf("Tiger's Fury", req => !Me.HasAura("Berserk") && (!Spell.IsSpellOnCooldown("Berserk") || Spell.GetSpellCooldown("Berserk").TotalSeconds > 15)),
                                             new Action( r => Logger.WriteDebug("Burst(Instance): Tiger Fury cast, so check if burst needed")),
@@ -379,7 +382,7 @@ namespace Singular.ClassSpecific.Druid
 #else
                                 Spell.OffGCD(
                                     new Decorator(
-                                        req => Me.HasAura("Savage Roar") && Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
+                                        req => Me.HasAura("Savage Roar") && Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange,
                                         new Sequence(
                                             // Tigers Fury if no Berserk aura active and a cooldown isn't about to become available
                                             Spell.BuffSelf( "Tiger's Fury", 

@@ -61,7 +61,7 @@ namespace Singular.ClassSpecific
                     new Decorator(
                         ret =>
                         {
-                            if (!StyxWoW.Me.Combat || !StyxWoW.Me.GotTarget)
+                            if (!StyxWoW.Me.Combat || !StyxWoW.Me.GotTarget())
                                 return false;
                             bool isMelee = StyxWoW.Me.IsMelee();
                             if (isMelee)
@@ -117,7 +117,7 @@ namespace Singular.ClassSpecific
                                 return true;
                             if (Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 2)
                                 return true;
-                            if (StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid && StyxWoW.Me.CurrentTarget.MaxHealth > (StyxWoW.Me.MaxHealth * 2))
+                            if (StyxWoW.Me.GotTarget() && StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid && StyxWoW.Me.CurrentTarget.MaxHealth > (StyxWoW.Me.MaxHealth * 2))
                                 return true;
                             return false;
                         },
@@ -193,7 +193,7 @@ namespace Singular.ClassSpecific
                 return new Decorator(
                     req =>
                     {
-                        if (!StyxWoW.Me.Combat || !StyxWoW.Me.GotTarget)
+                        if (!StyxWoW.Me.Combat || !StyxWoW.Me.GotTarget())
                             return false;
                         if (StyxWoW.Me.IsMelee())
                             return StyxWoW.Me.CurrentTarget.IsWithinMeleeRange;

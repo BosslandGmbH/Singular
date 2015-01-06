@@ -31,7 +31,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             get
             {
-                if (Me.GotTarget)
+                if (Me.GotTarget())
                 {
                     if (TalentManager.CurrentSpec == WoWSpec.ShamanRestoration && Me.IsInGroup())
                         return false;
@@ -51,6 +51,22 @@ namespace Singular.ClassSpecific.Shaman
             }
         }
 
+        public static bool AllowDpsTotems
+        {
+            get
+            {
+                return SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.PetUse)
+                    && AllowTotems;
+            }
+        }
+
+        public static bool AllowTotems
+        {
+            get
+            {
+                return SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.PetSummoning);
+            }
+        }
         private static bool ShouldWeDropTotemsYet
         {
             get
@@ -59,11 +75,11 @@ namespace Singular.ClassSpecific.Shaman
                     return false;
 
                 if ( TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement )
-                    return Me.GotTarget && Me.CurrentTarget.Distance < Me.MeleeDistance(Me.CurrentTarget) + 10;
+                    return Me.GotTarget() && Me.CurrentTarget.Distance < Me.MeleeDistance(Me.CurrentTarget) + 10;
 
                 if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
                 {
-                    if ( !Me.GotTarget )
+                    if ( !Me.GotTarget() )
                         return false;
                     
                     if ( Me.CurrentTarget.IsMoving )
@@ -75,7 +91,7 @@ namespace Singular.ClassSpecific.Shaman
                     return true;
                 }
 
-                return !Me.GotTarget || Me.CurrentTarget.SpellDistance() < 40;
+                return !Me.GotTarget() || Me.CurrentTarget.SpellDistance() < 40;
             }
         }
 
@@ -105,7 +121,7 @@ namespace Singular.ClassSpecific.Shaman
                 CreateTotemsNormalBehavior(),
 
                 // otherwise drop the DPS totem 
-                Spell.BuffSelf("Searing Totem", ret => ShouldWeDropPullTotems && !Exist(WoWTotemType.Fire))
+                Spell.BuffSelf("Searing Totem", ret => ShouldWeDropPullTotems && AllowDpsTotems && !Exist(WoWTotemType.Fire))
                 );
 
         }
@@ -134,7 +150,7 @@ namespace Singular.ClassSpecific.Shaman
             {
                 fireTotemBehavior = new PrioritySelector(
                     new Decorator(
-                        ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid), 
+                        ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget() && !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid), 
                         fireTotemBehavior
                         )
                     );
@@ -259,7 +275,7 @@ namespace Singular.ClassSpecific.Shaman
             if (TalentManager.CurrentSpec == WoWSpec.ShamanRestoration)
                 fireTotemBehavior = new PrioritySelector(
                     new Decorator(
-                        ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && !HealerManager.Instance.TargetList.Any(m => m.IsAlive), 
+                        ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget() && !HealerManager.Instance.TargetList.Any(m => m.IsAlive), 
                         fireTotemBehavior
                         )
                     );
@@ -365,7 +381,7 @@ namespace Singular.ClassSpecific.Shaman
 
         private static bool IsSearingTotemNeeded()
         {
-            if (Me.GotTarget && TotemIsKnown(WoWTotem.Searing))
+            if (Me.GotTarget() && TotemIsKnown(WoWTotem.Searing) && AllowDpsTotems)
             {
                 WoWTotemInfo ti = GetTotem(WoWTotemType.Fire);
                 if (!Exist(ti))
@@ -406,7 +422,7 @@ namespace Singular.ClassSpecific.Shaman
 
         private static bool IsMagmaTotemNeeded()
         {
-            if (Spell.UseAOE && Me.GotTarget && TotemIsKnown(WoWTotem.Magma))
+            if (Spell.UseAOE && Me.GotTarget() && TotemIsKnown(WoWTotem.Magma) && AllowDpsTotems)
             {
                 WoWTotemInfo ti = GetTotem(WoWTotemType.Fire);
 
@@ -446,7 +462,7 @@ namespace Singular.ClassSpecific.Shaman
         /// </remarks>
         public static Composite CreateRecallTotems()
         {
-            return new Action(r => RecallTotems() ? RunStatus.Success : RunStatus.Failure);
+            return new Throttle( 2, new Action(r => RecallTotems() ? RunStatus.Success : RunStatus.Failure));
         }
 
         public static bool RecallTotems()
@@ -455,7 +471,6 @@ namespace Singular.ClassSpecific.Shaman
             {
                 if (SpellManager.HasSpell("Totemic Recall"))
                 {
-                    Logger.Write( LogColor.Hilite, "^Recalling totems!");
                     Spell.LogCast("Totemic Recall", Me);
                     return Spell.CastPrimative("Totemic Recall");
                 }
@@ -502,11 +517,43 @@ namespace Singular.ClassSpecific.Shaman
         public static bool NeedToRecallTotems 
         { 
             get 
-            { 
-                return TotemsInRange == 0 
-                    && StyxWoW.Me.Totems.Count(t => t.Unit != null) > 0
-                    && !Unit.NearbyFriendlyPlayers.Any( f => f.Combat )
-                    && !StyxWoW.Me.Totems.Any(t => totemsWeDontRecall.Any( twl => twl == t.WoWTotem )); 
+            {
+                int cntTotemsInRange = 0;
+                int cntTotems = 0;
+                int cntTotemsAggro = 0;
+                bool aggroAllowed = SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.PetUse);
+
+                foreach (var totem in Me.Totems)
+                {
+                    if ( totem.Unit == null)
+                        continue;
+
+                    cntTotems++;
+                    if (!aggroAllowed && totemsThatAggro.Contains(totem.WoWTotem))
+                    {
+                        Logger.Write(LogColor.Hilite, "^Recalling Totems! {0} would aggro", totem.WoWTotem);
+                        cntTotemsAggro++;
+                    }
+
+                    if (Me.Location.Distance(totem.Unit.Location) < GetTotemRange(totem.WoWTotem))
+                        cntTotemsInRange++;
+                }
+
+                bool wantToRecall = false;
+                if (!aggroAllowed && cntTotemsAggro > 0)
+                {
+                    wantToRecall = true;
+                }
+                else if (cntTotems > 0 && cntTotemsInRange == 0)
+                {
+                    wantToRecall = !Unit.NearbyFriendlyPlayers.Any(f => f.Combat);
+                    if (wantToRecall)
+                    {
+                        Logger.Write(LogColor.Hilite, "^Recalling Totems! (out of range)");
+                    }
+                }
+
+                return wantToRecall;
             } 
         }
 
@@ -737,6 +784,30 @@ namespace Singular.ClassSpecific.Shaman
             WoWTotem.EarthElemental  , 
             WoWTotem.HealingTide , 
             WoWTotem.ManaTide 
+        };
+
+        static WoWTotem[] totemsThatAggro = new WoWTotem[] 
+        {
+            WoWTotem.FireElemental,
+            WoWTotem.Searing,
+            WoWTotem.Magma,
+            // DummyFire,
+            WoWTotem.EarthElemental,
+            WoWTotem.Earthbind,
+            // Tremor,
+            WoWTotem.Earthgrab,
+            // StoneBulwark,
+            // DummyEarth,
+            // HealingStream,
+            // ManaTide,
+            // HealingTide,
+            // DummyWater,
+            // Grounding,
+            // SpiritLink,
+            WoWTotem.Capacitor,
+            // Windwalk,
+            // DummyAir,
+            // Stormlash         
         };
 
         #endregion

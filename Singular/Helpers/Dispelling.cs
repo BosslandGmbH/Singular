@@ -13,6 +13,7 @@ using Singular.Settings;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using CommonBehaviors.Actions;
+using Styx.CommonBot.Routines;
 
 namespace Singular.Helpers
 {
@@ -192,7 +193,7 @@ namespace Singular.Helpers
 
         public static bool CanDispel(WoWUnit unit, DispelCapabilities chk)
         {
-            return (chk & GetDispellableTypesOnUnit(unit)) != 0;
+            return SingularRoutine.IsAllowed(CapabilityFlags.DefensiveDispel) && (chk & GetDispellableTypesOnUnit(unit)) != 0;
         }
 
 

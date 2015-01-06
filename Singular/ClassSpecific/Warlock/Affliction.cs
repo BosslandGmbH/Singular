@@ -66,7 +66,6 @@ namespace Singular.ClassSpecific.Warlock
                         }),
 
                         CreateWarlockDiagnosticOutputBehavior("Pull"),
-                        Helpers.Common.CreateAutoAttack(true),
                         SingularRoutine.CurrentWoWContext == WoWContext.Instances 
                             ? CreateApplyDotsBehaviorInstance(onUnit => Me.CurrentTarget, ret => true)
                             : CreateApplyDotsBehaviorNormal(onUnit => Me.CurrentTarget)
@@ -91,17 +90,14 @@ namespace Singular.ClassSpecific.Warlock
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
-                Helpers.Common.CreateAutoAttack(true),
-
                 // Movement.CreateEnsureMovementStoppedBehavior(35f),
 
-                new Action(r => { if ( Me.GotTarget) Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; } ),
+                new Action(r => { if ( Me.GotTarget()) Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; } ),
 
                 // cancel an early drain soul if DoTs are falling off
                 CancelChanneledCastBehavior(),
 
                 Spell.WaitForCastOrChannel(),
-                Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator(ret => !Spell.IsGlobalCooldown(),
 
@@ -139,7 +135,7 @@ namespace Singular.ClassSpecific.Warlock
                 new Decorator(
                     ret => {
                         // true: evaluate if we need to cancel, false: let it continue
-                        if (ret != null && Me.CurrentTarget != null)
+                        if (ret != null && Me.GotTarget())
                             return ((string)ret) == "Drain Soul" || ((string)ret) == "Drain Life";
                         return false;
                         },
@@ -202,7 +198,6 @@ namespace Singular.ClassSpecific.Warlock
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCastOrChannel(),
-                Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

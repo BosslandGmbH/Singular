@@ -59,7 +59,7 @@ namespace Singular.ClassSpecific.Rogue
                 {
                     if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
                         return true;
-                    if (StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.IsPlayer && Unit.ValidUnit(StyxWoW.Me.CurrentTarget))
+                    if (StyxWoW.Me.GotTarget() && StyxWoW.Me.CurrentTarget.IsPlayer && Unit.ValidUnit(StyxWoW.Me.CurrentTarget))
                         return true;
                     if (BotPoi.Current.Type == PoiType.Kill && BotPoi.Current.AsObject is WoWPlayer)
                         return true;
@@ -90,7 +90,7 @@ namespace Singular.ClassSpecific.Rogue
             return new PrioritySelector(
                 CreateRogueOpenBoxes(),
 
-                CreateStealthBehavior(ret => RogueSettings.StealthIfEating && StyxWoW.Me.HasAura("Food")),
+                CreateStealthBehavior(ret => RogueSettings.StealthIfEating && StyxWoW.Me.HasAnyAura("Food", "Refreshment")),
                 Rest.CreateDefaultRestBehaviour( ),
 
                 CheckThatDaggersAreEquippedIfNeeded(),
@@ -173,7 +173,7 @@ namespace Singular.ClassSpecific.Rogue
 
                             // cast if partially need healing and mob about to die
                             Spell.BuffSelf("Recuperate",
-                                ret => Me.GotTarget
+                                ret => Me.GotTarget()
                                     && AoeCount == 1
                                     && Me.CurrentTarget.TimeToDeath() < 2
                                     && Me.HealthPercent < (100 + RogueSettings.RecuperateHealth) / 2)
@@ -218,7 +218,7 @@ namespace Singular.ClassSpecific.Rogue
                 // new Action( r => { Logger.WriteDebug("PullBuffs -- stealthed={0}", Stealthed ); return RunStatus.Failure; } ),
                 CreateStealthBehavior( 
                     ret => {
-                        if (!Me.GotTarget || (Unit.IsTrivial(Me.CurrentTarget) && !RogueSettings.PickPocketOnlyPull))
+                        if (!Me.GotTarget() || (Unit.IsTrivial(Me.CurrentTarget) && !RogueSettings.PickPocketOnlyPull))
                             return false;
 
                         if (AreStealthAbilitiesAvailable)
@@ -240,7 +240,7 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.ComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !Spell.CanCastHack("Redirect"))),
                 new Throttle( 1,
                     new Decorator(
-                        req => MovementManager.IsClassMovementAllowed && StyxWoW.Me.IsMoving && StyxWoW.Me.GotTarget,
+                        req => MovementManager.IsClassMovementAllowed && StyxWoW.Me.IsMoving && StyxWoW.Me.GotTarget(),
                         new PrioritySelector(
                             // Throttle Shadowstep because cast can fail with no message
                             new Throttle(2, Spell.Cast("Shadowstep", ret => StyxWoW.Me.CurrentTarget.Distance > 12)),
@@ -294,7 +294,7 @@ namespace Singular.ClassSpecific.Rogue
 
                         // Now any enemy missing Weakened Armor
                         Spell.Buff("Expose Armor", req => {
-                            if (!Me.GotTarget)
+                            if (!Me.GotTarget())
                                 return false;
 
                             if (Me.CurrentTarget.HasAura("Weakened Armor", 3))
@@ -333,7 +333,7 @@ namespace Singular.ClassSpecific.Rogue
                         // Vanish to boost DPS if behind target, not stealthed, have slice/dice, and 0/1 combo pts
                         new Sequence(
                             Spell.BuffSelf("Vanish",
-                                ret => Me.GotTarget
+                                ret => Me.GotTarget()
                                     && !SingularRoutine.IsQuestBotActive
                                     && SingularRoutine.CurrentWoWContext != WoWContext.Normal
                                     && !AreStealthAbilitiesAvailable
@@ -437,7 +437,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new Throttle( 2,
                 new Decorator(
-                    ret => Me.GotTarget 
+                    ret => Me.GotTarget() 
                         && Me.CurrentTarget.IsMoving && Me.IsMoving 
                         && Me.CurrentTarget.MovementInfo.CurrentSpeed >= Me.MovementInfo.CurrentSpeed
                         && Me.IsSafelyBehind( Me.CurrentTarget),
@@ -476,7 +476,7 @@ namespace Singular.ClassSpecific.Rogue
                 return new ActionAlwaysFail();
 
             return new Decorator(
-                req => AreStealthAbilitiesAvailable && Me.GotTarget && SpellManager.HasSpell("Sap"),
+                req => AreStealthAbilitiesAvailable && Me.GotTarget() && SpellManager.HasSpell("Sap"),
                 new PrioritySelector(
                     ctx => GetBestSapTarget(),
                     new Decorator(
@@ -504,7 +504,7 @@ namespace Singular.ClassSpecific.Rogue
             if (RogueSettings.SapAddDistance <= 0 && !RogueSettings.SapMovingTargetsOnPull)
                 return null;
 
-            if (!Me.GotTarget || !AreStealthAbilitiesAvailable)
+            if (!Me.GotTarget() || !AreStealthAbilitiesAvailable)
                 return null;
 
             if (Unit.NearbyUnfriendlyUnits.Any(u => u.HasMyAura("Sap")))
@@ -803,7 +803,7 @@ namespace Singular.ClassSpecific.Rogue
             return new Decorator(
                 // changed to only do on non-player targets
                 ret => {
-                    if (!Me.GotTarget)
+                    if (!Me.GotTarget())
                         return false;
 
                     if (Me.CurrentTarget.IsPlayer)
@@ -912,7 +912,7 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => (!Me.Combat || RogueSettings.AllowPickPocketInCombat)
                         && AreStealthAbilitiesAvailable
-                        && Me.GotTarget
+                        && Me.GotTarget()
                         && Me.CurrentTarget.IsAlive
                         && !Me.CurrentTarget.IsPlayer
                         && (Me.CurrentTarget.IsWithinMeleeRange || (TalentManager.HasGlyph("Pick Pocket") && Me.CurrentTarget.SpellDistance() < 10))
@@ -1033,7 +1033,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             get
             {
-                if (!Me.GotTarget || !Me.CurrentTarget.IsWithinMeleeRange )
+                if (!Me.GotTarget() || !Me.CurrentTarget.IsWithinMeleeRange )
                     return false;
 
                 if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
@@ -1140,7 +1140,7 @@ namespace Singular.ClassSpecific.Rogue
             return new Action( r => {
                 if (RogueSettings.UsePickPocket && RogueSettings.PickPocketOnlyPull && !Me.IsInGroup())
                 {
-                    if (!Me.GotTarget)
+                    if (!Me.GotTarget())
                         return RunStatus.Success;
 
                     if (Me.CurrentTarget.IsPlayer)

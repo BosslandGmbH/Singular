@@ -28,8 +28,6 @@ namespace Singular.Settings
         {
         }
 
-        #region Protection
-
         public enum SpellPriority
         {
             Noxxic = 1,
@@ -43,12 +41,7 @@ namespace Singular.Settings
         [DisplayName("Spell Priority Selection")]
         public SpellPriority ArmsSpellPriority { get; set; }
 #endif
-        [Setting]
-        [DefaultValue(50)]
-        [Category("Protection")]
-        [DisplayName("Enraged Regeneration Health")]
-        [Description("Enrage Regeneration will be used when your health drops below this value")]
-        public int WarriorEnragedRegenerationHealth { get; set; }
+        #region Protection
 
         [Setting]
         [DefaultValue(30)]
@@ -84,6 +77,13 @@ namespace Singular.Settings
         #region DPS
 
         [Setting]
+        [DefaultValue(50)]
+        [Category("DPS")]
+        [DisplayName("Enraged Regeneration Health")]
+        [Description("Enrage Regeneration will be used when your health drops below this value")]
+        public int WarriorEnragedRegenerationHealth { get; set; }
+
+        [Setting]
         [DefaultValue(true)]
         [Category("DPS")]
         [DisplayName("Use Interupts")]
@@ -98,19 +98,20 @@ namespace Singular.Settings
         public bool UseWarriorSlows { get; set; }
         
         [Setting]
-        [DefaultValue(true)]
-        [Category("DPS")]
-        [DisplayName("Use Charge/Heroic Leap?")]
-        [Description("True / False if you would like the cc to use any gap closers")]
-        public bool UseWarriorCloser { get; set; }
-        #endregion
-
-        [Setting]
         [DefaultValue(WarriorStance.Auto)]
         [Category("DPS")]
         [DisplayName("Warrior DPS Stance")]
         [Description("The stance to use while DPSing. Battle stance if there is little incoming damage, Berserker otherwise. Protection will always use Defensive stance.")]
         public WarriorStance Stance { get; set; }
+
+        #endregion
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("General")]
+        [DisplayName("Use Charge/Heroic Leap?")]
+        [Description("True / False if you would like the cc to use any gap closers")]
+        public bool UseWarriorCloser { get; set; }
 
         [Setting]
         [DefaultValue(WarriorShout.BattleShout)]

@@ -29,8 +29,12 @@ namespace Singular.ClassSpecific.Warrior
         public static bool Tier14FourPieceBonus { get { return Me.HasAura("Item - Warrior T14 DPS 4P Bonus"); } }
 
         public static float DistanceChargeBehavior { get; set; }
+        public static float VictoryRushDistance { get; set; }
         public static int VictoryRushHealth { get; set; }
-       
+
+        public static float HeroicLeapDistance { get; set; }
+
+
         [Behavior(BehaviorType.Initialize, WoWClass.Warrior)]
         public static Composite CreateWarriorInitialize()
         {
@@ -39,7 +43,7 @@ namespace Singular.ClassSpecific.Warrior
 
             if (TalentManager.HasGlyph("Long Charge"))
             {
-                Logger.Write(LogColor.Init, "[glyph of charge] Recognized - Charge Distance increased by 5 yds");
+                Logger.Write(LogColor.Init, "glyph of long charge: [Charge] at {0:F1} yds", DistanceChargeBehavior);
                 DistanceChargeBehavior = 30f;
             }
 
@@ -47,27 +51,40 @@ namespace Singular.ClassSpecific.Warrior
             VictoryRushHealth = 90;
             if (SpellManager.HasSpell("Impending Victory"))
             {
-                Logger.Write(LogColor.Init, "[impending victory talent] Recognized");
                 VictoryRushHealth = 80;
                 spellVictory = "Impending Victory";
+                Logger.Write(LogColor.Init, "impending victory talent: [{0}] at {1}%", spellVictory, VictoryRushHealth);
             }
             else if (TalentManager.HasGlyph("Victory Rush"))
             {
-                Logger.Write(LogColor.Init, "[glyph of victory rush] Recognized");
-                VictoryRushHealth -= (100 - VictoryRushHealth) / 2;
-            }
-
-            if (WarriorSettings.VictoryRushOnCooldown)
-            {
-                Logger.Write(LogColor.Init, "[victory rush on cooldown] User Setting will cause [{0}] cast on cooldown", spellVictory);
-                VictoryRushHealth = 100;
+                VictoryRushHealth = 85;
+                Logger.Write(LogColor.Init, "glyph of victory rush: [{0}] at {1}%", spellVictory, VictoryRushHealth);
             }
             else
             {
-                Logger.Write(LogColor.Init, "[victory rush] will cast if health <= {0}%", VictoryRushHealth);
+                Logger.Write(LogColor.Init, "victory rush: [{0}] at {1}%", spellVictory, VictoryRushHealth);
             }
 
-            Logger.Write(LogColor.Init, "[charge distance] Charge cast at targets within {0:F1} yds", DistanceChargeBehavior);
+
+            if (WarriorSettings.VictoryRushOnCooldown)
+            {
+                Logger.Write(LogColor.Init, "victory rush on cooldown: [{0}] cast on cooldown", spellVictory);
+                VictoryRushHealth = 100;
+            }
+
+            VictoryRushDistance = 5f;
+            if (TalentManager.HasGlyph("Victorious Throw"))
+            {
+                VictoryRushDistance = 15f;
+                Logger.Write(LogColor.Init, "glyph of victorious throw: [{0}] at {1:F1} yds", spellVictory, VictoryRushDistance);
+            }
+
+            HeroicLeapDistance = 40f;
+            if (TalentManager.HasGlyph("Death From Above"))
+            {
+                HeroicLeapDistance = 25f;
+                Logger.Write(LogColor.Init, "glyph of death from above: [Heroic Leap] at {0:F1} yds", HeroicLeapDistance);
+            }
 
             DistanceChargeBehavior -= 0.2f;    // should not be needed, but is  -- based on log files and observations we need this adjustment
 
@@ -82,7 +99,8 @@ namespace Singular.ClassSpecific.Warrior
             return
                 new PrioritySelector(
                     Spell.BuffSelfAndWait(sp => SelectedStanceAsSpellName, req => StyxWoW.Me.Shapeshift != (ShapeshiftForm)SelectedStance),
-                    Spell.BuffSelfAndWait(sp => SelectedShoutAsSpellName)
+                    Spell.BuffSelfAndWait(sp => SelectedShoutAsSpellName),
+                    CreateSpellReflectBehavior()
                     );
         }
 
@@ -103,7 +121,7 @@ namespace Singular.ClassSpecific.Warrior
                 2,
                 new Decorator(
                     req => SingularRoutine.CurrentWoWContext == WoWContext.Normal
-                        && Me.GotTarget
+                        && Me.GotTarget()
                         && !Me.CurrentTarget.IsPlayer
                         && !Me.CurrentTarget.IsTagged
                         && !Me.HasAura("Charge")
@@ -131,11 +149,8 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new Decorator(
                 req => Me.HealthPercent < WarriorSettings.WarriorEnragedRegenerationHealth && !Spell.IsSpellOnCooldown("Enraged Regeneration"),
-                new Sequence(
-                    new PrioritySelector(
-                        Spell.BuffSelf("Berserker Rage"),
-                        new ActionAlwaysSucceed()
-                        ),
+                new PrioritySelector(
+                    Spell.OffGCD( Spell.BuffSelf("Berserker Rage") ),
                     Spell.BuffSelf("Enraged Regeneration")
                     )
                 );
@@ -198,24 +213,20 @@ namespace Singular.ClassSpecific.Warrior
                         ctx => Me.CurrentTarget,
                         new Decorator(
                             req => MovementManager.IsClassMovementAllowed 
+                                && SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.GapCloser)
                                 && req != null 
                                 && ((req as WoWUnit).Guid != Singular.Utilities.EventHandlers.LastNoPathTarget || Singular.Utilities.EventHandlers.LastNoPathFailure < DateTime.Now - TimeSpan.FromMinutes(15))
                                 && !Me.HasAura("Charge")
                                 && !(req as WoWUnit).HasAnyOfMyAuras( "Charge Stun", "Warbringer")
-                                && Me.IsSafelyFacing( req as WoWUnit)
                                 && (req as WoWUnit).InLineOfSight,
 
                             new PrioritySelector(
                                 // note: use Distance here -- even though to a WoWUnit, hitbox does not come into play
-                                Spell.Cast("Charge", req => (req as WoWUnit).Distance.Between( 8, DistanceChargeBehavior)),
+                                Spell.Cast("Charge", req => (req as WoWUnit).Distance.Between(8, DistanceChargeBehavior) && Me.IsSafelyFacing(req as WoWUnit)),
 
                                 //  Leap to close distance
                                 // note: use Distance rather than SpellDistance since spell is to point on ground
-                                Spell.CastOnGround("Heroic Leap",
-                                    on => (WoWUnit) on,
-                                    req => (req as WoWUnit).Distance.Between( 8, 40),
-                                    false
-                                    )
+                                CreateHeroicLeapCloser()
                                 )
                             )
                         )
@@ -225,6 +236,17 @@ namespace Singular.ClassSpecific.Warrior
             return _singletonChargeBehavior;
         }
 
+        public static Composite CreateSpellReflectBehavior()
+        {
+            return Spell.Cast(
+                "Spell Reflect",
+                on =>
+                {
+                    bool isPummelOnCD = Spell.IsSpellOnCooldown("Pummel");
+                    return Unit.UnitsInCombatWithUsOrOurStuff(40)
+                        .FirstOrDefault(u => u.IsCasting && (!u.CanInterruptCurrentSpellCast || isPummelOnCD || !Spell.CanCastHack("Pummel", u)));
+                });
+        }
 
         public static Composite CreateVictoryRushBehavior()
         {
@@ -233,9 +255,14 @@ namespace Singular.ClassSpecific.Warrior
             // we have aura AND (target is about to die OR aura expires in less than 3 secs)
             return new Throttle( 
                 new Decorator(
-                    ret => WarriorSettings.VictoryRushOnCooldown
-                        || Me.HealthPercent <= VictoryRushHealth
-                        || Me.HasAura("Victorious") && (Me.HasAuraExpired("Victorious", 3) || (Me.GotTarget && Me.CurrentTarget.TimeToDeath() < 7)),
+                    ret => 
+                        Me.GotTarget()
+                        && ( 
+                            WarriorSettings.VictoryRushOnCooldown
+                            || Me.HealthPercent <= VictoryRushHealth
+                            || (Me.HasAura("Victorious") && (Me.HasAuraExpired("Victorious", 3) || Me.CurrentTarget.TimeToDeath() < 7))
+                           )
+                        && Me.CurrentTarget.InRangeForVictoryRush(),
                     new PrioritySelector(
                         Spell.Cast("Impending Victory"),
                         Spell.Cast("Victory Rush", ret => Me.HasAura("Victorious"))
@@ -244,31 +271,9 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        public static Composite CreateDisarmBehavior()
+        private static bool InRangeForVictoryRush( this WoWUnit unit)
         {
-            if ( !WarriorSettings.UseDisarm )
-                return new ActionAlwaysFail();
-
-            if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-            {
-                return new Throttle(15, 
-                    Spell.Cast("Disarm", on => {
-                        if (Spell.IsSpellOnCooldown("Disarm"))
-                            return null;
-
-                        WoWUnit unit = Unit.NearbyUnfriendlyUnits.FirstOrDefault(
-                            u => u.IsWithinMeleeRange
-                                && (u.IsMelee() || u.Class == WoWClass.Hunter)
-                                && !Me.CurrentTarget.Disarmed 
-                                && !Me.CurrentTarget.IsCrowdControlled()
-                                && Me.IsSafelyFacing(u, 150)
-                                );
-                        return unit;
-                        })
-                    );
-            }
-
-            return new Throttle( 15, Spell.Cast("Disarm", req => !Me.CurrentTarget.Disarmed && !Me.CurrentTarget.IsCrowdControlled()));
+            return (VictoryRushDistance <= 5f ? unit.IsWithinMeleeRange : unit.SpellDistance() < VictoryRushDistance);
         }
 
         /// <summary>
@@ -306,7 +311,7 @@ namespace Singular.ClassSpecific.Warrior
             return new Decorator(
                 ret =>
                 {
-                    if (!Me.GotTarget)
+                    if (!Me.GotTarget())
                         return false;
 
                     if (Me.CurrentTarget.IsPlayer)
@@ -434,6 +439,74 @@ namespace Singular.ClassSpecific.Warrior
                 return false;
             return !unit.IsCrowdControlled() && !unit.IsSlowed(50) && !unit.HasAura("Hand of Freedom");
         }
+
+        public static Composite CreateHeroicLeapCloser()
+        {
+            const float JUMP_MIN = 8.4f;
+
+            return new PrioritySelector(
+                ctx => Me.CurrentTarget,
+                Spell.CastOnGround(
+                    "Heroic Leap", 
+                    loc => 
+                    {
+                        WoWUnit unit = loc as WoWUnit;
+                        if (unit != null)
+                        {
+                            WoWPoint pt = unit.Location;
+                            float distToMob = Me.Location.Distance(pt);
+                            float distToMobReach = distToMob - unit.CombatReach;
+                            float distToJump = distToMobReach;
+                            string comment = "hitbox of";
+
+                            if (distToJump < JUMP_MIN)
+                            {
+                                comment = "too close, now location of";
+                                distToJump = distToMob;
+                                if (distToJump < JUMP_MIN)
+                                {
+                                    return WoWPoint.Empty;
+                                }
+                            }
+
+                            if (distToMob >= HeroicLeapDistance)
+                            {
+                                distToJump = distToMobReach - 7; // allow for damage radius
+                                comment = "too far, now 7 yds before hitbox of";
+                                if (distToJump >= HeroicLeapDistance)
+                                {
+                                    return WoWPoint.Empty;
+                                }
+                            }
+
+                            float neededFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(Me.Location, pt);
+                            WoWPoint ptJumpTo = WoWPoint.RayCast(Me.Location, neededFacing, distToJump);
+                            Logger.WriteDebug("HeroicLeap: jump target is {0} {1}", comment, unit.SafeName());
+                            return ptJumpTo;
+                        }
+
+                        return WoWPoint.Empty;
+                    },
+                    req => 
+                    {
+                        if (req == null)
+                            return false;
+
+                        if (Spell.IsSpellOnCooldown("Heroic Leap"))
+                            return false;
+
+                        if (Me.SpellDistance(req as WoWUnit) > (HeroicLeapDistance + 7))
+                            return false;
+
+                        return true;
+                    },
+                    false, 
+                    desc => string.Format("on {0} @ {1:F1}%", (desc as WoWUnit).SafeName(), (desc as WoWUnit).HealthPercent)
+                    )
+                );
+
+        }
+
     }
 
     enum WarriorTalents

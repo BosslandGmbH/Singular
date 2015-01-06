@@ -17,7 +17,6 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(false),
                 Helpers.Common.CreateInterruptBehavior(),
 
                 Common.CreateChargeBehavior(),
@@ -45,7 +44,6 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateAutoAttack(false),
                 Common.CreateAttackFlyingOrUnreachableMobs(),
                 Common.CreateChargeBehavior(),
 

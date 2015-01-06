@@ -47,7 +47,6 @@ namespace Singular.ClassSpecific.Paladin
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Helpers.Common.CreateAutoAttack(true),
                         Spell.BuffSelf("Sacred Shield"),
                         Spell.Cast("Judgment"),
                         Spell.Cast("Avenger's Shield", ret => Spell.UseAOE),
@@ -94,7 +93,7 @@ namespace Singular.ClassSpecific.Paladin
 
                         Spell.BuffSelf(
                             "Guardian of Ancient Kings",
-                            ret => Me.GotTarget
+                            ret => Me.GotTarget()
                                 && Me.CurrentTarget.IsWithinMeleeRange
                                 && (Me.HealthPercent <= PaladinSettings.GoAKHealth || _aoeCount > 3)
                             ),
@@ -123,7 +122,7 @@ namespace Singular.ClassSpecific.Paladin
                     new PrioritySelector(
 
                         Spell.BuffSelf("Avenging Wrath", 
-                            ret => Me.GotTarget 
+                            ret => Me.GotTarget() 
                                 && Me.CurrentTarget.IsWithinMeleeRange 
                                 && (Me.CurrentTarget.TimeToDeath() > 25 || _aoeCount > 1)
                             )
@@ -145,7 +144,11 @@ namespace Singular.ClassSpecific.Paladin
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        new Action( r => {
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+
+                        new Action(r =>
+                        {
                             // Paladin AOE count should be those near paladin (consecrate, holy wrath) and those near target (avenger's shield)
                             _aoeCount = TankManager.Instance.TargetList.Count(u => u.SpellDistance() < 10 || u.Location.Distance(Me.CurrentTarget.Location) < 10);
                             return RunStatus.Failure;
@@ -153,7 +156,6 @@ namespace Singular.ClassSpecific.Paladin
 
                         CreateProtDiagnosticOutputBehavior(),
 
-                        Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreatePaladinPullMore(),
@@ -190,7 +192,7 @@ namespace Singular.ClassSpecific.Paladin
                                 Spell.Cast("Consecration", ret => !Me.IsMoving),
                         /// level 90 talents
                                 Spell.Cast("Holy Prism", on => Me),           // target enemy for Single target
-                                Spell.CastOnGround("Light's Hammer", on => Me.CurrentTarget, ret => Me.CurrentTarget != null, false),       // no mana cost
+                                Spell.CastOnGround("Light's Hammer", on => Me.CurrentTarget, ret => Me.GotTarget(), false),       // no mana cost
                                 Spell.Cast("Execution Sentence", 
                                     on => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => u.HealthPercent < 20 && Me.IsSafelyFacing(u) && u.InLineOfSpellSight )),               // no mana cost
                         /// end of talents
@@ -211,7 +213,7 @@ namespace Singular.ClassSpecific.Paladin
 
                         /// level 90 talent if avail
                         Spell.Cast("Holy Prism", ret => Spell.UseAOE),           // target enemy for Single target
-                        Spell.CastOnGround("Light's Hammer", on => Me.CurrentTarget, ret => Spell.UseAOE && Me.GotTarget, false),       // no mana cost
+                        Spell.CastOnGround("Light's Hammer", on => Me.CurrentTarget, ret => Spell.UseAOE && Me.GotTarget(), false),       // no mana cost
                         Spell.Cast("Execution Sentence", ret => Me.CurrentTarget.HealthPercent < 20),               // no mana cost
 
                         Spell.Cast("Holy Wrath"),

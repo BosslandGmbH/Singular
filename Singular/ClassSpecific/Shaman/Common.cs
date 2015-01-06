@@ -109,7 +109,7 @@ namespace Singular.ClassSpecific.Shaman
             return new Throttle(
                 2,
                 new Decorator(
-                    req => Me.GotTarget
+                    req => Me.GotTarget()
                         && !Me.CurrentTarget.IsPlayer
                         && !Me.CurrentTarget.IsTagged
                         && !Me.CurrentTarget.IsWithinMeleeRange,
@@ -178,7 +178,7 @@ namespace Singular.ClassSpecific.Shaman
 
                     // hex someone if they are not current target, attacking us, and 12 yds or more away
                     new Decorator(
-                        req => Me.GotTarget && (TalentManager.CurrentSpec != WoWSpec.ShamanEnhancement || !ShamanSettings.AvoidMaelstromDamage),
+                        req => Me.GotTarget() && (TalentManager.CurrentSpec != WoWSpec.ShamanEnhancement || !ShamanSettings.AvoidMaelstromDamage),
                         new PrioritySelector(
                             new PrioritySelector(
                                 ctx => Unit.NearbyUnfriendlyUnits
@@ -257,7 +257,7 @@ namespace Singular.ClassSpecific.Shaman
                     ctx => Unit.NearbyUnfriendlyUnits
                         .Where(u => (u.CreatureType == WoWCreatureType.Beast || u.CreatureType == WoWCreatureType.Humanoid)
                                 && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
-                                && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && Me.GotTarget && u.Location.Distance(Me.CurrentTarget.Location) > 10)
+                                && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && Me.GotTarget() && u.Location.Distance(Me.CurrentTarget.Location) > 10)
                         .OrderByDescending(u => u.Distance)
                         .FirstOrDefault(),
                     Spell.Cast("Hex", onUnit => (WoWUnit)onUnit)
@@ -269,7 +269,7 @@ namespace Singular.ClassSpecific.Shaman
                         && IsPvpFightWorthLusting),
 
                 Spell.BuffSelf("Ascendance",
-                    ret => ShamanSettings.UseAscendance && ((Me.GotTarget && Me.CurrentTarget.HealthPercent > 70) || Unit.NearbyUnfriendlyUnits.Count() > 1)),
+                    ret => ShamanSettings.UseAscendance && ((Me.GotTarget() && Me.CurrentTarget.HealthPercent > 70) || Unit.NearbyUnfriendlyUnits.Count() > 1)),
 
                 Spell.BuffSelf("Elemental Mastery", ret => !PartyBuff.WeHaveBloodlust)
 
@@ -344,7 +344,7 @@ namespace Singular.ClassSpecific.Shaman
                             Spell.OffGCD( 
                                 Spell.BuffSelf("Ancestral Guidance", 
                                     ret => Me.HealthPercent < ShamanSettings.SelfAncestralGuidance 
-                                        && Me.GotTarget
+                                        && Me.GotTarget()
                                         && Me.CurrentTarget.TimeToDeath() > 8 
                                     )
                                 ),

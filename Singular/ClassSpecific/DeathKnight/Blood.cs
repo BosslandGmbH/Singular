@@ -31,7 +31,7 @@ namespace Singular.ClassSpecific.DeathKnight
         public static Composite CreateDeathKnightBloodCombatBuffs()
         {
             return new Decorator(
-                req => !Me.GotTarget || !Me.CurrentTarget.IsTrivial(),
+                req => !Me.GotTarget() || !Me.CurrentTarget.IsTrivial(),
                 new PrioritySelector(
 
                     // *** Defensive Cooldowns ***
@@ -75,7 +75,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     // I need to use Empower Rune Weapon to use Death Strike
                     Spell.BuffSelf("Empower Rune Weapon",
                         ret => StyxWoW.Me.HealthPercent < DeathKnightSettings.EmpowerRuneWeaponPercent
-                            && Me.CurrentTarget != null
+                            && Me.GotTarget()
                             && Me.CurrentTarget.IsWithinMeleeRange
                             && Me.IsSafelyFacing(Me.CurrentTarget)
                             && Me.CurrentTarget.InLineOfSpellSight
@@ -87,7 +87,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     // *** Offensive Cooldowns ***
                     Spell.BuffSelf("Death's Advance",
                         ret => Common.HasTalent( DeathKnightTalents.DeathsAdvance) 
-                            && StyxWoW.Me.GotTarget && !Spell.CanCastHack("Death Grip") 
+                            && StyxWoW.Me.GotTarget() && !Spell.CanCastHack("Death Grip") 
                             && StyxWoW.Me.CurrentTarget.DistanceSqr > 10*10),
 
                     Spell.OffGCD( Spell.BuffSelf("Blood Tap", ret => NeedBloodTap() ) ),
@@ -121,8 +121,6 @@ namespace Singular.ClassSpecific.DeathKnight
                     new PrioritySelector(
 
                         Helpers.Common.CreateInterruptBehavior(),
-
-                        Helpers.Common.CreateAutoAttack(true),
 
                         Common.CreateDeathKnightPullMore(),
 
@@ -205,7 +203,6 @@ namespace Singular.ClassSpecific.DeathKnight
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                 Spell.WaitForCast(),
-                Helpers.Common.CreateAutoAttack(true),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
@@ -260,8 +257,6 @@ namespace Singular.ClassSpecific.DeathKnight
 
                     CreateDiagnosticOutputBehavior("Pull"),
 
-                    Helpers.Common.CreateAutoAttack(true),
-
                     new Decorator(
                         ret => !Spell.IsGlobalCooldown(),
                         new PrioritySelector(
@@ -286,11 +281,14 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
-                Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateDeathKnightPullMore(),

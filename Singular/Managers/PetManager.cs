@@ -114,16 +114,33 @@ namespace Singular.Managers
         private static WoWGuid lastPetAttack = WoWGuid.Empty;
         public static bool Attack(WoWUnit unit)
         {
-            if ( unit == null || StyxWoW.Me.Pet == null || StyxWoW.Me.Pet.CurrentTargetGuid == unit.Guid || lastPetAttack == unit.Guid )
+            if (unit == null || StyxWoW.Me.Pet == null || StyxWoW.Me.Pet.CurrentTargetGuid == unit.Guid || lastPetAttack == unit.Guid)
                 return false;
 
             if (lastPetAttack != unit.Guid)
             {
                 lastPetAttack = unit.Guid;
-                Logger.Write( LogColor.Hilite, "/petattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
+                Logger.Write(LogColor.Hilite, "/petattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
                 PetManager.CastPetAction("Attack", unit);
             }
 
+            return true;
+        }
+
+        public static bool Passive()
+        {
+            if (lastPetAttack != WoWGuid.Empty)
+                lastPetAttack = WoWGuid.Empty;
+
+            if (StyxWoW.Me.Pet == null || StyxWoW.Me.Pet.CurrentTargetGuid == WoWGuid.Empty)
+                return false;
+
+            if (StyxWoW.Me.Pet.CurrentTarget == null)
+                Logger.Write(LogColor.Hilite, "/petpassive");
+            else
+                Logger.Write(LogColor.Hilite, "/petpassive (stop attacking {0})", StyxWoW.Me.Pet.CurrentTarget.SafeName());
+
+            PetManager.CastPetAction("Passive");
             return true;
         }
 
@@ -151,7 +168,7 @@ namespace Singular.Managers
             if (spell == null)
                 return;
 
-            Logger.Write(Color.DeepSkyBlue, "[Pet] Casting {0}", action);
+            Logger.Write(Color.DeepSkyBlue, "*Pet:{0}", action);
             Lua.DoString("CastPetAction({0})", spell.ActionBarIndex + 1);
         }
 
@@ -161,7 +178,7 @@ namespace Singular.Managers
             if (spell == null)
                 return;
 
-            Logger.Write(Color.DeepSkyBlue, "[Pet] Casting {0} on {1} @ {2:F1} yds", action, on.SafeName(), on.SpellDistance());
+            Logger.Write(Color.DeepSkyBlue, "*Pet:{0} on {1} @ {2:F1} yds", action, on.SafeName(), on.SpellDistance());
             if (on.Guid == StyxWoW.Me.CurrentTargetGuid)
             {
                 Logger.WriteDebug("CastPetAction: cast [{0}] specifying CurrentTarget", action);
@@ -243,7 +260,7 @@ namespace Singular.Managers
                 case WoWClass.Warlock:
                     if (Spell.CanCastHack("Summon " + petName))
                     {
-                        Logger.Write(Color.DeepSkyBlue, "[Pet] Calling out my {0}", petName);
+                        Logger.Write(Color.DeepSkyBlue, "[Pet] Summon {0}", petName);
                         bool result = Spell.CastPrimative("Summon " + petName);
                         return result;
                     }
@@ -252,7 +269,7 @@ namespace Singular.Managers
                 case WoWClass.Mage:
                     if (Spell.CanCastHack("Summon Water Elemental"))
                     {
-                        Logger.Write(Color.DeepSkyBlue, "[Pet] Calling out Water Elemental");
+                        Logger.Write(Color.DeepSkyBlue, "[Pet] Summon Water Elemental");
                         bool result = Spell.CastPrimative("Summon Water Elemental");
                         return result;
                     }
@@ -263,7 +280,7 @@ namespace Singular.Managers
                     {
                         if (!StyxWoW.Me.GotAlivePet)
                         {
-                            Logger.Write(Color.DeepSkyBlue, "[Pet] Calling out pet #{0}", petName);
+                            Logger.Write(Color.DeepSkyBlue, "[Pet] Call Pet #{0}", petName);
                             bool result = Spell.CastPrimative("Call Pet " + petName);
                             return result;
                         }

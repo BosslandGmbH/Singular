@@ -148,7 +148,7 @@ namespace Singular.ClassSpecific.Druid
                             ret => !((WoWUnit)ret).HasMyAura("Rejuvenation") &&
                                    ((WoWUnit)ret).HealthPercent <= DruidSettings.Rejuvenation),
                         new Decorator(
-                            ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
+                            ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget() && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
                             new PrioritySelector(
                                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
                                 Helpers.Common.CreateInterruptBehavior(),
@@ -908,7 +908,7 @@ namespace Singular.ClassSpecific.Druid
                         if (RaFHelper.Leader != null && RaFHelper.Leader.IsValid && (mushroom == null || mushroom.SpellDistance(RaFHelper.Leader) > 10))
                         {
                             if (RaFHelper.Leader.IsAlive && RaFHelper.Leader.Combat && !RaFHelper.Leader.IsMoving
-                                && RaFHelper.Leader.GotTarget && RaFHelper.Leader.SpellDistance(RaFHelper.Leader.CurrentTarget) < 15)
+                                && RaFHelper.Leader.GotTarget() && RaFHelper.Leader.SpellDistance(RaFHelper.Leader.CurrentTarget) < 15)
                             return true;
                         }
                         return false;

@@ -109,7 +109,7 @@ namespace Singular.ClassSpecific.Druid
                         ctx => Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(
                             u => (u.IsBeast || u.IsDragon)
                                 && (Me.HasAura("Predatory Swiftness") || (!u.IsMoving && Me.Shapeshift == ShapeshiftForm.Normal))
-                                && (!Me.GotTarget || Me.CurrentTarget.Location.Distance(u.Location) > 10)
+                                && (!Me.GotTarget() || Me.CurrentTarget.Location.Distance(u.Location) > 10)
                                 && Me.CurrentTargetGuid != u.Guid
                                 && !u.HasAnyAura("Hibernate", "Cyclone", "Entangling Roots")
                                 )
@@ -129,7 +129,7 @@ namespace Singular.ClassSpecific.Druid
                     // combat buffs - make sure we have target and in range and other checks
                     // ... to avoid wastine cooldowns
                     new Decorator(
-                        ret => Me.GotTarget
+                        ret => Me.GotTarget()
                             && (Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3)
                             && Me.SpellDistance(Me.CurrentTarget) < ((TalentManager.CurrentSpec == WoWSpec.DruidFeral || TalentManager.CurrentSpec == WoWSpec.DruidGuardian) ? 8 : 40)
                             && Me.CurrentTarget.InLineOfSight
@@ -164,7 +164,7 @@ namespace Singular.ClassSpecific.Druid
                 // combat buffs - make sure we have target and in range and other checks
                 // ... to avoid wastine cooldowns
                 new Decorator(
-                    ret => Me.GotTarget 
+                    ret => Me.GotTarget() 
                         && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss())
                         && Me.SpellDistance( Me.CurrentTarget) < ((TalentManager.CurrentSpec == WoWSpec.DruidFeral || TalentManager.CurrentSpec == WoWSpec.DruidGuardian) ? 8 : 40)
                         && Me.CurrentTarget.InLineOfSight 
@@ -241,7 +241,7 @@ namespace Singular.ClassSpecific.Druid
                             else if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
                                 target = null;  
                             // heal others if needed
-                            else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || (Me.GotTarget && Me.CurrentTarget.IsPlayer))
+                            else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || (Me.GotTarget() && Me.CurrentTarget.IsPlayer))
                                 target = Unit.GroupMembers.Where(p => p.IsAlive && p.PredictedHealthPercent() < DruidSettings.PredSwiftnessPvpHeal && p.DistanceSqr < 40 * 40).FirstOrDefault();
                             // heal anyone if buff about to expire
                             else if (Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalMilliseconds.Between(500, 2000))
@@ -334,7 +334,7 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
 
                 new Decorator(
-                    ret => !Me.HasAura("Drink") && !Me.HasAura("Food")
+                    ret => !Me.HasAnyAura("Drink", "Food", "Refreshment")
                         && Me.PredictedHealthPercent(includeMyHeals: true) < (Me.Shapeshift == ShapeshiftForm.Normal ? 85 : SingularSettings.Instance.MinHealth)
                         && ((Me.HasAuraExpired("Rejuvenation", 1) && Spell.CanCastHack("Rejuvenation", Me)) || Spell.CanCastHack("Healing Touch", Me)),
                     new PrioritySelector(
@@ -719,7 +719,7 @@ namespace Singular.ClassSpecific.Druid
             if (unit.CreatureType != WoWCreatureType.Beast && unit.CreatureType != WoWCreatureType.Humanoid)
                 return false;
 
-            if (Me.CurrentTarget != null && Me.CurrentTarget == unit)
+            if (Me.GotTarget() && Me.CurrentTarget == unit)
                 return false;
 
             if (!unit.Combat)
@@ -729,7 +729,7 @@ namespace Singular.ClassSpecific.Druid
                 return false;
 
             if (Me.GroupInfo.IsInParty &&
-                Me.PartyMembers.Any(p => p.CurrentTarget != null && p.CurrentTarget == unit))
+                Me.PartyMembers.Any(p => p.GotTarget() && p.CurrentTarget == unit))
                 return false;
 
             return true;

@@ -37,7 +37,7 @@ namespace Singular.ClassSpecific.Mage
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         new Decorator(
-                            ret => !Me.HasAura("Drink") && !Me.HasAura("Food"),
+                            ret => !Me.HasAnyAura("Drink", "Food", "Refreshment"),
                             new PrioritySelector(
                                 CreateSummonWaterElemental(),
                                 Common.CreateHealWaterElemental()
@@ -227,7 +227,7 @@ namespace Singular.ClassSpecific.Mage
                 // req => Spell.CanCastHack("Ice Lance", (req as ILInfo).Unit) && ((req as ILInfo).Unit != null && ((req as ILInfo).StacksOfFOF > 0 || (req as ILInfo).Unit.IsTrivial())),
                     req => ILInfo.Ref(req).Unit != null && ILInfo.Ref(req).StacksOfFOF > 0 && Spell.CanCastHack("Ice Lance", ILInfo.Ref(req).Unit),
                     new Sequence(
-                        new Action(r => Logger.Write(LogColor.Hilite, "^Fingers of Frost: casting buffed Ice Lance", ILInfo.Ref(r).StacksOfFOF)),
+                        new Action(r => Logger.Write(LogColor.Hilite, "^Fingers of Frost: casting buffed Ice Lance[{0}]", ILInfo.Ref(r).StacksOfFOF)),
                         Spell.Cast("Ice Lance", mov => false, o => ILInfo.Ref(o).Unit, r => reqdel(ILInfo.Ref(r).SaveContext)),    // ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) < 4),
                         Helpers.Common.CreateWaitForLagDuration(
                             until => ILInfo.Ref(until).StacksOfFOF != Me.GetAuraStacks(FINGERS_OF_FROST)
@@ -296,12 +296,11 @@ namespace Singular.ClassSpecific.Mage
 
                         CreateSummonWaterElemental(),
 
-                        Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
 
                         // stack buffs for some burst... only every few minutes, but we'll use em if we got em
                         new Decorator(
-                             req => Me.GotTarget && !Me.CurrentTarget.IsTrivial() && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TimeToDeath(-1) > 40 || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3),
+                             req => Me.GotTarget() && !Me.CurrentTarget.IsTrivial() && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TimeToDeath(-1) > 40 || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3),
                              new Decorator(
                                  req => // WOD: (Me.HasAura("Invoker's Energy") || !Common.HasTalent(MageTalents.Invocation)) &&
                                     (Me.Level < 77 || Me.HasAura("Brain Freeze"))
@@ -462,7 +461,6 @@ namespace Singular.ClassSpecific.Mage
                         CreateSummonWaterElemental(),
                         Common.CreateMagePullBuffs(),
 
-                        Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
 
                          // Snipe Kills
@@ -571,11 +569,10 @@ namespace Singular.ClassSpecific.Mage
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateMagePullBuffs(),
-                        Spell.Cast("Icy Veins", req => Me.GotTarget && Me.CurrentTarget.SpellDistance() < 40),
+                        Spell.Cast("Icy Veins", req => Me.GotTarget() && Me.CurrentTarget.SpellDistance() < 40),
 
                         new Decorator(ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10).Count() > 1,
                             new PrioritySelector(

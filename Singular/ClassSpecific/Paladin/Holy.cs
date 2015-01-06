@@ -83,9 +83,8 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.WaitForCastOrChannel(),
 
                         new Decorator( 
-                            ret => !Spell.IsGlobalCooldown() && Me.GotTarget,
+                            ret => !Spell.IsGlobalCooldown() && Me.GotTarget(),
                             new PrioritySelector(
-                                Helpers.Common.CreateAutoAttack(true),
                                 Helpers.Common.CreateInterruptBehavior(),
 
                                 Common.CreatePaladinPullMore(),
@@ -115,7 +114,6 @@ namespace Singular.ClassSpecific.Paladin
                     new PrioritySelector(
                         Helpers.Common.EnsureReadyToAttackFromMelee(),
                         Spell.Cast("Judgment"),
-                        Helpers.Common.CreateAutoAttack(true),
                         Movement.CreateMoveToMeleeBehavior(true)
                         ))
                 );
@@ -185,7 +183,7 @@ namespace Singular.ClassSpecific.Paladin
                                 ret => (WoWUnit)ret,
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().HolyLightHealth),
                             new Decorator(
-                                ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
+                                ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget() && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
                                 new PrioritySelector(
                                     Helpers.Common.EnsureReadyToAttackFromMelee(),
                                     Helpers.Common.CreateInterruptBehavior(),

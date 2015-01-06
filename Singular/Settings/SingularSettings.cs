@@ -150,7 +150,7 @@ namespace Singular.Settings
 
                 if (verConfigFile < verSourceCode)
                 {
-                    Logger.WriteDiagnostic(LogColor.Init, "Settings: updating config file from verion {0}", verConfigFile.ToString());
+                    Logger.WriteDiagnostic(LogColor.Init, "Settings: config file from verion {0}", verConfigFile.ToString());
                     if (verConfigFile < new Version("3.0.0.3080"))
                     {
                         Logger.Write(LogColor.Init, "Settings: applying {0} related changes", new Version("3.0.0.3080").ToString());
@@ -174,7 +174,7 @@ namespace Singular.Settings
                     }
 
                     ConfigVersion = verSourceCode.ToString();
-                    Logger.WriteDiagnostic(LogColor.Init, "Settings: config file upgrade to {0} complete", ConfigVersion.ToString());
+                    Logger.WriteDiagnostic(LogColor.Init, "Settings: config settings upgrade to {0} complete", ConfigVersion.ToString());
                 }
 
                 // Pull More settings should be overwritten if !fileExist or last config saved was before selecting Specialization 
@@ -334,9 +334,6 @@ namespace Singular.Settings
             Logger.WriteFile("  {0}: {1}", "Debug", SingularSettings.Debug.ToYN());
             Logger.WriteFile("  {0}: {1}", "DisableAllMovement", SingularSettings.Instance.DisableAllMovement.ToYN());
             Logger.WriteFile("  {0}: {1}", "DisableAllTargeting", SingularSettings.DisableAllTargeting.ToYN());
-            Logger.WriteFile("  {0}: {1}", "TrivialHealth", Unit.TrivialHealth());
-            Logger.WriteFile("  {0}: {1}", "NeedTankTargeting", TankManager.NeedTankTargeting);
-            Logger.WriteFile("  {0}: {1}", "NeedHealTargeting", HealerManager.NeedHealTargeting);
             Logger.WriteFile("");
 
             if (DisableSpellsWithCooldown == 0)
@@ -1178,14 +1175,44 @@ namespace Singular.Settings
         [Description("None: disabled, Current: our target only, All: any enemy in range.")]
         public CheckTargets InterruptTarget { get; set; }
 
-        [Setting,ReadOnly(false)]
+        [Setting, ReadOnly(false)]
         [DefaultValue(50)]
         [Category("Enemy Control")]
-        [DisplayName("Trivial Mob Max Health %")]
+        [DisplayName("Trivial: Mob Max Health %")]
         [Description("Mob with Max Health less than % of your Max Health considered trivial")]
         public int TrivialMaxHealthPcnt { get; set; }
 
-        [Setting,ReadOnly(false)]
+#if SERIOUS_SUPPORT_IMPLEMENTED
+        [Setting, ReadOnly(false)]
+        [DefaultValue(200)]
+        [Category("Enemy Control")]
+        [DisplayName("Serious: Mob Min Health %")]
+        [Description("Mob with Max Health more than % of your Max Health considered Serious")]
+        public int SeriousMinHealthPct { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(3)]
+        [Category("Enemy Control")]
+        [DisplayName("Serious: Mob Levels Above")]
+        [Description("Mob this many levels above treated as an Elite")]
+        public int SeriousMobLevelsAboveAsElite { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(50)]
+        [Category("Enemy Control")]
+        [DisplayName("Serious: Mob Count")]
+        [Description("Fight with this many mobs (or more) non-trivial mobs will enable use of cooldowns saved for Serious Fights")]
+        public int SeriousMobCount { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(60)]
+        [Category("General")]
+        [DisplayName("Serious: Save Cooldowns (secs)")]
+        [Description("Prevent Singular from casting any spell with a this cooldown or greater unless in a Serious fight; set to 0 to allow Singular to cast all spells")]
+        public int SeriousSaveCooldowns { get; set; }
+#endif
+
+        [Setting, ReadOnly(false)]
         [DefaultValue(true)]
         [Category("Enemy Control")]
         [DisplayName("Use AOE Attacks")]

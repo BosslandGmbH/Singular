@@ -42,9 +42,10 @@ namespace Singular.ClassSpecific.DeathKnight
                 new Decorator(
                     req => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Helpers.Common.CreateInterruptBehavior(),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
-                        Helpers.Common.CreateAutoAttack(true),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateDeathKnightPullMore(),
 
@@ -57,7 +58,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         Common.CreateDarkSimulacrumBehavior(),
 
                         // Cooldowns
-                        Spell.BuffSelf("Pillar of Frost", req => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange),
+                        Spell.BuffSelf("Pillar of Frost", req => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange),
 
                         // Start AoE section
                         new PrioritySelector(
@@ -119,7 +120,8 @@ namespace Singular.ClassSpecific.DeathKnight
                 new Decorator(
                     req => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Helpers.Common.CreateAutoAttack(true),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         Helpers.Common.CreateInterruptBehavior(),
 
@@ -134,7 +136,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         Common.CreateSoulReaperHasteBuffBehavior(),
 
                         // Cooldowns
-                        Spell.BuffSelf("Pillar of Frost", req => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange),
+                        Spell.BuffSelf("Pillar of Frost", req => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange),
                 
                         // Start AoE section
                         new PrioritySelector(
@@ -225,11 +227,13 @@ namespace Singular.ClassSpecific.DeathKnight
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        Helpers.Common.CreateAutoAttack(true),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+
                         Helpers.Common.CreateInterruptBehavior(),
 
                         // Cooldowns
-                        Spell.BuffSelf("Pillar of Frost", req => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange ),
+                        Spell.BuffSelf("Pillar of Frost", req => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange ),
 
                         // Start AoE section
                         new PrioritySelector(

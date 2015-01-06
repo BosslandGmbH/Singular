@@ -1,3 +1,79 @@
+--- Release 4.0.0.4167 ---
+
+General 
+
+fixed - Melee Toons - opportunities for defensive cool-downs and buffs implemented in Heal or CombatBuff behaviours were being missed (for example, Arms warriors were not seeing Die by the Sword cast as promptly / often as it should)
+
+*new* - Capability Flags - support for disabling functionality/abilities based upon capability flags enhanced, including ability for Questing to disable Pull More for specific encounters requiring that
+
+fixed - Auto-Attack - now enabled for all characters if the Questing profile disallows Special Attacks. Requires melee range
+
+fixed - Refreshment - will now correctly wait for combined food/drink items which yield a Refreshment buff instead of 'Food' or 'Drink'
+
+fixed - Cast on Ground abilities - issues affecting  Priest and other classes corrected
+
+fixed - Talents and Spec recognition - fixed issue which was causing some odd log output and at times not correctly indicating type of character
+
+change- Lag in World PVP - reduced the amount of Combat Log information processed which should resolve this for most users
+
+
+
+Druid 
+
+*new* - Balance - support for Glyph of the Flapping Owl when falling
+
+
+Hunter
+
+*new* - All Specs - added support for Freezing Trap when mob is more than 15 yds away and Pet dies
+
+
+Mage
+
+change- All Specs - revised priority of crowd control / snare effects used prior to Blink. Will allow Blink to proceed only if mob slowed to at least 50%
+
+
+Monk
+
+*new* - Windwalker - added setting and support for Tigereye Brew
+
+
+Priest
+
+fixed - Holy - Flash Heal: was incorrectly referencing the Disc Flash Heal settings so changes made to settings appeared to have no effect.
+
+
+Rogue
+
+fixed - Assassination - exception occurring when in Combat and no Current Target
+
+Shaman
+
+change - Elemental - AOE: changed to cast Chain Lightning to buff Improved Chain Lightning at highest priority when learned
+
+
+Warlock
+
+change - Destruction - revision to priority to only cast Conflagarate if >= 2 charges
+
+fixed - All Specs - check range to target before casting Whirlwind since spell info does not include a maximum distance
+
+fixed - All Specs - check range to target before casting Dragon Roar since spell info does not include a maximum distance
+
+*new* - Glyph of Victorious Throw now recognized
+
+*new* - Glyph of Death from Above now recognized
+
+*new* - All Specs - support for Spell Reflect
+
+change- Arms/Fury - Heroic Leap: now more intelligent and will allow jumping further (to edge of ranged mobs hitbox rather than their location.)
+
+
+
+
+
+
+
 --- Release 4.0.0.4107 ---
 
 General 

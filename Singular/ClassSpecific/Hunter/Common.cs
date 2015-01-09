@@ -205,12 +205,22 @@ namespace Singular.ClassSpecific.Hunter
                     new PrioritySelector(
                         Spell.BuffSelf("Track Hidden"),
                         Spell.Buff("Mend Pet", onUnit => Me.Pet, req => Me.GotAlivePet && Pet.HealthPercent < 85),
+                        CreateHunterPetBuffs(),
                         CreateHunterCallPetBehavior(true)
                         )
                     )
                 );
         }
 
+        private static Composite CreateHunterPetBuffs()
+        {
+            return new Decorator(
+                ret => Me.GotAlivePet && HunterSettings.PetBuffs,
+                new PrioritySelector(
+                    PartyBuff.PetBuffGroup("Qiraji Fortitude", req => true)
+                    )
+                );
+        }
 
         [Behavior(BehaviorType.PullBuffs, WoWClass.Hunter, (WoWSpec)int.MaxValue, WoWContext.Battlegrounds)]
         public static Composite CreateHunterPullBuffsBattlegrounds()
@@ -221,6 +231,7 @@ namespace Singular.ClassSpecific.Hunter
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
+                        CreateHunterPetBuffs(),
                         CreateHunterCallPetBehavior(true)
 
                         )
@@ -290,7 +301,7 @@ namespace Singular.ClassSpecific.Hunter
                         CreateMisdirectionBehavior()
                         ),
 
-                    Spell.BuffSelf("Exhilaration", ret => Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 25)),
+                    Spell.BuffSelf("Exhilaration", ret => Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 20)),
 
                     Spell.Buff("Widow Venom", ret => HunterSettings.UseWidowVenom && Target.IsPlayer && Me.IsSafelyFacing(Target) && Target.InLineOfSpellSight),
 
@@ -309,9 +320,142 @@ namespace Singular.ClassSpecific.Hunter
                     Spell.Cast("Dire Beast"),
 
                     // Level 90 Talents
-                    Spell.Cast("Glaive Toss", req => Me.IsSafelyFacing(Me.CurrentTarget)),
-                    Spell.Cast("Powershot", req => Me.IsSafelyFacing(Me.CurrentTarget)),
-                    Spell.Cast("Barrage", req => Me.IsSafelyFacing(Me.CurrentTarget)),
+                    Spell.Cast(
+                        "Glaive Toss",
+                        on =>
+                        {
+                            WoWPoint loc = WoWPoint.RayCast(Me.Location, WoWMathHelper.CalculateNeededFacing(Me.Location, Me.CurrentTarget.Location), 40f);
+                            IEnumerable<WoWUnit> ienum = Clusters.GetPathToPointCluster(loc, Unit.UnfriendlyUnits(44), 44);
+                            int cntCC = 0;
+                            int cntTarget = 0;
+                            int cntNeutral = 0;
+                            WoWUnit target = null;
+
+                            foreach (WoWUnit u in ienum)
+                            {
+                                cntTarget++;
+                                if (u.IsCrowdControlled())
+                                    cntCC++;
+                                if (!u.Combat && !u.IsTrivial() && !u.Aggro && !u.PetAggro && !(u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))
+                                    cntNeutral++;
+                                if (target == null)
+                                    target = u;
+                                if (Me.CurrentTargetGuid == u.Guid)
+                                    target = u;
+                            }
+
+                            if (cntNeutral > 0)
+                            {
+                                Logger.WriteDebug("Glaive Toss: skipping, {0} additional targets would be pulled", cntNeutral);
+                                return null;
+                            }
+
+                            if (cntCC > 0)
+                            {
+                                Logger.WriteDebug("Glaive Toss: skipping, {0} crowd controlled targets", cntCC);
+                                return null;
+                            }
+
+                            if (cntTarget == 0)
+                            {
+                                Logger.WriteDebug("Glaive Toss: skipping, no targets would be hit");
+                                return null;
+                            }
+
+                            return target;
+                        }
+                        ),
+                    Spell.Cast(
+                        "Powershot",
+                        on =>
+                        {
+                            int dist = (int) Me.CurrentTarget.Distance + 4;
+                            WoWPoint loc = WoWPoint.RayCast(Me.Location, WoWMathHelper.CalculateNeededFacing(Me.Location, Me.CurrentTarget.Location), 40f);
+                            IEnumerable<WoWUnit> ienum = Clusters.GetPathToPointCluster(loc, Unit.UnfriendlyUnits(dist), dist);
+                            int cntCC = 0;
+                            int cntTarget = 0;
+                            int cntNeutral = 0;
+                            WoWUnit target = null;
+
+                            foreach (WoWUnit u in ienum)
+                            {
+                                cntTarget++;
+                                if (u.IsCrowdControlled())
+                                    cntCC++;
+                                if (!u.Combat && !u.IsTrivial() && !u.Aggro && !u.PetAggro && !(u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))
+                                    cntNeutral++;
+                                if (target == null)
+                                    target = u;
+                                if (Me.CurrentTargetGuid == u.Guid)
+                                    target = u;
+                            }
+
+                            if (cntNeutral > 0)
+                            {
+                                Logger.WriteDebug("Powershot: skipping, {0} additional targets would be pulled", cntNeutral);
+                                return null;
+                            }
+
+                            if (cntCC > 0)
+                            {
+                                Logger.WriteDebug("Powershot: skipping, {0} crowd controlled targets", cntCC);
+                                return null;
+                            }
+
+                            if (cntTarget == 0)
+                            { 
+                                Logger.WriteDebug("Powershot: skipping, no targets would be hit");
+                                return null;
+                            }
+
+                            return target;
+                        }
+                        ),
+                    Spell.Cast(
+                        "Barrage", 
+                        on => 
+                        {
+                            WoWPoint loc = WoWPoint.RayCast( Me.Location, Me.RenderFacing, 30f);
+                            IEnumerable<WoWUnit> ienum = Clusters.GetConeCluster(loc, 100f, 46f, Unit.UnfriendlyUnits(50));
+                            int cntCC = 0;
+                            int cntTarget = 0;
+                            int cntNeutral = 0;
+                            WoWUnit target = null;
+
+                            foreach (WoWUnit u in ienum)
+                            {
+                                cntTarget++;
+                                if (u.IsCrowdControlled())
+                                    cntCC++;
+                                if (!u.Combat && !u.IsTrivial() && !u.Aggro && !u.PetAggro && !(u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))
+                                    cntNeutral++;
+                                if (target == null)
+                                    target = u;
+                                if (Me.CurrentTargetGuid == u.Guid)
+                                    target = u;
+                            }
+
+                            if (cntNeutral > 0)
+                            {
+                                Logger.WriteDebug("Barrage: skipping, {0} additional targets would be pulled", cntNeutral);
+                                return null;
+                            }
+
+                            if (cntCC > 0)
+                            {
+                                Logger.WriteDebug("Barrage: skipping, {0} crowd controlled targets", cntCC);
+                                return null;
+                            }
+                                
+                            if (cntTarget == 0)
+                            {
+                                Logger.WriteDebug("Barrage: skipping, no targets would be hit");
+                                return null;
+                            }
+
+                            return target;
+                        }
+                        ),
 
                     // for long cooldowns, spend only when worthwhile                      
                     new Decorator(

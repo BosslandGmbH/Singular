@@ -67,13 +67,15 @@ namespace Singular.Helpers
                 || Me.Class == WoWClass.DeathKnight
                 || TalentManager.CurrentSpec == WoWSpec.DruidGuardian
                 || TalentManager.CurrentSpec == WoWSpec.DruidFeral
+                || Me.Class == WoWClass.Monk && TalentManager.CurrentSpec == WoWSpec.None
                 || TalentManager.CurrentSpec == WoWSpec.MonkBrewmaster
                 || TalentManager.CurrentSpec == WoWSpec.MonkWindwalker
-                || TalentManager.CurrentSpec == WoWSpec.PaladinProtection
-                || TalentManager.CurrentSpec == WoWSpec.PaladinRetribution
+                || TalentManager.CurrentSpec == WoWSpec.MonkMistweaver && !SpellManager.HasSpell("Crackling Jade Lightning")
+                || Me.Class == WoWClass.Paladin
                 || Me.Class == WoWClass.Rogue
                 || TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement
-                || Me.Class == WoWClass.Warrior;
+                || Me.Class == WoWClass.Warrior
+                ;
 
             bool autoAttackRanged = Me.Class == WoWClass.Hunter;
 
@@ -210,7 +212,7 @@ namespace Singular.Helpers
                                 }
                                 else if (petUse)
                                 {
-                                    if (Me.Pet.CurrentTarget == null || !Me.Pet.CurrentTarget.CurrentTarget.IsMe)
+                                    if (Me.Pet.CurrentTarget == null || Me.Pet.CurrentTarget.CurrentTargetGuid != Me.Guid)
                                     {
                                         // pickup aggroed mobs I'm not attacking (grab easy agro first)
                                         WoWUnit aggroedOnMe = Unit.NearbyUnfriendlyUnits
@@ -232,7 +234,7 @@ namespace Singular.Helpers
                                                 else
                                                     reason = "PickupAggro";
 
-                                                Logger.WriteDebug("PetManager: [reason={0}] sending Pet at {1} @ {2:F1} yds from Pet", reason, (r as WoWUnit).SafeName(), Me.Pet.SpellDistance(r as WoWUnit));
+                                                Logger.WriteDebug("PetManager: [reason={0}] sending Pet at {1} @ {2:F1} yds from Pet", reason, aggroedOnMe.SafeName(), Me.Pet.SpellDistance(r as WoWUnit));
                                             }
 
                                             PetManager.Attack(aggroedOnMe);

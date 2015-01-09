@@ -43,8 +43,8 @@ namespace Singular.ClassSpecific.Warrior
 
             if (TalentManager.HasGlyph("Long Charge"))
             {
-                Logger.Write(LogColor.Init, "glyph of long charge: [Charge] at {0:F1} yds", DistanceChargeBehavior);
                 DistanceChargeBehavior = 30f;
+                Logger.Write(LogColor.Init, "glyph of long charge: [Charge] at {0:F1} yds", DistanceChargeBehavior);
             }
 
             string spellVictory = "Victory Rush";

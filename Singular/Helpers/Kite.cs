@@ -97,7 +97,7 @@ namespace Singular.Helpers
                         new Sequence(
                             crowdControl,   // return Failure if shouldnt disengage, otherwise Success to allow
                             new PrioritySelector(
-                                new Action(r => { Logger.Write( LogColor.Hilite, "^Avoidance: disengaging away from mobs!"); return RunStatus.Failure; } ),
+                                // new Action(r => { Logger.Write( LogColor.Hilite, "^Avoidance: disengaging away from mobs!"); return RunStatus.Failure; } ),
                                 Disengage.CreateDisengageBehavior(disengageSpell, disengageDist, disengageDir, null),
                                 behavRocketJump
                                 )

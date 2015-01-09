@@ -211,7 +211,7 @@ namespace Singular
             return "Singular." + typ.ToString();
         }
 
-        static bool _inQuestVehicle = false;
+        public static bool inQuestVehicle { get; set; }
 
         static bool _inPetCombat = false;
 
@@ -226,17 +226,18 @@ namespace Singular
             // disable if Questing and in a Quest Vehicle (now requires setting as well)
             if (IsQuestBotActive)
             {
-                if (_inQuestVehicle != Me.InVehicle)
+                bool CurrentlyInVehicle = Me.InVehicle;
+                if (inQuestVehicle != CurrentlyInVehicle)
                 {
-                    _inQuestVehicle = Me.InVehicle; 
-                    if (_inQuestVehicle )
+                    inQuestVehicle = CurrentlyInVehicle; 
+                    if (inQuestVehicle )
                     {
                         Logger.WriteDiagnostic( LogColor.Hilite, "Singular is {0} while in a Quest Vehicle", SingularSettings.Instance.DisableInQuestVehicle ? "Disabled" : "Enabled");
                         // Logger.Write( LogColor.Hilite, "Change [Disable in Quest Vehicle] setting to '{0}' to change", !SingularSettings.Instance.DisableInQuestVehicle);
                     }
                 }
 
-                if (_inQuestVehicle && SingularSettings.Instance.DisableInQuestVehicle)
+                if (inQuestVehicle && SingularSettings.Instance.DisableInQuestVehicle)
                     return false;
             }
 
@@ -758,22 +759,36 @@ namespace Singular
                         }
                         else if (_timerLastTarget.IsFinished)
                         {
-                            BlacklistFlags blf = Me.CurrentTarget.Aggro || (Me.GotAlivePet && Me.CurrentTarget.PetAggro) ? BlacklistFlags.Combat : BlacklistFlags.Pull;
-                            if (!Blacklist.Contains(_guidLastTarget, blf))
+                            bool haveAggro = Me.CurrentTarget.Aggro || (Me.GotAlivePet && Me.CurrentTarget.PetAggro);
+                            if (haveAggro && Me.CurrentTarget.SpellDistance() < 25)
                             {
-                                TimeSpan bltime = TimeSpan.FromMinutes(5);
+                                ResetCurrentTargetTimer();
+                            }
+                            else
+                            {
+                                BlacklistFlags blf = !haveAggro ? BlacklistFlags.Pull : BlacklistFlags.Pull | BlacklistFlags.Combat;
+                                if (!Blacklist.Contains(_guidLastTarget, blf))
+                                {
+                                    TimeSpan bltime = haveAggro
+                                        ? TimeSpan.FromSeconds(30)
+                                        : TimeSpan.FromSeconds(300);
 
-                                Logger.Write(Color.HotPink, "{0} Target {1} out of range/line of sight for {2:F1} seconds, blacklisting for {3:c} and clearing {4}", 
-                                    blf, 
-                                    Me.CurrentTarget.SafeName(), 
-                                    _timerLastTarget.WaitTime.TotalSeconds, 
-                                    bltime,
-                                    _guidLastTarget == BotPoi.Current.Guid ? "BotPoi" : "Current Target" );
+                                    string fragment = string.Format(
+                                        "{0} out of range/line of sight for {1:F1} seconds",
+                                        Me.CurrentTarget.SafeName(),
+                                        _timerLastTarget.WaitTime.TotalSeconds
+                                        );
+                                    Logger.Write(Color.HotPink, "{0} Target {1}, blacklisting for {2:c} and clearing {3}",
+                                        blf,
+                                        fragment,
+                                        bltime,
+                                        _guidLastTarget == BotPoi.Current.Guid ? "BotPoi" : "Current Target");
 
-                                Blacklist.Add(_guidLastTarget, blf, TimeSpan.FromMinutes(5));
-                                if (_guidLastTarget == BotPoi.Current.Guid)
-                                    BotPoi.Clear("Clearing Blacklisted BotPoi");
-                                Me.ClearTarget();
+                                    Blacklist.Add(_guidLastTarget, blf, bltime, "Singular - " + fragment);
+                                    if (_guidLastTarget == BotPoi.Current.Guid)
+                                        BotPoi.Clear("Clearing Blacklisted BotPoi");
+                                    Me.ClearTarget();
+                                }
                             }
                         }
                     }
@@ -886,13 +901,13 @@ namespace Singular
             if (false == IsPullMoreActive)
             {
                 if (Me.Specialization == WoWSpec.None)
-                    Logger.Write(LogColor.Init, "Pull More: not active, Singular disables until Specialization selected");
+                    Logger.Write(LogColor.Init, "Pull More: disabled until Specialization selected");
                 else if (string.IsNullOrEmpty(PullMoreNeedSpell))
                     Logger.Write(LogColor.Init, "Pull More: always disabled for{0}", SpecAndClassName());
                 else if (!SpellManager.HasSpell(PullMoreNeedSpell))
-                    Logger.Write(LogColor.Init, "Pull More: not active, Singular disables for{0} until learning '{1}'", SpecAndClassName(), PullMoreNeedSpell);
+                    Logger.Write(LogColor.Init, "Pull More: disabled for{0} until learning '{1}'", SpecAndClassName(), PullMoreNeedSpell);
                 else
-                    Logger.Write(LogColor.Init, "Pull More: not active, only {0} target will Pull targets", SingularRoutine.GetBotName());
+                    Logger.Write(LogColor.Init, "Pull More: disabled, only {0} target will Pull targets", SingularRoutine.GetBotName());
             }
             else
             {
@@ -941,7 +956,7 @@ namespace Singular
                     break;
 
                 case WoWSpec.DruidBalance:
-                    PullMoreNeedSpell = "Sunfire";          // 18
+                    PullMoreNeedSpell = "Moonkin Form";     // 16
                     break;
 
                 case WoWSpec.DruidFeral:
@@ -1107,7 +1122,8 @@ namespace Singular
 
             return new Decorator(
                 req => HotkeyDirector.IsPullMoreEnabled 
-                    && (_allowPullMoreUntil == DateTime.MinValue || _allowPullMoreUntil > DateTime.Now),
+                    && (_allowPullMoreUntil == DateTime.MinValue || _allowPullMoreUntil > DateTime.Now)
+                    && !Spell.IsCastingOrChannelling(),
 
                 new Sequence(
 

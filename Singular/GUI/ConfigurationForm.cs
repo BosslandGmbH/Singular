@@ -347,7 +347,7 @@ namespace Singular.GUI
 #pragma warning disable 168
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
-        public static extern int SendMessage(IntPtr hWnd, Int32 wMsg, bool wParam, Int32 lParam);
+        public static extern int SendMessage(IntPtr hWnd, Int32 wMsg, bool wParam, IntPtr lParam);
         private const int WM_SETREDRAW = 11; 
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -356,11 +356,11 @@ namespace Singular.GUI
             if (tabControl1.SelectedTab != tabDebug)
                 return;
 
-            SendMessage(lblPoi.Handle, WM_SETREDRAW, false, 0);
-            SendMessage(lblTargets.Handle, WM_SETREDRAW, false, 0);
-            SendMessage(lblTankToStayNear.Handle, WM_SETREDRAW, false, 0);
-            SendMessage(lblTargets.Handle, WM_SETREDRAW, false, 0);
-            SendMessage(lblAuxTargets.Handle, WM_SETREDRAW, false, 0);
+            SendMessage(lblPoi.Handle, WM_SETREDRAW, false, (IntPtr) 0);
+            SendMessage(lblTargets.Handle, WM_SETREDRAW, false, (IntPtr)0);
+            SendMessage(lblTankToStayNear.Handle, WM_SETREDRAW, false, (IntPtr)0);
+            SendMessage(lblTargets.Handle, WM_SETREDRAW, false, (IntPtr)0);
+            SendMessage(lblAuxTargets.Handle, WM_SETREDRAW, false, (IntPtr)0);
 
             // update POI
             int i = 0;
@@ -454,11 +454,11 @@ namespace Singular.GUI
                 lblTargets.Text = sb.ToString();
             }
 
-            SendMessage(lblPoi.Handle, WM_SETREDRAW, true, 0);
-            SendMessage(lblTargets.Handle, WM_SETREDRAW, true, 0);
-            SendMessage(lblTankToStayNear.Handle, WM_SETREDRAW, true, 0);
-            SendMessage(lblTargets.Handle, WM_SETREDRAW, true, 0);
-            SendMessage(lblAuxTargets.Handle, WM_SETREDRAW, true, 0);
+            SendMessage(lblPoi.Handle, WM_SETREDRAW, true, (IntPtr)0);
+            SendMessage(lblTargets.Handle, WM_SETREDRAW, true, (IntPtr)0);
+            SendMessage(lblTankToStayNear.Handle, WM_SETREDRAW, true, (IntPtr)0);
+            SendMessage(lblTargets.Handle, WM_SETREDRAW, true, (IntPtr)0);
+            SendMessage(lblAuxTargets.Handle, WM_SETREDRAW, true, (IntPtr)0);
             tabDebug.Refresh();
         }
 

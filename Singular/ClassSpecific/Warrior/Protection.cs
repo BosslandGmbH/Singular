@@ -366,11 +366,18 @@ namespace Singular.ClassSpecific.Warrior
             return _checkShield;
         }
 
+        private static bool _hasShieldInOffHand { get; set; }
         public static bool HasShieldInOffHand
         {
             get
             {
-                return IsShield(Me.Inventory.Equipped.OffHand);
+                bool hasShield = IsShield(Me.Inventory.Equipped.OffHand);
+                if (hasShield != _hasShieldInOffHand)
+                {
+                    _hasShieldInOffHand = hasShield;
+                    Logger.WriteDebug("HasShieldCheck: shieldEquipped={0}", hasShield.ToYN());
+                }
+                return _hasShieldInOffHand;
             }
         }
 

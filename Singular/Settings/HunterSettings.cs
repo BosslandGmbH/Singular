@@ -42,6 +42,12 @@ namespace Singular.Settings
         [DisplayName("Mend Pet Percent")]
         public int MendPetPct { get; set; }
 
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Pet")]
+        [DisplayName("Use Pet Buffs")]
+        public bool PetBuffs { get; set; }
+
         #endregion
 
         #region Category: Common

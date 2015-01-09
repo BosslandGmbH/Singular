@@ -10,27 +10,20 @@ namespace Singular.ClassSpecific.Paladin
 {
     public class Lowbie
     {
-        [Behavior(BehaviorType.Combat,WoWClass.Paladin,0)]
-        public static Composite CreateLowbiePaladinCombat()
-        {
-            return
-                new PrioritySelector(
-                    Helpers.Common.EnsureReadyToAttackFromMelee(),
-                    Helpers.Common.CreateInterruptBehavior(),
-                    Spell.Cast("Crusader Strike"),
-                    Spell.Cast("Judgment"),
-                    Movement.CreateMoveToMeleeBehavior(true)
-                    );
-        }
         [Behavior(BehaviorType.Pull, WoWClass.Paladin, 0)]
         public static Composite CreateLowbiePaladinPull()
         {
-            return
-                new PrioritySelector(
-                    Helpers.Common.EnsureReadyToAttackFromMelee(),
-                    Spell.Cast("Judgment"),
-                    Movement.CreateMoveToMeleeBehavior(true)
-                    );
+            return new PrioritySelector(
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
+                Spell.WaitForCastOrChannel(),
+                new Decorator(
+                    req => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Spell.Cast("Judgment"),
+                        Spell.Cast("Crusader Strike")
+                        )
+                    )
+                );
         }
         [Behavior(BehaviorType.Heal, WoWClass.Paladin, 0)]
         public static Composite CreateLowbiePaladinHeal()
@@ -41,21 +34,38 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.Cast("Holy Light", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40)
                     );
         }
+
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Paladin, 0)]
         public static Composite CreateLowbiePaladinPreCombatBuffs()
         {
-            return
-                new PrioritySelector(
-                    Spell.BuffSelf("Seal of Command")
-                    );
+            return new PrioritySelector(
+                Common.CreatePaladinSealBehavior()
+                );
         }
+
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Paladin, 0)]
         public static Composite CreateLowbiePaladinCombatBuffs()
         {
-            return
-                new PrioritySelector(
-                    Spell.BuffSelf("Seal of Command")
-                    );
+            return new PrioritySelector(
+                Common.CreatePaladinSealBehavior()
+                );
+        }
+
+        [Behavior(BehaviorType.Combat, WoWClass.Paladin, 0)]
+        public static Composite CreateLowbiePaladinCombat()
+        {
+            return new PrioritySelector(
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
+                Spell.WaitForCastOrChannel(),
+                new Decorator(
+                    req => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Helpers.Common.CreateInterruptBehavior(),
+                        Spell.Cast("Crusader Strike"),
+                        Spell.Cast("Judgment")
+                        )
+                    )
+                );
         }
     }
 }

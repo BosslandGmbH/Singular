@@ -216,7 +216,8 @@ namespace Singular.Managers
 
         class NoNavigation : NavigationProvider
         {
-	        public NoNavigation()
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
+            public NoNavigation()
 	        {
 		        StuckHandler = new ScriptHelpers.NoUnstuck();
 	        }

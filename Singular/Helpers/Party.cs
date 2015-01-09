@@ -9,6 +9,8 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.World;
 using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
+using Singular.Managers;
+using Singular.Settings;
 
 namespace Singular.Helpers
 {
@@ -34,59 +36,130 @@ namespace Singular.Helpers
         Haste = 1 << 4,  // Unholy Aura, Swiftblade's Cunning, Unleashed Rage, Crackling Howl, Serpent's Swiftness
         SpellHaste = 1 << 5, // Moonkin Aura, Shadowform, Elemental Oath, Mind Quickening
         Crit = 1 << 6,   // Leader of the Pack, Arcane Brilliance, Dalaran Brilliance, Legacy of the White Tiger, Bellowing Roar, Furious Howl, Terrifying Roar, Fearless Roar, Still Water
-        Mastery = 1 << 7 // Blessing of Might, Grace of Air, Roar of Courage, Spirit Beast Blessing
+        Mastery = 1 << 7, // Blessing of Might, Grace of Air, Roar of Courage, Spirit Beast Blessing
+        MultiStrike = 1 << 8,
+        Versatility = 1 << 9,
     }
 
+    public class PartyBuffEntry
+    {
+        public string Name { get; set; }
+        public PartyBuffType Type { get; set; }
+
+        public PartyBuffEntry()
+        {
+
+        }
+        public PartyBuffEntry( string n, PartyBuffType t)
+        {
+            Name = n;
+            Type = t;
+        }
+    }
 
     public static class PartyBuff
     {
-        private static Dictionary<string, PartyBuffType> dictBuffs = new Dictionary<string, PartyBuffType>()
+        private static PartyBuffEntry []_listBuffs = new PartyBuffEntry[]
         {
-            { "Mark of the Wild",                   PartyBuffType.Stats},
-            { "Legacy of the Emperor",              PartyBuffType.Stats},
-            { "Blessing of Kings",                  PartyBuffType.Stats},
-            { "Embrace of the Shale Spider",        PartyBuffType.Stats},
+            new PartyBuffEntry( "Mark of the Wild",                   PartyBuffType.Stats ),
+            new PartyBuffEntry( "Legacy of the Emperor",              PartyBuffType.Stats),
+            new PartyBuffEntry( "Legacy of the White Tiger",          PartyBuffType.Stats),
+            new PartyBuffEntry( "Blessing of Kings",                  PartyBuffType.Stats),
+            new PartyBuffEntry( "Blessing of Forgotten Kings",        PartyBuffType.Stats),
+            new PartyBuffEntry( "Embrace of the Shale Spider",        PartyBuffType.Stats),
+            new PartyBuffEntry( "Lone Wolf: Power of the Primates",   PartyBuffType.Stats ),
+            new PartyBuffEntry( "Bark of the Wild",                   PartyBuffType.Stats ), 
+            new PartyBuffEntry( "Blessing of Kongs",                  PartyBuffType.Stats ), 
+            new PartyBuffEntry( "Strength of the Earth",              PartyBuffType.Stats ), 
 
-            { "Power Word: Fortitude",              PartyBuffType.Stamina},
-            { "Commanding Shout",                   PartyBuffType.Stamina},
-            { "Qiraji Fortitude",                   PartyBuffType.Stamina},
-            // { "Dark Intent",                        PartyBuffType.SpellPower | PartyBuffType.Stamina },
+            new PartyBuffEntry( "Power Word: Fortitude",              PartyBuffType.Stamina),
+            new PartyBuffEntry( "Blood Pact",                         PartyBuffType.Stamina | PartyBuffType.SpellPower ),
+            new PartyBuffEntry( "Commanding Shout",                   PartyBuffType.Stamina),
+            new PartyBuffEntry( "Lone Wolf: Fortitude of the Bear",   PartyBuffType.Stamina),
+            new PartyBuffEntry( "Invigorating Roar",                  PartyBuffType.Stamina),
+            new PartyBuffEntry( "Sturdiness",                         PartyBuffType.Stamina),
+            new PartyBuffEntry( "Savage Vigor",                       PartyBuffType.Stamina),
+            new PartyBuffEntry( "Fortitude",                          PartyBuffType.Stamina),
+            new PartyBuffEntry( "Qiraji Fortitude",                   PartyBuffType.Stamina | PartyBuffType.SpellPower ),
 
-            { "Horn of Winter",                     PartyBuffType.AttackPower},
-            { "Trueshot Aura",                      PartyBuffType.AttackPower},
-            { "Battle Shout",                       PartyBuffType.AttackPower},
+            new PartyBuffEntry( "Horn of Winter",                     PartyBuffType.AttackPower),
+            new PartyBuffEntry( "Trueshot Aura",                      PartyBuffType.AttackPower),
+            new PartyBuffEntry( "Battle Shout",                       PartyBuffType.AttackPower),
 
-            { "Arcane Brilliance",                  PartyBuffType.SpellPower | PartyBuffType.Crit},
-            { "Dalaran Brilliance",                 PartyBuffType.SpellPower | PartyBuffType.Crit},
-            { "Dark Intent",                        PartyBuffType.SpellPower | PartyBuffType.Stamina },
-            { "Still Water",                        PartyBuffType.SpellPower |PartyBuffType.Crit},
+            new PartyBuffEntry( "Arcane Brilliance",                  PartyBuffType.SpellPower | PartyBuffType.Crit),
+            new PartyBuffEntry( "Dalaran Brilliance",                 PartyBuffType.SpellPower | PartyBuffType.Crit),
+            new PartyBuffEntry( "Dark Intent",                        PartyBuffType.SpellPower | PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Lone Wolf: Wisdom of the Serpent",   PartyBuffType.SpellPower | PartyBuffType.Crit),
+            new PartyBuffEntry( "Still Water",                        PartyBuffType.SpellPower),
+            new PartyBuffEntry( "Serpent's Cunning",                  PartyBuffType.SpellPower),
 
-            { "Unholy Aura",                        PartyBuffType.Haste},
-            { "Swiftblade's Cunning",               PartyBuffType.Haste},
-            { "Unleashed Rage",                     PartyBuffType.Haste},
-            { "Crackling Howl",                     PartyBuffType.Haste},
-            { "Serpent's Swiftness",                PartyBuffType.Haste},
+            new PartyBuffEntry( "Unholy Aura",                        PartyBuffType.Haste),
+            new PartyBuffEntry( "Swiftblade's Cunning",               PartyBuffType.Haste | PartyBuffType.MultiStrike),
+            new PartyBuffEntry( "Mind Quickening",                     PartyBuffType.Haste),
+            new PartyBuffEntry( "Grace of Air",                     PartyBuffType.Haste),
+            new PartyBuffEntry( "Lone Wolf: Haste of the Hyena",                     PartyBuffType.Haste),
+            new PartyBuffEntry( "Cackling Howl",                     PartyBuffType.Haste),
+            new PartyBuffEntry( "Savage Vigor",                     PartyBuffType.Haste),
+            new PartyBuffEntry( "Energizing Spores",                     PartyBuffType.Haste),
+            new PartyBuffEntry( "Speed of the Swarm",                     PartyBuffType.Haste),
 
-            { "Moonkin Aura",                       PartyBuffType.SpellHaste},
-            { "Shadowform",                         PartyBuffType.SpellHaste},
-            { "Elemental Oath",                     PartyBuffType.SpellHaste},
-            { "Mind Quickening",                    PartyBuffType.SpellHaste},
+            new PartyBuffEntry( "Leader of the Pack",                 PartyBuffType.Crit),
+            // new PartyBuffEntry( "Arcane Brilliance",               new BuffCategory[] new PartyBuffEntry(PartyBuff.SpellPower | PartyBuff.Crit), // here for doc only... see SpellPower section
+            // new PartyBuffEntry( "Dalaran Brilliance",              new BuffCategory[] new PartyBuffEntry(PartyBuff.SpellPower | PartyBuff.Crit), // here for doc only... see SpellPower section
+            new PartyBuffEntry( "Bellowing Roar",                     PartyBuffType.Crit),
+            new PartyBuffEntry( "Legacy of the White Tiger",          PartyBuffType.Crit),
+            new PartyBuffEntry( "Furious Howl",                       PartyBuffType.Crit),
+            new PartyBuffEntry( "Terrifying Roar",                    PartyBuffType.Crit),
+            new PartyBuffEntry( "Fearless Roar",                      PartyBuffType.Crit),
+            new PartyBuffEntry( "Dalaran Brilliance",                    PartyBuffType.Crit),
+            new PartyBuffEntry( "Dalaran Brilliance",                    PartyBuffType.Crit),
+            new PartyBuffEntry( "Lone Wolf: Ferocity of the Raptor",                    PartyBuffType.Crit),
+            new PartyBuffEntry( "Terrifying Roar",                    PartyBuffType.Crit),
+            new PartyBuffEntry( "Fearless Roar",                    PartyBuffType.Crit),
+            new PartyBuffEntry( "Strength of the Pack",                    PartyBuffType.Crit),
+            new PartyBuffEntry( "Embrace of the Shale Spider",                    PartyBuffType.Crit),
+            new PartyBuffEntry( "Still Water",                    PartyBuffType.Crit),
+            new PartyBuffEntry( "Furious Howl",                    PartyBuffType.Crit),
 
-            { "Leader of the Pack",                 PartyBuffType.Crit},
-            // { "Arcane Brilliance",               new BuffCategory[] {PartyBuff.SpellPower | PartyBuff.Crit}, // here for doc only... see SpellPower section
-            // { "Dalaran Brilliance",              new BuffCategory[] {PartyBuff.SpellPower | PartyBuff.Crit}, // here for doc only... see SpellPower section
-            { "Legacy of the White Tiger",          PartyBuffType.Crit},
-            { "Bellowing Roar",                     PartyBuffType.Crit},
-            { "Furious Howl",                       PartyBuffType.Crit},
-            { "Terrifying Roar",                    PartyBuffType.Crit},
-            { "Fearless Roar",                      PartyBuffType.Crit},
-            // { "Still Water",                     new BuffCategory[] {PartyBuff.SpellPower | PartyBuff.Crit}, // here for doc only... see SpellPower section
+            new PartyBuffEntry( "Windflurry",                  PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Mind Quickening",                  PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Swiftblade's Cunning",                  PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Dark Intent",                  PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Lone Wolf: Quickness of the Dragonhawk",                  PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Sonic Focus",                  PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Wild Strength",                  PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Double Bite",                  PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Spry Attacks",                  PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Breath of the Winds",                  PartyBuffType.MultiStrike ),
 
-            { "Blessing of Might",                  PartyBuffType.Mastery},
-            { "Grace of Air",                       PartyBuffType.Mastery},
-            { "Roar of Courage",                    PartyBuffType.Mastery},
-            { "Spirit Beast Blessing",              PartyBuffType.Mastery},
+            new PartyBuffEntry( "Unholy Aura",                  PartyBuffType.Versatility ),
+            new PartyBuffEntry( "Mark of the Wild",                  PartyBuffType.Versatility ),
+            new PartyBuffEntry( " Sanctity Aura",                  PartyBuffType.Versatility ),
+            new PartyBuffEntry( "Inspiring Presence",                  PartyBuffType.Versatility ),
+            new PartyBuffEntry( "Lone Wolf: Versatility of the Ravager",                  PartyBuffType.Versatility ),
+            new PartyBuffEntry( "Tenacity",                  PartyBuffType.Versatility ),
+            new PartyBuffEntry( "Indomitable",                  PartyBuffType.Versatility ),
+            new PartyBuffEntry( "Wild Strength",                  PartyBuffType.Versatility ),
+            new PartyBuffEntry( "Defensive Quills",                  PartyBuffType.Versatility ),
+            new PartyBuffEntry( "Chitinous Armor",                  PartyBuffType.Versatility ),
+            new PartyBuffEntry( "Grace",                  PartyBuffType.Versatility ),
+            new PartyBuffEntry( "Strength of the Earth",                  PartyBuffType.Versatility ),
+
+            new PartyBuffEntry( "Blessing of Might",                  PartyBuffType.Mastery),
+            new PartyBuffEntry( "Grace of Air",                       PartyBuffType.Mastery),
+            new PartyBuffEntry( "Roar of Courage",                    PartyBuffType.Mastery),
+            new PartyBuffEntry( "Power of the Grave",              PartyBuffType.Mastery),
+            new PartyBuffEntry( "Moonkin Aura",              PartyBuffType.Mastery),
+            new PartyBuffEntry( "Blessing of Might",              PartyBuffType.Mastery),
+            new PartyBuffEntry( "Grace of Air",              PartyBuffType.Mastery),
+            new PartyBuffEntry( "Lone Wolf: Grace of the Cat",              PartyBuffType.Mastery),
+            new PartyBuffEntry( "Roar of Courage",              PartyBuffType.Mastery),
+            new PartyBuffEntry( "Keen Senses",              PartyBuffType.Mastery),
+            new PartyBuffEntry( "Spirit Beast Blessing",              PartyBuffType.Mastery),
+            new PartyBuffEntry( "Plainswalking",              PartyBuffType.Mastery),
         };
+
+        private static Dictionary<string, PartyBuffType> dictBuffs = null;
 
         /// <summary>
         /// maps a Spell name to its associated PartyBuff vlaue
@@ -243,22 +316,44 @@ namespace Singular.Helpers
         /// <returns></returns>
         private static Composite BuffUnit(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, params string[] myMutexBuffs)
         {
-            return 
+            return
                 new Decorator(
-                    ret => onUnit(ret) != null 
+                    ret => onUnit(ret) != null
                         && (PartyBuffType.None != (onUnit(ret).GetMissingPartyBuffs() & GetPartyBuffForSpell(name)))
                         && (myMutexBuffs == null || myMutexBuffs.Count() == 0 || !onUnit(ret).GetAllAuras().Any(a => a.CreatorGuid == StyxWoW.Me.Guid && myMutexBuffs.Contains(a.Name))),
                     new Sequence(
-                        Spell.Buff( name, onUnit, requirements),
-                        new Wait( 1, until => StyxWoW.Me.HasPartyBuff(name), new ActionAlwaysSucceed()),
+                        Spell.Buff(name, onUnit, requirements),
+                        new Wait(1, until => StyxWoW.Me.HasPartyBuff(name), new ActionAlwaysSucceed()),
                         new Action(ret =>
-                            {                                   
-                            System.Diagnostics.Debug.Assert( PartyBuffType.None != GetPartyBuffForSpell(name));
+                        {
+                            System.Diagnostics.Debug.Assert(PartyBuffType.None != GetPartyBuffForSpell(name));
                             if (PartyBuffType.None != GetPartyBuffForSpell(name))
                                 ResetReadyToPartyBuffTimer();
                             else
                                 Logger.WriteDebug("Programmer Error: should use Spell.Buff(\"{0}\") instead", name);
-                            })
+                        })
+                        )
+                    );
+        }
+
+        private static Composite PetBuffUnit(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, params string[] myMutexBuffs)
+        {
+            return
+                new Decorator(
+                    ret => onUnit(ret) != null
+                        && (PartyBuffType.None != (onUnit(ret).GetMissingPartyBuffs() & GetPartyBuffForSpell(name)))
+                        && (myMutexBuffs == null || myMutexBuffs.Count() == 0 || !onUnit(ret).GetAllAuras().Any(a => a.CreatorGuid == StyxWoW.Me.Guid && myMutexBuffs.Contains(a.Name))),
+                    new Sequence(
+                        PetManager.Buff(name, onUnit, requirements, myMutexBuffs),
+                        new Wait(1, until => StyxWoW.Me.HasPartyBuff(name), new ActionAlwaysSucceed()),
+                        new Action(ret =>
+                        {
+                            System.Diagnostics.Debug.Assert(PartyBuffType.None != GetPartyBuffForSpell(name));
+                            if (PartyBuffType.None != GetPartyBuffForSpell(name))
+                                ResetReadyToPartyBuffTimer();
+                            else
+                                Logger.WriteDebug("Programmer Error: should use Spell.Buff(\"{0}\") instead", name);
+                        })
                         )
                     );
         }
@@ -291,15 +386,51 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite BuffGroup(string name, SimpleBooleanDelegate requirements, params string[] myMutexBuffs)
         {
-            return
-                new Decorator(ret => IsItTimeToBuff() 
-                                    && SpellManager.HasSpell(name)
-                                    && (!StyxWoW.Me.Mounted || !PVP.IsPrepPhase),
-                    new PrioritySelector(
-                        ctx => Unit.GroupMembers.FirstOrDefault(m => m.IsAlive && m.DistanceSqr < 30 * 30 && (PartyBuffType.None != (m.GetMissingPartyBuffs() & GetPartyBuffForSpell(name)))),
-                        BuffUnit(name, ctx => (WoWUnit)ctx, requirements, myMutexBuffs)
-                        )
-                    );
+            return new Decorator(
+                ret => IsItTimeToBuff()
+                    && SpellManager.HasSpell(name)
+                    && (!StyxWoW.Me.Mounted || !PVP.IsPrepPhase),
+                new PrioritySelector(
+                    ctx => Unit.GroupMembers
+                        .FirstOrDefault(m => 
+                        {
+                            if (!m.IsAlive || m.DistanceSqr > 30 * 30)
+                                return false;
+                            PartyBuffType missing = m.GetMissingPartyBuffs();
+                            PartyBuffType bufftyp = GetPartyBuffForSpell(name);
+                            if (PartyBuffType.None == (missing & bufftyp))
+                                return false;
+                            Logger.WriteDiagnostic("BuffGroup: casting '{0}' since {1} missing {2}",
+                                name,
+                                m.SafeName(),
+                                missing & bufftyp
+                                );
+                            if (SingularSettings.Debug)
+                            {
+                                Logger.WriteDebug("BuffGroup: === {0} has ===", m.SafeName());
+                                foreach (var a in m.GetAllAuras())
+                                {
+                                    Logger.WriteDebug("BuffGroup:     {0}", a.Name);
+                                }
+                            }
+                            return true;
+                        }),
+                    BuffUnit(name, ctx => (WoWUnit)ctx, requirements, myMutexBuffs)
+                    )
+                );
+        }
+
+        public static Composite PetBuffGroup(string name, SimpleBooleanDelegate requirements, params string[] myMutexBuffs)
+        {
+            return new Decorator(
+                ret => IsItTimeToBuff()
+                    && PetManager.CanCastPetAction("Qiraji Fortitude")
+                    && (!StyxWoW.Me.Mounted || !PVP.IsPrepPhase),
+                new PrioritySelector(
+                    ctx => Unit.GroupMembers.FirstOrDefault(m => m.IsAlive && m.DistanceSqr < 30 * 30 && (PartyBuffType.None != (m.GetMissingPartyBuffs() & GetPartyBuffForSpell(name)))),
+                    PetManager.Buff(name, on => (WoWUnit) on, requirements, myMutexBuffs)
+                    )
+                );
         }
 
         #region Handle Faction Specific Name for Bloodlust
@@ -363,6 +494,15 @@ namespace Singular.Helpers
         internal static void Init()
         {
             SetBloodlustSpellInformation();
+
+            dictBuffs = new Dictionary<string,PartyBuffType>();
+            foreach (var t in _listBuffs)
+            {
+                if (dictBuffs.ContainsKey(t.Name))
+                    dictBuffs[t.Name] |= t.Type;
+                else
+                    dictBuffs.Add(t.Name, t.Type);
+            }
         }
     }
 }

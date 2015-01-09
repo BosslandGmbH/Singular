@@ -118,7 +118,7 @@ namespace Singular.Helpers
         /// <summary>
         /// List of WoWPlayer in your Group. Deals with Party / Raid in a list independent manner and does not restrict distance
         /// </summary>
-        public static IEnumerable<WoWPlayer> GroupMembers
+        public static IEnumerable<WoWUnit> GroupMembers
         {
             get
             {
@@ -167,7 +167,7 @@ namespace Singular.Helpers
             get { return StyxWoW.Me.GroupInfo.RaidMembers.Union(StyxWoW.Me.GroupInfo.PartyMembers).Distinct(); }
         }
 
-        public static IEnumerable<WoWPlayer> NearbyGroupMembers
+        public static IEnumerable<WoWUnit> NearbyGroupMembers
         {
             get
             {

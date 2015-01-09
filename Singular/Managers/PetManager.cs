@@ -120,7 +120,7 @@ namespace Singular.Managers
             if (lastPetAttack != unit.Guid)
             {
                 lastPetAttack = unit.Guid;
-                Logger.Write(LogColor.Hilite, "/petattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
+                // Logger.Write(LogColor.Hilite, "/petattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
                 PetManager.CastPetAction("Attack", unit);
             }
 
@@ -228,6 +228,51 @@ namespace Singular.Managers
                     return RunStatus.Success;
                 }));
         }
+
+        private static WoWUnit _buffUnit { get; set; }
+
+        public static Composite Buff(string spell, UnitSelectionDelegate onUnit, SimpleBooleanDelegate require, params string[] buffNames)
+        {
+            return new Decorator(
+                ret =>
+                {
+                    if (onUnit == null || require == null)
+                        return false;
+
+                    _buffUnit = onUnit(ret);
+                    if (_buffUnit == null)
+                        return false;
+
+                    if (spell == null)
+                        return false;
+
+                    if (Spell.DoubleCastContains(_buffUnit, spell))
+                        return false;
+
+                    if (!buffNames.Any())
+                        return !_buffUnit.HasAura(spell);
+
+                    bool buffFound;
+                    try
+                    {
+                        buffFound = buffNames.Any(b => _buffUnit.HasAura(b));
+                    }
+                    catch
+                    {
+                        // mark as found buff, so we return false
+                        buffFound = true;
+                    }
+
+                    return !buffFound;
+                },
+                new Sequence(
+                // new Action(ctx => _lastBuffCast = name),
+                    new Action( r => PetManager.CastPetAction(spell)),
+                    new Action(ret => Spell.UpdateDoubleCast(spell, _buffUnit))
+                    )
+                );
+        }
+
 
         //public static void EnableActionAutocast(string action)
         //{

@@ -1634,6 +1634,17 @@ namespace Singular.Helpers
                         cctx.IsSpellBeingQueued = allow == LagTolerance.Yes && (Spell.GcdActive || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling);
 
                         LogCast(cctx.spell.Name, cctx.unit, cctx.health, cctx.distance, cctx.spell.IsHeal());
+
+                        if (SingularSettings.DebugSpellCasting)
+                            Logger.WriteDebug("Cast('{0}'): dist:{1:F3}, need({2}), hitbox:{3:F3}",
+                                cctx.spell.Name, 
+                                cctx.unit.Distance,
+                                cctx.spell.IsMeleeSpell
+                                    ? "Melee"
+                                    : (!cctx.spell.HasRange ? "None" : string.Format("min={0:F3},max={1:F3}", cctx.spell.MinRange, cctx.spell.MaxRange)),
+                                cctx.unit.CombatReach
+                                );
+
                         if (!Spell.CastPrimative(cctx.spell, cctx.unit))
                         {
                             Logger.Write(Color.LightPink, "cast of {0} on {1} failed!", cctx.spell.Name, cctx.unit.SafeName());

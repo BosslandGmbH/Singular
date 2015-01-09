@@ -444,11 +444,12 @@ namespace Singular.Utilities
                         Logger.Write(Color.LightGoldenrodYellow, "Mob {0} has evaded {1} times. Previously blacklisted {2:X0} for {3} minutes!", unit.SafeName(), MobsThatEvaded[unit.Guid], unit.Guid, MinutesToBlacklist);
                     else
                     {
-                        Logger.Write(Color.LightGoldenrodYellow, "Mob {0} has evaded {1} times. Blacklisting {2:X0} for {3} minutes!", unit.SafeName(), MobsThatEvaded[unit.Guid], unit.Guid, MinutesToBlacklist);
-                        Blacklist.Add(unit.Guid, BlacklistFlags.Combat, TimeSpan.FromMinutes(MinutesToBlacklist));
+                        string fragment = string.Format("Mob {0} has evaded {1} times", unit.SafeName(), MobsThatEvaded[unit.Guid]);
+                        Logger.Write(Color.LightGoldenrodYellow, "{0}. Blacklisting {1:X0} for {2} minutes!", fragment, unit.Guid, MinutesToBlacklist);
+                        Blacklist.Add(unit.Guid, BlacklistFlags.Combat, TimeSpan.FromMinutes(MinutesToBlacklist), "Singular - " + fragment);
                         if (!Blacklist.Contains(unit.Guid, BlacklistFlags.Combat))
                         {
-                            Logger.Write(Color.Pink, "error: blacklist does not contain entry for {0} so adding {1}", unit.SafeName(), unit.Guid);
+                            Logger.Write(Color.Pink, "error: blacklist does not contain entry for {0} after Blacklist.Add", unit.SafeName());
                         }
                     }
 

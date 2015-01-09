@@ -80,11 +80,15 @@ namespace Singular.Helpers
             }
         }
 
+        public static IEnumerable<WoWUnit> GetConeCluster(WoWPoint targetLoc, float coneDegrees, float coneDist, IEnumerable<WoWUnit> otherUnits)
+        {
+            return otherUnits.Where(u => StyxWoW.Me.IsSafelyFacing(u, coneDegrees) && (u.Location.Distance(targetLoc) + u.CombatReach) <= coneDist);
+        }
+
         private static IEnumerable<WoWUnit> GetConeCluster(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float distance)
         {
-            var targetLoc = target.Location;
             // most (if not all) player cone spells are 90 degrees.
-            return otherUnits.Where(u => target.IsSafelyFacing(u, 90) && u.Location.Distance(targetLoc) <= distance);
+            return GetConeCluster(target.Location, 90f, distance, otherUnits);
         }
 
         private static int GetConeClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float distance)

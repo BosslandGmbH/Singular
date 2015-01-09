@@ -76,7 +76,7 @@ namespace Singular.Managers
         {
             // return Talents.FirstOrDefault(t => t.Index == index).Selected;
             int tier = (index-1) / 3;
-            if (tier.Between(0, 5))
+            if (tier.Between(0, 6))
                 return TalentId[tier] == index;
             return false;
         }

@@ -1,3 +1,57 @@
+--- Release 4.0.0.4190 ---
+
+General 
+
+fixed - Exception: impacted all Pet classes and occurred when the Pets current target did not have a current target.  Prevented normal use requiring users to downgrade.  Fix allows use of improved Pet attack management introduced.
+
+fixed - NPC Healing: Singular healing of NPCs including Pets, Companions, and Escorts fixed
+
+fixed - Blacklist: when blacklisting a mob that we cannot Pull within 20 seconds, will now include reason in blacklist call (surrounding log statements specified, but allows for easier filtering of blacklist events now)
+
+change- Blacklist: mobs blacklisted due to being unable to Pull within 20 seconds 
+
+fixed - Pull More: waits for any spell cast in progress before moving towards next Pull Target
+
+fixed - Auto Attack: now treats Lowbie characters as Melee and will enable auto-attack when mob is in melee range
+
+fixed - Party Buffs: updated settings and management for party/raid buffs
+
+
+Druid
+
+fixed - Balance - Pull More: was allowed only once Druid learned Sunfire, however this spell wasn't appearing in SpellManager except during Solar period so would inadvertently disable Pull More.  Now enabled upon learning Moonkin Form
+
+fixed - Balance - Wild Charge: removed the additional restriction of Health % < 50.  Now correctly uses only the settings present in Class Config - General tab
+
+change- Balance - Wild Charge: now will attempt to slow/root targets in melee range before casting Wild Charge.  Abilities used are Ursol's Vortex, Disorienting Roar, Mass Entanglement, Mighty Bash, Faerie Swarm, Entangling Roots, or Typhoon (to create greater separation)
+
+fixed - Balance - Multi-Dotting: now correctly DoTs multiple targets attacking even if AOE is suppressed (like when a crowd controlled mob is in range, etc.)
+
+
+Hunter
+
+change- All Specs - Level 90 Talents: will now check that no additional mobs will be aggroed or crowd control broken before casting Glaive Toss, Powershot, and Barrage.
+
+*new* - All Specs - Pet Buffs: added code to support casting Pet provided Buffs for group.  Currently supports only Qiraji Fortitude.  Setting present in Class Config to disable.  Only considers non-trivial targets so when farming low-levels can still aggro additionals.  User should change the trivial mob setting if that is not desirable.
+
+
+Monk
+
+fixed - Mistweaver - AutoAttack: now enables auto-attack when enemy is in melee range prior to learning Crackling Jade Lightning
+
+
+Paladin
+
+fixed - Lowbie - no longer spams Seal of Command
+
+
+Warrior 
+
+fixed - All Specs - message regarding Glyph of Long Charge incorrectly displayed distance of 25 yds.  Now reports 30 yds.
+
+change- Protection - added Shield Equipped/Not Equipped status change messages to log 
+
+
 --- Release 4.0.0.4167 ---
 
 General 

@@ -71,6 +71,8 @@ namespace Singular
             TalentManager.Init();           // initializes CurrentSpec which is referenced everywhere
             SingularSettings.Initialize();  // loads Singular global and spec-specific settings (must determine spec first)
 
+            DetermineCurrentWoWContext();
+
             WriteSupportInfo();
 
             _lastLogLevel = GlobalSettings.Instance.LogLevel;

@@ -79,7 +79,7 @@ namespace Singular
             }
         }
 
-        private static void DetermineCurrentWoWContext()
+        public static void DetermineCurrentWoWContext()
         {
             CurrentWoWContext = _DetermineCurrentWoWContext();
             CurrentHealContext = (CurrentWoWContext == WoWContext.Instances && Me.GroupInfo.IsInRaid)
@@ -156,6 +156,7 @@ namespace Singular
                 {
                     if (arg.Event == SingularBotEvent.BotStarted || arg.Event == SingularBotEvent.BotChanged)
                     {
+
                         // check if any of the bot detection values have changed which we use to 
                         // .. conditionally build trees
                         DescribeContext();

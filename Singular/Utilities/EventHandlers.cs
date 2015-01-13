@@ -143,15 +143,19 @@ namespace Singular.Utilities
             Lua.Events.AttachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
             _combatLogAttached = true;
 
+            string myGuid = Lua.GetReturnVal<string>("return UnitGUID('player');", 0);
+            Logger.WriteDiagnostic("MyGuid = {0}", myGuid);
+
             string filterCriteria = "return";
 
             if (SingularRoutine.CurrentWoWContext == WoWContext.Normal && SingularSettings.Instance.TargetWorldPvpRegardless)
-                filterCriteria += 
+            {
+                filterCriteria +=
                     " ("
-                    + " args[8] == UnitGUID('player')"
+                    + " args[8] == " + "'" + myGuid + "'"
                     + " and args[8] ~= args[4]"
                     + " and bit.band(args[6], COMBATLOG_OBJECT_CONTROL_PLAYER) > 0"
-                    + " and 'Player' == args[4]:sub(1,6))"
+                    + " and 'Player' == args[4]:sub(1,6)"
                     + " ("
                     + " args[2] == 'SPELL_DAMAGE'"
                     + " or args[2] == 'RANGE_DAMAGE'"
@@ -160,6 +164,7 @@ namespace Singular.Utilities
                     + ")"
                     + " or";
                 // filterCriteria += " (args[8] == UnitGUID('player') and args[8] ~= args[4] and 0x000 == bit.band(tonumber('0x'..strsub(guid, 3,5)),0x00f)) or";
+            }
             else if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
                 filterCriteria +=
                     " (args[2] == 'UNIT_DIED') or";
@@ -167,7 +172,7 @@ namespace Singular.Utilities
             // standard portion of filter
             filterCriteria += 
                 " ("
-                + " args[4] == UnitGUID('player')"
+                + " args[4] == " + "'" + myGuid + "'"
                 + " and"
                 +   " ("
                 +   " args[2] == 'SPELL_MISSED'"
@@ -252,7 +257,15 @@ namespace Singular.Utilities
             {
                 default:
                     if ( SingularSettings.Debug )
-                        Logger.WriteDebug("[CombatLog] filter out this event -- " + e.Event + " - " + e.SourceName + " - " + e.SpellName);
+                        Logger.WriteDebug("[CombatLog] filter out {0} - {1} {2} - {3} {4} on {5} {6}",
+                            e.EventName, 
+                            e.SourceGuid,
+                            e.SourceName,
+                            e.SpellName,
+                            e.SpellId,
+                            e.DestGuid,
+                            e.DestName
+                            );
                     break;
 
                 // spell_cast_failed only passes filter in Singular debug mode

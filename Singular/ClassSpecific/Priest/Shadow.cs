@@ -17,6 +17,7 @@ using Rest = Singular.Helpers.Rest;
 using System.Collections.Generic;
 using System.Drawing;
 using Singular.Utilities;
+using Styx.CommonBot.Profiles;
 
 namespace Singular.ClassSpecific.Priest
 {
@@ -94,6 +95,9 @@ namespace Singular.ClassSpecific.Priest
         public static Composite CreateShadowHeal()
         {
             return new PrioritySelector(
+
+                CreateFightAssessment(),
+
                 Spell.Cast("Desperate Prayer", ret => Me, ret => Me.HealthPercent < PriestSettings.DesperatePrayerHealth),
 
                 Spell.BuffSelf("Power Word: Shield", ret => (Me.HealthPercent < PriestSettings.PowerWordShield || (!Me.HasAura("Shadowform") && SpellManager.HasSpell("Shadowform"))) && !Me.HasAura("Weakened Soul")),
@@ -176,8 +180,8 @@ namespace Singular.ClassSpecific.Priest
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        // updated time to death tracking values before we need them
-                        new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         Spell.BuffSelf("Shadowform"),
 
@@ -203,7 +207,7 @@ namespace Singular.ClassSpecific.Priest
 
                                 Spell.OffGCD(
                                     new PrioritySelector(
-                                        ctx => Me.CurrentTarget.TimeToDeath() > 15 || AoeTargets.Count() > 1,
+                                        ctx => Me.CurrentTarget.TimeToDeath() > 15 || cntAoeTargets > 1,
                                         new Sequence(
                                             Spell.BuffSelfAndWait(sp => "Vampiric Embrace", req => ((bool)req) && Me.HealthPercent < PriestSettings.VampiricEmbracePct),
                                             Spell.BuffSelf("Power Infusion")
@@ -219,9 +223,21 @@ namespace Singular.ClassSpecific.Priest
 
                         // AoE Rotation
                         new Decorator(
-                            ret => Spell.UseAOE && AoeTargets.Count() > 1,
+                            ret => Spell.UseAOE && cntAoeTargets > 1,
                             new PrioritySelector(
                                 ctx => AoeTargets.Where( u=> Me.IsSafelyFacing(u) && u.InLineOfSpellSight).FirstOrDefault(),
+
+                                Spell.Buff(
+                                    "Void Entropy", 
+                                    true, 
+                                    on => AoeTargets.FirstOrDefault( u => (u != Me.CurrentTarget && u.HealthPercent > 90) || (u == Me.CurrentTarget && Me.CurrentTarget.TimeToDeath() > 30)), 
+                                    ret => OrbCount >= 3 && Me.CurrentTarget.TimeToDeath() > 30
+                                    ),
+
+                                new Decorator(
+                                    req => Common.HasTalent(PriestTalents.AuspiciousSpirits),
+                                    Spell.Buff("Shadow Word: Pain", true, on => AoeTargets.FirstOrDefault(u => !u.HasMyAura("Shadow Word: Pain") && u.InLineOfSpellSight), req => true)
+                                    ),
 
                                 // cast on highest health mob (for greatest heal)
                                 Spell.Buff(
@@ -250,10 +266,14 @@ namespace Singular.ClassSpecific.Priest
                                 Spell.Buff("Shadow Word: Pain", true, on => AoeTargets.FirstOrDefault(u => !u.HasMyAura("Shadow Word: Pain") && u.InLineOfSpellSight), req => true),
                                 Spell.Buff("Vampiric Touch", true, on => AoeTargets.FirstOrDefault(u => !u.HasMyAura("Vampiric Touch") && Me.IsSafelyFacing(u) && u.InLineOfSpellSight), req => true),
 
-                                // halo only if nothing near we aren't already in combat with
-                                Spell.Cast("Halo",
-                                    ret => AoeTargets.Count() >= 4
-                                        && Unit.NearbyUnfriendlyUnits.All(u => Me.SpellDistance(u) < 34 && !u.IsCrowdControlled() && u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))
+                                new Decorator(
+                                    req => cntAoeTargets >= PriestSettings.TalentTier6Count,
+                                    new PrioritySelector(
+                                        // halo only if nothing near we aren't already in combat with
+                                        Spell.Cast("Halo", req => UseHalo()),
+                                        Spell.Cast("Cascade", on => GetBestCascadeTarget()),
+                                        Spell.Cast("Divine Star", req => UseDivineStar())
+                                        )
                                     ),
 
                                 // filler spell
@@ -271,12 +291,13 @@ namespace Singular.ClassSpecific.Priest
                                         },
                                     cancel => Me.HealthPercent < PriestSettings.ShadowFlashHeal
                                     ),
-                                CastMindFlay(on => (WoWUnit)on, req => AoeTargets.Count() < 4)
+                                CastMindFlay(on => (WoWUnit)on, req => cntAoeTargets < 4)
                                 )
                             ),
 
-                        // questing priority moves DoTs earlier
+                        Spell.Buff("Void Entropy", true, ret => OrbCount >= 3 && Me.CurrentTarget.TimeToDeath() > 30),
                         Spell.Buff("Devouring Plague", true, ret => OrbCount >= 3),
+
                         Spell.Buff("Shadow Word: Pain", true),
                         Spell.Buff("Vampiric Touch", true),
                         CastMindBlast(),
@@ -290,6 +311,11 @@ namespace Singular.ClassSpecific.Priest
                                     && u.Combat
                                     && (u.Aggro || u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember)
                                     )
+                            ),
+
+                        new Decorator(
+                            req => Common.HasTalent(PriestTalents.VoidEntropy),
+                            Spell.Buff("Devouring Plague", true, ret => OrbCount >= 3)
                             ),
 
                         CastMindFlay()
@@ -464,18 +490,19 @@ namespace Singular.ClassSpecific.Priest
 
                         // AoE Rotation
                         new Decorator(
-                            ret => Spell.UseAOE && AoeTargets.Count() > 1,
+                            ret => Spell.UseAOE && cntAoeTargets > 1,
                             new PrioritySelector(
                                 ctx => Me.CurrentTarget,
 
                                 // halo only if nothing near we aren't already in combat with
                                 Spell.Cast("Halo", 
-                                    ret => Unit.NearbyUnfriendlyUnits.All(u => Me.SpellDistance(u) < 34 && !u.IsCrowdControlled() && u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))),
+                                    ret => Unit.NearbyUnfriendlyUnits
+                                        .All(u => Me.SpellDistance(u) < 34 && !u.IsCrowdControlled() && u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))),
                                 Spell.Cast("Divine Star"),
                                 Spell.Cast("Cascade"),
 
                                 new Decorator(
-                                    req => AoeTargets.Count() <= 4,
+                                    req => cntAoeTargets <= 4,
                                     new PrioritySelector(
                                         ctx => AoeTargets.FirstOrDefault(u => !u.HasAllMyAuras("Shadow Word: Pain", "Vampiric Touch")),
                                         Spell.Buff("Vampiric Touch", on => (WoWUnit) on),
@@ -516,17 +543,67 @@ namespace Singular.ClassSpecific.Priest
                 );
         }
 
-        public static int NumAoeTargets { get; set; }
 
-        public static IEnumerable<WoWUnit> AoeTargets
+        static int cntAoeTargets { get; set; }
+        static int cntCC { get; set; }
+        static int cntAvoid { get; set; }
+
+        static List<WoWUnit> AoeTargets { get; set; }
+
+        /// <summary>
+        /// creates a behavior which will populate list AoeTargets that we 
+        /// can safely attack.  will also populate cntAoeTargets, cntCC,
+        /// and cntAvoid appropriately.  if avoid mob or cc detected, then
+        /// AoeTargets will contain list of mobs we can attack, but cntAoeTargtets
+        /// will be 1 indicating no AOE spells should be used
+        /// </summary>
+        /// <returns>behavior</returns>
+        static Composite CreateFightAssessment()
         {
-            get
-            {
-                return Unit.UnfriendlyUnits(40)
-                    .Where(u => u != null && u.IsValid
-                        && (u == Me.CurrentTarget || u.Aggro || u.TaggedByMe || (u == EventHandlers.AttackingEnemyPlayer && (DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 15))
-                        );
-            }
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                return new ActionAlwaysFail();
+
+            return new Action( r => {
+
+                if (Me.GotTarget())
+                    Me.CurrentTarget.TimeToDeath();
+
+                cntAoeTargets = 0;
+                cntCC = 0;
+
+                AoeTargets = new List<WoWUnit>();
+                foreach (var u in Unit.UnfriendlyUnits(40))
+                {
+                    if (u.IsCrowdControlled())
+                        cntCC++;
+                    else if (u.IsAvoidMob())
+                        cntAvoid++;
+                    else
+                    {
+                        // abort AOE if enemy player involved
+                        if (u.IsPlayer)
+                        {
+                            cntAoeTargets = 1;
+                            cntCC = 0;
+                            AoeTargets = new List<WoWUnit>();
+                            AoeTargets.Add(u);
+                            break;
+                        }
+
+                        // count AOE targets
+                        if (u.Combat && (u.Aggro || u.PetAggro || u.TaggedByMe || u.IsTargetingUs()))
+                        {
+                            cntAoeTargets++;
+                            AoeTargets.Add(u);
+                        }
+                    }
+                }
+
+                if (cntCC > 0 || cntAvoid > 0)
+                    cntAoeTargets = 1;
+
+                return RunStatus.Failure;
+            });
         }
 
 
@@ -639,6 +716,160 @@ namespace Singular.ClassSpecific.Priest
 
         }
 
+        /// <summary>
+        /// checks for chained cascade targets.  this is expensive as the theoretical linked distance is 200 yds
+        /// if all 4 hops occur and mobs are in straight line.  regardless, this ability can easily aggro the 
+        /// entire countryside while questing, so we will be conservative in our assessment of whether it can
+        /// be used or not while still maximizing the number of mobs hit based upon the initial targets proximity
+        /// to linked mobs
+        /// </summary>
+        /// <returns></returns>
+        public static WoWUnit GetBestCascadeTarget()
+        {
+            if (!Spell.CanCastHack("Cascade", Me, skipWowCheck: true))
+            {
+                Logger.WriteDebug("GetBestCascadeTarget: CanCastHack says NO to Cascade");
+                return null;
+            }
+
+            // search players we are facing in range for the number of hops they represent
+            var targetInfo = Unit.UnfriendlyUnits()
+                .Where(u => u.SpellDistance() < 40 && Me.IsSafelyFacing(u) && u.InLineOfSpellSight)
+                .Select(p => new { Unit = p, Count = Clusters.GetChainedClusterCount(p, Unit.UnfriendlyUnits(), 40f, AvoidAttackingTarget) })
+                .OrderByDescending(v => v.Count)                    // maximize count
+                .OrderByDescending(v => (int)v.Unit.DistanceSqr)   // maximize initial distance
+                .DefaultIfEmpty(null)
+                .FirstOrDefault();
+
+            if (targetInfo == null)
+            {
+                Logger.WriteDiagnostic("GetBestCascadeTarget:  0 mobs without unwanted aggro / cc break");
+                return null;
+            }
+
+            Logger.WriteDiagnostic(
+                "GetBestCascadeTarget: {0} will hit {1} mobs without unwanted aggro / cc break",
+                targetInfo.Unit.SafeName(),
+                targetInfo.Count
+                );
+            return targetInfo.Unit;
+        }
+
+        /// <summary>
+        /// checks for chained cascade targets.  this is expensive as the theoretical linked distance is 200 yds
+        /// if all 4 hops occur and mobs are in straight line.  regardless, this ability can easily aggro the 
+        /// entire countryside while questing, so we will be conservative in our assessment of whether it can
+        /// be used or not while still maximizing the number of mobs hit based upon the initial targets proximity
+        /// to linked mobs
+        /// </summary>
+        /// <returns></returns>
+        public static bool UseDivineStar()
+        {
+            if (!Spell.CanCastHack("Divine Star", Me.CurrentTarget, skipWowCheck: true))
+            {
+                return false;
+            }
+
+            WoWPoint endPoint = WoWPoint.RayCast( Me.Location, Me.RenderFacing, 26);
+            List<WoWUnit> hitByDS = Clusters.GetPathToPointCluster(endPoint, Unit.UnfriendlyUnits(26), 4).ToList();
+
+            if (hitByDS == null || !hitByDS.Any())
+            {
+                Logger.WriteDiagnostic("UseDivineStar:  0 mobs would be hit");
+                return false;
+            }
+
+            WoWUnit avoid = hitByDS.FirstOrDefault(u => u.IsAvoidMob());
+            if (avoid != null)
+            {
+                Logger.WriteDiagnostic(
+                    "UseDivineStar: skipping to avoid hitting {0} - aggr:{1} cc:{2} avdmob:{3}", 
+                    avoid.SafeName(),
+                    (avoid.Aggro || avoid.PetAggro).ToYN(),
+                    avoid.IsCrowdControlled().ToYN(),
+                    avoid.IsAvoidMob().ToYN()
+                    );
+                return false;
+            }
+
+            int count = hitByDS.Count();
+            if (count >= PriestSettings.TalentTier6Count)
+            {
+                Logger.WriteDiagnostic(
+                    "UseDivineStar: will hit {0} mobs without aggroing adds / cc break",
+                    count
+                    );
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool UseHalo()
+        {
+            if (!Spell.CanCastHack("Halo", Me.CurrentTarget, skipWowCheck: true))
+            {
+                return false;
+            }
+
+            List<WoWUnit> hitByHalo = Unit.NearbyUnfriendlyUnits.Where(u => Me.SpellDistance(u) < 34).ToList();
+
+            if (hitByHalo == null || !hitByHalo.Any()) 
+            {
+                Logger.WriteDiagnostic("UseHalo:  0 mobs hit");
+                return false;
+            }
+
+            WoWUnit avoid = hitByHalo.FirstOrDefault(u => u.IsAvoidMob());
+            if (avoid != null)
+            {
+                Logger.WriteDiagnostic(
+                    "UseHalo: skipping to avoid hitting {0} - aggr:{1} cc:{2} avdmob:{3}", 
+                    avoid.SafeName(),
+                    (avoid.Aggro || avoid.PetAggro).ToYN(),
+                    avoid.IsCrowdControlled().ToYN(),
+                    avoid.IsAvoidMob().ToYN()
+                    );
+                return false;
+            }
+
+            int count = hitByHalo.Count();
+            if (count >= PriestSettings.TalentTier6Count)
+            {
+                Logger.WriteDiagnostic(
+                    "UseHalo: will hit {0} mobs without unwanted aggro / cc break",
+                    count
+                    );
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// checks if a WoWUnit (passed as object for use as delegate) represents a mob
+        /// we want to avoid hitting when already in combat
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <returns></returns>
+        private static bool AvoidAttackingTarget( object ctx)
+        {
+            WoWUnit unit = (WoWUnit)ctx;
+            if (unit.IsTrivial())
+                return false;
+
+            if (unit.Combat && (unit.TaggedByMe || unit.Aggro || unit.PetAggro || unit.IsTargetingUs()))
+            {
+                if (unit.IsAvoidMob())
+                    return true;
+                if (unit.IsCrowdControlled())
+                    return true;
+                return false;
+            }
+                
+            return true;
+        }
+
         #endregion
 
         #region Diagnostics
@@ -653,7 +884,7 @@ namespace Singular.ClassSpecific.Priest
                 {
                     uint orbs = OrbCount;
 
-                    string line = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, moving={3}, form={4}, orbs={5}, SoD={6}, divins={7}",
+                    string line = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, moving={3}, form={4}, orbs={5}, SoD={6}, divins={7}, aoe={8}",
                         CompositeBuilder.CurrentBehaviorType.ToString(),
                         Me.HealthPercent,
                         Me.ManaPercent,
@@ -661,7 +892,8 @@ namespace Singular.ClassSpecific.Priest
                         Me.Shapeshift,
                         orbs,
                         (long)Me.GetAuraTimeLeft(SURGE_OF_DARKNESS, true).TotalMilliseconds,
-                        (long)Me.GetAuraTimeLeft("Divine Insight", true).TotalMilliseconds
+                        (long)Me.GetAuraTimeLeft("Divine Insight", true).TotalMilliseconds,
+                        cntAoeTargets 
                         );
 
                     WoWUnit target = Me.CurrentTarget;

@@ -12,6 +12,7 @@ using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using Styx.WoWInternals;
 using CommonBehaviors.Actions;
+using System.Diagnostics;
 
 namespace Singular.Helpers
 {
@@ -414,6 +415,7 @@ namespace Singular.Helpers
         }
     }
 
+
     public class DynaWaitContinue : Decorator
     {
         private bool _measure;
@@ -487,6 +489,61 @@ namespace Singular.Helpers
 
             DecoratedChild.Stop(context);
             if (DecoratedChild.LastStatus == RunStatus.Failure)
+            {
+                yield return RunStatus.Failure;
+                yield break;
+            }
+
+            yield return RunStatus.Success;
+            yield break;
+        }
+    }
+
+    public class DecoratorIfElse : GroupComposite        
+    {
+        protected CanRunDecoratorDelegate Runner { get; private set; }
+
+        public Composite ChildIf { get { return Children[0]; } }
+        public Composite ChildElse { get { return Children[1]; } }
+
+
+        public DecoratorIfElse(CanRunDecoratorDelegate runFunc, params Composite []children)  
+            : base(children)
+        {
+            Debug.Assert(runFunc != null);
+            Debug.Assert(children.Count() == 2);
+            Runner = runFunc;
+        }
+
+        protected virtual bool CanRun(object context)
+        {
+            return true;
+        }
+
+        public override void Start(object context)
+        {
+            if (Children.Count != 2)
+            {
+                throw new ApplicationException("DecoratorIfElse must have exactly two children.");
+            }
+            base.Start(context);
+        }
+
+        protected override IEnumerable<RunStatus> Execute(object context)
+        {
+            bool runIf = Runner(context);
+            Composite compBranch = runIf 
+                ? ChildIf
+                : ChildElse;
+
+            compBranch.Start(context);
+            while (compBranch.Tick(context) == RunStatus.Running)
+            {
+                yield return RunStatus.Running;
+            }
+
+            compBranch.Stop(context);
+            if (compBranch.LastStatus == RunStatus.Failure)
             {
                 yield return RunStatus.Failure;
                 yield break;

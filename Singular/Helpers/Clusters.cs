@@ -4,6 +4,7 @@ using System.Linq;
 using Styx;
 using Styx.WoWInternals.WoWObjects;
 using Bots.DungeonBuddy.Helpers;
+using Styx.WoWInternals;
 
 namespace Singular.Helpers
 {
@@ -107,9 +108,30 @@ namespace Singular.Helpers
             return GetRadiusCluster(target, otherUnits, radius).Count();
         }
 
-        private static int GetChainedClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float chainRange)
+        /// <summary>
+        /// retrieve best estimation of number of hops a chained spell will make for a given target
+        /// </summary>
+        /// <param name="target">spell target all hops originate from</param>
+        /// <param name="otherUnits">units to consider as possible targets</param>
+        /// <param name="chainRange">chain hop distance</param>
+        /// <param name="avoid">delegate to determine if an unwanted target would be hit</param>
+        /// <returns>0 avoid target would be hit, otherwise count of targets hit (including initial target)</returns>
+        public static int GetChainedClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float chainRange, SimpleBooleanDelegate avoid = null)
         {
-            return GetChainedCluster(target, otherUnits, chainRange).Count();
+            if (avoid == null)
+                return GetChainedCluster(target, otherUnits, chainRange).Count();
+
+            int cnt = 0;
+            foreach (var u in GetChainedCluster(target, otherUnits, chainRange))
+            {
+                cnt++;
+                if (avoid(u))
+                {
+                    cnt = 0;
+                    break;
+                }
+            }
+            return cnt;
         }
 
         static IEnumerable<WoWUnit> GetChainedCluster(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float chainRange)
@@ -133,7 +155,7 @@ namespace Singular.Helpers
         public static IEnumerable<WoWUnit> GetPathToPointCluster(WoWPoint destLoc, IEnumerable<WoWUnit> otherUnits, float distance)
         {
             var myLoc = StyxWoW.Me.Location;
-            return otherUnits.Where(u => u.Location.GetNearestPointOnSegment(myLoc, destLoc).Distance(u.Location) <= distance);
+            return otherUnits.Where(u => (distance + u.CombatReach) <= u.Location.GetNearestPointOnSegment(myLoc, destLoc).Distance(u.Location));
         }
 
         private static int GetPathClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float distance)

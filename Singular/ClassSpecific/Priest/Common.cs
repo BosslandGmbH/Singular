@@ -118,16 +118,17 @@ namespace Singular.ClassSpecific.Priest
                                 new Decorator(
                                     ret => SpellManager.HasSpell("Angelic Feather")
                                         && !StyxWoW.Me.HasAura("Angelic Feather"),
-                                    new Sequence(
-                                        Spell.CastOnGround(
-                                            "Angelic Feather", 
-                                            loc => Me.Location.RayCast(Me.RenderFacing, 1.5f), 
-                                            req => true, 
-                                            waitForSpell: false, 
-                                            tgtDescRtrv:  desc => string.Format("Speed Boost on {0}", Me.SafeName())
-                                            ),
-                                        Helpers.Common.CreateWaitForLagDuration(orUntil => Spell.GetPendingCursorSpell != null),
-                                        new Action(ret => Lua.DoString("SpellStopTargeting()"))
+                                    new PrioritySelector(
+                                        new Sequence(
+                                            Spell.CastOnGround(
+                                                "Angelic Feather",
+                                                loc => Me.Location.RayCast(Me.RenderFacing, 1.5f),
+                                                req => true,
+                                                waitForSpell: true,
+                                                tgtDescRtrv: desc => string.Format("Speed Boost on {0}", Me.SafeName())
+                                                ),
+                                            new Action(ret => Lua.DoString("SpellStopTargeting()"))
+                                            )
                                         )
                                     )
                                 )

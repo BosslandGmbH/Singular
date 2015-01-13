@@ -2036,27 +2036,46 @@ namespace Singular.Helpers
                     },    
            
                 new Sequence(
+                    // if wait requested, wait for spell in progress to be clear
+                    new DecoratorContinue(
+                        req => waitForSpell,
+                        new PrioritySelector(
+                            new Wait(
+                                TimeSpan.FromMilliseconds(500),
+                                until => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                                new Action(r => Logger.WriteDebug("CastOnGround: waitForSpell - beginning"))
+                                ),
+                            new Action( r => 
+                            {
+                                Logger.WriteDebug("CastOnGround: waitForSpell - failed! other spell in progress?");
+                                return RunStatus.Failure;
+                            })
+                            )
+                        ),
+
+                    // cast spell which needs ground targeting
                     new Action( ret => {
                         CogContext cog = ret.CogContext();
                         Logger.Write( cog.spell.IsHeal() ? LogColor.SpellHeal : LogColor.SpellNonHeal, "*{0} {1}at {2:F1} yds {3}", cog.name, cog.targetDesc, cog.loc.Distance(StyxWoW.Me.Location), cog.loc);
                         return Spell.CastPrimative(cog.spell) ? RunStatus.Success : RunStatus.Failure; 
                         }),
 
-                    new DecoratorContinue(
-                        ctx => waitForSpell,
-                        new PrioritySelector(
-                            new WaitContinue(1,
-                                ret => GetPendingCursorSpell != null && GetPendingCursorSpell.Name == ret.CogContext().name,
-                                new ActionAlwaysSucceed()
-                                ),
-                            new Action(r =>
-                            {
-                                Logger.WriteDebug("error: spell {0} not seen as pending on cursor after 1 second", r.CogContext().name);
-                                return RunStatus.Failure;
-                            })
-                            )
+                    // confirm spell is on cursor requiring targeting
+                    new PrioritySelector(
+                        new WaitContinue(
+                            1,
+                            until => GetPendingCursorSpell != null && GetPendingCursorSpell.Name == until.CogContext().name,
+                            new ActionAlwaysSucceed()
+                            ),
+                        new Action(r =>
+                        {
+                            Logger.WriteDebug("error: spell {0} not seen as pending on cursor after 1 second", r.CogContext().name);
+                            Lua.DoString("SpellStopTargeting()");   // shouldn't be needed, but handle GetPendingCursorSpell breakage
+                            return RunStatus.Failure;
+                        })
                         ),
 
+                    // click on ground
                     new Action(ret => 
                     {
                         if (!SpellManager.ClickRemoteLocation(ret.CogContext().loc))
@@ -2068,10 +2087,15 @@ namespace Singular.Helpers
                         return RunStatus.Success;
                     }),
 
+                    // handle waiting if requested
                     new PrioritySelector(
+                        new Decorator(
+                            req => !waitForSpell,
+                            new ActionAlwaysSucceed()
+                            ),
                         new Wait( 
                             TimeSpan.FromMilliseconds(500), 
-                            until => Me.CurrentPendingCursorSpell == null,
+                            until => Spell.IsGlobalCooldown() || Spell.IsCastingOrChannelling() || Me.CurrentPendingCursorSpell == null,
                             new Action(r => Logger.WriteDebug("CastOnGround: click successful"))
                             ),
                         new Action(ret =>
@@ -2090,18 +2114,17 @@ namespace Singular.Helpers
                         })
                         ),
 
-                    // check for we are done status
+                    // confirm we are done with cast
                     new PrioritySelector(
-            // done if cursor doesn't have spell anymore
                         new Decorator(
-                            ret => !waitForSpell || ret.CogContext().spell.IsInstantCast(),
+                            ret => !waitForSpell,
                             new ActionAlwaysSucceed()
                             ),
 
                         new Wait(
                             TimeSpan.FromMilliseconds(750),
-                            until => Me.IsCasting || Me.IsChanneling,
-                            new ActionAlwaysSucceed()
+                            until => Spell.IsGlobalCooldown() || Spell.IsCastingOrChannelling(),
+                            new Action(r => Logger.WriteDebug("CastOnGround({0}): detected cast in progress", r.CogContext().name))
                             ),
 
                         new Action( ret => 
@@ -2629,13 +2652,13 @@ namespace Singular.Helpers
                 name = spell.Name;
                 context = ctx;
                 unit = onUnit(ctx);
-
+                    
                 // health/dist change quickly, so grab these now where
                 // .. we check requirements so the log message we output
                 // .. later reflects what they were when we were testing
                 // .. as opposed to what they may have changed to
                 // .. (since spell lookup, move while casting check, and cancast take time)
-                if (unit != null)
+                if (unit != null && unit.IsValid)
                 {
                     health = unit.HealthPercent;
                     distance = unit.SpellDistance();

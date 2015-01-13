@@ -92,16 +92,22 @@ namespace Singular.ClassSpecific.Warrior
         }
 
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warrior)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warrior, priority: 999)]
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Warrior, priority: 999)]
         public static Composite CreateWarriorNormalPreCombatBuffs()
         {
-            return
-                new PrioritySelector(
-                    Spell.BuffSelfAndWait(sp => SelectedStanceAsSpellName, req => StyxWoW.Me.Shapeshift != (ShapeshiftForm)SelectedStance),
-                    Spell.BuffSelfAndWait(sp => SelectedShoutAsSpellName),
-                    CreateSpellReflectBehavior()
-                    );
+            return new PrioritySelector(
+                Spell.BuffSelfAndWait(
+                    sp => SelectedStanceAsSpellName, 
+                    req => 
+                    {
+                        if (StyxWoW.Me.Shapeshift == (ShapeshiftForm)SelectedStance)
+                            return false;
+                        return true;
+                    }),
+                PartyBuff.BuffGroup(Common.SelectedShoutAsSpellName),
+                CreateSpellReflectBehavior()
+                );
         }
 
         [Behavior(BehaviorType.LossOfControl, WoWClass.Warrior)]
@@ -161,7 +167,7 @@ namespace Singular.ClassSpecific.Warrior
             get { return WarriorSettings.Shout.ToString().CamelToSpaced().Substring(1); }
         }
 
-        public static WarriorStance  SelectedStance
+        public static WarriorStance SelectedStance
         {
             get
             {
@@ -178,7 +184,18 @@ namespace Singular.ClassSpecific.Warrior
                             break;
                         default:
                         case WoWSpec.WarriorProtection:
-                            stance = WarriorStance.DefensiveStance;
+                            if (!Protection.HasShieldInOffHand)
+                                stance = Warrior.Protection.talentGladiator ? WarriorStance.GladiatorStance : WarriorStance.BattleStance;
+                            else if (!Warrior.Protection.talentGladiator)
+                                stance = WarriorStance.DefensiveStance;
+                            else if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
+                                stance = WarriorStance.GladiatorStance;
+                            else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                                stance = WarriorStance.GladiatorStance;
+                            else if (Me.Role != WoWPartyMember.GroupRole.Tank)
+                                stance = WarriorStance.GladiatorStance;
+                            else 
+                                stance = WarriorStance.DefensiveStance;
                             break;
                     }
                 }
@@ -319,8 +336,13 @@ namespace Singular.ClassSpecific.Warrior
 
                     if (Me.CurrentTarget.IsFlying)
                     {
-                        Logger.Write( LogColor.Hilite, "Ranged Attack: {0} is Flying! using Ranged attack....", Me.CurrentTarget.SafeName());
-                        return true;
+                        float heightOffGround = Me.CurrentTarget.HeightOffTheGround();
+                        float meleeDist = Me.CurrentTarget.MeleeDistance();
+                        if (heightOffGround > meleeDist)
+                        {
+                            Logger.Write(LogColor.Hilite, "Ranged Attack: {0} is Flying {1:F3} yds off ground! using Ranged attack since can only reach {2:F3} yds....", Me.CurrentTarget.SafeName(), heightOffGround, meleeDist);
+                            return true;
+                        }
                     }
 
                     if ((DateTime.Now - Singular.Utilities.EventHandlers.LastNoPathFailure).TotalSeconds < 1f)
@@ -481,8 +503,28 @@ namespace Singular.ClassSpecific.Warrior
 
                             float neededFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(Me.Location, pt);
                             WoWPoint ptJumpTo = WoWPoint.RayCast(Me.Location, neededFacing, distToJump);
-                            Logger.WriteDebug("HeroicLeap: jump target is {0} {1}", comment, unit.SafeName());
-                            return ptJumpTo;
+                            Logger.WriteDiagnostic("HeroicLeap: jump target is {0} {1}", comment, unit.SafeName());
+                            float h = unit.HeightOffTheGround();
+                            float m = unit.MeleeDistance();
+                            if (h > m)
+                            {
+                                Logger.WriteDiagnostic("HeroicLeap: aborting, target is {0:F3} off ground and melee is {1:F3}", h, m);
+                                return WoWPoint.Empty;
+                            }
+                            else if ( h < -1)
+                            {
+                                Logger.WriteDiagnostic("HeroicLeap: aborting, target appears to be {0:F3} off ground @ {1}", h, ptJumpTo);
+                                return WoWPoint.Empty;
+                            }
+
+                            WoWPoint ptNew = new WoWPoint();
+                            ptNew.X = ptJumpTo.X;
+                            ptNew.Y = ptJumpTo.Y;
+                            ptNew.Z = ptJumpTo.Z - h;
+                            Logger.WriteDiagnostic("HeroicLeap: adjusting dest, target @ {0} is {1:F3} above ground @ {2}", ptJumpTo, h, ptNew);
+                            ptJumpTo = ptNew;
+
+                            return ptNew;
                         }
 
                         return WoWPoint.Empty;

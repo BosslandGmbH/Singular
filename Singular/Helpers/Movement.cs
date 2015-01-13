@@ -583,7 +583,7 @@ namespace Singular.Helpers
                     && !Me.IsOnTransport
                     && !Me.OnTaxi
                     && Me.Race == WoWRace.Worgen
-                    && !Me.HasAnyAura("Darkflight")
+                    && !Me.HasAnyAura("Darkflight", "Running Wild", "Travel Form")
                     && (BotPoi.Current == null || BotPoi.Current.Type == PoiType.None || BotPoi.Current.Location.Distance(Me.Location) > 10)
                     && !Me.IsAboveTheGround(),
 

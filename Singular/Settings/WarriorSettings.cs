@@ -12,7 +12,8 @@ namespace Singular.Settings
         Auto,
         BattleStance        = Styx.ShapeshiftForm.BattleStance ,
         BerserkerStance     = Styx.ShapeshiftForm.BattleStance ,    // keep this to avoid errors for existing users
-        DefensiveStance     = Styx.ShapeshiftForm.DefensiveStance 
+        DefensiveStance     = Styx.ShapeshiftForm.DefensiveStance,
+        GladiatorStance     = 33
     }
 
     public enum WarriorShout

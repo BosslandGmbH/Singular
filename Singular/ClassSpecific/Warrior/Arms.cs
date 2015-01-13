@@ -317,7 +317,33 @@ namespace Singular.ClassSpecific.Warrior
                             ret => !Me.ActiveAuras.ContainsKey("Enrage")
                                 && Spell.GetSpellCooldown("Mortal Strike").TotalSeconds > 4
                                 && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 6
+                                ),
+
+                        Spell.Cast( "Colossus Smash", req => !Me.CurrentTarget.HasAura("Colossus Smash")),
+                        Spell.Cast( "Rend", req => Me.CurrentTarget.HasAuraExpired("Rend", 4)),
+                        Spell.Cast( "Execute", req => Me.CurrentRage > 60 && Me.CurrentTarget.HealthPercent <= 20),
+                        Spell.Cast( "Mortal Strike"),
+                        Spell.Cast( "Slam"),
+                        Spell.Cast( "Whirlwind", req => Me.CurrentTarget.SpellDistance() < 8),
+
+                        new Decorator(
+                            req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8,
+                            new PrioritySelector(
+                                Spell.Cast("Dragon Roar", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8),
+                                Spell.Cast("Storm Bolt"),
+                                Spell.BuffSelf("Bladestorm"),
+                                Spell.Cast("Shockwave")
                                 )
+                            ),
+
+                        // if we are low-level with low rage regen, do any damage we can
+                        new Decorator(
+                            req => !SpellManager.HasSpell("Whirlwind"),
+                            new PrioritySelector(
+                                Spell.Cast("Rend"),
+                                Spell.Cast("Thunder Clap", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8)
+                                )
+                            )
                         )
                     )
                 );

@@ -20,6 +20,7 @@ using System.Text;
 using Singular.Managers;
 using Singular.Utilities;
 using Singular.Dynamics;
+using Styx.CommonBot.Profiles;
 
 namespace Singular.Helpers
 {
@@ -370,6 +371,14 @@ namespace Singular.Helpers
                 return true;
             }
 
+            // Ignore evading NPCs 
+            if (p.IsEvading())
+            {
+                if (showReason)
+                    Logger.Write(invalidColor, "invalid unit, {0} game flagged as evading", p.SafeName());
+                return false;
+            }
+
             // Ignore friendlies!
             if (p.IsFriendly)
             {
@@ -431,13 +440,18 @@ namespace Singular.Helpers
             return true;
         }
 
+        public static bool IsEvading(this WoWUnit u)
+        {
+            return (u.Flags & 0x10) != 0;
+        }
+
         /// <summary>
         /// Checks if target is a Critter that can safely be ignored
         /// </summary>
         /// <param name="u"></param>
         /// WoWUnit to check
         /// <returns>true: can ignore safely, false: treat as attackable enemy</returns>
-        public static bool IsIgnorableCritter(WoWUnit u)
+        public static bool IsIgnorableCritter(this WoWUnit u)
         {
             if (!u.IsCritter)
                 return false;
@@ -1421,6 +1435,11 @@ namespace Singular.Helpers
             }
 
             return canAttack;
+        }
+
+        public static bool IsAvoidMob(this WoWUnit unit)
+        {
+            return ProfileManager.CurrentProfile != null && ProfileManager.CurrentProfile.AvoidMobs != null && ProfileManager.CurrentProfile.AvoidMobs.Contains(unit.Entry);
         }
     }
 

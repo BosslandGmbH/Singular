@@ -1,4 +1,4 @@
---- Release 4.0.0.4190 ---
+--- Release 4.0.0.4208 ---
 
 General 
 
@@ -15,6 +15,12 @@ fixed - Pull More: waits for any spell cast in progress before moving towards ne
 fixed - Auto Attack: now treats Lowbie characters as Melee and will enable auto-attack when mob is in melee range
 
 fixed - Party Buffs: updated settings and management for party/raid buffs
+
+fixed - Path based AOE: fixed detection of targets hit by path of spell
+
+fixed - Worgen: added detection of other Running Wild and Travel Form as speed buffs we shouldn't break for Darkflight
+
+fixed - Evading Mobs: will no longer chase mobs which are evading and returning to their spawn point/patrol area
 
 
 Druid
@@ -45,11 +51,38 @@ Paladin
 fixed - Lowbie - no longer spams Seal of Command
 
 
+Priest
+
+fixed - All Specs - Angelic Feather: in some circumstances was leaving spell on cursor for targeting after use blocking subsequent casts/actions
+
+fixed - Shadow - AOE Detection: improved detection of multi-mob fights and detection of situations where AOE should not be used (would pull additional mobs, break CC, etc.) 
+
+*new* - Shadow - Tier 6 Talent Count setting: can now configure minimum number of mobs required to cast Tier 6 DPS talent
+
+fixed - Shadow - Halo: now blocks use if mobs in AOE are CC'd or  not fighting us, unless they are trivial (so ability can be used for farming lowbies)
+
+fixed - Shadow - Divine Star: now correctly checks count of mobs hit and suppresses cast if it would break CC or aggro additional mobs 
+
+fixed - Shadow - Cascade: now correctly checks count of mobs hit and suppresses cast if it would break CC or aggro additional mobs.  Note: this ability has a range of 40 yds to target and 40 yds on each hop. While soloing in densely populated areas it will likely never be cast due to always detecting additional mobs that could be pulled
+
+*new* - Shadow - Void Entropy: supports casting this ability.  Talent should only be used if DoT will exist on target for 40+ seconds
+
+*new* - Shadow - Auspicious Spirits: if talented, will make multi-DoTting SW:Pain highest priority
+
+
 Warrior 
+
+*new* - Protection - Gladiator Stance: now supports using this stance and switching based upon context / role
+
+fixed - All Specs - Heroic Leap: fixed bug which was preventing use; should cast more frequently (but only if Charge not available due to cooldown or range)
 
 fixed - All Specs - message regarding Glyph of Long Charge incorrectly displayed distance of 25 yds.  Now reports 30 yds.
 
 change- Protection - added Shield Equipped/Not Equipped status change messages to log 
+
+change- Arms - additional spells added to PVP context spell priority
+
+fixed - Protection - Shout cast spam
 
 
 --- Release 4.0.0.4167 ---

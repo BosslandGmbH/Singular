@@ -105,7 +105,7 @@ namespace Singular.ClassSpecific.Druid
                                 )
                             ),
 
-                        Common.CastForm("Cat Form", req => Me.Shapeshift != ShapeshiftForm.Cat && !Utilities.EventHandlers.IsShapeshiftSuppressed),
+                        Common.CastForm( ShapeshiftForm.Cat, req => Me.Shapeshift != ShapeshiftForm.Cat && !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
                         Common.CreateProwlBehavior(),
 
@@ -191,7 +191,7 @@ namespace Singular.ClassSpecific.Druid
                     new Throttle(
                         10, 
                         Common.CastForm( 
-                            "Cat Form", 
+                            ShapeshiftForm.Cat, 
                             req => !Utilities.EventHandlers.IsShapeshiftSuppressed
                                 && Me.IsMoving
                                 && !Me.IsFlying && !Me.IsSwimming 
@@ -223,7 +223,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateFeralCombatBuffs()
         {
             return new PrioritySelector(
-                Common.CastForm("Cat Form", req => Me.Shapeshift != ShapeshiftForm.Cat && !Utilities.EventHandlers.IsShapeshiftSuppressed)
+                Common.CastForm(ShapeshiftForm.Cat, req => Me.Shapeshift != ShapeshiftForm.Cat && !Utilities.EventHandlers.IsShapeshiftSuppressed)
                 );
         }
 

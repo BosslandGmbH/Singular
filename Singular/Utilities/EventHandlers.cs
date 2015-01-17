@@ -444,7 +444,7 @@ namespace Singular.Utilities
                 if ( !MobsThatEvaded.ContainsKey( unit.Guid ))
                     MobsThatEvaded.Add( unit.Guid, 0);
 
-                MobsThatEvaded[unit.Guid]++;
+                MobsThatEvaded[unit.Guid] = MobsThatEvaded[unit.Guid] + 1;
                 if (MobsThatEvaded[unit.Guid] < SingularSettings.Instance.EvadedAttacksAllowed)
                 {
                     Logger.Write("Mob {0} has evaded {1} times. Not blacklisting yet, but will count evades on {2:X0} for now", unit.SafeName(), MobsThatEvaded[unit.Guid], unit.Guid);

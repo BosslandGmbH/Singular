@@ -98,7 +98,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateBrewmasterMonkCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Stance of the Sturdy Ox"),
+                Spell.BuffSelfAndWait(sp => "Stance of the Sturdy Ox", req => !Me.GetAllAuras().Any(a => a.ApplyAuraType == WoWApplyAuraType.ModShapeshift && a.IsPassive && a.Name == "Stance of the Sturdy Ox")),
 
                 new Decorator(
                     req => !Unit.IsTrivial( Me.CurrentTarget),

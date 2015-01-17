@@ -184,7 +184,7 @@ namespace Singular.ClassSpecific.Warrior
                             new Wait(TimeSpan.FromMilliseconds(500), until => !Common.IsSlowNeeded(Me.CurrentTarget), new ActionAlwaysSucceed())
                             ),
 
-                        CreateArmsAoeCombat(ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 1))),
+                        CreateArmsAoeCombat(ret => Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() < (Common.DistanceWindAndThunder(8)))),
 
                         // Noxxic
                         //----------------
@@ -218,7 +218,7 @@ namespace Singular.ClassSpecific.Warrior
                                         Spell.Cast( "Colossus Smash"),
 
                                         // 5 Whirlwind as a filler ability when target is above 20% health.
-                                        Spell.Cast( "Whirlwind", req => Me.CurrentTarget.HealthPercent > 20 && Me.CurrentTarget.SpellDistance() < 8),
+                                        Spell.Cast("Whirlwind", req => Me.CurrentTarget.HealthPercent > 20 && Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8)),
 
                                         // Done here
                                         new ActionAlwaysFail()
@@ -235,7 +235,7 @@ namespace Singular.ClassSpecific.Warrior
                                         Spell.Cast( "Mortal Strike", req => Me.HealthPercent > 20),
 
                                         // 3 Whirlwind as a filler ability when target is above 20% health.
-                                        Spell.Cast("Whirlwind", req => Me.CurrentTarget.HealthPercent > 20 && Me.CurrentTarget.SpellDistance() < 8),
+                                        Spell.Cast("Whirlwind", req => Me.CurrentTarget.HealthPercent > 20 && Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8)),
 
                                         // Done here
                                         new ActionAlwaysFail()
@@ -324,7 +324,7 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast( "Execute", req => Me.CurrentRage > 60 && Me.CurrentTarget.HealthPercent <= 20),
                         Spell.Cast( "Mortal Strike"),
                         Spell.Cast( "Slam"),
-                        Spell.Cast( "Whirlwind", req => Me.CurrentTarget.SpellDistance() < 8),
+                        Spell.Cast("Whirlwind", req => Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8)),
 
                         new Decorator(
                             req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8,
@@ -421,7 +421,7 @@ namespace Singular.ClassSpecific.Warrior
 
                         Spell.Cast("Thunder Clap",
                             req => {
-                                if (Me.CurrentTarget.SpellDistance() <= 8)
+                                if (Me.CurrentTarget.SpellDistance() <= Common.DistanceWindAndThunder(8))
                                 {
                                     // cast only if out of melee or behind us
                                     if (!Me.CurrentTarget.IsWithinMeleeRange || !Me.IsSafelyFacing(Me.CurrentTarget))

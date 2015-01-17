@@ -77,11 +77,6 @@ namespace Singular.Helpers
                 ps.AddChild(UseEquippedItem((uint)WoWInventorySlot.Trinket2));
             }
 
-            if (SingularSettings.Instance.GloveUsage == usage)
-            {
-                ps.AddChild(UseEquippedItem((uint)WoWInventorySlot.Hands));
-            }
-
             if (!ps.Children.Any())
                 return new ActionAlwaysFail();
 
@@ -512,7 +507,8 @@ namespace Singular.Helpers
                     else
                         Logger.WriteFile("Hands: {0} #{1} - found [{2}] and will use as per user settings", item.Name, item.Entry, itemSpell);
                 }
-                
+
+                /*
                 // debug logic:  try another method to check for Engineering Tinkers
                 foreach (var enchName in GloveEnchants)
                 {
@@ -520,6 +516,7 @@ namespace Singular.Helpers
                     if (ench != null)
                         Logger.WriteFile("Hands (double check): {0} #{1} - found enchant [{2}] #{3} (debug info only)", item.Name, item.Entry, ench.Name, ench.Id);
                 }
+                */
 
                 item = Me.Inventory.Equipped.Waist;
                 if (item != null)
@@ -534,6 +531,7 @@ namespace Singular.Helpers
             }
         }
 
+        /*
         // should be an api to inspect gloves, but instead yal (yet another list)
         internal static List<string> GloveEnchants = new List<string>() 
         {
@@ -544,6 +542,7 @@ namespace Singular.Helpers
             "Phase Fingers",
             "Incendiary Fireworks Launcher"
         };
+        */
 
         internal static List<string> BeltEnchants = new List<string>() 
         {

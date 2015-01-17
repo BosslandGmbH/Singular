@@ -551,7 +551,7 @@ namespace Singular.ClassSpecific.Druid
                                         )),
  */ 
                                     new PrioritySelector(
-                                        Common.CastForm("Travel Form", 
+                                        Common.CastForm(ShapeshiftForm.Travel, 
                                             req => {
                                                 if (!Me.IsOutdoors || BotPoi.Current.Type == PoiType.Kill)
                                                     return false;
@@ -563,7 +563,7 @@ namespace Singular.ClassSpecific.Druid
                                                 }
                                                 return true;
                                             }),
-                                        Common.CastForm("Cat Form")
+                                        Common.CastForm( ShapeshiftForm.Cat)
                                         )
                                     )
                                 ),
@@ -572,7 +572,7 @@ namespace Singular.ClassSpecific.Druid
                                     && BotPoi.Current.Location.Distance(Me.Location) >= 10
                                     && Me.Shapeshift != ShapeshiftForm.Aqua
                                     && Spell.CanCastHack("Aquatic Form", Me, false), 
-                                Common.CastForm( "Aquatic Form")
+                                Common.CastForm( ShapeshiftForm.Aqua)
                                 )
                             ),
 
@@ -631,22 +631,53 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
         
-        public static Composite CastForm( string spellName, SimpleBooleanDelegate requirements = null)
+        public static Composite CastForm( ShapeshiftForm shape, SimpleBooleanDelegate requirements = null)
         {
+            string spellName = string.Empty;
+            int spellId = 0;
+            switch(shape)
+            {
+                case ShapeshiftForm.Cat: //  1,
+                    spellName = "Cat Form";
+                    break;
+                case ShapeshiftForm.Travel: //  3,
+                    spellName = "Travel Form";
+                    break;
+                case ShapeshiftForm.Aqua: //  4,
+                    spellName = "Aquatic Form";
+                    break;
+                case ShapeshiftForm.Bear: //  5,
+                    spellName = "Bear Form";
+                    break;
+                case ShapeshiftForm.Moonkin: //  31,
+                    spellName = "Moonkin Form";
+                    break;
+                
+                default:
+                    Logger.Write(LogColor.Diagnostic, "Programming Error: shape shift {0} not supported in Singular Druid");
+                    return new ActionAlwaysFail();
+            }
+
+            SpellFindResults sfr;
+            if (!SpellManager.FindSpell(spellName, out sfr))
+            {
+                Logger.WriteDiagnostic("CastForm: disabled for [{0}], spell not learned yet", spellName);
+                return new ActionAlwaysFail();
+            }
+
+            spellId = sfr.Original.Id;
+            if (sfr.Override != null)
+            {
+                Logger.WriteDiagnostic("CastForm: using [{0}] as override for [{1}] spell and aura names", sfr.Override.Name, spellName);
+                spellName = sfr.Override.Name;
+                spellId = sfr.Override.Id;
+            }
+
             return new Decorator(
-                req => !Me.HasAura(spellName) && (requirements == null || requirements(req)),
+                req => Me.Shapeshift != shape && (requirements == null || requirements(req)),
                 new Sequence(
-                    new Action( r => {
-                        WoWAura aura = Me.GetAllAuras().FirstOrDefault( a => a.Spell.Name.Right(5).Equals(" Form"));
-                        Logger.WriteDiagnostic( "CastForm: changing to form='{0}',  current='{1}',  hb-says='{2}'", 
-                            spellName, aura == null ? "-none-" : aura.Name, Me.Shapeshift.ToString()
-                            );
-                        }),
-                    Spell.BuffSelf(spellName),
-                    new PrioritySelector(
-                        new Wait(TimeSpan.FromMilliseconds(500), until => Me.HasAura(spellName), new Action( r => Logger.WriteDiagnostic("CastForm: the form '{0}' is now active!", spellName))),
-                        new Action( r => Logger.WriteDiagnostic("CastForm: error - did not yet enter form '{0}'", spellName))
-                        )
+                    new Action(r => Logger.WriteDiagnostic( "CastForm: changing to form='{0}', current='{1}', using spell '{2}'", shape, Me.Shapeshift, spellName)),
+                    Spell.BuffSelfAndWait( spellId, requirements)
                     )
                 );
         }

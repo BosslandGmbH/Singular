@@ -176,7 +176,7 @@ namespace Singular.ClassSpecific.Warrior
                         // -- check melee dist+3 rather than 8 so works for large hitboxes (8 is range of DR and WW)
 
                         new Decorator(  // Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3,
-                            ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count( u => u.SpellDistance() < 8 ) >= 3,                       
+                            ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() < Common.DistanceWindAndThunder(8)) >= 3,                       
                             new PrioritySelector(
                                 Spell.BuffSelf("Bladestorm"),
                                 Spell.Cast("Shockwave"),
@@ -259,7 +259,7 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Execute"),
                         Spell.Cast("Bloodthirst"),
                         Spell.Cast("Wild Strike"),
-                        Spell.Cast("Thunder Clap", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8)
+                        Spell.Cast("Thunder Clap", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8))
                         )
                     ),
 

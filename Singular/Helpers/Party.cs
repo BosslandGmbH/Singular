@@ -400,6 +400,13 @@ namespace Singular.Helpers
                             PartyBuffType bufftyp = GetPartyBuffForSpell(name);
                             if (PartyBuffType.None == (missing & bufftyp))
                                 return false;
+
+                            if (!Spell.CanCastHack(name, m))
+                                return false;
+
+                            if (!requirements(ctx))
+                                return false;
+
                             Logger.WriteDiagnostic("BuffGroup: casting '{0}' since {1} missing {2}",
                                 name,
                                 m.SafeName(),
@@ -415,7 +422,7 @@ namespace Singular.Helpers
                             }
                             return true;
                         }),
-                    BuffUnit(name, ctx => (WoWUnit)ctx, requirements, myMutexBuffs)
+                    BuffUnit(name, ctx => (WoWUnit)ctx, req => true, myMutexBuffs)
                     )
                 );
         }

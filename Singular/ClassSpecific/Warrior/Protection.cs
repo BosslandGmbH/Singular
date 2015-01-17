@@ -102,7 +102,7 @@ namespace Singular.ClassSpecific.Warrior
                         // just in case user botting a Prot Warrior without a shield
                         Spell.Cast("Revenge"),
                         Spell.Cast("Devastate", ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
-                        Spell.Cast("Thunder Clap", ret => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8f && !Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
+                        Spell.Cast("Thunder Clap", ret => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8) && !Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
 
                         // filler to try and do something more than auto attack at this point
                         Spell.Cast("Devastate"),
@@ -256,7 +256,7 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     ret => UseAOE,
                     new PrioritySelector(
-                        Spell.Cast("Thunder Clap", on => Unit.UnfriendlyUnits(8).FirstOrDefault()),
+                        Spell.Cast("Thunder Clap", on => Unit.UnfriendlyUnits(Common.DistanceWindAndThunder(8)).FirstOrDefault()),
                         Spell.Cast("Bladestorm", on => Unit.UnfriendlyUnits(8).FirstOrDefault(), ret => AoeCount >= 4),
                         Spell.Cast("Shockwave", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => Me.IsSafelyFacing(u)), ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 10f) >= 3),
                         Spell.Cast("Dragon Roar", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => Me.IsSafelyFacing(u)), ret => Me.CurrentTarget.SpellDistance() <= 8 || Me.CurrentTarget.IsWithinMeleeRange)
@@ -269,7 +269,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Shield Slam", ret => Me.CurrentRage < RageBuild && HasShieldInOffHand),
                 Spell.Cast("Revenge"),
                 Spell.Cast("Execute", ret => Me.CurrentRage > RageDump && Me.CurrentTarget.HealthPercent <= 20),
-                Spell.Cast("Thunder Clap", ret => Me.CurrentTarget.SpellDistance() < 8f && !Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
+                Spell.Cast("Thunder Clap", ret => Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8) && !Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
 
                 // Filler
                 Spell.Cast("Devastate"),
@@ -332,7 +332,7 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     ret => UseAOE,
                     new PrioritySelector(
-                        Spell.Cast("Thunder Clap", on => Unit.UnfriendlyUnits(8).FirstOrDefault()),
+                        Spell.Cast("Thunder Clap", on => Unit.UnfriendlyUnits(Common.DistanceWindAndThunder(8)).FirstOrDefault()),
                         Spell.Cast("Bladestorm", on => Unit.UnfriendlyUnits(8).FirstOrDefault(), ret => AoeCount >= 4),
                         Spell.Cast("Shockwave", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => Me.IsSafelyFacing(u)), ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 10f) >= 3),
                         Spell.Cast("Dragon Roar", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => Me.IsSafelyFacing(u)), ret => Me.CurrentTarget.SpellDistance() <= 8 || Me.CurrentTarget.IsWithinMeleeRange)
@@ -346,7 +346,11 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Shield Slam", ret => Me.CurrentRage < RageBuild && HasShieldInOffHand),
                 Spell.Cast("Revenge"),
                 Spell.Cast("Execute", ret => Me.CurrentRage > RageDump && Me.CurrentTarget.HealthPercent <= 20),
-                Spell.Cast("Thunder Clap", ret => Me.CurrentTarget.SpellDistance() < 8f && !Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
+                Spell.Cast(
+                    "Thunder Clap", 
+                    ret => Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8) 
+                        && !Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")
+                    ),
                 Spell.Cast("Devastate"),
                 Spell.Cast("Heroic Strike", req => !HasShieldInOffHand),
 

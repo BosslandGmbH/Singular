@@ -34,6 +34,7 @@ namespace Singular.ClassSpecific.Warrior
 
         public static float HeroicLeapDistance { get; set; }
 
+        public static int _DistanceWindAndThunder { get; set; }
 
         [Behavior(BehaviorType.Initialize, WoWClass.Warrior)]
         public static Composite CreateWarriorInitialize()
@@ -84,6 +85,13 @@ namespace Singular.ClassSpecific.Warrior
             {
                 HeroicLeapDistance = 25f;
                 Logger.Write(LogColor.Init, "glyph of death from above: [Heroic Leap] at {0:F1} yds", HeroicLeapDistance);
+            }
+
+            _DistanceWindAndThunder = 0;
+            if (TalentManager.HasGlyph("Wind and Thunder"))
+            {
+                _DistanceWindAndThunder = 4;
+                Logger.Write(LogColor.Init, "glyph of wind and thunder: [Whirlwind] and [Thunder Clap] +4 yds");
             }
 
             DistanceChargeBehavior -= 0.2f;    // should not be needed, but is  -- based on log files and observations we need this adjustment
@@ -549,6 +557,10 @@ namespace Singular.ClassSpecific.Warrior
 
         }
 
+        public static int DistanceWindAndThunder( int range)
+        {
+            return _DistanceWindAndThunder + range;
+        }
     }
 
     enum WarriorTalents

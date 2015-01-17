@@ -42,8 +42,7 @@ namespace Singular.ClassSpecific
             // 
 
             if (SingularSettings.Instance.Trinket1Usage == TrinketUsage.Never
-                && SingularSettings.Instance.Trinket2Usage == TrinketUsage.Never
-                && SingularSettings.Instance.GloveUsage == TrinketUsage.Never)
+                && SingularSettings.Instance.Trinket2Usage == TrinketUsage.Never)
             {
                 return new Action(ret => { return RunStatus.Failure; });
             }
@@ -143,7 +142,11 @@ namespace Singular.ClassSpecific
             if (SpellManager.HasSpell("Shadowmeld"))
             {
                 pri.AddChild(
-                    Spell.OffGCD(Spell.BuffSelf("Shadowmeld", ret => NeedShadowmeld()))
+                    // even though not on GCD, return success so we resume at top of tree
+                    new Sequence(
+                        Spell.BuffSelf("Shadowmeld", ret => NeedShadowmeld()),
+                        new Action( r => shadowMeldStart = DateTime.Now )
+                        )
                     );
             }
 
@@ -208,13 +211,16 @@ namespace Singular.ClassSpecific
 
         private static bool NeedShadowmeld()
         {
-            if (!SingularSettings.Instance.ShadowmeldThreatDrop || StyxWoW.Me.Race != WoWRace.NightElf)
+            if (StyxWoW.Me.Race != WoWRace.NightElf)
                 return false;
 
-            if (!Spell.CanCastHack("Shadowmeld"))
-                return false;
-
-            if (StyxWoW.Me.IsInGroup())
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
+            {
+                if (SingularSettings.Instance.ShadowmeldSoloHealthPct > 0
+                    && StyxWoW.Me.HealthPercent <= SingularSettings.Instance.ShadowmeldSoloHealthPct)
+                    return true;
+            }
+            else if (SingularSettings.Instance.ShadowmeldThreatDrop)
             {
                 if (Group.MeIsTank)
                     return false;
@@ -237,6 +243,86 @@ namespace Singular.ClassSpecific
 
             // need to add logic to wait for pats, or for PVP losing ranged targets may be enough
             return false;
+        }
+
+        static WoWUnit shadowMeldAggro { get; set; }
+        static DateTime shadowMeldStart { get; set; }
+
+        public static Composite CreateCancelShadowmeld()
+        {
+            if (StyxWoW.Me.Race != WoWRace.NightElf)
+                return new ActionAlwaysFail();
+
+            return new Sequence(
+                ctx => StyxWoW.Me.GetAllAuras().FirstOrDefault( a => a.Name == "Shadowmeld"),
+                
+                // fail sequence if no aura
+                new Action( r => 
+                { 
+                    if (r == null)
+                        return RunStatus.Failure;
+                    return RunStatus.Success; 
+                }),
+
+                new PrioritySelector(
+                    new Sequence(
+                        new Action( r => 
+                        {
+                            const int timeLimitSeconds = 20;
+                            TimeSpan timeLimit = TimeSpan.FromSeconds(timeLimitSeconds);
+                            DateTime now = DateTime.Now;
+
+                            if (shadowMeldStart == null || shadowMeldStart == DateTime.MinValue)
+                                shadowMeldStart = now;
+
+                            WoWAura aura = (WoWAura) r;
+                            if ((now - shadowMeldStart) > timeLimit)
+                            {
+                                Logger.Write(LogColor.Cancel, "/cancelaura shadowmeld (exceeded {0:F1} seconds)", timeLimit.TotalSeconds);
+                                return RunStatus.Success;
+                            }
+                             
+                            shadowMeldAggro = Unit.UnfriendlyUnits()
+                                .Where(u => u.MyReaction == WoWUnitReaction.Hostile && u.SpellDistance() < (u.MyAggroRange + 5))
+                                .FirstOrDefault();
+                            if (shadowMeldAggro == null)
+                            {
+                                Logger.Write(LogColor.Cancel, "/cancelaura shadowmeld (no hostile mobs in aggro range)");
+                                return RunStatus.Success;
+                            }
+                            
+                            // otherwise, exit sequence with failure
+                            return RunStatus.Failure;
+                        }),
+                        new Action( r => StyxWoW.Me.CancelAura("Shadowmeld") ),
+                        new PrioritySelector(
+                            new Wait( 1, until => !StyxWoW.Me.HasAura("Shadowmeld"), new ActionAlwaysSucceed()),
+                            new Action( r => 
+                            {
+                                Logger.WriteDiagnostic("Shadowmeld: aura not removed after cancel");
+                                return RunStatus.Failure;
+                            })
+                            ),
+                        new Action( r => 
+                        {
+                            Logger.WriteDiagnostic("Shadowmeld: removed - after {0:F1} seconds", (DateTime.Now - shadowMeldStart).TotalSeconds );
+                            shadowMeldStart = DateTime.MinValue;
+                            return RunStatus.Success;
+                        })
+                        ),
+                    new ThrottlePasses( 
+                        1, 
+                        TimeSpan.FromSeconds(5),
+                        RunStatus.Success,
+                        new Action( r =>
+                        {
+                            WoWAura aura = (WoWAura) r;
+                            Logger.Write( LogColor.Hilite, "Shadowmeld: wait for {0} @ {1:F1} yds to clear area", shadowMeldAggro.SafeName(), shadowMeldAggro.SpellDistance());
+                            Logger.WriteDiagnostic("Shadowmeld: {0} @ {1:F1} has {2:F1} aggro range with me", shadowMeldAggro.SafeName(), shadowMeldAggro.SpellDistance(), shadowMeldAggro.MyAggroRange);
+                        })                    
+                        )
+                    )
+                );
         }
 
         // [Behavior(BehaviorType.Combat, priority: 997)]

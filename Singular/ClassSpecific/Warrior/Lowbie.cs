@@ -26,14 +26,16 @@ namespace Singular.ClassSpecific.Warrior
 
                 // AOE
                 new Decorator(
-                    ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 2,
+                    ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2,
                     new PrioritySelector(
                         Spell.Cast("Thunder Clap"),
-                        Spell.Cast("Heroic Strike"))),
+                        Spell.Cast("Heroic Strike")
+                        )
+                    ),
                 // DPS
                 Spell.Cast("Execute"),
                 Spell.Cast("Heroic Strike"),
-                Spell.Cast("Thunder Clap", ret => StyxWoW.Me.RagePercent > 50),
+                Spell.Cast("Thunder Clap", ret => StyxWoW.Me.RagePercent > 50 && StyxWoW.Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8)),
                 //move to melee
                 Movement.CreateMoveToMeleeBehavior(true)
                 );

@@ -33,10 +33,14 @@ namespace Singular.ClassSpecific.Hunter
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static WoWUnit Pet { get { return StyxWoW.Me.Pet; } }
         private static WoWUnit Target { get { return StyxWoW.Me.CurrentTarget; } }
+        private static WoWGuid TargetGuid { get { return StyxWoW.Me.CurrentTargetGuid; } }
         private static HunterSettings HunterSettings { get { return SingularSettings.Instance.Hunter(); } }
         private static bool HasTalent(HunterTalents tal) { return TalentManager.IsSelected((int)tal); }
 
         private static uint _lastUnknownPetSpell = 0xffff;
+
+        private static DateTime camouflageStart { get; set; }
+        private static DateTime camouflageExpires { get; set; }
 
         private static uint ActivePetNumber
         {
@@ -256,6 +260,7 @@ namespace Singular.ClassSpecific.Hunter
             }
         }
 
+
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Hunter)]
         public static Composite CreateHunterCombatBuffs()
         {
@@ -271,8 +276,29 @@ namespace Singular.ClassSpecific.Hunter
                 feignDeathBehavior = CreateFeignDeath(req => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any( u=> u.Aggro && u.CurrentTargetGuid == Me.Guid), () => TimeSpan.FromMilliseconds(1500), ret => false);
 
             return new Decorator(
-                req => !Unit.IsTrivial(Me.CurrentTarget),
+                req => !Unit.IsTrivial(Target),
                 new PrioritySelector(
+
+                    !SpellManager.HasSpell("Enhanced Camouflage")
+                    ? (Composite)new ActionAlwaysFail()
+                    : (Composite)new Sequence(
+                        Spell.BuffSelf("Camouflage", req => Me.HealthPercent <= HunterSettings.ImprovedCamouflageHealth),
+                        new Wait(
+                            1,
+                            until => Me.HasAura("Camouflage"),
+                            new Action(r => 
+                            { 
+                                camouflageStart = DateTime.Now;
+                                WoWAura aura = Me.GetAllAuras().FirstOrDefault(a => a.Name == "Camouflage");
+                                if (aura != null)
+                                    camouflageExpires = camouflageStart + aura.TimeLeft;
+                                else
+                                {
+                                    Logger.WriteDiagnostic("Camouflage: cast but never saw buff appear");
+                                    camouflageExpires = DateTime.MinValue;
+                                }
+                            }))
+                        ),
 
                     feignDeathBehavior,
 
@@ -301,180 +327,187 @@ namespace Singular.ClassSpecific.Hunter
                         CreateMisdirectionBehavior()
                         ),
 
-                    Spell.BuffSelf("Exhilaration", ret => Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 20)),
-
-                    Spell.Buff("Widow Venom", ret => HunterSettings.UseWidowVenom && Target.IsPlayer && Me.IsSafelyFacing(Target) && Target.InLineOfSpellSight),
-
-                    // Buffs - don't stack Bestial Wrath and Rapid Fire
-                    Spell.Buff("Bestial Wrath", true, ret => Spell.GetSpellCooldown("Kill Command") == TimeSpan.Zero && !Me.HasAura("Rapid Fire"), "The Beast Within"),
-
-                    Spell.Cast("Stampede",
-                        ret => PartyBuff.WeHaveBloodlust
-                            || (!Me.IsInGroup() && SafeArea.AllEnemyMobsAttackingMe.Count() > 2)
-                            || (Me.GotTarget() && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile)),
-
-                    // Level 75 Talents
-                    Spell.Cast("A Murder of Crows"),
-
-                    // Level 60 Talents
-                    Spell.Cast("Dire Beast"),
-
-                    // Level 90 Talents
-                    Spell.Cast(
-                        "Glaive Toss",
-                        on =>
-                        {
-                            WoWPoint loc = WoWPoint.RayCast(Me.Location, WoWMathHelper.CalculateNeededFacing(Me.Location, Me.CurrentTarget.Location), 40f);
-                            IEnumerable<WoWUnit> ienum = Clusters.GetPathToPointCluster(loc, Unit.UnfriendlyUnits(44), 44);
-                            int cntCC = 0;
-                            int cntTarget = 0;
-                            int cntNeutral = 0;
-                            WoWUnit target = null;
-
-                            foreach (WoWUnit u in ienum)
-                            {
-                                cntTarget++;
-                                if (u.IsCrowdControlled())
-                                    cntCC++;
-                                if (!u.Combat && !u.IsTrivial() && !u.Aggro && !u.PetAggro && !(u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))
-                                    cntNeutral++;
-                                if (target == null)
-                                    target = u;
-                                if (Me.CurrentTargetGuid == u.Guid)
-                                    target = u;
-                            }
-
-                            if (cntNeutral > 0)
-                            {
-                                Logger.WriteDebug("Glaive Toss: skipping, {0} additional targets would be pulled", cntNeutral);
-                                return null;
-                            }
-
-                            if (cntCC > 0)
-                            {
-                                Logger.WriteDebug("Glaive Toss: skipping, {0} crowd controlled targets", cntCC);
-                                return null;
-                            }
-
-                            if (cntTarget == 0)
-                            {
-                                Logger.WriteDebug("Glaive Toss: skipping, no targets would be hit");
-                                return null;
-                            }
-
-                            return target;
-                        }
-                        ),
-                    Spell.Cast(
-                        "Powershot",
-                        on =>
-                        {
-                            int dist = (int) Me.CurrentTarget.Distance + 4;
-                            WoWPoint loc = WoWPoint.RayCast(Me.Location, WoWMathHelper.CalculateNeededFacing(Me.Location, Me.CurrentTarget.Location), 40f);
-                            IEnumerable<WoWUnit> ienum = Clusters.GetPathToPointCluster(loc, Unit.UnfriendlyUnits(dist), dist);
-                            int cntCC = 0;
-                            int cntTarget = 0;
-                            int cntNeutral = 0;
-                            WoWUnit target = null;
-
-                            foreach (WoWUnit u in ienum)
-                            {
-                                cntTarget++;
-                                if (u.IsCrowdControlled())
-                                    cntCC++;
-                                if (!u.Combat && !u.IsTrivial() && !u.Aggro && !u.PetAggro && !(u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))
-                                    cntNeutral++;
-                                if (target == null)
-                                    target = u;
-                                if (Me.CurrentTargetGuid == u.Guid)
-                                    target = u;
-                            }
-
-                            if (cntNeutral > 0)
-                            {
-                                Logger.WriteDebug("Powershot: skipping, {0} additional targets would be pulled", cntNeutral);
-                                return null;
-                            }
-
-                            if (cntCC > 0)
-                            {
-                                Logger.WriteDebug("Powershot: skipping, {0} crowd controlled targets", cntCC);
-                                return null;
-                            }
-
-                            if (cntTarget == 0)
-                            { 
-                                Logger.WriteDebug("Powershot: skipping, no targets would be hit");
-                                return null;
-                            }
-
-                            return target;
-                        }
-                        ),
-                    Spell.Cast(
-                        "Barrage", 
-                        on => 
-                        {
-                            WoWPoint loc = WoWPoint.RayCast( Me.Location, Me.RenderFacing, 30f);
-                            IEnumerable<WoWUnit> ienum = Clusters.GetConeCluster(loc, 100f, 46f, Unit.UnfriendlyUnits(50));
-                            int cntCC = 0;
-                            int cntTarget = 0;
-                            int cntNeutral = 0;
-                            WoWUnit target = null;
-
-                            foreach (WoWUnit u in ienum)
-                            {
-                                cntTarget++;
-                                if (u.IsCrowdControlled())
-                                    cntCC++;
-                                if (!u.Combat && !u.IsTrivial() && !u.Aggro && !u.PetAggro && !(u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))
-                                    cntNeutral++;
-                                if (target == null)
-                                    target = u;
-                                if (Me.CurrentTargetGuid == u.Guid)
-                                    target = u;
-                            }
-
-                            if (cntNeutral > 0)
-                            {
-                                Logger.WriteDebug("Barrage: skipping, {0} additional targets would be pulled", cntNeutral);
-                                return null;
-                            }
-
-                            if (cntCC > 0)
-                            {
-                                Logger.WriteDebug("Barrage: skipping, {0} crowd controlled targets", cntCC);
-                                return null;
-                            }
-                                
-                            if (cntTarget == 0)
-                            {
-                                Logger.WriteDebug("Barrage: skipping, no targets would be hit");
-                                return null;
-                            }
-
-                            return target;
-                        }
-                        ),
-
-                    // for long cooldowns, spend only when worthwhile                      
                     new Decorator(
-                        ret => Pet != null && Target != null && Target.IsAlive
-                            && (Target.IsBoss() || Target.IsPlayer || ScaryNPC || 3 <= Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet)),
+                        req => Me.GotTarget() && Me.IsSafelyFacing(Target) && Target.InLineOfSpellSight,
                         new PrioritySelector(
-                            Spell.Buff("Rapid Fire", ret => Me.Specialization == WoWSpec.HunterMarksmanship && !Me.HasAura("The Beast Within"))
-                            )
-                       ),
+                            Spell.BuffSelf("Exhilaration", ret => Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 20)),
 
-                    new Decorator(
-                        req => (!Me.GotAlivePet || Me.Pet.HealthPercent < 20)
-                            && Me.GotTarget()
-                            && Me.CurrentTarget.SpellDistance().Between(15, 40),
-                        new PrioritySelector(
-                            // CreateHunterTrapBehavior("Freezing Trap", true, on => Me.CurrentTarget, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null),
-                            new PrioritySelector(
-                                ctx => WoWMathHelper.CalculatePointFrom( Me.Location, Me.CurrentTarget.Location, 12f + Me.CurrentTarget.CombatReach ),
-                                CreateHunterTrapBehavior("Ice Trap", loc => (WoWPoint) loc, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null)
+                            Spell.Buff("Widow Venom", ret => HunterSettings.UseWidowVenom && Target.IsPlayer && Me.IsSafelyFacing(Target) && Target.InLineOfSpellSight),
+
+                            // Buffs - don't stack Bestial Wrath and Rapid Fire
+                            Spell.Buff("Bestial Wrath", true, ret => Spell.GetSpellCooldown("Kill Command") == TimeSpan.Zero && !Me.HasAura("Rapid Fire"), "The Beast Within"),
+
+                            Spell.Cast("Stampede",
+                                ret => PartyBuff.WeHaveBloodlust
+                                    || (!Me.IsInGroup() && SafeArea.AllEnemyMobsAttackingMe.Count() > 2)
+                                    || (Me.GotTarget() && Target.IsPlayer && Target.ToPlayer().IsHostile)),
+
+                            // Level 75 Talents
+                            Spell.Cast("A Murder of Crows"),
+
+                            // Level 60 Talents
+                            Spell.Cast("Dire Beast"),
+
+                            // Level 90 Talents
+                            Spell.Cast(
+                                "Glaive Toss",
+                                on =>
+                                {
+                                    if (!Me.GotTarget())
+                                        return null;
+                                    WoWPoint loc = WoWPoint.RayCast(Me.Location, WoWMathHelper.CalculateNeededFacing(Me.Location, Target.Location), 40f);
+                                    IEnumerable<WoWUnit> ienum = Clusters.GetPathToPointCluster(loc, Unit.UnfriendlyUnits(44), 44);
+                                    int cntCC = 0;
+                                    int cntTarget = 0;
+                                    int cntNeutral = 0;
+                                    WoWUnit target = null;
+
+                                    foreach (WoWUnit u in ienum)
+                                    {
+                                        cntTarget++;
+                                        if (u.IsCrowdControlled())
+                                            cntCC++;
+                                        if (!u.Combat && !u.IsTrivial() && !u.Aggro && !u.PetAggro && !(u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))
+                                            cntNeutral++;
+                                        if (target == null)
+                                            target = u;
+                                        if (TargetGuid == u.Guid)
+                                            target = u;
+                                    }
+
+                                    if (cntNeutral > 0)
+                                    {
+                                        Logger.WriteDebug("Glaive Toss: skipping, {0} additional targets would be pulled", cntNeutral);
+                                        return null;
+                                    }
+
+                                    if (cntCC > 0)
+                                    {
+                                        Logger.WriteDebug("Glaive Toss: skipping, {0} crowd controlled targets", cntCC);
+                                        return null;
+                                    }
+
+                                    if (cntTarget == 0)
+                                    {
+                                        Logger.WriteDebug("Glaive Toss: skipping, no targets would be hit");
+                                        return null;
+                                    }
+
+                                    return target;
+                                }
+                                ),
+                            Spell.Cast(
+                                "Powershot",
+                                on =>
+                                {
+                                    int dist = (int)Target.Distance + 4;
+                                    WoWPoint loc = WoWPoint.RayCast(Me.Location, WoWMathHelper.CalculateNeededFacing(Me.Location, Target.Location), 40f);
+                                    IEnumerable<WoWUnit> ienum = Clusters.GetPathToPointCluster(loc, Unit.UnfriendlyUnits(dist), dist);
+                                    int cntCC = 0;
+                                    int cntTarget = 0;
+                                    int cntNeutral = 0;
+                                    WoWUnit target = null;
+
+                                    foreach (WoWUnit u in ienum)
+                                    {
+                                        cntTarget++;
+                                        if (u.IsCrowdControlled())
+                                            cntCC++;
+                                        if (!u.Combat && !u.IsTrivial() && !u.Aggro && !u.PetAggro && !(u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))
+                                            cntNeutral++;
+                                        if (target == null)
+                                            target = u;
+                                        if (TargetGuid == u.Guid)
+                                            target = u;
+                                    }
+
+                                    if (cntNeutral > 0)
+                                    {
+                                        Logger.WriteDebug("Powershot: skipping, {0} additional targets would be pulled", cntNeutral);
+                                        return null;
+                                    }
+
+                                    if (cntCC > 0)
+                                    {
+                                        Logger.WriteDebug("Powershot: skipping, {0} crowd controlled targets", cntCC);
+                                        return null;
+                                    }
+
+                                    if (cntTarget == 0)
+                                    {
+                                        Logger.WriteDebug("Powershot: skipping, no targets would be hit");
+                                        return null;
+                                    }
+
+                                    return target;
+                                }
+                                ),
+                            Spell.Cast(
+                                "Barrage",
+                                on =>
+                                {
+                                    WoWPoint loc = WoWPoint.RayCast(Me.Location, Me.RenderFacing, 30f);
+                                    IEnumerable<WoWUnit> ienum = Clusters.GetConeCluster(loc, 100f, 46f, Unit.UnfriendlyUnits(50));
+                                    int cntCC = 0;
+                                    int cntTarget = 0;
+                                    int cntNeutral = 0;
+                                    WoWUnit target = null;
+
+                                    foreach (WoWUnit u in ienum)
+                                    {
+                                        cntTarget++;
+                                        if (u.IsCrowdControlled())
+                                            cntCC++;
+                                        if (!u.Combat && !u.IsTrivial() && !u.Aggro && !u.PetAggro && !(u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))
+                                            cntNeutral++;
+                                        if (target == null)
+                                            target = u;
+                                        if (TargetGuid == u.Guid)
+                                            target = u;
+                                    }
+
+                                    if (cntNeutral > 0)
+                                    {
+                                        Logger.WriteDebug("Barrage: skipping, {0} additional targets would be pulled", cntNeutral);
+                                        return null;
+                                    }
+
+                                    if (cntCC > 0)
+                                    {
+                                        Logger.WriteDebug("Barrage: skipping, {0} crowd controlled targets", cntCC);
+                                        return null;
+                                    }
+
+                                    if (cntTarget == 0)
+                                    {
+                                        Logger.WriteDebug("Barrage: skipping, no targets would be hit");
+                                        return null;
+                                    }
+
+                                    return target;
+                                }
+                                ),
+
+                            // for long cooldowns, spend only when worthwhile                      
+                            new Decorator(
+                                ret => Pet != null && Target != null && Target.IsAlive
+                                    && (Target.IsBoss() || Target.IsPlayer || ScaryNPC || 3 <= Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet)),
+                                new PrioritySelector(
+                                    Spell.Buff("Rapid Fire", ret => Me.Specialization == WoWSpec.HunterMarksmanship && !Me.HasAura("The Beast Within"))
+                                    )
+                               ),
+
+                            new Decorator(
+                                req => (!Me.GotAlivePet || Me.Pet.HealthPercent < 20)
+                                    && Me.GotTarget()
+                                    && Target.SpellDistance().Between(15, 40),
+                                new PrioritySelector(
+                // CreateHunterTrapBehavior("Freezing Trap", true, on => Target, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null),
+                                    new PrioritySelector(
+                                        ctx => WoWMathHelper.CalculatePointFrom(Me.Location, Target.Location, 12f + Target.CombatReach),
+                                        CreateHunterTrapBehavior("Ice Trap", loc => (WoWPoint)loc, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null)
+                                        )
+                                    )
                                 )
                             )
                         ),
@@ -485,34 +518,34 @@ namespace Singular.ClassSpecific.Hunter
                         ),
 
                     new PrioritySelector(
-                        ctx => (!Me.GotAlivePet ? null : 
+                        ctx => (!Me.GotAlivePet ? null :
                             Unit.NearbyUnfriendlyUnits
                                 .Where(u => u.SpellDistance(Me.Pet) < 30 && Me.Pet.IsSafelyFacing(u))
-                                .OrderBy( u => u.SpellDistance(Me.Pet))
+                                .OrderBy(u => u.SpellDistance(Me.Pet))
                                 .FirstOrDefault()),
 
                         new Decorator(
                             req => ((WoWUnit)req) != null && ((WoWUnit)req).SpellDistance(Me.Pet) < 5,
-                            new PrioritySelector(                           
-                                PetManager.CastAction("Sting", on => (WoWUnit) on),
-                                PetManager.CastAction("Paralyzing Quill", on => (WoWUnit) on),
-                                PetManager.CastAction("Lullaby", on => (WoWUnit) on),
-                                PetManager.CastAction("Pummel", on => (WoWUnit) on),
-                                PetManager.CastAction("Spore Cloud", on => (WoWUnit) on),
-                                PetManager.CastAction("Trample", on => (WoWUnit) on),
-                                PetManager.CastAction("Horn Toss", on => (WoWUnit) on)
+                            new PrioritySelector(
+                                PetManager.CastAction("Sting", on => (WoWUnit)on),
+                                PetManager.CastAction("Paralyzing Quill", on => (WoWUnit)on),
+                                PetManager.CastAction("Lullaby", on => (WoWUnit)on),
+                                PetManager.CastAction("Pummel", on => (WoWUnit)on),
+                                PetManager.CastAction("Spore Cloud", on => (WoWUnit)on),
+                                PetManager.CastAction("Trample", on => (WoWUnit)on),
+                                PetManager.CastAction("Horn Toss", on => (WoWUnit)on)
                                 )
                             ),
 
                         new Decorator(
                             req => ((WoWUnit)req) != null && ((WoWUnit)req).SpellDistance(Me.Pet) < 20,
                             new PrioritySelector(
-                                PetManager.CastAction("Sonic Blast", on => (WoWUnit) on),
-                                PetManager.CastAction("Petrifying Gaze", on => (WoWUnit) on),
-                                PetManager.CastAction("Lullaby", on => (WoWUnit) on),
-                                PetManager.CastAction("Bad Manner", on => (WoWUnit) on),
-                                PetManager.CastAction("Nether Shock", on => (WoWUnit) on),
-                                PetManager.CastAction("Serenity Dust", on => (WoWUnit) on)
+                                PetManager.CastAction("Sonic Blast", on => (WoWUnit)on),
+                                PetManager.CastAction("Petrifying Gaze", on => (WoWUnit)on),
+                                PetManager.CastAction("Lullaby", on => (WoWUnit)on),
+                                PetManager.CastAction("Bad Manner", on => (WoWUnit)on),
+                                PetManager.CastAction("Nether Shock", on => (WoWUnit)on),
+                                PetManager.CastAction("Serenity Dust", on => (WoWUnit)on)
                                 )
                             ),
 
@@ -528,6 +561,57 @@ namespace Singular.ClassSpecific.Hunter
                     )
                 );
         }
+
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Hunter, priority: 999)]
+        public static Composite CreateHunterCombat()
+        {
+            return new PrioritySelector(
+                CreateCancelCamouflage()
+                );
+        }
+
+        public static Composite CreateCancelCamouflage()
+        {
+            if (StyxWoW.Me.Class != WoWClass.Hunter || !SpellManager.HasSpell("Camouflage"))
+                return new ActionAlwaysFail();
+
+            return new Decorator(
+                req => camouflageExpires != DateTime.MinValue,
+                new Sequence(
+                    ctx => StyxWoW.Me.GetAllAuras().FirstOrDefault(a => a.Name == "Camouflage"),
+
+                    // fail sequence if no aura
+                    new Action(r =>
+                    {
+                        if (r != null)
+                        {
+                            camouflageExpires = DateTime.Now + ((WoWAura)r).TimeLeft;
+                            return RunStatus.Success;
+                        }
+
+                        if (camouflageExpires != DateTime.MinValue)
+                        {
+                            camouflageStart = DateTime.MinValue;
+                            camouflageExpires = DateTime.MinValue;
+                            Logger.Write("^Camouflage: expired");
+                        }
+                        return RunStatus.Failure;
+                    }),
+
+                    new ThrottlePasses(
+                        1,
+                        TimeSpan.FromSeconds(3),
+                        RunStatus.Success,
+                        new Action(r =>
+                        {
+                            WoWAura aura = (WoWAura)r;
+                            Logger.Write(LogColor.Hilite, "^Camouflage: expires in {0:F1} seconds @ {1:hh:mm:ss.f}", aura.TimeLeft.TotalSeconds, camouflageExpires);
+                        })
+                        )
+                    )
+                );
+        }
+
 
         private static bool NeedFeignDeath
         {
@@ -1220,7 +1304,7 @@ namespace Singular.ClassSpecific.Hunter
                 && u.Distance <= 40 
                 && !u.IsCrowdControlled()
                 // && !u.HasAnyAura("Explosive Trap", "Ice Trap", "Freezing Trap", "Snake Trap")
-                && u.Guid != Me.CurrentTargetGuid
+                && u.Guid != TargetGuid
                 && !Blacklist.Contains(u.Guid, BlacklistFlags.Combat)                   
                 && !Unit.NearbyFriendlyPlayers.Any( g => g.CurrentTargetGuid == u.Guid);
             return good;
@@ -1229,7 +1313,7 @@ namespace Singular.ClassSpecific.Hunter
         //
         private static bool NeedsPvpCrowdControl(WoWUnit u)
         {
-            bool good = u.Distance <= 40 && !u.IsCrowdControlled() && u.Guid != Me.CurrentTargetGuid && !Blacklist.Contains(u.Guid, BlacklistFlags.Combat);
+            bool good = u.Distance <= 40 && !u.IsCrowdControlled() && u.Guid != TargetGuid && !Blacklist.Contains(u.Guid, BlacklistFlags.Combat);
             // && !Unit.NearbyGroupMembers.Any( g => g.CurrentTargetGuid == u.Guid);
             return good;
         }

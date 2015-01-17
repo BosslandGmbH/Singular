@@ -499,7 +499,7 @@ namespace Singular.Helpers
         private static Composite CreateClearPendingCursorSpell(RunStatus finalResult)
         {
             Sequence seq = new Sequence(
-                new Action(r => Logger.WriteDebug(targetColor, "EnsureTarget: /cancel Pending Spell {0}", Spell.GetPendingCursorSpell.Name)),
+                new Action(r => Logger.WriteDebug(targetColor, "CancelPendingSpell: /cancelling Pending Spell {0}", Spell.GetPendingCursorSpell.Name)),
                 new Action(ctx => Lua.DoString("SpellStopTargeting()"))
                 );
 

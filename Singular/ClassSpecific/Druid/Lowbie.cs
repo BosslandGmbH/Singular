@@ -103,11 +103,11 @@ namespace Singular.ClassSpecific.Druid
                         // moonfire if already out of form
                         Spell.Buff("Moonfire", req => StyxWoW.Me.Shapeshift != ShapeshiftForm.Cat || StyxWoW.Me.CurrentTarget.Distance > 8),
 
-                        Common.CastForm("Cat Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
+                        Common.CastForm( ShapeshiftForm.Cat, req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
                         Helpers.Common.CreateInterruptBehavior(),
 
                         new Decorator(
-                            ret => StyxWoW.Me.HasAura("Cat Form"),
+                            ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat,
                             new PrioritySelector(
 
                                 Spell.Buff("Rake", true),

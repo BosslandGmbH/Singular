@@ -357,6 +357,8 @@ namespace Singular.ClassSpecific.Priest
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
+                        CreateFightAssessment(),
+
                         Spell.BuffSelf("Shadowform"),
 
                         // blow-up target (or snipe a kill) when possible 
@@ -468,6 +470,8 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                        CreateFightAssessment(),
 
                         Helpers.Common.CreateInterruptBehavior(),
                         Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),

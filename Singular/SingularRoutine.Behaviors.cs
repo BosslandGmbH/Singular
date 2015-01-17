@@ -551,6 +551,10 @@ namespace Singular
 
                 composite = new LockSelector(
                     new CallWatch("Heal",
+
+                        // following must occur before any cast or movement during Combat
+                        Generic.CreateCancelShadowmeld(),
+
                         SingularRoutine.Instance._lostControlBehavior,
                         new Decorator(
                             ret => Kite.IsKitingActive(),
@@ -907,7 +911,7 @@ namespace Singular
                 else if (!SpellManager.HasSpell(PullMoreNeedSpell))
                     Logger.Write(LogColor.Init, "Pull More: disabled for{0} until learning '{1}'", SpecAndClassName(), PullMoreNeedSpell);
                 else
-                    Logger.Write(LogColor.Init, "Pull More: disabled, only {0} target will Pull targets", SingularRoutine.GetBotName());
+                    Logger.Write(LogColor.Init, "Pull More: disabled, only {0} will Pull targets", SingularRoutine.GetBotName());
             }
             else
             {

@@ -657,38 +657,67 @@ namespace Singular
         private static bool _lastIsGCD = false;
         private static bool _lastIsCasting = false;
         private static bool _lastIsChanneling = false;
+        private static bool _lastIsInVehicle = false;
+        private static bool _lastIsInCinematic = false;
+        private static bool _lastIsSpellPending = false;
+        private static string _lastSpellPending = string.Empty;
+
         private static DateTime _nextAbcWarning = DateTime.MinValue;
         public static bool UpdateDiagnosticCastingState( bool retVal = false)
         {
             if (SingularSettings.Debug && SingularSettings.DebugSpellCasting)
             {
-                if (_lastIsGCD != Spell.IsGlobalCooldown())
+                if (SingularSettings.DebugSpellCasting)
                 {
-                    _lastIsGCD = Spell.IsGlobalCooldown();
-                    Logger.WriteDebug("CastingState:  GCD={0} GCDTimeLeft={1}", _lastIsGCD, (int)Spell.GcdTimeLeft.TotalMilliseconds);
+                    if (_lastIsGCD != Spell.IsGlobalCooldown())
+                    {
+                        _lastIsGCD = !_lastIsGCD;
+                        Logger.WriteDebug("CastingState:  GCD={0} GCDTimeLeft={1}", _lastIsGCD.ToYN(), (int)Spell.GcdTimeLeft.TotalMilliseconds);
+                    }
+                    if (_lastIsCasting != Spell.IsCasting())
+                    {
+                        _lastIsCasting = !_lastIsCasting;
+                        Logger.WriteDebug("CastingState:  Casting={0} CastTimeLeft={1}", _lastIsCasting.ToYN(), (int)Me.CurrentCastTimeLeft.TotalMilliseconds);
+                    }
+                    if (_lastIsChanneling != Spell.IsChannelling())
+                    {
+                        _lastIsChanneling = !_lastIsChanneling;
+                        Logger.WriteDebug("ChannelingState:  Channeling={0} ChannelTimeLeft={1}", _lastIsChanneling.ToYN(), (int)Me.CurrentChannelTimeLeft.TotalMilliseconds);
+                    }
                 }
-                if (_lastIsCasting != Spell.IsCasting())
+                if (_lastIsInVehicle != Me.InVehicle)
                 {
-                    _lastIsCasting = Spell.IsCasting();
-                    Logger.WriteDebug("CastingState:  Casting={0} CastTimeLeft={1}", _lastIsCasting, (int)Me.CurrentCastTimeLeft.TotalMilliseconds);
-                }
-                if (_lastIsChanneling != Spell.IsChannelling())
-                {
-                    _lastIsChanneling = Spell.IsChannelling();
-                    Logger.WriteDebug("ChannelingState:  Channeling={0} ChannelTimeLeft={1}", _lastIsChanneling, (int)Me.CurrentChannelTimeLeft.TotalMilliseconds);
+                    _lastIsInVehicle = !_lastIsInVehicle;
+                    Logger.WriteDebug("VehicleState:  InVehicle={0} ***", _lastIsInVehicle.ToYN());
                 }
 
-                /// Special: provide diagnostics if healer 
-                if ( HealerManager.NeedHealTargeting && (_nextAbcWarning < DateTime.Now) && !Me.IsCasting && !Me.IsChanneling && !Spell.IsGlobalCooldown(LagTolerance.No))
+                if (_lastIsInCinematic != InCinematic())
                 {
-                    WoWUnit low = HealerManager.FindLowestHealthTarget();
-                    if (low != null )
+                    _lastIsInCinematic = !_lastIsInCinematic;
+                    Logger.WriteDebug("CinematicState:  InCinematic={0} ***", _lastIsInCinematic.ToYN());
+                }
+                WoWSpell pending = Spell.GetPendingCursorSpell;
+                if (_lastIsSpellPending != (pending != null))
+                {
+                    _lastIsSpellPending = !_lastIsSpellPending;
+                    _lastSpellPending = pending.Name;
+                    Logger.WriteDebug("PendingState:  Pending Target={0}{1}", _lastIsSpellPending.ToYN(), !_lastIsSpellPending ? "" : ", Spell=" + _lastSpellPending);
+                }
+
+                if (SingularSettings.DebugSpellCasting)
+                {
+                    /// Special: provide diagnostics if healer 
+                    if (HealerManager.NeedHealTargeting && (_nextAbcWarning < DateTime.Now) && !Me.IsCasting && !Me.IsChanneling && !Spell.IsGlobalCooldown(LagTolerance.No))
                     {
-                        float lh = low.PredictedHealthPercent();
-                        if ((SingularSettings.Instance.HealerCombatAllow && HealerManager.CancelHealerDPS()) || (!SingularSettings.Instance.HealerCombatAllow && lh < 70))
+                        WoWUnit low = HealerManager.FindLowestHealthTarget();
+                        if (low != null)
                         {
-                            Logger.WriteDebug("Healer ABC Warning: no cast in progress detected, low health {0} {1:F1}% @ {2:F1} yds", low.SafeName(), lh, low.SpellDistance());
-                            _nextAbcWarning = DateTime.Now + TimeSpan.FromSeconds(1);
+                            float lh = low.PredictedHealthPercent();
+                            if ((SingularSettings.Instance.HealerCombatAllow && HealerManager.CancelHealerDPS()) || (!SingularSettings.Instance.HealerCombatAllow && lh < 70))
+                            {
+                                Logger.WriteDebug("Healer ABC Warning: no cast in progress detected, low health {0} {1:F1}% @ {2:F1} yds", low.SafeName(), lh, low.SpellDistance());
+                                _nextAbcWarning = DateTime.Now + TimeSpan.FromSeconds(1);
+                            }
                         }
                     }
                 }

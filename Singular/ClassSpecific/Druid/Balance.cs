@@ -228,7 +228,7 @@ namespace Singular.ClassSpecific.Druid
                     new PrioritySelector(
 
                         // Spell.Buff("Entangling Roots", ret => Me.CurrentTarget.Distance > 12),
-                        Spell.Buff("Faerie Swarm", ret => Me.CurrentTarget.IsMoving && Me.CurrentTarget.Distance > 20),
+                        CreateBalanceFaerieFireBehavior(),
 
                         // yes, only 8yds because we are knocking back only if close to melee range
                         Spell.Cast("Typhoon",
@@ -346,7 +346,9 @@ namespace Singular.ClassSpecific.Druid
                     ret => !Spell.IsGlobalCooldown(), 
                     new PrioritySelector(
 
-                        Common.CastForm("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
+                        Common.CastForm( ShapeshiftForm.Moonkin, req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
+
+                        CreateBalanceFaerieFireBehavior(),
 
                         new PrioritySelector(
                             ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => u.IsCasting && u.Distance <30 && u.CurrentTargetGuid == Me.Guid ),
@@ -383,13 +385,23 @@ namespace Singular.ClassSpecific.Druid
                             ),
                         */
                         // More DoTs!!  Dot EVERYTHING (including pets) to boost Shooting Stars proc chance
-                        new PrioritySelector(
-                            ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => !u.HasAllMyAuras( "Moonfire", "Sunfire") && Me.IsSafelyFacing(u) && u.InLineOfSpellSight ),
-                            Spell.Buff( "Moonfire", on => (WoWUnit) on),
-                            Spell.Buff( "Sunfire", on => (WoWUnit) on)
+                        new Decorator(
+                            req => SpellManager.HasSpell("Sunfire"),
+                            new PrioritySelector(
+                                ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => !u.HasMyAura("Sunfire") && !u.IsCrowdControlled() && Me.IsSafelyFacing(u) && u.InLineOfSpellSight),
+                                Spell.Buff("Sunfire", on => (WoWUnit)on)
+                                )
                             ),
 
-                        Spell.Cast( "Starfall"),
+                        new Decorator(
+                            req => SpellManager.HasSpell("Moonfire"),
+                            new PrioritySelector(
+                                ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => !u.HasMyAura("Moonfire") && !u.IsCrowdControlled() && Me.IsSafelyFacing(u) && u.InLineOfSpellSight),
+                                Spell.Buff("Moonfire", on => (WoWUnit)on)
+                                )
+                            ),
+
+                        Spell.Cast("Starfall"),
 
                         new Decorator(
                             ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid),
@@ -408,7 +420,9 @@ namespace Singular.ClassSpecific.Druid
                                 )
                             ),
 #endif
-                        // Now on any group target missing Weakened Armor
+                        
+
+                           // Now on any group target missing Weakened Armor
                         Spell.Buff("Fairie Fire",
                         on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.Distance < 35 && !u.HasAura("Weakened Armor")
                                                                     && Unit.GroupMembers.Any(m => m.CurrentTargetGuid == u.Guid)
@@ -442,7 +456,7 @@ namespace Singular.ClassSpecific.Druid
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        Common.CastForm("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
+                        Common.CastForm( ShapeshiftForm.Moonkin, req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
                         // Spell.Cast("Mighty Bash", ret => Me.CurrentTarget.IsWithinMeleeRange),
 
@@ -596,7 +610,7 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
                 CreateBalanceDiagnosticOutputBehavior(),
-                Common.CastForm("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
+                Common.CastForm( ShapeshiftForm.Moonkin, req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
                 );
         }
 
@@ -604,7 +618,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateBalanceCombatBuffNormal()
         {
             return new PrioritySelector(
-                Common.CastForm("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
+                Common.CastForm( ShapeshiftForm.Moonkin, req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
                 Spell.BuffSelf("Flap", req => glyphFlappingOwl && Me.Shapeshift == ShapeshiftForm.Moonkin && Me.IsFalling)
                 );
         }
@@ -613,7 +627,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateBalanceCombatBuffBattlegrounds()
         {
             return new PrioritySelector(
-                Common.CastForm("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
+                Common.CastForm( ShapeshiftForm.Moonkin, req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
                 Spell.BuffSelf("Flap", req => glyphFlappingOwl && Me.Shapeshift == ShapeshiftForm.Moonkin && Me.IsFalling)
                 );
         }
@@ -679,6 +693,22 @@ namespace Singular.ClassSpecific.Druid
 
         #endregion
 
+        private static Composite CreateBalanceFaerieFireBehavior()
+        {
+            if (!SpellManager.HasSpell("Faerie Swarm"))
+                return new ActionAlwaysFail();
+
+            return Common.CreateFaerieFireBehavior(
+                on => Me.CurrentTarget,
+                req => Me.GotTarget()
+                    && Me.CurrentTarget.IsPlayer
+                    && (Me.CurrentTarget.Class == WoWClass.Rogue || Me.CurrentTarget.Shapeshift == ShapeshiftForm.Cat)
+                    && !Me.CurrentTarget.HasAnyAura("Faerie Fire", "Faerie Swarm")
+                    && Me.CurrentTarget.SpellDistance() < 35
+                    && Me.IsSafelyFacing(Me.CurrentTarget)
+                    && Me.CurrentTarget.InLineOfSpellSight
+                );
+        }
 
         private static WaitTimer detonateTimer = new WaitTimer(TimeSpan.FromSeconds(4));
         private static int checkMushroomCount { get; set; }

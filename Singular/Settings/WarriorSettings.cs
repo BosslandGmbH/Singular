@@ -129,13 +129,6 @@ namespace Singular.Settings
         public bool VictoryRushOnCooldown { get; set; }
 
         [Setting]
-        [DefaultValue(false)]
-        [Category("General")]
-        [DisplayName("Use Disarm")]
-        [Description("True: use Disarm on cooldown; False: do not cast")]
-        public bool UseDisarm { get; set; }
-
-        [Setting]
         [DefaultValue(50)]
         [Category("Defensive")]
         [DisplayName("Die by the Sword %")]

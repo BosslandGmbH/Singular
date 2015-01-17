@@ -960,38 +960,44 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(SimpleIntDelegate spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
-            return new Decorator(ret => requirements != null && onUnit != null,
-                new Throttle(
-                    new Action(ret =>
+            if (spellId == null || onUnit == null || requirements == null)
+            {
+                System.Diagnostics.Debug.Assert(spellId != null);
+                System.Diagnostics.Debug.Assert(onUnit != null);
+                System.Diagnostics.Debug.Assert(requirements != null);
+                return new ActionAlwaysFail();
+            }
+
+            return new Throttle(
+                new Action(ret =>
+                {
+                    int id = spellId(ret);
+
+                    // exit now if spell search not needed
+                    if (id == 0)
+                        return RunStatus.Failure;
+
+                    SpellFindResults sfr;
+                    if (SpellManager.FindSpell(id, out sfr))
                     {
-                        int id = spellId(ret);
-
-                        // exit now if spell search not needed
-                        if (id == 0)
-                            return RunStatus.Failure;
-
-                        SpellFindResults sfr;
-                        if (SpellManager.FindSpell(id, out sfr))
+                        WoWUnit castOnUnit = onUnit(ret);
+                        if (castOnUnit != null && requirements(ret))
                         {
-                            WoWUnit castOnUnit = onUnit(ret);
-                            if (castOnUnit != null && requirements(ret))
+                            if (Spell.CanCastHack(sfr, castOnUnit, skipWowCheck: true))
                             {
-                                if (Spell.CanCastHack(sfr, castOnUnit, skipWowCheck: true))
+                                WoWSpell spell = sfr.Override ?? sfr.Original;
+                                // LogCast(spell.Name, castOnUnit, spell.IsHealingSpell);
+                                LogCast(spell.Name, castOnUnit, spell.IsHeal());
+                                if (Spell.CastPrimative(spell, castOnUnit))
                                 {
-                                    WoWSpell spell = sfr.Override ?? sfr.Original;
-                                    // LogCast(spell.Name, castOnUnit, spell.IsHealingSpell);
-                                    LogCast(spell.Name, castOnUnit, spell.IsHeal());
-                                    if (Spell.CastPrimative(spell, castOnUnit))
-                                    {
-                                        return RunStatus.Success;
-                                    }
+                                    return RunStatus.Success;
                                 }
                             }
                         }
+                    }
 
-                        return RunStatus.Failure;
-                    })
-                )
+                    return RunStatus.Failure;
+                })
             );
         }
 
@@ -1350,11 +1356,45 @@ namespace Singular.Helpers
                 requirements = req => true;
 
             return new Sequence(
-                BuffSelf( name, requirements, expirSecs),
-                new DynaWait( 
-                    time => TimeSpan.FromMilliseconds(Me.Combat ? 500 : 1000),
-                    until => StyxWoW.Me.HasAura( name(until)),
-                    new ActionAlwaysSucceed()
+                BuffSelf(name, requirements, expirSecs),
+                new PrioritySelector(
+                    new DynaWait(
+                        time => TimeSpan.FromMilliseconds(Me.Combat ? 500 : 1000),
+                        until => StyxWoW.Me.HasAura(name(until)),
+                        new ActionAlwaysSucceed()
+                        ),
+                    new Action(r =>
+                    {
+                        Logger.WriteDiagnostic("BuffSelfAndWait: aura [{0}] not applied!!!", name(r));
+                        return RunStatus.Failure;
+                    })
+                    )
+                );
+        }
+
+        public static Composite BuffSelfAndWait( int id, SimpleBooleanDelegate requirements = null, int expirSecs = 0)
+        {
+            WoWSpell spell = WoWSpell.FromId(id);
+            if (spell == null || !SpellManager.HasSpell(spell.Id))
+                return new ActionAlwaysFail();
+
+            if (requirements == null)
+                requirements = req => true;
+
+            return new Sequence(
+                BuffSelf(id, requirements),
+                new PrioritySelector(
+                    new DynaWait(
+                        time => TimeSpan.FromMilliseconds(Me.Combat ? 500 : 1000),
+                        until => StyxWoW.Me.HasAura(id),
+                        new ActionAlwaysSucceed()
+                        ),
+                    new Action(r =>
+                    {
+                        WoWSpell s = WoWSpell.FromId(id);
+                        Logger.WriteDiagnostic("BuffSelfAndWait: aura [{0}] #{1} not applied!!!", s == null ? "(null)" : s.Name, id);
+                        return RunStatus.Failure;
+                    })
                     )
                 );
         }
@@ -1420,8 +1460,10 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite Buff(int spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
-            return new Decorator(ret => onUnit(ret) != null && onUnit(ret).Auras.Values.All(a => a.SpellId != spellId),
-                Cast(spellId, onUnit, requirements));
+            return new Decorator(
+                req => onUnit(req) != null && onUnit(req).Auras.Values.All(a => a.SpellId != spellId),
+                Cast(spellId, onUnit, requirements)
+                );
         }
 
         /// <summary>

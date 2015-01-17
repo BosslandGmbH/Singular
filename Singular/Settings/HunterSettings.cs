@@ -122,6 +122,13 @@ namespace Singular.Settings
         [Description("Cast FD to drop agro if targeted during fight; does not attempt to survive wipes")]
         public bool FeignDeathInInstances { get; set; }
 
+        [Setting]
+        [DefaultValue(5)]
+        [Category("Common")]
+        [DisplayName("Camouflage: Health %")]
+        [Description("Cast if health below this % and have Enhanced Camouflage (Level 92+); 0: disable")]
+        public int ImprovedCamouflageHealth { get; set; }
+
        
         #endregion
     }

@@ -93,7 +93,7 @@ namespace Singular.Helpers
                 if (unit.Class == WoWClass.Monk)    // treat all enemy Monks as melee
                     return true;
 
-                if (unit.Class == WoWClass.Druid && unit.HasAnyAura("Cat Form", "Bear Form"))
+                if (unit.Class == WoWClass.Druid && unit.HasAnyShapeshift(ShapeshiftForm.Cat, ShapeshiftForm.Bear))
                     return true;
 
                 if (unit.Class == WoWClass.Shaman && unit.GetAllAuras().Any(a => a.Name == "Unleashed Rage" && a.CreatorGuid == unit.Guid))

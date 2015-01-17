@@ -276,8 +276,7 @@ namespace Singular.Settings
         public static bool IsTrinketUsageWanted(TrinketUsage usage)
         {
             return usage == SingularSettings.Instance.Trinket1Usage
-                || usage == SingularSettings.Instance.Trinket2Usage
-                || usage == SingularSettings.Instance.GloveUsage;
+                || usage == SingularSettings.Instance.Trinket2Usage;
         }
 
         /// <summary>
@@ -981,12 +980,6 @@ namespace Singular.Settings
         [DisplayName("Trinket 2 Usage")]
         public TrinketUsage Trinket2Usage { get; set; }
 
-        [Setting,ReadOnly(false)]
-        [DefaultValue(TrinketUsage.OnCooldownInCombat)]
-        [Category("Items")]
-        [DisplayName("Glove Enchant Usage")]
-        public TrinketUsage GloveUsage { get; set; }
-
         #endregion
 
         #region Category: Racials
@@ -1004,13 +997,20 @@ namespace Singular.Settings
         [Description("Uses Gift of the Naaru when HP falls below this %.")]
         public int GiftNaaruHP { get; set; }
 
-        [Setting,ReadOnly(false)]
+        [Setting, ReadOnly(false)]
+        [DefaultValue(0)]
+        [Category("Racials")]
+        [DisplayName("Shadowmeld: Solo Health %")]
+        [Description("Solo Only: 0 = disable Shadowmeld, else cast if health % falls below this value")]
+        public int ShadowmeldSoloHealthPct { get; set; }
+
+        [Setting, ReadOnly(false)]
         [DefaultValue(true)]
         [Category("Racials")]
-        [DisplayName("Shadowmeld Threat Drop")]
+        [DisplayName("Shadowmeld: Threat Drop")]
         [Description("When in a group (and not a tank), uses shadowmeld as a threat drop.")]
         public bool ShadowmeldThreatDrop { get; set; }
-        
+
         #endregion
 
         #region Category: Tanking

@@ -1,3 +1,51 @@
+--- Release 4.0.0.4234 ---
+
+General 
+
+*new* - Night Elf: support for Shadowmeld in Normal context (Solo).  Will cast if health falls below configurable %.  Default is 0 which disables.
+
+change- Glove Enchants: support and settings removed
+
+fixed - Party Buffs: will now correctly detect if the target missing the buff is not suitable as cast target (not in LoS, out of range, etc.)
+
+fixed - Melee Detection: now correctly identifies an enemy in Claws of Shirvallah form as melee
+
+
+Druid
+
+fixed - Feral - Claws of Shirvallah: cast was failing as HB doesn't support casting by name.  Revised Druid form casting logic to account for this overriding Cat Form
+
+fixed - Balance - PVP Multi-DoTting: revised logic to account for Moonfire and Sunfire not being available at same time.  Should now have increased DoT uptime in PvP
+
+fixed - Balance - Faerie Swarm: fixed support for this talent 
+
+
+Hunter
+
+*new* - All Specs - Camouflage: will cast when health falls below class specific health % setting (default 5%).  Only cast if Enhanced Camouflage (Level 92+) known
+
+fixed - All Specs - Exception occurring in checking for need to cast some buffs that was interrupting combat sequence
+
+
+Monk
+
+fixed - Windwalker - no longer spams Stance of the Fierce Tiger
+
+
+Priest
+
+fixed - Shadow - corrected AOE detection in PVP and Instances
+
+
+Warrior
+
+*new* - All Specs - support for Glyph of Wind and Thunder
+
+
+
+
+
+
 --- Release 4.0.0.4208 ---
 
 General 

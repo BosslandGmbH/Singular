@@ -515,7 +515,7 @@ namespace Singular
             return InstDiff[diff];
         }
 
-        public bool InCinematic()
+        public static bool InCinematic()
         {
             bool inCin = Lua.GetReturnVal<bool>("return InCinematic()", 0);
             return inCin;

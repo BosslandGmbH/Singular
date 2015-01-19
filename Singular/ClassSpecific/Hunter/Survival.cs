@@ -4,7 +4,7 @@ using Singular.Helpers;
 using Singular.Managers;
 using Singular.Settings;
 using Styx;
-
+using Styx.Common;
 using Styx.CommonBot;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
@@ -22,7 +22,7 @@ namespace Singular.ClassSpecific.Hunter
         private static HunterSettings HunterSettings { get { return SingularSettings.Instance.Hunter(); } }
 
         #region Normal Rotation
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterSurvival, WoWContext.Normal | WoWContext.Instances )]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterSurvival, WoWContext.Normal)]
         public static Composite CreateHunterSurvivalNormalPullAndCombat()
         {
             return new PrioritySelector(
@@ -81,10 +81,11 @@ namespace Singular.ClassSpecific.Hunter
                         // Single Target Rotation
                         Spell.Cast("Black Arrow", ret => Me.CurrentTarget.TimeToDeath() > 12),
                         Spell.Cast("Explosive Shot"),
-                        Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 70 || !Me.CurrentTarget.HasMyAura("Serpent Sting")),
-                        Spell.Cast("Cobra Shot"),
+						Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 70 || !Me.CurrentTarget.HasMyAura("Serpent Sting")),
+						Spell.Cast("Cobra Shot", ret => Me.CurrentFocus < 70),
+						Spell.Cast("Focusing Shot", ret => Me.CurrentFocus < 50),
 
-                        Common.CastSteadyShot( on => Me.CurrentTarget, ret => !SpellManager.HasSpell("Cobra Shot"))
+                        Common.CastSteadyShot( on => Me.CurrentTarget, ret => !SpellManager.HasSpell("Cobra Shot") && !SpellManager.HasSpell("Focusing Shot"))
                         )
                     ),
 
@@ -94,9 +95,76 @@ namespace Singular.ClassSpecific.Hunter
 
         #endregion
 
-        #region Battleground Rotation
+		#region Instance Rotation
 
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterSurvival, WoWContext.Battlegrounds)]
+		[Behavior(BehaviorType.Pull, WoWClass.Hunter, WoWSpec.HunterSurvival, WoWContext.Instances)]
+	    public static Composite CreateHunterSurvivalInstancesPull()
+	    {
+		    return new PrioritySelector();
+	    }
+
+		[Behavior(BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterSurvival, WoWContext.Instances)]
+		public static Composite CreateHunterSurvivalInstancesCombat()
+		{
+			return new PrioritySelector(
+
+				Common.CreateHunterEnsureReadyToAttackFromLongRange(),
+
+				Spell.WaitForCastOrChannel(),
+
+				// updated time to death tracking values before we need them
+				new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
+
+				CreateSurvivalDiagnosticOutputBehavior(),
+
+				Helpers.Common.CreateInterruptBehavior(),
+
+				// We don't really want to do any of those below in raids
+				new Decorator(ret => !Me.CurrentMap.IsRaid,
+					new PrioritySelector(
+
+						Common.CreateMisdirectionBehavior(),
+
+						Common.CreateHunterAvoidanceBehavior(null, null),
+
+						Common.CreateHunterNormalCrowdControl(),
+
+						Spell.Cast("Tranquilizing Shot", req => Me.GetAllAuras().Any(a => a.Spell.DispelType == WoWDispelType.Enrage)),
+
+						Spell.Buff("Concussive Shot",
+							ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
+								&& Me.CurrentTarget.Distance > Spell.MeleeRange),
+
+						// Defensive Stuff
+						Spell.Cast("Intimidation",
+							ret => Me.GotTarget()
+								&& Me.CurrentTarget.IsAlive
+								&& Me.GotAlivePet
+								&& (!Me.CurrentTarget.GotTarget() || Me.CurrentTarget.CurrentTarget == Me))						
+						)
+					),
+
+				Spell.Cast("A Murder of Crows"),
+				Spell.Cast("Black Arrow"),
+				Spell.Cast("Explosive Shot"),
+				Spell.Cast("Dire Beast"),
+				Spell.Cast("Barrage"),
+				Spell.Cast("Multi-Shot", ret => (Me.CurrentFocus > 70 || Me.CurrentTarget.HasKnownAuraExpired("Serpent Sting", 4)) && Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 2),
+				Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 70 || Me.CurrentTarget.HasKnownAuraExpired("Serpent Sting", 4)),
+				Common.CreateHunterTrapBehavior("Explosive Trap", true, ret => Me.CurrentTarget),
+				Spell.Cast("Cobra Shot", ret => Me.CurrentFocus < 70),
+				Spell.Cast("Focusing Shot", ret => Me.CurrentFocus < 50),
+				
+                Common.CastSteadyShot( on => Me.CurrentTarget, ret => !SpellManager.HasSpell("Cobra Shot") && !SpellManager.HasSpell("Focusing Shot")),
+				Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget, 35f, 30f)
+				);
+		}
+
+		#endregion
+
+		#region Battleground Rotation
+
+		[Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterSurvival, WoWContext.Battlegrounds)]
         public static Composite CreateHunterSurvivalPvPPullAndCombat()
         {
             return new PrioritySelector(

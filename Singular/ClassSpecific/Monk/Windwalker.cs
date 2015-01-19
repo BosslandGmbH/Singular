@@ -132,9 +132,73 @@ namespace Singular.ClassSpecific.Monk
                     )
                 );
         }
+		
+		[Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Instances)]
+		public static Composite CreateWindwalkerMonkInstanceCombatBuffs()
+		{
+			return new PrioritySelector(
+				Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
+				Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
+				Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
+				Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPct),
+				Spell.BuffSelf("Zen Sphere", ctx => HasTalent(MonkTalents.ZenSphere) && Me.HealthPercent < 90),
+
+				Spell.BuffSelf(
+					"Invoke Xuen, the White Tiger",
+					req => !Me.IsMoving
+						&& Me.CurrentTarget.IsBoss()
+						&& Me.CurrentTarget.IsWithinMeleeRange
+						&& (PartyBuff.WeHaveBloodlust || PartyBuff.WeHaveSatedDebuff)
+						)
+				);
+		}
+
+		[Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Instances)]
+	    public static Composite CreateWindwalkerMonkCombatInstances()
+	    {
+			return new PrioritySelector(
+				Helpers.Common.EnsureReadyToAttackFromMelee(),
+
+				Spell.WaitForCastOrChannel(FaceDuring.Yes),
+
+				new Decorator(
+					ret => !Spell.IsGlobalCooldown(),
+					new PrioritySelector(
+
+						CreateWindwalkerDiagnosticBehavior(),
+
+						Helpers.Common.CreateInterruptBehavior(),
+						
+						Common.CreateMonkCloseDistanceBehavior(),
+
+						Common.CastTouchOfDeath(),
+
+						new Decorator(
+							req => Me.MaxChi - Me.CurrentChi >= 3,
+							new PrioritySelector(
+								Spell.Cast("Spinning Crane Kick", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3),
+								Spell.Cast("Expel Harm", ret => StyxWoW.Me.HealthPercent < 80),
+								Spell.Cast("Jab")
+								)
+							),
+
+						Spell.Cast("Tiger Palm", ret => Me.HasKnownAuraExpired("Tiger Power")),
+						Spell.Cast("Rising Sun Kick", ret => !SpellManager.HasSpell("Chi Explosion") || Me.CurrentTarget.HasAuraExpired("Rising Sun Kick", 1)),
+						Spell.Cast("Fists of Fury"),
+						Spell.Cast("Chi Explosion", ret => Me.HasAura("Combo Breaker: Chi Explosion") && Me.CurrentChi >= 3),
+						Spell.Cast("Blackout Kick", ret => Me.HasAura("Combo Breaker: Blackout Kick")),
+						Spell.Cast("Tiger Palm", ret => Me.HasAura("Combo Breaker: Tiger Palm")),
+						Spell.Cast("Chi Wave"),
+						Spell.Cast("Chi Explosion", ret => Me.CurrentChi >= 4 || Me.CurrentChi >= 3 && Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(Me.CurrentTarget.Location) <= 8 * 8) < 2),
+						Spell.Cast("Blackout Kick", ret => !SpellManager.HasSpell("Chi Explosion"))
+						)
+					),
+
+				Movement.CreateMoveToMeleeBehavior(true)
+				);
+	    }
 
         [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal)]
-        [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Instances)]
         public static Composite CreateWindwalkerMonkCombatNormal()
         {
             return new PrioritySelector(
@@ -360,28 +424,6 @@ namespace Singular.ClassSpecific.Monk
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
-
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Instances )]
-        public static Composite CreateWindwalkerMonkInstanceCombatBuffs()
-        {
-            return new PrioritySelector(
-                Spell.BuffSelfAndWait(sp => "Stance of the Fierce Tiger", req => !Me.GetAllAuras().Any(a => a.ApplyAuraType == WoWApplyAuraType.ModShapeshift && a.IsPassive && a.Name == "Stance of the Fierce Tiger")),
-                Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
-                Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
-                Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
-                Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPct),
-                Spell.BuffSelf("Zen Sphere", ctx => HasTalent(MonkTalents.ZenSphere) && Me.HealthPercent < 90),
-
-                Spell.BuffSelf(
-                    "Invoke Xuen, the White Tiger", 
-                    req => !Me.IsMoving 
-                        && Me.CurrentTarget.IsBoss() 
-                        && Me.CurrentTarget.IsWithinMeleeRange 
-                        && (PartyBuff.WeHaveBloodlust || PartyBuff.WeHaveSatedDebuff)
-                        )
-                );
-        }
-
 
         [Behavior(BehaviorType.Heal, WoWClass.Monk, WoWSpec.MonkBrewmaster, WoWContext.Normal | WoWContext.Battlegrounds)]
         [Behavior(BehaviorType.Heal, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal | WoWContext.Battlegrounds)]

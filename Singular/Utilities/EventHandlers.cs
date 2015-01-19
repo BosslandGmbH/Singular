@@ -252,16 +252,36 @@ namespace Singular.Utilities
             switch (e.Event)
             {
                 default:
-                    if ( SingularSettings.Debug )
+                    if (SingularSettings.Debug)
+                    {
+                        string sourceName;
+                        string destName;
+                        try
+                        {
+                            sourceName = e.SourceUnit.SafeName();
+                        }
+                        catch
+                        {
+                            sourceName = "unknown";
+                        }
+                        try
+                        {
+                            destName = e.DestUnit.SafeName();
+                        }
+                        catch
+                        {
+                            destName = "unknown";
+                        }
                         Logger.WriteDebug("[CombatLog] filter out {0} - {1} {2} - {3} {4} on {5} {6}",
-                            e.EventName, 
+                            e.EventName,
                             e.SourceGuid,
-                            e.SourceName,
+                            sourceName,
                             e.SpellName,
                             e.SpellId,
                             e.DestGuid,
-                            e.DestName
+                            destName
                             );
+                    }
                     break;
 
                 // spell_cast_failed only passes filter in Singular debug mode

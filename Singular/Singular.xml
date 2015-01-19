@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>01/18/2015 22:56:23</ScanTime>
+  <ScanTime>01/19/2015 08:19:30</ScanTime>
   <FileList>
     <File Hash="28095" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="35156" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -18,7 +18,7 @@
     <File Hash="71979" Name="ClassSpecific\Hunter\Common.cs" />
     <File Hash="1379" Name="ClassSpecific\Hunter\Lowbie.cs" />
     <File Hash="8831" Name="ClassSpecific\Hunter\Marksman.cs" />
-    <File Hash="8307" Name="ClassSpecific\Hunter\Survival.cs" />
+    <File Hash="10991" Name="ClassSpecific\Hunter\Survival.cs" />
     <File Hash="14256" Name="ClassSpecific\Mage\Arcane.cs" />
     <File Hash="38532" Name="ClassSpecific\Mage\Common.cs" />
     <File Hash="17476" Name="ClassSpecific\Mage\Fire.cs" />
@@ -28,7 +28,7 @@
     <File Hash="43547" Name="ClassSpecific\Monk\Common.cs" />
     <File Hash="1439" Name="ClassSpecific\Monk\Lowbie.cs" />
     <File Hash="85423" Name="ClassSpecific\Monk\Mistweaver.cs" />
-    <File Hash="21626" Name="ClassSpecific\Monk\Windwalker.cs" />
+    <File Hash="22937" Name="ClassSpecific\Monk\Windwalker.cs" />
     <File Hash="13327" Name="ClassSpecific\Paladin\Common.cs" />
     <File Hash="10705" Name="ClassSpecific\Paladin\Holy.cs" />
     <File Hash="2460" Name="ClassSpecific\Paladin\Lowbie.cs" />
@@ -122,7 +122,7 @@
     <File Hash="2705" Name="SingularRoutine.Version.cs" />
     <File Hash="3053" Name="Utilities\CombatLog.cs" />
     <File Hash="2024" Name="Utilities\Enumeration.cs" />
-    <File Hash="30843" Name="Utilities\EventHandlers.cs" />
+    <File Hash="31538" Name="Utilities\EventHandlers.cs" />
     <File Hash="3576" Name="Utilities\FileModCheck.cs" />
     <File Hash="10173" Name="Utilities\Logger.cs" />
   </FileList>

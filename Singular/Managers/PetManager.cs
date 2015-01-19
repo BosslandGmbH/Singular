@@ -15,6 +15,7 @@ using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using System.Drawing;
+using Singular.Settings;
 
 namespace Singular.Managers
 {
@@ -81,7 +82,7 @@ namespace Singular.Managers
 
                     // only load spells if we have one that is non-null
                     // .. as initial load happens before Me.PetSpells is initialized and we were saving 'null' spells
-                    if (StyxWoW.Me.PetSpells.Any(s => s.Spell != null))
+                    if (StyxWoW.Me.PetSpells.Any(s => s.Spell != null || s.Action != WoWPetSpell.PetAction.None))
                     {
                         NeedToCheckPetTauntAutoCast = true;
 
@@ -121,7 +122,8 @@ namespace Singular.Managers
             if (StyxWoW.Me.Pet.CurrentTargetGuid != unit.Guid && (lastPetAttack != unit.Guid || waitNextPetAttack.IsFinished))
             {
                 lastPetAttack = unit.Guid;
-                // Logger.Write(LogColor.Hilite, "/petattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
+                if (SingularSettings.Debug)
+                    Logger.WriteDebug("PetAttack: on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
                 PetManager.CastPetAction("Attack", unit);
                 waitNextPetAttack.Reset();
                 return true;

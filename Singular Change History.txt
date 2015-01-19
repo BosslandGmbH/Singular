@@ -1,3 +1,28 @@
+--- Release 4.0.0.4245 ---
+
+General 
+
+fixed - Pet Attack: was not sending pet at a mob if it had previously attacked
+
+fixed - LUA Error: should no longer display error window (if enabled in game client) upon entering combat
+
+*new* - Thunderlord Grapple: added support for Melee characters to use on Pull within Frostfire Ridge.  Setting added to General / Items group named Toys: Allow Use
+
+change- Spell Casting: improved support for instants that do not initiate a global cooldown
+
+fixed - CapabilityFlags: special movements (like Roll) were only checking GapCloser allowed; now checks Movement allowed also
+
+fixed - CapabilityFlags: melee move behind behavior was only checking MoveBehind allowed; now checks Movement allowed also
+
+fixed - CapabilityFlags: kiting behavior was only checking Kiting allowed; now checks Movement allowed also
+
+
+Warlock
+
+fixed - All Specs - Demon Summon: was initiating a cast after having completed instant summon.  
+
+
+
 --- Release 4.0.0.4234 ---
 
 General 

@@ -1,8 +1,10 @@
---- Release 4.0.0.4245 ---
+--- Release 4.0.0.4250 ---
 
 General 
 
 fixed - Pet Attack: was not sending pet at a mob if it had previously attacked
+
+fixed - Pet Spells: was not loading pet spells if pet bar only contained actions (attack, stay, etc.)
 
 fixed - LUA Error: should no longer display error window (if enabled in game client) upon entering combat
 

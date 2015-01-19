@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>01/18/2015 22:14:20</ScanTime>
+  <ScanTime>01/18/2015 22:56:23</ScanTime>
   <FileList>
     <File Hash="28095" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="35156" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -89,7 +89,7 @@
     <File Hash="16205" Name="Managers\HotkeyManager.cs" />
     <File Hash="4258" Name="Managers\MountManager.cs" />
     <File Hash="10199" Name="Managers\MovementManager.cs" />
-    <File Hash="19471" Name="Managers\PetManager.cs" />
+    <File Hash="19573" Name="Managers\PetManager.cs" />
     <File Hash="3010" Name="Managers\SoulstoneManager.cs" />
     <File Hash="816" Name="Managers\SpellImmunityManager.cs" />
     <File Hash="9148" Name="Managers\TalentManager.cs" />

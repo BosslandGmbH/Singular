@@ -98,88 +98,58 @@
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x86\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
-    <OutputPath>bin\x86\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Raphus|x86'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x86\Raphus\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Bobby53|x86'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x86\Bobby53\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
-    <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Jim|x86'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x86\Jim\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
-    <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'HighVoltz|x86'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x86\HighVoltz\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="GreyMagic">
-      <HintPath>..\..\..\..\HB\GreyMagic.dll</HintPath>
-    </Reference>
-    <Reference Include="Honorbuddy">
-      <HintPath>..\..\..\..\HB\Honorbuddy.exe</HintPath>
-    </Reference>
-    <Reference Include="PresentationCore" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <Reference Include="Tripper.RecastManaged">
-      <HintPath>..\..\..\..\HB\Tripper.RecastManaged.dll</HintPath>
-    </Reference>
-    <Reference Include="Tripper.Tools">
-      <HintPath>..\..\..\..\HB\Tripper.Tools.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+  <Choose>
+    <When Condition=" '$(Configuration)' == 'Bobby53' ">
+      <ItemGroup>
+        <Reference Include="GreyMagic">
+          <HintPath>..\..\..\..\HB\GreyMagic.dll</HintPath>
+        </Reference>
+        <Reference Include="Honorbuddy">
+          <HintPath>..\..\..\..\HB\Honorbuddy.exe</HintPath>
+        </Reference>
+        <Reference Include="Tripper.RecastManaged">
+          <HintPath>..\..\..\..\HB\Tripper.RecastManaged.dll</HintPath>
+        </Reference>
+        <Reference Include="Tripper.Tools">
+          <HintPath>..\..\..\..\HB\Tripper.Tools.dll</HintPath>
+        </Reference>
+        <Reference Include="PresentationCore" />
+        <Reference Include="System" />
+        <Reference Include="System.Core" />
+        <Reference Include="System.Drawing" />
+        <Reference Include="System.Windows.Forms" />
+        <Reference Include="System.Xml.Linq" />
+        <Reference Include="System.Data.DataSetExtensions" />
+        <Reference Include="System.Data" />
+        <Reference Include="System.Xml" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <Reference Include="GreyMagic">
+          <HintPath>..\Honorbuddy\GreyMagic.dll</HintPath>
+        </Reference>
+        <Reference Include="Honorbuddy">
+          <HintPath>..\Honorbuddy\Honorbuddy.exe</HintPath>
+        </Reference>
+        <Reference Include="Tripper.RecastManaged">
+          <HintPath>..\Honorbuddy\Tripper.RecastManaged.dll</HintPath>
+        </Reference>
+        <Reference Include="Tripper.Tools">
+          <HintPath>..\Honorbuddy\Tripper.Tools.dll</HintPath>
+        </Reference>
+        <Reference Include="PresentationCore" />
+        <Reference Include="System" />
+        <Reference Include="System.Core" />
+        <Reference Include="System.Drawing" />
+        <Reference Include="System.Windows.Forms" />
+        <Reference Include="System.Xml.Linq" />
+        <Reference Include="System.Data.DataSetExtensions" />
+        <Reference Include="System.Data" />
+        <Reference Include="System.Xml" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
   <ItemGroup>
     <Compile Include="ClassSpecific\DeathKnight\Blood.cs" />
     <Compile Include="ClassSpecific\DeathKnight\Common.cs" />
@@ -339,7 +309,7 @@
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "G:\Code\WoW\Honorbuddy 2\trunk\Honorbuddy\bin\Debug\CustomClasses\Singular v2\" /i /f /s /v /y
 )
 if $(ConfigurationName) == Raphus (
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\Buddy\Honorbuddy\Source\trunk\Honorbuddy\CustomClasses\Singular\" /i /f /s /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\HB\Routines\Singular\" /i /f /s /v /y
 )
 
 if $(ConfigurationName) == Bobby53 (

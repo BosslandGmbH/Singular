@@ -1,3 +1,20 @@
+--- Release 4.0.0.4261 ---
+
+General 
+
+fixed - Logged Output - fixed issue with player names appearing in log file.  Issue resolved in prior release via change to combat log filtering, but additional steps to ensure name not used taken in this release 
+
+
+Hunter
+
+change - Survival - Instance spell priority updated
+
+
+Monk
+
+change - Windwalker - Instance spell priority updated
+
+
 --- Release 4.0.0.4250 ---
 
 General 

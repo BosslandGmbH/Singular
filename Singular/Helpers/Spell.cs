@@ -1382,7 +1382,7 @@ namespace Singular.Helpers
                 );
         }
 
-        public static Composite BuffSelfAndWait( int id, SimpleBooleanDelegate requirements = null, int expirSecs = 0, HasGcd gcd = HasGcd.Yes)
+        public static Composite BuffSelfAndWait( int id, SimpleBooleanDelegate requirements = null, HasGcd gcd = HasGcd.Yes)
         {
             WoWSpell spell = WoWSpell.FromId(id);
             if (spell == null || !SpellManager.HasSpell(spell.Id))
@@ -1392,7 +1392,7 @@ namespace Singular.Helpers
                 requirements = req => true;
 
             return new Sequence(
-                BuffSelf(idd => id, requirements, expirSecs, gcd),
+                BuffSelf(idd => id, requirements, gcd),
                 new PrioritySelector(
                     new DynaWait(
                         time => TimeSpan.FromMilliseconds(Me.Combat ? 500 : 1000),
@@ -1409,9 +1409,9 @@ namespace Singular.Helpers
                 );
         }
 
-        public static Composite BuffSelf(SimpleIntDelegate idd, SimpleBooleanDelegate requirements, int expirSecs, HasGcd gcd)
+        public static Composite BuffSelf(SimpleIntDelegate idd, SimpleBooleanDelegate requirements, HasGcd gcd)
         {
-            throw new NotImplementedException();
+            return Buff(idd, on => Me, requirements, gcd);
         }
 
         #endregion

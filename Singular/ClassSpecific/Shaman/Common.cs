@@ -341,7 +341,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         new PrioritySelector(
 
-                            Spell.OffGCD( 
+                            Spell.HandleOffGCD( 
                                 Spell.BuffSelf("Ancestral Guidance", 
                                     ret => Me.HealthPercent < ShamanSettings.SelfAncestralGuidance 
                                         && Me.GotTarget()
@@ -356,7 +356,7 @@ namespace Singular.ClassSpecific.Shaman
                                     && Me.HealthPercent < ShamanSettings.SelfAncestralSwiftnessHeal
                                     && Me.PredictedHealthPercent(includeMyHeals: true) < ShamanSettings.SelfAncestralSwiftnessHeal,
                                 new PrioritySelector(
-                                    Spell.OffGCD( Spell.BuffSelf("Ancestral Swiftness") ),
+                                    Spell.HandleOffGCD( Spell.BuffSelf("Ancestral Swiftness") ),
                                     new PrioritySelector(
                                         new Sequence(
                                             ctx => (float)Me.HealthPercent,
@@ -409,7 +409,7 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator(
                     ret => (Me.Combat || ((WoWUnit)ret).Combat) && ((WoWUnit)ret).PredictedHealthPercent() < ShamanSettings.OffHealSettings.AncestralSwiftness,
                     new PrioritySelector(
-                        Spell.OffGCD(Spell.BuffSelf("Ancestral Swiftness")),
+                        Spell.HandleOffGCD(Spell.BuffSelf("Ancestral Swiftness")),
                         Spell.Cast("Healing Surge", on => (WoWUnit)on)
                         )
                     )

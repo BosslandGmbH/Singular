@@ -427,7 +427,7 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueMoveBehindTarget()
         {
             return new Decorator(
-                req => RogueSettings.MoveBehindTargets,
+                req => MovementManager.IsMoveBehindAllowed && RogueSettings.MoveBehindTargets,
                 Movement.CreateMoveBehindTargetBehavior()
                 );
         }

@@ -403,7 +403,7 @@ namespace Singular
                             ret => !Me.IsFlying && AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
                             new PrioritySelector(
 
-//                                TestDynaWait(),
+                                // TestDynaWait(),
 
                                 new Decorator(
                                     req => ShouldWeFightDuringRest(),
@@ -527,7 +527,8 @@ namespace Singular
 #if BOTS_NOT_CALLING_PULLBUFFS
                             _pullBuffsBehavior,
 #endif
- CreateLogTargetChanges(BehaviorType.Pull, "<<< PULL >>>"),
+                                CreateLogTargetChanges(BehaviorType.Pull, "<<< PULL >>>"),
+                                Item.CreateThunderLordGrappleBehavior(),
                                 composite ?? new ActionAlwaysFail()
                                 )
                             )
@@ -816,12 +817,13 @@ namespace Singular
             if (Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
                 info += string.Format(", TargetIndex={0}", Targeting.Instance.TargetList.IndexOf(Me.CurrentTarget) + 1);
 
-            Logger.WriteDebug(sType + " CurrentTarget now: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostil={6}, faction={7}, loss={8}, face={9}, agro={10}" + info,
+            Logger.WriteDebug(sType + " CurrentTarget now: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, inmelee={5}, player={6}, hostil={7}, faction={8}, loss={9}, face={10}, agro={11}" + info,
                 target.SafeName(),
                 target.HealthPercent,
                 target.MaxHealth,
                 target.Distance,
                 target.CombatReach,
+                target.IsWithinMeleeRange.ToYN(),
                 target.IsPlayer.ToYN(),
                 target.IsHostile.ToYN(),
                 target.FactionId,
@@ -1830,9 +1832,9 @@ namespace Singular
                     new PrioritySelector(
                         new Sequence(
                             new DynaWait(ts => TimeSpan.FromSeconds(2), until => false, new ActionAlwaysSucceed(), true),
-                            new Action(r => { Logger.Write("1. Success - Test Failed"); return RunStatus.Success; })
+                            new Action(r => { Logger.Write("1. RunStatus.Success - TEST FAILED"); return RunStatus.Success; })
                             ),
-                        new Action(r => { Logger.Write("1. Failure - Test Succeeded!"); return RunStatus.Success; })
+                        new Action(r => { Logger.Write("1. RunStatus.Failure - Test Succeeded!"); return RunStatus.Success; })
                         ),
                     new ActionAlwaysFail()
                     ),
@@ -1840,9 +1842,9 @@ namespace Singular
                     new PrioritySelector(
                         new Sequence(
                             new DynaWait(ts => TimeSpan.FromSeconds(2), until => true, new ActionAlwaysSucceed(), true),
-                            new Action(r => { Logger.Write("2. Success - Test Succeeded!"); return RunStatus.Success; })
+                            new Action(r => { Logger.Write("2. RunStatus.Success - Test Succeeded!"); return RunStatus.Success; })
                             ),
-                        new Action(r => { Logger.Write("2. Failure - Test Failed"); return RunStatus.Success; })
+                        new Action(r => { Logger.Write("2. RunStatus.Failure - TEST FAILED"); return RunStatus.Success; })
                         ),
                     new ActionAlwaysFail()
                     ),
@@ -1851,9 +1853,9 @@ namespace Singular
                     new PrioritySelector(
                         new Sequence(
                             new DynaWait(ts => TimeSpan.FromSeconds(2), until => true, new ActionAlwaysFail(), true),
-                            new Action(r => { Logger.Write("3. Success - Test Failed"); return RunStatus.Success; })
+                            new Action(r => { Logger.Write("3. RunStatus.Success - TEST FAILED"); return RunStatus.Success; })
                             ),
-                        new Action(r => { Logger.Write("3. Failure - Test Succeeded!"); return RunStatus.Success; })
+                        new Action(r => { Logger.Write("3. RunStatus.Failure - Test Succeeded!"); return RunStatus.Success; })
                         ),
                     new ActionAlwaysFail()
                     ),
@@ -1861,9 +1863,9 @@ namespace Singular
                     new PrioritySelector(
                         new Sequence(
                             new DynaWaitContinue(ts => TimeSpan.FromSeconds(2), until => false, new ActionAlwaysSucceed(), true),
-                            new Action(r => { Logger.Write("4. Success - Test Succeeded!"); return RunStatus.Success; })
+                            new Action(r => { Logger.Write("4. RunStatus.Success - Test Succeeded!"); return RunStatus.Success; })
                             ),
-                        new Action(r => { Logger.Write("4. Failure - Test Failed"); return RunStatus.Success; })
+                        new Action(r => { Logger.Write("4. RunStatus.Failure - TEST FAILED"); return RunStatus.Success; })
                         ),
                     new ActionAlwaysFail()
                     ),
@@ -1871,9 +1873,9 @@ namespace Singular
                     new PrioritySelector(
                         new Sequence(
                             new DynaWaitContinue(ts => TimeSpan.FromSeconds(2), until => true, new ActionAlwaysSucceed(), true),
-                            new Action(r => { Logger.Write("5. Success - Test Succeeded!"); return RunStatus.Success; })
+                            new Action(r => { Logger.Write("5. RunStatus.Success - Test Succeeded!"); return RunStatus.Success; })
                             ),
-                        new Action(r => { Logger.Write("5. Failure - Test Failed"); return RunStatus.Success; })
+                        new Action(r => { Logger.Write("5. RunStatus.Failure - TEST FAILED"); return RunStatus.Success; })
                         ),
                     new ActionAlwaysFail()
                     ),
@@ -1882,9 +1884,9 @@ namespace Singular
                     new PrioritySelector(
                         new Sequence(
                             new DynaWaitContinue(ts => TimeSpan.FromSeconds(2), until => true, new ActionAlwaysFail(), true),
-                            new Action(r => { Logger.Write("6. Success - Test Failed"); return RunStatus.Success; })
+                            new Action(r => { Logger.Write("6. RunStatus.Success - TEST FAILED"); return RunStatus.Success; })
                             ),
-                        new Action(r => { Logger.Write("6. Failure - Test Succeeded!"); return RunStatus.Success; })
+                        new Action(r => { Logger.Write("6. RunStatus.Failure - Test Succeeded!"); return RunStatus.Success; })
                         ),
                     new ActionAlwaysFail()
                     )

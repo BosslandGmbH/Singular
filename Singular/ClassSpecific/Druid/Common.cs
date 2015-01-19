@@ -17,6 +17,7 @@ using Singular.Managers;
 using CommonBehaviors.Actions;
 using System.Drawing;
 using Styx.CommonBot.POI;
+using Styx.CommonBot.Routines;
 
 #endregion
 
@@ -137,7 +138,7 @@ namespace Singular.ClassSpecific.Druid
                         new PrioritySelector(
                             Spell.BuffSelf("Celestial Alignment", ret => Spell.GetSpellCooldown("Celestial Alignment") == TimeSpan.Zero && PartyBuff.WeHaveBloodlust),
 
-                            Spell.OffGCD(Spell.Cast("Force of Nature", req => TalentManager.CurrentSpec != WoWSpec.DruidRestoration && Me.CurrentTarget.TimeToDeath() > 8)),
+                            Spell.HandleOffGCD(Spell.Cast("Force of Nature", req => TalentManager.CurrentSpec != WoWSpec.DruidRestoration && Me.CurrentTarget.TimeToDeath() > 8)),
 
                     // to do:  time ICoE at start of eclipse
                             Spell.BuffSelf("Incarnation: Chosen of Elune"),
@@ -172,7 +173,7 @@ namespace Singular.ClassSpecific.Druid
                     new PrioritySelector(
                         Spell.BuffSelf("Celestial Alignment", ret => Spell.GetSpellCooldown("Celestial Alignment") == TimeSpan.Zero && PartyBuff.WeHaveBloodlust),
                         new Sequence(
-                            Spell.OffGCD(Spell.Cast("Force of Nature", req => TalentManager.CurrentSpec != WoWSpec.DruidRestoration && Me.CurrentTarget.TimeToDeath() > 8)),
+                            Spell.HandleOffGCD(Spell.Cast("Force of Nature", req => TalentManager.CurrentSpec != WoWSpec.DruidRestoration && Me.CurrentTarget.TimeToDeath() > 8)),
                             new ActionAlwaysFail()
                             ),
                         // to do:  time ICoE at start of eclipse
@@ -626,7 +627,9 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateMoveBehindTargetWhileProwling()
         {
             return new Decorator(
-                req => DruidSettings.MoveBehindTargets && Me.HasAura("Prowl"),
+                req => MovementManager.IsMoveBehindAllowed
+                    && DruidSettings.MoveBehindTargets 
+                    && Me.HasAura("Prowl"),
                 Movement.CreateMoveBehindTargetBehavior()
                 );
         }

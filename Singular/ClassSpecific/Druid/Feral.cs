@@ -291,13 +291,13 @@ namespace Singular.ClassSpecific.Druid
 
                         Spell.Cast("Shred"),
 
-                        Spell.OffGCD(Spell.Cast("Force of Nature", req => TalentManager.CurrentSpec != WoWSpec.DruidRestoration && Me.CurrentTarget.TimeToDeath() > 8)),
+                        Spell.HandleOffGCD(Spell.Cast("Force of Nature", req => TalentManager.CurrentSpec != WoWSpec.DruidRestoration && Me.CurrentTarget.TimeToDeath() > 8)),
 
                         new Decorator(
                             ret => MovementManager.IsClassMovementAllowed && Me.IsMoving && Me.CurrentTarget.Distance > (Me.CurrentTarget.IsPlayer ? 10 : 15),
                             new PrioritySelector(
                                 CreateFeralWildChargeBehavior(),
-                                Spell.BuffSelf("Dash", ret => Spell.GetSpellCooldown("Wild Charge", 0).TotalSeconds < 13 )
+                                Spell.BuffSelf("Dash", ret => MovementManager.IsClassMovementAllowed && Spell.GetSpellCooldown("Wild Charge", 0).TotalSeconds < 13 )
                                 )
                             )
 
@@ -380,7 +380,7 @@ namespace Singular.ClassSpecific.Druid
                                         )
                                     ),
 #else
-                                Spell.OffGCD(
+                                Spell.HandleOffGCD(
                                     new Decorator(
                                         req => Me.HasAura("Savage Roar") && Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange,
                                         new Sequence(
@@ -391,13 +391,13 @@ namespace Singular.ClassSpecific.Druid
                                                     && !Spell.GetSpellCooldown("Nature's Vigil").TotalSeconds.Between(double.Epsilon, 5)),
                                             // following only if Tiger's Fury cast successful
                                             new PrioritySelector(
-                                                Spell.OffGCD(Spell.BuffSelf("Nature's Vigil", req => Spell.GetSpellCooldown("Berserk").TotalSeconds > 30)),
+                                                Spell.HandleOffGCD(Spell.BuffSelf("Nature's Vigil", req => Spell.GetSpellCooldown("Berserk").TotalSeconds > 30)),
                                                 new Sequence(
                                                     Spell.BuffSelf("Berserk", req => !Spell.GetSpellCooldown("Nature's Vigil").TotalSeconds.Between(double.Epsilon, 30)),
                                                     new PrioritySelector(
-                                                        Spell.OffGCD(Spell.BuffSelf("Incarnation: King of the Jungle")),
-                                                        Spell.OffGCD(Spell.BuffSelf("Nature's Vigil")),
-                                                        Spell.OffGCD(Spell.Cast("Force of Nature"))
+                                                        Spell.HandleOffGCD(Spell.BuffSelf("Incarnation: King of the Jungle")),
+                                                        Spell.HandleOffGCD(Spell.BuffSelf("Nature's Vigil")),
+                                                        Spell.HandleOffGCD(Spell.Cast("Force of Nature"))
                                                         )
                                                     )
                                                 )
@@ -484,7 +484,7 @@ namespace Singular.ClassSpecific.Druid
                             ret => MovementManager.IsClassMovementAllowed && Me.IsMoving && Me.CurrentTarget.Distance > (Me.CurrentTarget.IsPlayer ? 10 : 15),
                             new PrioritySelector(
                                 CreateFeralWildChargeBehavior(),
-                                Spell.BuffSelf("Dash", ret => Spell.GetSpellCooldown("Wild Charge", 0).TotalSeconds < 13)
+                                Spell.BuffSelf("Dash", ret => MovementManager.IsClassMovementAllowed && Spell.GetSpellCooldown("Wild Charge", 0).TotalSeconds < 13)
                                 )
                             )
 

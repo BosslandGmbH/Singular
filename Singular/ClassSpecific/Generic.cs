@@ -120,7 +120,7 @@ namespace Singular.ClassSpecific
                                 return true;
                             return false;
                         },
-                        Spell.OffGCD(Spell.BuffSelf("Stoneform"))
+                        Spell.HandleOffGCD(Spell.BuffSelf("Stoneform"))
                         )
                     );
             }
@@ -128,14 +128,14 @@ namespace Singular.ClassSpecific
             if (SpellManager.HasSpell("Escape Artist"))
             {
                 pri.AddChild(
-                    Spell.OffGCD(Spell.BuffSelf("Escape Artist", req => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared)))
+                    Spell.HandleOffGCD(Spell.BuffSelf("Escape Artist", req => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared)))
                     );
             }
 
             if (SpellManager.HasSpell("Gift of the Naaru"))
             {
                 pri.AddChild(
-                    Spell.OffGCD(Spell.BuffSelf("Gift of the Naaru", req => StyxWoW.Me.HealthPercent < SingularSettings.Instance.GiftNaaruHP))
+                    Spell.HandleOffGCD(Spell.BuffSelf("Gift of the Naaru", req => StyxWoW.Me.HealthPercent < SingularSettings.Instance.GiftNaaruHP))
                     );
             }
 
@@ -173,21 +173,21 @@ namespace Singular.ClassSpecific
             if (SpellManager.HasSpell("Lifeblood"))
             {
                 priCombat.AddChild(
-                    Spell.OffGCD(Spell.BuffSelf("Lifeblood", ret => !PartyBuff.WeHaveBloodlust))
+                    Spell.HandleOffGCD(Spell.BuffSelf("Lifeblood", ret => !PartyBuff.WeHaveBloodlust))
                     );
             }
 
             if (SpellManager.HasSpell("Berserking"))
             {
                 priCombat.AddChild(
-                    Spell.OffGCD(Spell.BuffSelf("Berserking", ret => !PartyBuff.WeHaveBloodlust))
+                    Spell.HandleOffGCD(Spell.BuffSelf("Berserking", ret => !PartyBuff.WeHaveBloodlust))
                     );
             }
 
             if (SpellManager.HasSpell("Blood Fury"))
             {
                 priCombat.AddChild(
-                    Spell.OffGCD(Spell.BuffSelf("Blood Fury", ret => true))
+                    Spell.HandleOffGCD(Spell.BuffSelf("Blood Fury", ret => true))
                     );
             }
 

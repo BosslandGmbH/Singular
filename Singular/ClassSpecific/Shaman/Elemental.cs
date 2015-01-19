@@ -362,7 +362,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         Spell.Buff("Flame Shock", 3, on => Me.CurrentTarget, req => true),
 
-                        Spell.OffGCD(Spell.Cast("Ascendance", req => ShamanSettings.UseAscendance && Me.CurrentTarget.IsBoss() && Me.CurrentTarget.SpellDistance() < 40 && !Me.IsMoving)),
+                        Spell.HandleOffGCD(Spell.Cast("Ascendance", req => ShamanSettings.UseAscendance && Me.CurrentTarget.IsBoss() && Me.CurrentTarget.SpellDistance() < 40 && !Me.IsMoving)),
 
                         Spell.Cast("Lava Burst", on => Me.CurrentTarget, req => true, cancel => false),
 

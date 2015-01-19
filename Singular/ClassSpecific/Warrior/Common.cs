@@ -16,6 +16,7 @@ using CommonBehaviors.Actions;
 using System.Drawing;
 using Styx.Pathing;
 using Action = Styx.TreeSharp.Action;
+using Styx.WoWInternals;
 
 namespace Singular.ClassSpecific.Warrior
 {
@@ -164,8 +165,8 @@ namespace Singular.ClassSpecific.Warrior
             return new Decorator(
                 req => Me.HealthPercent < WarriorSettings.WarriorEnragedRegenerationHealth && !Spell.IsSpellOnCooldown("Enraged Regeneration"),
                 new PrioritySelector(
-                    Spell.OffGCD( Spell.BuffSelf("Berserker Rage") ),
-                    Spell.BuffSelf("Enraged Regeneration")
+                    Spell.HandleOffGCD( Spell.BuffSelf("Berserker Rage", req => true, 0, HasGcd.No) ),
+                    Spell.BuffSelf("Enraged Regeneration", req => true, 0, HasGcd.No)
                     )
                 );
         }
@@ -237,8 +238,7 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
                         ctx => Me.CurrentTarget,
                         new Decorator(
-                            req => MovementManager.IsClassMovementAllowed 
-                                && SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.GapCloser)
+                            req => MovementManager.IsClassMovementAllowed
                                 && req != null 
                                 && ((req as WoWUnit).Guid != Singular.Utilities.EventHandlers.LastNoPathTarget || Singular.Utilities.EventHandlers.LastNoPathFailure < DateTime.Now - TimeSpan.FromMinutes(15))
                                 && !Me.HasAura("Charge")
@@ -330,6 +330,13 @@ namespace Singular.ClassSpecific.Warrior
             }
         }
 
+        public static bool IsEnraged 
+        { 
+            get 
+            { 
+                return StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Enraged); 
+            } 
+        }
 
         public static Composite CreateAttackFlyingOrUnreachableMobs()
         {
@@ -439,7 +446,7 @@ namespace Singular.ClassSpecific.Warrior
 
         public static Composite CreateDieByTheSwordBehavior()
         {
-            return Spell.OffGCD(Spell.BuffSelf("Die by the Sword", req => Me.Combat && Me.HealthPercent <= WarriorSettings.DieByTheSwordHealth));
+            return Spell.HandleOffGCD(Spell.BuffSelf("Die by the Sword", req => Me.Combat && Me.HealthPercent <= WarriorSettings.DieByTheSwordHealth, 0, HasGcd.No));
         }
 
         public static Composite CreateVigilanceBehavior()
@@ -539,6 +546,9 @@ namespace Singular.ClassSpecific.Warrior
                     },
                     req => 
                     {
+                        if (!MovementManager.IsClassMovementAllowed)
+                            return false;
+
                         if (req == null)
                             return false;
 

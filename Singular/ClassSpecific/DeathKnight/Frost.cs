@@ -90,8 +90,20 @@ namespace Singular.ClassSpecific.DeathKnight
                         new Decorator(
                             ret => !SpellManager.HasSpell("Obliterate"),
                             new PrioritySelector(
-                                Spell.Buff(sp => Spell.UseAOE ? "Howling Blast" : "Icy Touch", true, on => Me.CurrentTarget, req => true, "Frost Fever"),
-                                Spell.Buff("Plague Strike", true, on => Me.CurrentTarget, req => true, "Blood Plague"),
+                                Spell.Buff(
+                                    sp => Spell.UseAOE ? "Howling Blast" : "Icy Touch", 
+                                    true, 
+                                    on => Me.CurrentTarget, 
+                                    req => true, 
+                                    "Frost Fever"
+                                    ),
+                                Spell.Buff(
+                                    "Plague Strike", 
+                                    true, 
+                                    on => Me.CurrentTarget, 
+                                    req => true, 
+                                    "Blood Plague"
+                                    ),
                                 Spell.Cast("Death Strike", ret => Me.HealthPercent < 90),
                                 Spell.Cast("Frost Strike"),
                                 Spell.Cast(sp => Spell.UseAOE ? "Howling Blast" : "Icy Touch"),

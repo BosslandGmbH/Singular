@@ -202,7 +202,7 @@ namespace Singular.ClassSpecific.Paladin
                             ),
 
                         //Single target
-                        Spell.OffGCD( Spell.Cast("Shield of the Righteous", ret => Me.CurrentHolyPower >= 3 || Me.ActiveAuras.ContainsKey("Divine Purpose"))),
+                        Spell.HandleOffGCD( Spell.Cast("Shield of the Righteous", ret => Me.CurrentHolyPower >= 3 || Me.ActiveAuras.ContainsKey("Divine Purpose"))),
 
                         Spell.Cast("Crusader Strike", req => !Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
                         Spell.Cast("Judgment", ret => Common.HasTalent(PaladinTalents.SanctifiedWrath) && Me.HasAura("Avenging Wrath")),

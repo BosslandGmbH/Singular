@@ -270,7 +270,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                     new Decorator(
                         req => TalentManager.CurrentSpec == WoWSpec.DeathKnightBlood,
-                        Spell.OffGCD(
+                        Spell.HandleOffGCD(
                             new Sequence(
                                 Spell.BuffSelf("Rune Tap", req => Me.HealthPercent < Settings.RuneTapPercent),
                                 new Wait( TimeSpan.FromMilliseconds(500), until => Me.HasAura("Rune Tap"), new ActionAlwaysSucceed())

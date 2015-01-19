@@ -316,9 +316,11 @@ namespace Singular
             else
                 sRunningAs = "Zone: " + Me.CurrentMap.Name;
 
-            Logger.Write(Color.LightGreen, "... {0} using my {1} Behaviors",
+            Logger.Write(Color.LightGreen, "... {0} using my {1} Behaviors {2}",
                  sRunningAs,
-                 CurrentWoWContext == WoWContext.Normal ? "SOLO" : CurrentWoWContext.ToString().ToUpper());
+                 CurrentWoWContext == WoWContext.Normal ? "SOLO" : CurrentWoWContext.ToString().ToUpper(),
+                 !Me.IsInGroup() ? "alone" : "in a group of " + Unit.GroupMemberInfos.Count().ToString()
+                 );
 
             if (CurrentWoWContext != WoWContext.Battlegrounds && Me.IsInGroup())
             {

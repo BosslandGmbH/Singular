@@ -242,7 +242,7 @@ namespace Singular.ClassSpecific.Druid
 
                                 // CreateMushroomSetAndDetonateBehavior(),
 
-                                Spell.OffGCD(Spell.Cast("Force of Nature", req => !Me.CurrentTarget.IsTrivial() && Me.CurrentTarget.TimeToDeath() > 8)),
+                                Spell.HandleOffGCD(Spell.Cast("Force of Nature", req => !Me.CurrentTarget.IsTrivial() && Me.CurrentTarget.TimeToDeath() > 8)),
 
                                 // Starfall:  verify either not glyphed -or- at least 3 targets have DoT
                                 Spell.Cast("Starfall", req => !TalentManager.HasGlyph("Guided Stars") || Unit.NearbyUnfriendlyUnits.Count(u => u.HasAnyOfMyAuras("Sunfire", "Moonfire")) >= 3),

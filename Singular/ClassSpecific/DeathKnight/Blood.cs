@@ -90,7 +90,7 @@ namespace Singular.ClassSpecific.DeathKnight
                             && StyxWoW.Me.GotTarget() && !Spell.CanCastHack("Death Grip") 
                             && StyxWoW.Me.CurrentTarget.DistanceSqr > 10*10),
 
-                    Spell.OffGCD( Spell.BuffSelf("Blood Tap", ret => NeedBloodTap() ) ),
+                    Spell.HandleOffGCD( Spell.BuffSelf("Blood Tap", ret => NeedBloodTap() ) ),
 
                     Spell.Cast("Plague Leech", ret => Common.CanCastPlagueLeech),
 
@@ -425,8 +425,8 @@ namespace Singular.ClassSpecific.DeathKnight
                     req => Common.NeedBloodTap(),
                     new Sequence(
                         ctx => Common.DeathRuneSlotsActive,
-                        Spell.OffGCD(Spell.BuffSelf("Blood Tap", req => ((int)req) < 1) ),
-                        Spell.OffGCD(Spell.BuffSelf("Blood Tap", req => ((int)req) < 2) )
+                        Spell.HandleOffGCD(Spell.BuffSelf("Blood Tap", req => ((int)req) < 1) ),
+                        Spell.HandleOffGCD(Spell.BuffSelf("Blood Tap", req => ((int)req) < 2) )
                         )
                     ),
 

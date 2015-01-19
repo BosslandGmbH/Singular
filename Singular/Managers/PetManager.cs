@@ -112,19 +112,22 @@ namespace Singular.Managers
         }
 
         private static WoWGuid lastPetAttack = WoWGuid.Empty;
+        private static WaitTimer waitNextPetAttack = new WaitTimer(TimeSpan.FromSeconds(2));
         public static bool Attack(WoWUnit unit)
         {
-            if (unit == null || StyxWoW.Me.Pet == null || StyxWoW.Me.Pet.CurrentTargetGuid == unit.Guid || lastPetAttack == unit.Guid)
+            if (unit == null || StyxWoW.Me.Pet == null)
                 return false;
 
-            if (lastPetAttack != unit.Guid)
+            if (StyxWoW.Me.Pet.CurrentTargetGuid != unit.Guid && (lastPetAttack != unit.Guid || waitNextPetAttack.IsFinished))
             {
                 lastPetAttack = unit.Guid;
                 // Logger.Write(LogColor.Hilite, "/petattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
                 PetManager.CastPetAction("Attack", unit);
+                waitNextPetAttack.Reset();
+                return true;
             }
 
-            return true;
+            return false;
         }
 
         public static bool Passive()

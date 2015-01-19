@@ -384,6 +384,8 @@ namespace Singular.Helpers
 
         public static bool IsKitingPossible(int minScan = -1)
         {
+            if (!SingularRoutine.IsAllowed(CapabilityFlags.Movement))
+                return false;
             if (!SingularRoutine.IsAllowed(CapabilityFlags.Kiting))
                 return false;
 

@@ -52,7 +52,7 @@ namespace Singular.ClassSpecific.Rogue
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
                         // ok, everything else failed so just hit him!!!!
-                        Spell.OffGCD(Spell.Buff("Premeditation", req => Common.AreStealthAbilitiesAvailable && Me.ComboPoints < 4 && Me.IsWithinMeleeRange)),
+                        Spell.HandleOffGCD(Spell.Buff("Premeditation", req => Common.AreStealthAbilitiesAvailable && Me.ComboPoints < 4 && Me.IsWithinMeleeRange)),
                         Spell.Cast("Hemorrhage")
                         )
                     )

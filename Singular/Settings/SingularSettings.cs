@@ -974,11 +974,18 @@ namespace Singular.Settings
         [DisplayName("Trinket 1 Usage")]
         public TrinketUsage Trinket1Usage { get; set; }
 
-        [Setting,ReadOnly(false)]
+        [Setting, ReadOnly(false)]
         [DefaultValue(TrinketUsage.Never)]
         [Category("Items")]
         [DisplayName("Trinket 2 Usage")]
         public TrinketUsage Trinket2Usage { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(true)]
+        [Category("Items")]
+        [DisplayName("Toys: Allow Use")]
+        [Description("Uses Thunderlord Grapple")]
+        public bool ToysAllowUse { get; set; }
 
         #endregion
 

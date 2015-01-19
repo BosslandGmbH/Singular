@@ -401,7 +401,7 @@ namespace Singular.ClassSpecific.Monk
                                     )
                                 ),
 
-                            Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.GapCloser) && !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > minDistRollAllowed)
+                            Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > minDistRollAllowed)
                             )
                         ),
 
@@ -548,7 +548,6 @@ namespace Singular.ClassSpecific.Monk
                                 Spell.Cast("Roll", 
                                     req => Me.Shapeshift == SPIRITED_CRANE 
                                         && MovementManager.IsClassMovementAllowed
-                                        && SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.GapCloser) 
                                         && !MonkSettings.DisableRoll 
                                         && Me.CurrentTarget.Distance > minDistRollAllowed
                                     )

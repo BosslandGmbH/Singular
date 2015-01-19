@@ -108,25 +108,33 @@ namespace Singular.ClassSpecific.Warrior
                                 return Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= 4;
                                 },
                             new PrioritySelector(
-                                Spell.OffGCD( Spell.BuffSelf("Avatar")),
-                                Spell.OffGCD( Spell.BuffSelf("Bloodbath"))
+                                Spell.HandleOffGCD(Spell.BuffSelf("Avatar", req => true, 0, HasGcd.No)),
+                                Spell.HandleOffGCD(Spell.BuffSelf("Bloodbath", req => true, 0, HasGcd.No))
                                 )
                             ),
 
-                        Spell.OffGCD( Spell.BuffSelf("Rallying Cry", req => !Me.IsInGroup() && Me.HealthPercent < 50)),
+                        Spell.HandleOffGCD( Spell.BuffSelf("Rallying Cry", req => !Me.IsInGroup() && Me.HealthPercent < 50, 0, HasGcd.No)),
 
-                        Spell.OffGCD( Spell.Cast("Recklessness", ret => (Spell.CanCastHack("Execute") || Common.Tier14FourPieceBonus || PartyBuff.WeHaveBloodlust) && (StyxWoW.Me.CurrentTarget.TimeToDeath() > 40 || StyxWoW.Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances))),
+                        Spell.HandleOffGCD(Spell.BuffSelf("Recklessness", ret => (Spell.CanCastHack("Execute") || Common.Tier14FourPieceBonus || PartyBuff.WeHaveBloodlust) && (StyxWoW.Me.CurrentTarget.TimeToDeath() > 40 || StyxWoW.Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances), 0, HasGcd.No)),
 
                         Spell.Cast("Storm Bolt"),  // in normal rotation
 
                         // Execute is up, so don't care just cast
-                        Spell.Cast("Berserker Rage", ret => {
-                            if (Me.CurrentTarget.HealthPercent <= 20)
-                                return true;
-                            if (!Me.ActiveAuras.ContainsKey("Enrage") && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 6)
-                                return true;
-                            return false;
-                            }),
+                        Spell.HandleOffGCD(
+                            Spell.BuffSelf(
+                                "Berserker Rage", 
+                                req => 
+                                {
+                                    if (Me.CurrentTarget.HealthPercent <= 20)
+                                        return true;
+                                    if (!Common.IsEnraged && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 6)
+                                        return true;
+                                    return false;
+                                },
+                                0,
+                                HasGcd.No
+                                )
+                            ),
 
 
                         Spell.BuffSelf(Common.SelectedShoutAsSpellName)
@@ -267,7 +275,7 @@ namespace Singular.ClassSpecific.Warrior
         private static Composite CreateArmsAoeCombat(SimpleIntDelegate aoeCount)
         {
             return new PrioritySelector(
-                Spell.OffGCD( Spell.BuffSelf("Sweeping Strikes", ret => aoeCount(ret) >= 2) ),
+                Spell.HandleOffGCD( Spell.BuffSelf("Sweeping Strikes", ret => aoeCount(ret) >= 2, 0, HasGcd.No) ),
                 new Decorator(ret => Spell.UseAOE && aoeCount(ret) >= 3,
                     new PrioritySelector(
                         Spell.Cast( "Thunder Clap" ),
@@ -303,21 +311,23 @@ namespace Singular.ClassSpecific.Warrior
                         new Decorator(
                             ret => Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.IsCrowdControlled(),
                             new PrioritySelector(
-                                Spell.OffGCD( Spell.BuffSelf("Avatar")),
-                                Spell.OffGCD( Spell.BuffSelf("Bloodbath")),
-                                Spell.OffGCD( Spell.BuffSelf("Recklessness"))
+                                Spell.HandleOffGCD( Spell.BuffSelf("Avatar", req => true, 0, HasGcd.No)),
+                                Spell.HandleOffGCD(Spell.BuffSelf("Bloodbath", req => true, 0, HasGcd.No)),
+                                Spell.HandleOffGCD(Spell.BuffSelf("Recklessness", req => true, 0, HasGcd.No))
                                 )
                             ),
 
                         // Execute is up, so don't care just cast
-                        Spell.Cast("Berserker Rage", ret => Me.CurrentTarget.HealthPercent <= 20),
-
                         // try to avoid overlapping Enrages
-                        Spell.Cast("Berserker Rage", 
-                            ret => !Me.ActiveAuras.ContainsKey("Enrage")
-                                && Spell.GetSpellCooldown("Mortal Strike").TotalSeconds > 4
-                                && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 6
-                                ),
+                        Spell.HandleOffGCD(
+                            Spell.BuffSelf("Berserker Rage", 
+                                req => !Common.IsEnraged
+                                    && Spell.GetSpellCooldown("Mortal Strike").TotalSeconds > 4
+                                    && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 6,
+                                0,
+                                HasGcd.No
+                                )
+                            ),
 
                         Spell.Cast( "Colossus Smash", req => !Me.CurrentTarget.HasAura("Colossus Smash")),
                         Spell.Cast( "Rend", req => Me.CurrentTarget.HasAuraExpired("Rend", 4)),
@@ -536,9 +546,9 @@ namespace Singular.ClassSpecific.Warrior
         private static Composite CreateDiagnosticOutputBehavior(string context = null)
         {
             if (context == null)
-                context = "...";
-            else
-                context = "<<" + context + ">>";
+                context = Dynamics.CompositeBuilder.CurrentBehaviorType.ToString();
+            
+            context = "<<" + context + ">>";
 
             return new Decorator(
                 ret => SingularSettings.Debug,

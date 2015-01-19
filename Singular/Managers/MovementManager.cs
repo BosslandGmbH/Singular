@@ -86,7 +86,26 @@ namespace Singular.Managers
                 if (IsBotMovementDisabled)
                     return false;
 
-                if (!SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.GapCloser))
+                if (!SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.Movement)
+                    || !SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.GapCloser))
+                    return false;
+
+                if (SingularSettings.Instance.AllowMovement == AllowMovementType.Auto)
+                    return !IsManualMovementBotActive;
+
+                return SingularSettings.Instance.AllowMovement >= AllowMovementType.ClassSpecificOnly;
+            }
+        }
+
+        public static bool IsMoveBehindAllowed
+        {
+            get
+            {
+                if (IsBotMovementDisabled)
+                    return false;
+
+                if (!SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.Movement)
+                    || !SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.MoveBehind))
                     return false;
 
                 if (SingularSettings.Instance.AllowMovement == AllowMovementType.Auto)

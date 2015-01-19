@@ -345,7 +345,7 @@ namespace Singular.ClassSpecific.Monk
                             req => !((WoWUnit)req).IsAboveTheGround() && ((WoWUnit)req).SpellDistance() > 10 && Me.IsSafelyFacing(((WoWUnit)req), 10f),
                             new Sequence(
                                 new PrioritySelector(
-                                    Spell.Cast("Roll", on => (WoWUnit) on, req => !MonkSettings.DisableRoll)
+                                    Spell.Cast("Roll", on => (WoWUnit) on, req => !MonkSettings.DisableRoll && MovementManager.IsClassMovementAllowed)
                                     )
                                 )
                             )

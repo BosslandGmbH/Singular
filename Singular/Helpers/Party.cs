@@ -316,24 +316,23 @@ namespace Singular.Helpers
         /// <returns></returns>
         private static Composite BuffUnit(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, params string[] myMutexBuffs)
         {
-            return
-                new Decorator(
-                    ret => onUnit(ret) != null
-                        && (PartyBuffType.None != (onUnit(ret).GetMissingPartyBuffs() & GetPartyBuffForSpell(name)))
-                        && (myMutexBuffs == null || myMutexBuffs.Count() == 0 || !onUnit(ret).GetAllAuras().Any(a => a.CreatorGuid == StyxWoW.Me.Guid && myMutexBuffs.Contains(a.Name))),
-                    new Sequence(
-                        Spell.Buff(name, onUnit, requirements),
-                        new Wait(1, until => StyxWoW.Me.HasPartyBuff(name), new ActionAlwaysSucceed()),
-                        new Action(ret =>
-                        {
-                            System.Diagnostics.Debug.Assert(PartyBuffType.None != GetPartyBuffForSpell(name));
-                            if (PartyBuffType.None != GetPartyBuffForSpell(name))
-                                ResetReadyToPartyBuffTimer();
-                            else
-                                Logger.WriteDebug("Programmer Error: should use Spell.Buff(\"{0}\") instead", name);
-                        })
-                        )
-                    );
+            return new Decorator(
+                ret => onUnit(ret) != null
+                    && (PartyBuffType.None != (onUnit(ret).GetMissingPartyBuffs() & GetPartyBuffForSpell(name)))
+                    && (myMutexBuffs == null || myMutexBuffs.Count() == 0 || !onUnit(ret).GetAllAuras().Any(a => a.CreatorGuid == StyxWoW.Me.Guid && myMutexBuffs.Contains(a.Name))),
+                new Sequence(
+                    Spell.Buff(name, onUnit, requirements),
+                    new Wait(1, until => StyxWoW.Me.HasPartyBuff(name), new ActionAlwaysSucceed()),
+                    new Action(ret =>
+                    {
+                        System.Diagnostics.Debug.Assert(PartyBuffType.None != GetPartyBuffForSpell(name));
+                        if (PartyBuffType.None != GetPartyBuffForSpell(name))
+                            ResetReadyToPartyBuffTimer();
+                        else
+                            Logger.WriteDiagnostic("Programmer Error: should use Spell.Buff(\"{0}\") instead", name);
+                    })
+                    )
+                );
         }
 
         private static Composite PetBuffUnit(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, params string[] myMutexBuffs)

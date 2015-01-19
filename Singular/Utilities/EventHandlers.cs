@@ -153,14 +153,10 @@ namespace Singular.Utilities
                 filterCriteria +=
                     " ("
                     + " args[8] == " + "'" + myGuid + "'"
-                    + " and args[8] ~= args[4]"
+                    + " and args[4] ~= args[8]"
                     + " and bit.band(args[6], COMBATLOG_OBJECT_CONTROL_PLAYER) > 0"
                     + " and 'Player' == args[4]:sub(1,6)"
-                    + " ("
-                    + " args[2] == 'SPELL_DAMAGE'"
-                    + " or args[2] == 'RANGE_DAMAGE'"
-                    + " or args[2] == 'SWING_DAMAGE'"
-                    + " )"
+                    + " and (args[2] == 'SPELL_DAMAGE' or args[2] == 'RANGE_DAMAGE' or args[2] == 'SWING_DAMAGE')"
                     + ")"
                     + " or";
                 // filterCriteria += " (args[8] == UnitGUID('player') and args[8] ~= args[4] and 0x000 == bit.band(tonumber('0x'..strsub(guid, 3,5)),0x00f)) or";
@@ -241,7 +237,7 @@ namespace Singular.Utilities
                             Logger.WriteDiagnostic("GankDetect: attacked by Level {0} {1}{2}", enemy.Level, enemy.SafeName(), extra);
                             if ( SingularSettings.Instance.TargetWorldPvpRegardless && (BotPoi.Current == null || BotPoi.Current.Guid != enemy.Guid))
                             {
-                                Logger.Write( LogColor.Hilite, "GankDetect: setting {0} as BotPoi Kill Target");
+                                Logger.Write( LogColor.Hilite, "GankDetect: setting {0} as BotPoi Kill Target", enemy.SafeName());
                                 BotPoi.Current = new BotPoi(enemy, PoiType.Kill);
                             }
                         }

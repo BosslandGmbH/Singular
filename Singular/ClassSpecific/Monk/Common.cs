@@ -156,7 +156,7 @@ namespace Singular.ClassSpecific.Monk
                         new PrioritySelector(
 
                             // add buff / shield here
-                            Spell.OffGCD(
+                            Spell.HandleOffGCD(
                                 new Throttle(
                                     3, 
                                     Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HealthPercent < MonkSettings.TigereyeBrewHealth && Me.HasAura("Tigereye Brew", 1))
@@ -474,9 +474,6 @@ namespace Singular.ClassSpecific.Monk
                 )
             */
 
-            if (!MovementManager.IsClassMovementAllowed)
-                return new ActionAlwaysFail();
-
             bool hasFSKGlpyh = TalentManager.HasGlyph("Flying Serpent Kick");
             bool hasTigersLust = HasTalent(MonkTalents.TigersLust);
 
@@ -494,7 +491,7 @@ namespace Singular.ClassSpecific.Monk
                     ctx => onUnit(ctx),
                     new Decorator(
                         req => {
-                            if (!SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.GapCloser))
+                            if (!MovementManager.IsClassMovementAllowed)
                                 return false;
 
                             if (!canReq(req))
@@ -615,7 +612,7 @@ namespace Singular.ClassSpecific.Monk
                             Spell.BuffSelf("Tiger's Lust", req => hasTigersLust ),
 
                             new Sequence(
-                                Spell.Cast("Roll", on => (WoWUnit)on, req => !MonkSettings.DisableRoll ),
+                                Spell.Cast("Roll", on => (WoWUnit)on, req => !MonkSettings.DisableRoll && MovementManager.IsClassMovementAllowed),
                                 new PrioritySelector(
                                     new Wait(
                                         TimeSpan.FromMilliseconds(500), 

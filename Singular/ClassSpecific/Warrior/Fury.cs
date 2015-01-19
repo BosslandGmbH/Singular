@@ -186,7 +186,7 @@ namespace Singular.ClassSpecific.Warrior
                                 Spell.Cast("Thunder Clap", req => !SpellManager.HasSpell("Whirlwind")),
 
                                 //Bloodthirst on cooldown when not Enraged. Procs Bloodsurge.
-                                Spell.Cast("Bloodthirst", ret => !IsEnraged),
+                                Spell.Cast("Bloodthirst", ret => !Common.IsEnraged),
 
                                 //Whirlwind as a Rage dump and to build Raging Blow stacks.
                                 Spell.Cast("Whirlwind", ret => Me.RagePercent > 80),
@@ -195,7 +195,7 @@ namespace Singular.ClassSpecific.Warrior
                                 Spell.Cast("Raging Blow", ret => Me.HasAura("Raging Blow", 1)),
 
                                 //Wild Strike to consume Bloodsurge procs.
-                                Spell.Cast("Wild Strike", ret => IsEnraged || StyxWoW.Me.HasAura("Bloodsurge"))
+                                Spell.Cast("Wild Strike", ret => Common.IsEnraged || StyxWoW.Me.HasAura("Bloodsurge"))
                                 )
                             ),
 
@@ -225,13 +225,13 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Wild Strike", ret => Me.RagePercent > 80),
 
                         //Bloodthirst on cooldown when not Enraged. Procs Bloodsurge.
-                        Spell.Cast("Bloodthirst", ret => !IsEnraged),
+                        Spell.Cast("Bloodthirst", ret => !Common.IsEnraged),
 
                         //Raging Blow when available.
                         Spell.Cast("Raging Blow"),
 
                         //Wild Strike when Enraged or with Bloodsurge procs.
-                        Spell.Cast("Wild Strike", ret => IsEnraged || StyxWoW.Me.HasAura("Bloodsurge"))
+                        Spell.Cast("Wild Strike", ret => Common.IsEnraged || StyxWoW.Me.HasAura("Bloodsurge"))
                         )
                     ),
 
@@ -243,13 +243,13 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Execute", req => Me.RagePercent > 80),
 
                         //Bloodthirst on cooldown when not Enraged. Procs Bloodsurge.
-                        Spell.Cast("Bloodthirst", ret => !IsEnraged),
+                        Spell.Cast("Bloodthirst", ret => !Common.IsEnraged),
 
                         //Execute while Enraged or with >= 60 Rage.
                         Spell.Cast("Execute", req => Me.RagePercent >= 60),
 
                         //Wild Strike when Enraged or with Bloodsurge procs.
-                        Spell.Cast("Wild Strike", ret => IsEnraged || StyxWoW.Me.HasAura("Bloodsurge"))
+                        Spell.Cast("Wild Strike", ret => Common.IsEnraged || StyxWoW.Me.HasAura("Bloodsurge"))
                         )
                     ),
 
@@ -276,7 +276,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Dragon Roar", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8),
                 Spell.Cast("Storm Bolt"),
 
-                Spell.BuffSelf("Berserker Rage", ret => !IsEnraged && StyxWoW.Me.CurrentTarget.IsWithinMeleeRange)
+                Spell.BuffSelf("Berserker Rage", ret => !Common.IsEnraged && StyxWoW.Me.CurrentTarget.IsWithinMeleeRange)
                 );
         }
 
@@ -306,7 +306,6 @@ namespace Singular.ClassSpecific.Warrior
         static TimeSpan CSCD { get { return Spell.GetSpellCooldown("Colossus Smash"); } }
 
         static bool WithinExecuteRange { get { return StyxWoW.Me.CurrentTarget.HealthPercent <= 20; } }
-        static bool IsEnraged { get { return StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Enraged); } }
         private static bool TargetSmashed { get { return StyxWoW.Me.CurrentTarget.HasAura("Colossus Smash"); } }
 
 

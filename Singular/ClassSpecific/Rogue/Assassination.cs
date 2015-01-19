@@ -218,9 +218,7 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Cast("Mutilate", req => Common.HasTwoDaggers),
 
                         Common.CheckThatDaggersAreEquippedIfNeeded(),
-                        AssaCastSinisterStrike(),
-
-                        Common.CreateRogueMoveBehindTarget()
+                        AssaCastSinisterStrike()
                         )
                     )
                 );

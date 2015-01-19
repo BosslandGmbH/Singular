@@ -287,7 +287,7 @@ namespace Singular.ClassSpecific.Priest
                                 new Decorator(
                                     ret => ret != null && Spell.CanCastHack("Prayer of Mending", (WoWUnit)ret),
                                     new PrioritySelector(
-                                        Spell.OffGCD(Spell.BuffSelf("Archangel", req => Me.HasAura("Evangelism", 5))),
+                                        Spell.HandleOffGCD(Spell.BuffSelf("Archangel", req => Me.HasAura("Evangelism", 5))),
                                         Spell.Cast("Prayer of Mending", on => (WoWUnit)on, req => true)
                                         )
                                     )
@@ -316,7 +316,7 @@ namespace Singular.ClassSpecific.Priest
                             ret => ret != null && HealerManager.Instance.TargetList.Count(u => u.IsAlive && u.HealthPercent < PriestSettings.DiscHeal.DiscLevel90Talent && u.Distance < 30) >= PriestSettings.DiscHeal.CountLevel90Talent
                                 && Spell.CanCastHack("Halo", (WoWUnit)ret),
                             new PrioritySelector(
-                                Spell.OffGCD(Spell.BuffSelf("Archangel", req => ((WoWUnit)req) != null && Me.HasAura("Evangelism", 5))),
+                                Spell.HandleOffGCD(Spell.BuffSelf("Archangel", req => ((WoWUnit)req) != null && Me.HasAura("Evangelism", 5))),
                                 Spell.CastOnGround("Halo", on => (WoWUnit)on, req => true)
                                 )
                             )
@@ -332,7 +332,7 @@ namespace Singular.ClassSpecific.Priest
                             new Decorator(
                                 ret => ret != null && Spell.CanCastHack("Cascade", (WoWUnit) ret),
                                 new PrioritySelector(
-                                    Spell.OffGCD(Spell.BuffSelf("Archangel", req => Me.HasAura("Evangelism", 5))),
+                                    Spell.HandleOffGCD(Spell.BuffSelf("Archangel", req => Me.HasAura("Evangelism", 5))),
                                     Spell.Cast("Cascade", mov => true, on => (WoWUnit)on, req => true)
                                     )
                                 )

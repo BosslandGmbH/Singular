@@ -310,7 +310,7 @@ namespace Singular.ClassSpecific.Mage
 
                                      Spell.BuffSelf("Mirror Image"),
 
-                                     Spell.OffGCD(
+                                     Spell.HandleOffGCD(
                                          new Sequence(
                                              new PrioritySelector(
                                                 Spell.BuffSelf("Icy Veins"),
@@ -498,14 +498,14 @@ namespace Singular.ClassSpecific.Mage
 
                                  Spell.BuffSelf( "Mirror Image"),
 
-                                 Spell.OffGCD(
+                                 Spell.HandleOffGCD(
                                      new Sequence(
                                          new PrioritySelector(
                                             Spell.BuffSelf("Icy Veins"),
                                             new Decorator( req => !SpellManager.HasSpell("Icy Veins"), new ActionAlwaysSucceed())
                                             ),
                                          new PrioritySelector(
-                                            Spell.OffGCD( Spell.BuffSelf("Alter Time")),
+                                            Spell.HandleOffGCD( Spell.BuffSelf("Alter Time")),
                                             new Decorator( req => !SpellManager.HasSpell("Alter Time"), new ActionAlwaysSucceed())
                                             )
                                         )

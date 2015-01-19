@@ -37,6 +37,11 @@ namespace Singular.Helpers
         Yes
     };
 
+    enum HasGcd
+    {
+        No = 0,
+        Yes
+    };
 
     public delegate WoWUnit UnitSelectionDelegate(object context);
     public delegate WoWObject ObjSelectionDelegate(object context);
@@ -50,7 +55,7 @@ namespace Singular.Helpers
     public delegate float SimpleFloatDelegate(object context);
     
     public delegate TimeSpan SimpleTimeSpanDelegate(object context);
-    
+
     internal static class Spell
     {
         // type casting method for context dereferencing within Spell class
@@ -60,6 +65,7 @@ namespace Singular.Helpers
         private static SpellFindResults EmptySFR = new SpellFindResults(null);
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
+
         public static void LogCast(string sname, WoWUnit unit, bool isHeal = false)
         {
             LogCast(sname, unit, unit.HealthPercent, unit.SpellDistance(), isHeal);
@@ -735,7 +741,7 @@ namespace Singular.Helpers
         /// </summary>
         /// <param name="tree"></param>
         /// <returns></returns>
-        public static Composite OffGCD(Composite tree)
+        public static Composite HandleOffGCD(Composite tree)
         {
             return new Sequence(
                 new Throttle( TimeSpan.FromMilliseconds(500), tree ),
@@ -945,7 +951,7 @@ namespace Singular.Helpers
         /// <param name = "onUnit">The on unit.</param>
         /// <param name = "requirements">The requirements.</param>
         /// <returns>.</returns>
-        public static Composite Cast(int spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        public static Composite Cast(int spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, HasGcd gcd = HasGcd.Yes)
         {
             return Cast(id => spellId, onUnit, requirements);
         }
@@ -958,7 +964,7 @@ namespace Singular.Helpers
         /// <param name = "onUnit">The on unit.</param>
         /// <param name = "requirements">The requirements.</param>
         /// <returns>.</returns>
-        public static Composite Cast(SimpleIntDelegate spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        public static Composite Cast(SimpleIntDelegate spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, HasGcd gcd = HasGcd.Yes)
         {
             if (spellId == null || onUnit == null || requirements == null)
             {
@@ -1099,7 +1105,7 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite Buff(string name, SimpleBooleanDelegate requirements)
         {
-            return Buff(name, false, ret => StyxWoW.Me.CurrentTarget, requirements, name);
+            return Buff(name, false, on => StyxWoW.Me.CurrentTarget, requirements, name);
         }
 
         /// <summary>
@@ -1124,7 +1130,7 @@ namespace Singular.Helpers
 
         public static Composite Buff(string name, bool myBuff, SimpleBooleanDelegate requirements)
         {
-            return Buff(name, myBuff, ret => StyxWoW.Me.CurrentTarget, requirements);
+            return Buff(name, myBuff, ret => StyxWoW.Me.CurrentTarget, requirements );
         }
 
         public static Composite Buff(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
@@ -1150,7 +1156,7 @@ namespace Singular.Helpers
         }
 
         public static Composite Buff(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements,
-            params string[] buffNames)
+            HasGcd gcd = HasGcd.Yes, params string[] buffNames)
         {
             return Buff(name, false, onUnit, requirements, buffNames);
         }
@@ -1225,16 +1231,16 @@ namespace Singular.Helpers
 
         public static Composite Buff(string name, int expirSecs = 3, UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate require = null, bool myBuff = true, params string[] buffNames)
         {
-            return Buff(sp => name, expirSecs, onUnit, require, myBuff, buffNames);
+            return Buff(sp => name, expirSecs, onUnit, require, myBuff, HasGcd.Yes, buffNames);
         }
 
 
-        public static Composite Buff(SimpleStringDelegate name, int expirSecs, UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate require = null, bool myBuff = true, params string[] buffNames)
+        public static Composite Buff(SimpleStringDelegate name, int expirSecs, UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate require = null, bool myBuff = true, HasGcd gcd = HasGcd.Yes, params string[] buffNames)
         {
-            return Buff(name, TimeSpan.FromSeconds(expirSecs), onUnit, require, myBuff, buffNames);
+            return Buff(name, TimeSpan.FromSeconds(expirSecs), onUnit, require, myBuff, gcd, buffNames);
         }
 
-        public static Composite Buff(SimpleStringDelegate name, TimeSpan expires, UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate require = null, bool myBuff = true, params string[] buffNames)
+        public static Composite Buff(SimpleStringDelegate name, TimeSpan expires, UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate require = null, bool myBuff = true, HasGcd gcd = HasGcd.Yes, params string[] buffNames)
         {
             if (onUnit == null)
                 onUnit = u => Me.CurrentTarget;
@@ -1295,7 +1301,7 @@ namespace Singular.Helpers
                 },
                 new Sequence(
                 // new Action(ctx => _lastBuffCast = name),
-                    Cast(sp => _buffName, chkMov => true, onUnit, require, cancel => false /* causes cast to complete */ ),
+                    Cast(sp => _buffName, chkMov => true, onUnit, require, cancel => false /* causes cast to complete */, gcd: gcd ),
                     new Action(ret => UpdateDoubleCast( _buffName, _buffUnit))
                     )
                 );
@@ -1335,9 +1341,9 @@ namespace Singular.Helpers
             return Buff(name, false, on => Me, requirements);
         }
 
-        public static Composite BuffSelf(string name, SimpleBooleanDelegate requirements, int expirSecs)
+        public static Composite BuffSelf(string name, SimpleBooleanDelegate requirements, int expirSecs = 0, HasGcd gcd = HasGcd.Yes)
         {
-            return Buff(name, expirSecs, on => Me, requirements, false);
+            return Buff(b => name, expirSecs, on => Me, requirements, false, gcd);
         }
 
         public static Composite BuffSelf(SimpleStringDelegate name, SimpleBooleanDelegate requirements)
@@ -1345,34 +1351,38 @@ namespace Singular.Helpers
             return Buff(name, false, on => Me, requirements);
         }
 
-        public static Composite BuffSelf(SimpleStringDelegate name, SimpleBooleanDelegate requirements, int expirSecs)
+        public static Composite BuffSelf(SimpleStringDelegate name, SimpleBooleanDelegate requirements, int expirSecs, HasGcd gcd = HasGcd.Yes)
         {
-            return Buff(name, expirSecs, on => Me, require: requirements);
+            return Buff(name, expirSecs, on => Me, require: requirements, gcd:gcd);
         }
 
-        public static Composite BuffSelfAndWait(SimpleStringDelegate name, SimpleBooleanDelegate requirements = null, int expirSecs = 0)
+        public static Composite BuffSelfAndWait(SimpleStringDelegate name, SimpleBooleanDelegate requirements = null, int expirSecs = 0, CanRunDecoratorDelegate until = null, bool measure = false, HasGcd gcd = HasGcd.Yes)
         {
             if (requirements == null)
                 requirements = req => true;
 
+            if (until == null)
+                until = u => StyxWoW.Me.HasAura(name(u));
+
             return new Sequence(
-                BuffSelf(name, requirements, expirSecs),
+                BuffSelf(name, requirements, expirSecs, gcd),
                 new PrioritySelector(
                     new DynaWait(
                         time => TimeSpan.FromMilliseconds(Me.Combat ? 500 : 1000),
-                        until => StyxWoW.Me.HasAura(name(until)),
-                        new ActionAlwaysSucceed()
+                        until,
+                        new ActionAlwaysSucceed(),
+                        measure
                         ),
                     new Action(r =>
                     {
-                        Logger.WriteDiagnostic("BuffSelfAndWait: aura [{0}] not applied!!!", name(r));
+                        Logger.WriteDiagnostic("BuffSelfAndWait: buff of [{0}] failed", name(r));
                         return RunStatus.Failure;
                     })
                     )
                 );
         }
 
-        public static Composite BuffSelfAndWait( int id, SimpleBooleanDelegate requirements = null, int expirSecs = 0)
+        public static Composite BuffSelfAndWait( int id, SimpleBooleanDelegate requirements = null, int expirSecs = 0, HasGcd gcd = HasGcd.Yes)
         {
             WoWSpell spell = WoWSpell.FromId(id);
             if (spell == null || !SpellManager.HasSpell(spell.Id))
@@ -1382,7 +1392,7 @@ namespace Singular.Helpers
                 requirements = req => true;
 
             return new Sequence(
-                BuffSelf(id, requirements),
+                BuffSelf(idd => id, requirements, expirSecs, gcd),
                 new PrioritySelector(
                     new DynaWait(
                         time => TimeSpan.FromMilliseconds(Me.Combat ? 500 : 1000),
@@ -1397,6 +1407,11 @@ namespace Singular.Helpers
                     })
                     )
                 );
+        }
+
+        public static Composite BuffSelf(SimpleIntDelegate idd, SimpleBooleanDelegate requirements, int expirSecs, HasGcd gcd)
+        {
+            throw new NotImplementedException();
         }
 
         #endregion
@@ -1477,10 +1492,12 @@ namespace Singular.Helpers
         /// <param name = "onUnit">The on unit</param>
         /// <param name = "requirements">The requirements.</param>
         /// <returns></returns>
-        public static Composite Buff(SimpleIntDelegate spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        public static Composite Buff(SimpleIntDelegate spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, HasGcd gcd = HasGcd.Yes)
         {
-            return new Decorator(ret => onUnit(ret) != null && onUnit(ret).Auras.Values.All(a => a.SpellId != spellId(ret)),
-                Cast(spellId, onUnit, requirements));
+            return new Decorator(
+                req => onUnit(req) != null && onUnit(req).Auras.Values.All(a => a.SpellId != spellId(req)),
+                Cast(spellId, onUnit, requirements, gcd) 
+                );
         }
 
         #endregion
@@ -1555,15 +1572,15 @@ namespace Singular.Helpers
         /// <param name="allow">allow next spell to queue before this one completes</param>
         /// <returns>.</returns>
         public static Composite Cast(string name, UnitSelectionDelegate onUnit,
-            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel = null, LagTolerance allow = LagTolerance.Yes)
+            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel = null, LagTolerance allow = LagTolerance.Yes, HasGcd gcd = HasGcd.Yes)
         {
-            return Cast(n => name, mov => true, onUnit, requirements, cancel, allow);
+            return Cast(n => name, mov => true, onUnit, requirements, cancel, allow, gcd:gcd);
         }
 
         public static Composite Cast(string name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
-            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel = null, LagTolerance allow = LagTolerance.Yes)
+            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel = null, LagTolerance allow = LagTolerance.Yes, HasGcd gcd = HasGcd.Yes)
         {
-            return Cast(n => name, checkMovement, onUnit, requirements, cancel, allow);
+            return Cast(n => name, checkMovement, onUnit, requirements, cancel, allow, gcd: gcd);
         }
 
         /// <summary>
@@ -1605,7 +1622,7 @@ namespace Singular.Helpers
         /// <param name="allow">check if spell can be cast</param>
         /// <returns>.</returns>
         public static Composite Cast(SimpleStringDelegate name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
-            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel = null, LagTolerance allow = LagTolerance.Yes, bool skipWowCheck = false, CanCastDelegate canCast = null)
+            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel = null, LagTolerance allow = LagTolerance.Yes, bool skipWowCheck = false, CanCastDelegate canCast = null, HasGcd gcd = HasGcd.Yes)
         {
             SpellFindDelegate ssd =
                 (object ctx, out SpellFindResults sfr) =>
@@ -1623,11 +1640,11 @@ namespace Singular.Helpers
                     return false;
                 };
 
-            return Cast(ssd, checkMovement, onUnit, requirements, cancel, allow, skipWowCheck, canCast);
+            return Cast(ssd, checkMovement, onUnit, requirements, cancel, allow, skipWowCheck, canCast, gcd);
         }
 
         public static Composite Cast(SpellFindDelegate ssd, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
-            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel = null, LagTolerance allow = LagTolerance.Yes, bool skipWowCheck = false, CanCastDelegate canCast = null)
+            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel = null, LagTolerance allow = LagTolerance.Yes, bool skipWowCheck = false, CanCastDelegate canCast = null, HasGcd gcd = HasGcd.Yes)
         {
             // only need to check these at creation time
             if (ssd == null || checkMovement == null || onUnit == null || requirements == null)
@@ -1639,7 +1656,7 @@ namespace Singular.Helpers
             Composite comp =  new PrioritySelector(
 
                 // create a CastContext object to save passed in context and other values
-                ctx => new CastContext(ctx, ssd, onUnit),
+                ctx => new CastContext(ctx, ssd, onUnit, gcd),
 
                 new Sequence(
                     // cast the spell, saving state information including if we queued this cast
@@ -1715,6 +1732,13 @@ namespace Singular.Helpers
                             until =>
                             {
                                 CastContext cctx = until.CastContext();
+                                if (gcd == HasGcd.No)
+                                {
+                                    if (SingularSettings.DebugSpellCasting)
+                                        Logger.WriteFile("Spell.Cast[{0}]: offgcd and GCD has {1} left, isgcd={2}", cctx.spell.Name, (long)Spell.GcdTimeLeft.TotalMilliseconds, Spell.IsGlobalCooldown(allow).ToYN());
+                                    return true;
+                                }
+
                                 if (cctx.spell.IsInstantCast() && Spell.GcdTimeLeft.TotalMilliseconds > 650)
                                 {
                                     if (SingularSettings.DebugSpellCasting)
@@ -1760,20 +1784,25 @@ namespace Singular.Helpers
                             {
                                 CastContext cctx = r.CastContext();
                                 if (SingularSettings.DebugSpellCasting)
-                                    Logger.WriteFile( "Spell.Cast(\"{0}\"): forcing success, assuming off the global cooldown", cctx.spell.Name);
+                                {
+                                    if (gcd == HasGcd.No)
+                                        Logger.WriteFile("Spell.Cast(\"{0}\"): off the global cooldown", cctx.spell.Name);
+                                    else
+                                        Logger.WriteFile("Spell.Cast(\"{0}\"): forcing success, assuming off the global cooldown", cctx.spell.Name);
+                                }
                                 return RunStatus.Success;
                             })
                             ),
 
                         // for instant or no cancel method given, we are done
                         new Decorator(
-                            ret => cancel == null || ret.CastContext().spell.IsInstantCast(),
+                            ret => gcd == HasGcd.No || cancel == null || ret.CastContext().spell.IsInstantCast(),
                             new Action(r =>
                             {
                                 CastContext cctx = r.CastContext();
 
                                 if (SingularSettings.DebugSpellCasting)
-                                    Logger.WriteFile( "Spell.Cast(\"{0}\"): no cancel delegate or instant", cctx.spell.Name);
+                                    Logger.WriteFile( "Spell.Cast(\"{0}\"): no cancel delegate or instant or offgcd", cctx.spell.Name);
                                 return RunStatus.Success;
                             })
                             ),
@@ -2683,7 +2712,7 @@ namespace Singular.Helpers
         }
 
         // always create passing the existing context so it is preserved for delegate usage
-        internal CastContext(object ctx, SpellFindDelegate ssd, UnitSelectionDelegate onUnit)
+        internal CastContext(object ctx, SpellFindDelegate ssd, UnitSelectionDelegate onUnit, HasGcd gcd = HasGcd.Yes)
         {
             if (ssd == null || onUnit == null)
                 return;

@@ -205,7 +205,7 @@ namespace Singular.ClassSpecific.Priest
                                 Common.CreatePriestShackleUndeadAddBehavior(),
                                 Common.CreatePsychicScreamBehavior(),
 
-                                Spell.OffGCD(
+                                Spell.HandleOffGCD(
                                     new PrioritySelector(
                                         ctx => Me.CurrentTarget.TimeToDeath() > 15 || cntAoeTargets > 1,
                                         new Sequence(

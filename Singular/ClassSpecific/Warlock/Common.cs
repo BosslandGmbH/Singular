@@ -495,48 +495,88 @@ namespace Singular.ClassSpecific.Warlock
                                     ),
                                 new Decorator(
                                     // need to check that no live pet here as FoX will only summon last living, so worthless if live pet (even if wrong one)
-                                    ret => TalentManager.CurrentSpec == WoWSpec.WarlockDestruction && !Me.GotAlivePet && Spell.CanCastHack("Flames of Xoroth", Me) && Warlock.Destruction.CurrentBurningEmbers >= 10,
+                                    ret => TalentManager.CurrentSpec == WoWSpec.WarlockDestruction                                        
+                                        && !Me.GotAlivePet && Spell.CanCastHack("Flames of Xoroth", Me) 
+                                        && Warlock.Destruction.CurrentBurningEmbers >= 10,
                                     new Sequence(
+                                        new Action(r => 
+                                        {
+                                            if (Me.Combat || Unit.NearbyUnfriendlyUnits.Any(u => u.IsPlayer && u.IsTargetingMyStuff()))
+                                                return RunStatus.Success;
+                                            Logger.WriteDebug("CreateWarlockSummonPet:  not in combat and no imminent danger nearby, so saving embers");
+                                            return RunStatus.Failure;
+                                        }),
                                         new Action(r => Logger.Write( LogColor.Hilite, "^Instant Summon Pet: Flames of Xoroth!")),
-                                        Spell.BuffSelf("Flames of Xoroth")
+                                        new PrioritySelector(
+                                            Spell.BuffSelfAndWait( s=>"Flames of Xoroth", until: u => !Me.GotAlivePet, measure: true),
+                                            new Action( r => 
+                                            {
+                                                Logger.WriteDebug("Flames of Xoroth: no pet detected, assuming it failed");
+                                                return RunStatus.Failure;
+                                            })
+                                            )
                                         )
                                     ),
                                 new Decorator(
                                     req => StyxWoW.Me.HasAura( "Soulburn"),
-                                    new Action( r => Logger.Write( LogColor.Hilite, "^Instant Summon Pet: Soulburn already active - should work!"))
+                                    new Sequence(
+                                        new Action(r => Logger.Write(LogColor.Hilite, "^Instant Summon Pet: Soulburn already active")),
+                                        new Action(r => Logger.WriteDebug(LogColor.Hilite, "CreateWarlockSummonPet: Summon will have 60 sec cooldown"))
+                                        )
                                     ),
-                                CreateCastSoulburn(ret => {
-                                    if (TalentManager.CurrentSpec == WoWSpec.WarlockAffliction)
-                                    {
-                                        if (Me.CurrentSoulShards == 0)
-                                            Logger.WriteDebug("CreateWarlockSummonPet:  no shards so instant pet summon not available");
-                                        else if (!Me.Combat && !Unit.NearbyUnfriendlyUnits.Any(u => u.Combat || u.IsPlayer))
-                                            Logger.WriteDebug("CreateWarlockSummonPet:  not in combat and no imminent danger nearby, so saving shards");
-                                        else if (!Spell.CanCastHack("Soulburn", Me))
-                                            Logger.WriteDebug("soulburn not available, shards={0}", Me.CurrentSoulShards);
-                                        else
+                                new Sequence(
+                                    CreateCastSoulburn(ret => {
+                                        if (TalentManager.CurrentSpec == WoWSpec.WarlockAffliction)
                                         {
-                                            Logger.Write( LogColor.Hilite, "^Instant Summon Pet: Soulburn - hope it works!");
-                                            return true;
+                                            if (Me.CurrentSoulShards == 0)
+                                                Logger.WriteDebug("CreateWarlockSummonPet:  no shards so instant pet summon not available");
+                                            else if (false && !Me.Combat && !Unit.NearbyUnfriendlyUnits.Any(u => u.Combat || u.IsPlayer))
+                                                Logger.WriteDebug("CreateWarlockSummonPet:  not in combat and no imminent danger nearby, so saving shards");
+                                            else if (!Spell.CanCastHack("Soulburn", Me))
+                                                Logger.WriteDebug("soulburn not available, shards={0}", Me.CurrentSoulShards);
+                                            else
+                                                return true;
                                         }
-                                    }
-                                    return false;
-                                    }),
+                                        return false;
+                                        }),
+                                    new PrioritySelector(
+                                        new Wait( 
+                                            TimeSpan.FromSeconds(1), 
+                                            until => Me.HasAura("Soulburn"),
+                                            new Sequence(
+                                                new Action(r => Logger.Write(LogColor.Hilite, "^Instant Summon Pet: Soulburn active")),
+                                                new Action(r => Logger.WriteDebug(LogColor.Hilite, "CreateWarlockSummonPet: Summon will have 60 sec cooldown"))
+                                                )
+                                            ),
+                                        new Action(r => Logger.WriteDebug("CreateWarlockSummonPet: Soulburn not present, assuming cast non-instant"))
+                                        ),
+                                    new ActionAlwaysFail()      // fail here as we need Summon cast whether instant or not
+                                    ),
 
-                                new Action(r => Logger.WriteDebug("instant summon not active, continuing..."))
+                                new Sequence(
+                                    new Action(r => Logger.WriteDebug("CreateWarlockSummonPet: summoning {0}", GetBestPet().ToString().CamelToSpaced())),
+                                    new PrioritySelector(
+                                        Spell.Cast( 
+                                            n => "Summon" + GetBestPet().ToString().CamelToSpaced(), 
+                                            chkMov => true,
+                                            onUnit => Me, 
+                                            req => true,
+                                            cncl => GetBestPet() == GetCurrentPet()
+                                            )
+                                        )
+                                    )
                                 ),
 #endregion
-                            new Action(ret => Logger.WriteDebug("Summon Pet:  about to summon{0}", GetBestPet().ToString().CamelToSpaced())),
 
-                            // Heal() used intentionally here (has spell completion logic not present in Cast())
-                            Spell.Cast( n => "Summon" + GetBestPet().ToString().CamelToSpaced(), 
-                                chkMov => true,
-                                onUnit => Me, 
-                                req => true,
-                                cncl => GetBestPet() == GetCurrentPet()),
-
-                            // make sure we see pet alive before continuing
-                            new Wait( 1, ret => GetCurrentPet() != WarlockPet.None, new ActionAlwaysSucceed() )
+                            // confirm we see an pet alive and fail if we don't
+                            new PrioritySelector(
+                                new Wait( 1, ret => GetCurrentPet() != WarlockPet.None, new ActionAlwaysSucceed() ),
+                                new Action(r => 
+                                {
+                                    Logger.WriteDebug("CreateWarlockSummonPet: summon attempt failed, petalive={0}", Me.GotAlivePet.ToYN());
+                                    return RunStatus.Failure;
+                                })
+                                )
                             )
                         )
                     )
@@ -556,7 +596,7 @@ namespace Singular.ClassSpecific.Warlock
 
         public static Composite CreateCastSoulburn(SimpleBooleanDelegate requirements)
         {
-            return Spell.BuffSelfAndWait(sp => "Soulburn", req => Me.CurrentSoulShards > 0 && requirements(req));
+            return Spell.BuffSelfAndWait(sp => "Soulburn", req => Me.CurrentSoulShards > 0 && requirements(req), gcd: HasGcd.No);
         }
 
         #region Pet Support

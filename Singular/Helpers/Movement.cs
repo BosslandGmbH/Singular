@@ -433,7 +433,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite CreateMoveBehindTargetBehavior(Composite gapCloser = null)
         {
-            return CreateMoveBehindTargetBehavior(ret => true);
+            return CreateMoveBehindTargetBehavior(ret => true, gapCloser);
         }
 
         /// <summary>
@@ -482,7 +482,10 @@ namespace Singular.Helpers
                             new Action(behindPoint => Navigator.MoveTo((WoWPoint)behindPoint)),
                             new Action(behindPoint => StopMoving.AtLocation((WoWPoint)behindPoint)),
                             new PrioritySelector(
-                                gapCloser,
+                                new Decorator(
+                                    req => MovementManager.IsClassMovementAllowed, 
+                                    gapCloser
+                                    ),
                                 new ActionAlwaysSucceed()
                                 )
                             )
@@ -879,20 +882,22 @@ namespace Singular.Helpers
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
-        static StopMoving()
-        {
-            Clear();
-        }
-
         public static void Clear()
         {
-            Set(StopType.None, null, WoWPoint.Empty, 0, stop => false, null);
+            if (Type != StopType.None)
+                Set(StopType.None, null, WoWPoint.Empty, 0, stop => false, null);
         }
 
         public static void Pulse()
         {
-            if (Type == StopType.None || MovementManager.IsMovementDisabled)
+            if (Type == StopType.None)
                 return;
+
+            if (MovementManager.IsMovementDisabled)
+            {
+                Clear();
+                return;
+            }
 
             bool stopMovingNow;
             try

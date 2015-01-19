@@ -335,7 +335,14 @@ namespace Singular.ClassSpecific.Hunter
                             Spell.Buff("Widow Venom", ret => HunterSettings.UseWidowVenom && Target.IsPlayer && Me.IsSafelyFacing(Target) && Target.InLineOfSpellSight),
 
                             // Buffs - don't stack Bestial Wrath and Rapid Fire
-                            Spell.Buff("Bestial Wrath", true, ret => Spell.GetSpellCooldown("Kill Command") == TimeSpan.Zero && !Me.HasAura("Rapid Fire"), "The Beast Within"),
+                            Spell.Buff(
+                                "Bestial Wrath", 
+                                on => Me,
+                                req => Spell.GetSpellCooldown("Kill Command") == TimeSpan.Zero && !Me.HasAura("Rapid Fire"), 
+                                HasGcd.No, 
+                                "The Beast Within"
+                                ),
+
 
                             Spell.Cast("Stampede",
                                 ret => PartyBuff.WeHaveBloodlust
@@ -1010,6 +1017,9 @@ namespace Singular.ClassSpecific.Hunter
 
         public static bool IsDisengageNeeded()
         {
+            if (!SingularRoutine.IsAllowed(CapabilityFlags.Movement))
+                return false;
+
             if (!SingularRoutine.IsAllowed(CapabilityFlags.Kiting))
                 return false;
 
@@ -1106,7 +1116,7 @@ namespace Singular.ClassSpecific.Hunter
                 return new ThrottlePasses( 5,
                     new Decorator( 
                         ret => Me.GotAlivePet && !Me.HasAura("Misdirection"),
-                        Spell.OffGCD( Spell.Cast("Misdirection", ctx => Me.Pet, req => Me.GotAlivePet && Pet.Distance < 100))
+                        Spell.HandleOffGCD( Spell.Cast("Misdirection", on => Me.Pet, req => Me.GotAlivePet && Pet.Distance < 100, gcd: HasGcd.No))
                         )
                     );
             }
@@ -1119,7 +1129,7 @@ namespace Singular.ClassSpecific.Hunter
                     return new ThrottlePasses(5,
                         new Decorator(
                             ret => Me.GotAlivePet && !Me.HasAura("Misdirection"),
-                            Spell.OffGCD( Spell.Cast("Misdirection", on => Group.Tanks.FirstOrDefault(t => t.IsAlive && t.Distance < 100)))
+                            Spell.HandleOffGCD( Spell.Cast("Misdirection", on => Group.Tanks.FirstOrDefault(t => t.IsAlive && t.Distance < 100)))
                             )
                         );
                 }

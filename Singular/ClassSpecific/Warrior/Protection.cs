@@ -124,21 +124,20 @@ namespace Singular.ClassSpecific.Warrior
                 req => !Unit.IsTrivial(Me.CurrentTarget),
                 new Throttle(    // throttle these because most are off the GCD
                     new PrioritySelector(
-                        Spell.OffGCD(Spell.Cast("Demoralizing Shout", ret => Unit.NearbyUnfriendlyUnits.Any(m => m.SpellDistance() < 10))),
+                        Spell.HandleOffGCD(Spell.Cast("Demoralizing Shout", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(m => m.SpellDistance() < 10), req => true, gcd: HasGcd.No)),
 
-                        Spell.OffGCD( 
+                        Spell.HandleOffGCD( 
                             new PrioritySelector(
-                                Spell.BuffSelf("Shield Wall", ret => Me.HealthPercent < WarriorSettings.WarriorShieldWallHealth),
-                                Spell.BuffSelf("Shield Barrier", ret => Me.HealthPercent < WarriorSettings.WarriorShieldBarrierHealth),
-                                Spell.BuffSelf("Shield Block", ret => Me.HealthPercent < WarriorSettings.WarriorShieldBlockHealth),
-                                Spell.BuffSelf("Savage Defense", ret => Me.HealthPercent < WarriorSettings.WarriorShieldBlockHealth && !StyxWoW.Me.HasAura("Shield Block") && Spell.GetSpellCooldown("Shield Block").TotalSeconds > 0)
+                                Spell.BuffSelf("Shield Wall", ret => Me.HealthPercent < WarriorSettings.WarriorShieldWallHealth, gcd: HasGcd.No ),
+                                Spell.BuffSelf("Shield Barrier", ret => Me.HealthPercent < WarriorSettings.WarriorShieldBarrierHealth, gcd: HasGcd.No),
+                                Spell.BuffSelf("Shield Block", ret => Me.HealthPercent < WarriorSettings.WarriorShieldBlockHealth, gcd: HasGcd.No)
                                 )
                             ),
 
-                        Spell.OffGCD(
+                        Spell.HandleOffGCD(
                             new PrioritySelector(
-                                Spell.OffGCD(Spell.BuffSelf("Last Stand", ret => Me.HealthPercent < WarriorSettings.WarriorLastStandHealth)),
-                                Spell.OffGCD(Common.CreateWarriorEnragedRegeneration())
+                                Spell.HandleOffGCD(Spell.BuffSelf("Last Stand", ret => Me.HealthPercent < WarriorSettings.WarriorLastStandHealth, gcd: HasGcd.No)),
+                                Spell.HandleOffGCD(Common.CreateWarriorEnragedRegeneration())
                                 )
                             ),
 
@@ -148,8 +147,8 @@ namespace Singular.ClassSpecific.Warrior
                                 new Decorator(
                                     ret => Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (!Me.IsInGroup() && AoeCount >= 3),
                                     new PrioritySelector(
-                                        Spell.OffGCD( Spell.Cast("Recklessness")),
-                                        Spell.OffGCD( Spell.Cast("Avatar"))
+                                        Spell.HandleOffGCD( Spell.BuffSelf("Recklessness", req => true, 0, HasGcd.No)),
+                                        Spell.HandleOffGCD( Spell.BuffSelf("Avatar", req => true, 0, HasGcd.No))
                                         )
                                     ),
 
@@ -342,7 +341,7 @@ namespace Singular.ClassSpecific.Warrior
                 Common.CreateExecuteOnSuddenDeath(),
 
                 Spell.Cast("Shield Charge", ret => HasShieldInOffHand && (Spell.GetCharges("Shield Charge") >= 2 || !Me.HasAura("Shield Charge"))),
-                Spell.OffGCD(new Throttle(Spell.Cast("Heroic Strike", req => Me.HasAura("Shield Charge") || HasUltimatum || Me.CurrentRage > RageDump))),
+                Spell.HandleOffGCD(new Throttle(Spell.Cast("Heroic Strike", on => Me.CurrentTarget, req => Me.HasAura("Shield Charge") || HasUltimatum || Me.CurrentRage > RageDump, gcd: HasGcd.No))),
                 Spell.Cast("Shield Slam", ret => Me.CurrentRage < RageBuild && HasShieldInOffHand),
                 Spell.Cast("Revenge"),
                 Spell.Cast("Execute", ret => Me.CurrentRage > RageDump && Me.CurrentTarget.HealthPercent <= 20),

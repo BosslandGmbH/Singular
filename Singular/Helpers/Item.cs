@@ -16,6 +16,7 @@ using Styx.Common;
 using Styx.CommonBot;
 using System.Drawing;
 using System.Text.RegularExpressions;
+using Singular.Managers;
 
 namespace Singular.Helpers
 {
@@ -25,7 +26,13 @@ namespace Singular.Helpers
 
         public static bool HasItem(uint itemId)
         {
-            return StyxWoW.Me.CarriedItems.Any(i => i.Entry == itemId);
+            WoWItem item = FindItem(itemId);
+            return item != null;
+        }
+
+        public static WoWItem FindItem(uint itemId)
+        {
+            return StyxWoW.Me.CarriedItems.FirstOrDefault(i => i.Entry == itemId);
         }
 
         public static bool HasWeaponImbue(WoWInventorySlot slot, string imbueName, int imbueId)
@@ -740,5 +747,74 @@ namespace Singular.Helpers
                 .FirstOrDefault();
         }
 
+        public static Composite CreateThunderLordGrappleBehavior()
+        {
+            const int FROSTFIRE_RIDGE = 6720;
+            const int THUNDERLORD_GRAPPLE = 101677;
+
+            if (!SingularSettings.Instance.ToysAllowUse)
+                return new ActionAlwaysFail();
+
+            if (SingularRoutine.CurrentWoWContext != WoWContext.Normal)
+                return new ActionAlwaysFail();
+
+            if (!Me.IsMelee())
+                return new ActionAlwaysFail();
+
+            return new Throttle(
+                15,
+                new Decorator(
+                    req => Me.ZoneId == FROSTFIRE_RIDGE,
+                    new Decorator(
+                        req => MovementManager.IsClassMovementAllowed   // checks Movement and GapCloser capability flags
+                            && CanUseCarriedItem(THUNDERLORD_GRAPPLE)
+                            && Me.GotTarget()
+                            && Me.CurrentTarget.Distance.Between(25, 40)
+                            && Me.CurrentTarget.InLineOfSight
+                            && Me.IsSafelyFacing(Me.CurrentTarget)
+                            && (DateTime.Now - Utilities.EventHandlers.LastNoPathFailure) > TimeSpan.FromSeconds(15),
+                        new Sequence(
+                            new Action( r => StopMoving.Now()),
+                            new Wait(
+                                TimeSpan.FromMilliseconds(500),
+                                until => !Me.IsMoving,
+                                new ActionAlwaysSucceed()
+                                ),
+                            new Action(r => 
+                            {
+                                Logger.Write(LogColor.Hilite, "^Thunderlord Grapple on {0} @ {1:F1} yds", Me.CurrentTarget.SafeName(), Me.CurrentTarget.SpellDistance());
+                                WoWItem item = FindItem(THUNDERLORD_GRAPPLE);
+                                item.Use();
+                            }),
+                            new Wait(
+                                1,
+                                until => Spell.IsCastingOrChannelling(),
+                                new ActionAlwaysSucceed()
+                                ),
+                            new Action( r => Logger.WriteDebug("ThunderlordGrapple: start @ {0:F1} yds", Me.CurrentTarget.Distance)),
+                            new Wait(
+                                3,
+                                until => !Spell.IsCastingOrChannelling(),
+                                new ActionAlwaysSucceed()
+                                ),
+                            new Wait(
+                                1,
+                                until => !Me.IsMoving || Me.CurrentTarget.IsWithinMeleeRange,
+                                new ActionAlwaysSucceed()
+                                ),
+                            new Action( r => Logger.WriteDebug("ThunderlordGrapple: ended @ {0:F1} yds", Me.CurrentTarget.Distance))
+                            )
+                        )
+                    )
+                );
+        }
+
+        private static bool CanUseCarriedItem(int itemId)
+        {
+            WoWItem item = Me.CarriedItems
+                .Where(b => b.Entry == itemId)
+                .FirstOrDefault();           
+            return item == null ? false : CanUseItem(item);
+        }
     }
 }

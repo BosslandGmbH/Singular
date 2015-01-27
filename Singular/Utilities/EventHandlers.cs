@@ -113,6 +113,15 @@ namespace Singular.Utilities
         public static WoWUnit LastLineOfSightTarget { get; set; }
         public static WoWGuid LastNoPathTarget { get; set; }
 
+        public static bool IsPathErrorTarget(this WoWUnit unit)
+        { 
+            if ( unit.Guid != Singular.Utilities.EventHandlers.LastNoPathTarget )
+                return false;
+            if (Singular.Utilities.EventHandlers.LastNoPathFailure < DateTime.Now - TimeSpan.FromMinutes(15))
+                return false;
+            return true;
+        }
+
         public static Dictionary<WoWGuid, int> MobsThatEvaded = new Dictionary<WoWGuid, int>();
 
         public static WoWUnit AttackingEnemyPlayer { get; set; }
@@ -434,7 +443,7 @@ namespace Singular.Utilities
                     { 
                         WoWUnit corpse = e.SourceUnit;
                         WoWPartyMember pm = Unit.GroupMemberInfos.First( m => m.Guid == corpse.Guid);
-                        Logger.WriteDiagnostic( "Combat Log: Role={0} {1} Died!", pm.Role & (~WoWPartyMember.GroupRole.Leader), corpse.SafeName());                    
+                        Logger.WriteDiagnostic( "Combat Log: UNIT_DIED - Role={0} {1}", pm.Role & (~WoWPartyMember.GroupRole.Leader), corpse.SafeName());                    
                     }
                     catch 
                     {

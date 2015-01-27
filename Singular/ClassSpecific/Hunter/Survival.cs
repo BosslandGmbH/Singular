@@ -146,9 +146,10 @@ namespace Singular.ClassSpecific.Hunter
 
 				Spell.Cast("A Murder of Crows"),
 				Spell.Cast("Black Arrow"),
+				Spell.Cast("Arcane Shot", ret => Me.HasAura("Thrill of the Hunt")),
 				Spell.Cast("Explosive Shot"),
 				Spell.Cast("Dire Beast"),
-				Spell.Cast("Barrage"),
+				Spell.Cast("Barrage", ret => Clusters.GetConeCluster(Me.Location, 60f, 40f, Unit.NearbyUnitsInCombatWithUsOrOurStuff).Count() >= 3),
 				Spell.Cast("Multi-Shot", ret => (Me.CurrentFocus > 70 || Me.CurrentTarget.HasKnownAuraExpired("Serpent Sting", 4)) && Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 2),
 				Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 70 || Me.CurrentTarget.HasKnownAuraExpired("Serpent Sting", 4)),
 				Common.CreateHunterTrapBehavior("Explosive Trap", true, ret => Me.CurrentTarget),

@@ -16,6 +16,7 @@ using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using System.Drawing;
 using Singular.Settings;
+using Styx.CommonBot.Routines;
 
 namespace Singular.Managers
 {
@@ -59,6 +60,15 @@ namespace Singular.Managers
         }
 
         public static string WantedPet { get; set; }
+
+        public static bool IsPetUseAllowed
+        {
+            get
+            {
+                return !SingularSettings.Instance.DisablePetUsage 
+                    && SingularRoutine.IsAllowed(CapabilityFlags.PetUse);
+            }
+        }
 
         internal static void Pulse()
         {
@@ -116,7 +126,7 @@ namespace Singular.Managers
         private static WaitTimer waitNextPetAttack = new WaitTimer(TimeSpan.FromSeconds(2));
         public static bool Attack(WoWUnit unit)
         {
-            if (unit == null || StyxWoW.Me.Pet == null)
+            if (unit == null || StyxWoW.Me.Pet == null || !IsPetUseAllowed)
                 return false;
 
             if (StyxWoW.Me.Pet.CurrentTargetGuid != unit.Guid && (lastPetAttack != unit.Guid || waitNextPetAttack.IsFinished))

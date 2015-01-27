@@ -6,7 +6,7 @@ using Singular.Helpers;
 using Singular.Managers;
 using Singular.Settings;
 using Styx;
-
+using Styx.Common;
 using Styx.CommonBot;
 using Styx.Helpers;
 
@@ -27,7 +27,7 @@ namespace Singular.ClassSpecific.Hunter
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull|BehaviorType.Combat,WoWClass.Hunter,WoWSpec.HunterMarksmanship,WoWContext.Normal | WoWContext.Instances )]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterMarksmanship, WoWContext.Normal)]
         public static Composite CreateMarksmanHunterNormalPullAndCombat()
         {
             return new PrioritySelector(
@@ -90,8 +90,76 @@ namespace Singular.ClassSpecific.Hunter
 
         #endregion
 
-        #region Battleground Rotation
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterMarksmanship, WoWContext.Battlegrounds)]
+		#region Instance Rotation
+
+		[Behavior(BehaviorType.Pull, WoWClass.Hunter, WoWSpec.HunterMarksmanship, WoWContext.Instances)]
+	    public static Composite CreateMarksmanHunterInstancePull()
+	    {
+		    return new PrioritySelector();
+	    }
+
+		[Behavior(BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterMarksmanship, WoWContext.Instances)]
+		public static Composite CreateMarksmanHunterInstanceCombat()
+		{
+			return new PrioritySelector(
+				Common.CreateHunterEnsureReadyToAttackFromLongRange(),
+
+				Spell.WaitForCastOrChannel(),
+
+				Helpers.Common.CreateInterruptBehavior(),
+				
+				CreateMarksmanDiagnosticOutputBehavior(),
+								
+				// We don't really want to do any of those below in raids
+				new Decorator(ret => !Me.CurrentMap.IsRaid,
+					new PrioritySelector(
+						Common.CreateMisdirectionBehavior(),
+
+						Common.CreateHunterAvoidanceBehavior(null, null),
+
+						Common.CreateHunterNormalCrowdControl(),
+
+						Spell.Cast("Tranquilizing Shot", req => Me.GetAllAuras().Any(a => a.Spell.DispelType == WoWDispelType.Enrage)),
+
+						Spell.Buff("Concussive Shot",
+							ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
+								&& Me.CurrentTarget.Distance > Spell.MeleeRange),
+
+						// Defensive Stuff
+						Spell.Cast("Intimidation",
+							ret => Me.GotTarget()
+								&& Me.CurrentTarget.IsAlive
+								&& Me.GotAlivePet
+								&& (!Me.CurrentTarget.GotTarget() || Me.CurrentTarget.CurrentTarget == Me))
+								)
+							),
+							
+				Spell.Cast("Chimaera Shot"),
+				Spell.Cast("Kill Shot", ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < KillShotPercentage && u.DistanceSqr < 40 * 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
+				Spell.Cast("Rapid Fire"),
+				Spell.Cast("Aimed Shot", ret => Me.HasAura("Rapid Fire") || Me.CurrentTarget.HealthPercent > 80),
+				Spell.Cast("A Murder of Crows"),
+				Spell.Cast("Stampede"),
+				Spell.Cast("Glaive Toss"),
+				Spell.Cast("Multi-Shot", req => Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 6),
+				Spell.Cast("Aimed Shot", ret => Me.HasAura("Thrill of the Hunt")),
+				Spell.Cast("Barrage"),
+				Spell.Cast("Steady Shot", req => TalentManager.IsSelected(10) && Me.HasKnownAuraExpired("Steady Focus", 2)),
+				Common.CreateHunterTrapBehavior("Explosive Trap", true, onUnit => Me.CurrentTarget, req => Unit.UnfriendlyUnitsNearTarget(10f).Any()),
+				Spell.Cast("Aimed Shot"),
+				Spell.Cast("Focusing Shot"),
+				Spell.Cast("Steady Shot"),
+
+				Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget, 35f, 30f)
+				);
+		}
+
+		private static double KillShotPercentage { get { return SpellManager.HasSpell("Enhanced Kill Shot") ? 35d : 20d; } }
+
+		#endregion
+
+		#region Battleground Rotation
+		[Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterMarksmanship, WoWContext.Battlegrounds)]
         public static Composite CreateMarksmanHunterPvPPullAndCombat()
         {
             return new PrioritySelector(

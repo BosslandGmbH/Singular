@@ -39,8 +39,6 @@ namespace Singular.ClassSpecific.Druid
 
         private static bool glyphFlappingOwl { get; set; }
 
-        private static int StarfallRange { get { return TalentManager.HasGlyph("Focus") ? 20 : 40; } }
-
         private static int CurrentEclipse { get { return BitConverter.ToInt32(BitConverter.GetBytes(StyxWoW.Me.CurrentEclipse), 0); } }
 
         private static DruidSettings DruidSettings
@@ -50,6 +48,8 @@ namespace Singular.ClassSpecific.Druid
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static WoWUnit Target { get { return Me.CurrentTarget; } }
+
+        private static CombatScenario scenario { get; set; }
 
         static int MushroomCount
         {
@@ -63,20 +63,24 @@ namespace Singular.ClassSpecific.Druid
 
         #endregion
 
-        #region Heal
-
-
-        private static WoWUnit _CrowdControlTarget;
-
         [Behavior(BehaviorType.Initialize, WoWClass.Druid, WoWSpec.DruidBalance)]
         public static Composite CreateDruidBalanceInitialize()
         {
+            scenario = new CombatScenario(42, 1.5f);
+
             glyphFlappingOwl = TalentManager.HasGlyph("Flapping Owl");
             if (glyphFlappingOwl)
                 Logger.Write(LogColor.Init, "Glyph of Flapping Owl: will [Flap] when falling");
 
             return null;
         }
+
+
+
+        #region Heal
+
+
+        private static WoWUnit _CrowdControlTarget;
 
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidBalance)]
         public static Composite CreateDruidBalanceHeal()
@@ -100,7 +104,7 @@ namespace Singular.ClassSpecific.Druid
                     new Decorator(
                         ret => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.SpellDistance() < 8)
                             && (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || SingularRoutine.CurrentWoWContext == WoWContext.Normal),
-                        CreateDruidAvoidanceBehavior(CreateSlowMeleeBehavior(), null, null)
+                        CreateDruidBalanceAvoidanceBehavior(CreateSlowMeleeBehavior(), null, null)
                         ),
 
             #endregion 
@@ -227,6 +231,15 @@ namespace Singular.ClassSpecific.Druid
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+
+                        new Action(r =>
+                        {
+                            scenario.Update(Target);
+                            return RunStatus.Failure;
+                        }),
+
                         // Spell.Buff("Entangling Roots", ret => Me.CurrentTarget.Distance > 12),
                         CreateBalanceFaerieFireBehavior(),
 
@@ -237,7 +250,7 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Cast("Mighty Bash", ret => Me.CurrentTarget.IsWithinMeleeRange),
 
                         new Decorator(
-                            ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                            ret => scenario.MobCount > 1,
                             new PrioritySelector(
 
                                 // CreateMushroomSetAndDetonateBehavior(),
@@ -245,10 +258,22 @@ namespace Singular.ClassSpecific.Druid
                                 Spell.HandleOffGCD(Spell.Cast("Force of Nature", req => !Me.CurrentTarget.IsTrivial() && Me.CurrentTarget.TimeToDeath() > 8)),
 
                                 // Starfall:  verify either not glyphed -or- at least 3 targets have DoT
-                                Spell.Cast("Starfall", req => !TalentManager.HasGlyph("Guided Stars") || Unit.NearbyUnfriendlyUnits.Count(u => u.HasAnyOfMyAuras("Sunfire", "Moonfire")) >= 3),
+                                Spell.Cast(
+                                    "Starfall",
+                                    req =>
+                                    {
+                                        if (TalentManager.HasGlyph("Guided Stars"))
+                                        {
+                                            if (3 <= scenario.Mobs.Count(u => u.HasAnyOfMyAuras("Sunfire", "Moonfire")))
+                                                return true;
+                                            return false;
+                                        }
+
+                                        return !scenario.AvoidAOE;
+                                    }),
 
                                 new PrioritySelector(
-                                    ctx => Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && !u.IsCrowdControlled() && Me.IsSafelyFacing(u)).ToList(),
+                                    ctx => scenario.Mobs.Where(u => u.Combat && !u.IsCrowdControlled() && Me.IsSafelyFacing(u)).ToList(),
                                     Spell.Cast("Sunfire", on => ((List<WoWUnit>)on).FirstOrDefault(u => u.HasAuraExpired("Sunfire", 2)), req => Me.CurrentEclipse > 0 && Me.CurrentTarget.HasKnownAuraExpired("Sunfire", 3)),
                                     Spell.Cast("Moonfire", on => ((List<WoWUnit>)on).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2)), req => Me.CurrentEclipse > 0 && Me.CurrentTarget.HasKnownAuraExpired("Moonfire", 3)),
                                     Common.CastHurricaneBehavior(on => Me.CurrentTarget)
@@ -643,7 +668,7 @@ namespace Singular.ClassSpecific.Druid
         /// <param name="nonfacingAttack">behavior while running away (back to target - instants only)</param>
         /// <param name="jumpturnAttack">behavior while facing target during jump turn (instants only)</param>
         /// <returns></returns>
-        public static Composite CreateDruidAvoidanceBehavior(Composite slowAttack, Composite nonfacingAttack, Composite jumpturnAttack)
+        public static Composite CreateDruidBalanceAvoidanceBehavior(Composite slowAttack, Composite nonfacingAttack, Composite jumpturnAttack)
         {
             return Avoidance.CreateAvoidanceBehavior( "Wild Charge", 20, Disengage.Direction.Backwards, slowAttack ?? new ActionAlwaysSucceed() );
         }

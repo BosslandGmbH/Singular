@@ -62,15 +62,15 @@ namespace Singular.Managers
                 {
                     e.Cancel = true;
 
-                    if (!StyxWoW.Me.HasAnyAura("Aquatic Form", "Flight Form"))  // check flightform in case we jump cast it at water surface
+                    if (!StyxWoW.Me.HasAnyShapeshift(ShapeshiftForm.Aqua, ShapeshiftForm.Travel, ShapeshiftForm.FlightForm, ShapeshiftForm.EpicFlightForm))  // check flightform in case we jump cast it at water surface
                     {
                         WoWAura aura = StyxWoW.Me.GetAllAuras().FirstOrDefault(a => a.Spell.Name.Substring(a.Name.Length - 5).Equals(" Form"));
                         Logger.WriteDiagnostic("MountManager: changing to form='{0}',  current='{1}',  hb-says='{2}'",
                             "Travel Form", aura == null ? "-none-" : aura.Name, StyxWoW.Me.Shapeshift.ToString()
-                            ); Spell.LogCast("Travel Form", StyxWoW.Me);
+                            );
                         Logger.Write(LogColor.Hilite, "^Aquatic Form instead of mounting.");
-                        Spell.LogCast("Aquatic Form", StyxWoW.Me);
-                        Spell.CastPrimative("Aquatic Form");
+                        Spell.LogCast("Travel Form", StyxWoW.Me);
+                        Spell.CastPrimative("Travel Form");
                     }
                 }
             }

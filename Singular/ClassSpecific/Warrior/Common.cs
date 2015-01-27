@@ -17,6 +17,7 @@ using System.Drawing;
 using Styx.Pathing;
 using Action = Styx.TreeSharp.Action;
 using Styx.WoWInternals;
+using Singular.Utilities;
 
 namespace Singular.ClassSpecific.Warrior
 {
@@ -25,6 +26,7 @@ namespace Singular.ClassSpecific.Warrior
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior(); } }
         public static bool HasTalent(WarriorTalents tal) { return TalentManager.IsSelected((int)tal); }
+        public static WarriorTalents GetTierTalent(int tier) { return (WarriorTalents) TalentManager.GetSelectedForTier(tier); }
 
         public static bool Tier14TwoPieceBonus { get { return Me.HasAura("Item - Warrior T14 DPS 2P Bonus"); } }
         public static bool Tier14FourPieceBonus { get { return Me.HasAura("Item - Warrior T14 DPS 4P Bonus"); } }
@@ -238,19 +240,9 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
                         ctx => Me.CurrentTarget,
                         new Decorator(
-                            req => MovementManager.IsClassMovementAllowed
-                                && req != null 
-                                && ((req as WoWUnit).Guid != Singular.Utilities.EventHandlers.LastNoPathTarget || Singular.Utilities.EventHandlers.LastNoPathFailure < DateTime.Now - TimeSpan.FromMinutes(15))
-                                && !Me.HasAura("Charge")
-                                && !(req as WoWUnit).HasAnyOfMyAuras( "Charge Stun", "Warbringer")
-                                && (req as WoWUnit).InLineOfSight,
-
+                            req => (req as WoWUnit).IsGapCloserAllowed(),
                             new PrioritySelector(
-                                // note: use Distance here -- even though to a WoWUnit, hitbox does not come into play
-                                Spell.Cast("Charge", req => (req as WoWUnit).Distance.Between(8, DistanceChargeBehavior) && Me.IsSafelyFacing(req as WoWUnit)),
-
-                                //  Leap to close distance
-                                // note: use Distance rather than SpellDistance since spell is to point on ground
+                                CreateChargeCloser(),
                                 CreateHeroicLeapCloser()
                                 )
                             )
@@ -259,6 +251,148 @@ namespace Singular.ClassSpecific.Warrior
             }
 
             return _singletonChargeBehavior;
+        }
+
+        private static bool IsGapCloserAllowed(this WoWUnit unit)
+        {
+            return MovementManager.IsClassMovementAllowed
+                && unit != null
+                && !unit.IsPathErrorTarget()
+                && !Me.HasAura("Charge")
+                && !unit.HasAnyOfMyAuras("Charge Stun", "Warbringer")
+                && unit.InLineOfSight;  
+        }
+
+        public static Composite CreateChargeCloser()
+        {
+            return new PrioritySelector(
+                ctx => Me.CurrentTarget,
+                new Decorator(
+                    req => (req as WoWUnit).IsGapCloserAllowed(),
+                    // note: use Distance here -- even though to a WoWUnit, hitbox does not come into play for all mobs
+                    Spell.Cast("Charge", req => (req as WoWUnit).Distance.Between(8, DistanceChargeBehavior) && Me.IsSafelyFacing(req as WoWUnit))
+                    )
+                );
+        }
+
+        public static Composite CreateShieldChargeCloser()
+        {
+            const float SCHARGE_MIN = 5.1f;
+            const float SCHARGE_MAX = 10.0f;
+
+            if (!Common.HasTalent(WarriorTalents.GladiatorsResolve))
+                return new ActionAlwaysFail();
+
+            return new PrioritySelector(
+                ctx => Me.CurrentTarget,
+                new Decorator(
+                    req => (req as WoWUnit).IsGapCloserAllowed(),
+                    Spell.Cast(
+                        "Shield Charge", 
+                        req => (req as WoWUnit).SpellDistance().Between(SCHARGE_MIN, SCHARGE_MAX) 
+                            && Me.IsSafelyFacing(req as WoWUnit)
+                            && (req as WoWUnit).InLineOfSight
+                        )
+                    )
+                );
+        }
+
+        public static Composite CreateHeroicLeapCloser()
+        {
+            const float JUMP_MIN = 8.4f;
+
+            if (!SpellManager.HasSpell("Heroic Leap"))
+                return new ActionAlwaysFail();
+
+            //  Leap to close distance
+            // note: use Distance rather than SpellDistance since spell is to point on ground
+            return new PrioritySelector(
+                ctx => Me.CurrentTarget,
+                new Decorator(
+                    req => (req as WoWUnit).IsGapCloserAllowed(),
+                    Spell.CastOnGround(
+                        "Heroic Leap",
+                        loc =>
+                        {
+                            WoWUnit unit = loc as WoWUnit;
+                            if (unit != null)
+                            {
+                                WoWPoint pt = unit.Location;
+                                float distToMob = Me.Location.Distance(pt);
+                                float distToMobReach = distToMob - unit.CombatReach;
+                                float distToJump = distToMobReach;
+                                string comment = "hitbox of";
+
+                                if (distToJump < JUMP_MIN)
+                                {
+                                    comment = "too close, now location of";
+                                    distToJump = distToMob;
+                                    if (distToJump < JUMP_MIN)
+                                    {
+                                        return WoWPoint.Empty;
+                                    }
+                                }
+
+                                if (distToMob >= HeroicLeapDistance)
+                                {
+                                    distToJump = distToMobReach - 7; // allow for damage radius
+                                    comment = "too far, now 7 yds before hitbox of";
+                                    if (distToJump >= HeroicLeapDistance)
+                                    {
+                                        return WoWPoint.Empty;
+                                    }
+                                }
+
+                                float neededFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(Me.Location, pt);
+                                WoWPoint ptJumpTo = WoWPoint.RayCast(Me.Location, neededFacing, distToJump);
+                                Logger.WriteDiagnostic("HeroicLeap: jump target is {0} {1}", comment, unit.SafeName());
+                                float h = unit.HeightOffTheGround();
+                                float m = unit.MeleeDistance();
+                                if (h > m)
+                                {
+                                    Logger.WriteDiagnostic("HeroicLeap: aborting, target is {0:F3} off ground and melee is {1:F3}", h, m);
+                                    return WoWPoint.Empty;
+                                }
+                                else if (h < -1)
+                                {
+                                    Logger.WriteDiagnostic("HeroicLeap: aborting, target appears to be {0:F3} off ground @ {1}", h, ptJumpTo);
+                                    return WoWPoint.Empty;
+                                }
+
+                                WoWPoint ptNew = new WoWPoint();
+                                ptNew.X = ptJumpTo.X;
+                                ptNew.Y = ptJumpTo.Y;
+                                ptNew.Z = ptJumpTo.Z - h;
+                                Logger.WriteDiagnostic("HeroicLeap: adjusting dest, target @ {0} is {1:F3} above ground @ {2}", ptJumpTo, h, ptNew);
+                                ptJumpTo = ptNew;
+
+                                return ptNew;
+                            }
+
+                            return WoWPoint.Empty;
+                        },
+                        req =>
+                        {
+                            if (!MovementManager.IsClassMovementAllowed)
+                                return false;
+
+                            if (req == null)
+                                return false;
+
+                            if (Spell.IsSpellOnCooldown("Heroic Leap"))
+                                return false;
+
+                            if (Me.SpellDistance(req as WoWUnit) > (HeroicLeapDistance + 7))
+                                return false;
+
+                            return true;
+                        },
+                        false,
+                        desc => string.Format("on {0} @ {1:F1}%", (desc as WoWUnit).SafeName(), (desc as WoWUnit).HealthPercent)
+                        )
+                    )
+                );
+
         }
 
         public static Composite CreateSpellReflectBehavior()
@@ -419,7 +553,7 @@ namespace Singular.ClassSpecific.Warrior
                     new Action(r =>
                     {
                         // check if it makes sense to cancel to resume normal speed movement and charge
-                        if (!Me.Combat || !Unit.UnfriendlyUnits(20).Any(u => u.Aggro || (u.IsPlayer && u.IsHostile)))
+                        if (!Me.Combat || !Unit.UnfriendlyUnits(20).Any(u => u.Aggro || (u.IsPlayer && u.IsHostile) || u.IsTargetingUs()))
                         {
                             Logger.WriteDebug("Bladestorm: cancel since out of combat or no targets within 20 yds");
                             Me.CancelAura("Bladestorm");
@@ -431,9 +565,9 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        public static Composite CreateExecuteOnSuddenDeath( UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate requirements = null)
+        public const int SUDDEN_DEATH_PROC = 52437;
+        public static Composite CreateExecuteOnSuddenDeath(UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate requirements = null)
         {
-            const int SUDDEN_DEATH_PROC = 52437;
 
             if (onUnit == null)
                 onUnit = on => Me.CurrentTarget;
@@ -477,96 +611,6 @@ namespace Singular.ClassSpecific.Warrior
             return !unit.IsCrowdControlled() && !unit.IsSlowed(50) && !unit.HasAura("Hand of Freedom");
         }
 
-        public static Composite CreateHeroicLeapCloser()
-        {
-            const float JUMP_MIN = 8.4f;
-
-            return new PrioritySelector(
-                ctx => Me.CurrentTarget,
-                Spell.CastOnGround(
-                    "Heroic Leap", 
-                    loc => 
-                    {
-                        WoWUnit unit = loc as WoWUnit;
-                        if (unit != null)
-                        {
-                            WoWPoint pt = unit.Location;
-                            float distToMob = Me.Location.Distance(pt);
-                            float distToMobReach = distToMob - unit.CombatReach;
-                            float distToJump = distToMobReach;
-                            string comment = "hitbox of";
-
-                            if (distToJump < JUMP_MIN)
-                            {
-                                comment = "too close, now location of";
-                                distToJump = distToMob;
-                                if (distToJump < JUMP_MIN)
-                                {
-                                    return WoWPoint.Empty;
-                                }
-                            }
-
-                            if (distToMob >= HeroicLeapDistance)
-                            {
-                                distToJump = distToMobReach - 7; // allow for damage radius
-                                comment = "too far, now 7 yds before hitbox of";
-                                if (distToJump >= HeroicLeapDistance)
-                                {
-                                    return WoWPoint.Empty;
-                                }
-                            }
-
-                            float neededFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(Me.Location, pt);
-                            WoWPoint ptJumpTo = WoWPoint.RayCast(Me.Location, neededFacing, distToJump);
-                            Logger.WriteDiagnostic("HeroicLeap: jump target is {0} {1}", comment, unit.SafeName());
-                            float h = unit.HeightOffTheGround();
-                            float m = unit.MeleeDistance();
-                            if (h > m)
-                            {
-                                Logger.WriteDiagnostic("HeroicLeap: aborting, target is {0:F3} off ground and melee is {1:F3}", h, m);
-                                return WoWPoint.Empty;
-                            }
-                            else if ( h < -1)
-                            {
-                                Logger.WriteDiagnostic("HeroicLeap: aborting, target appears to be {0:F3} off ground @ {1}", h, ptJumpTo);
-                                return WoWPoint.Empty;
-                            }
-
-                            WoWPoint ptNew = new WoWPoint();
-                            ptNew.X = ptJumpTo.X;
-                            ptNew.Y = ptJumpTo.Y;
-                            ptNew.Z = ptJumpTo.Z - h;
-                            Logger.WriteDiagnostic("HeroicLeap: adjusting dest, target @ {0} is {1:F3} above ground @ {2}", ptJumpTo, h, ptNew);
-                            ptJumpTo = ptNew;
-
-                            return ptNew;
-                        }
-
-                        return WoWPoint.Empty;
-                    },
-                    req => 
-                    {
-                        if (!MovementManager.IsClassMovementAllowed)
-                            return false;
-
-                        if (req == null)
-                            return false;
-
-                        if (Spell.IsSpellOnCooldown("Heroic Leap"))
-                            return false;
-
-                        if (Me.SpellDistance(req as WoWUnit) > (HeroicLeapDistance + 7))
-                            return false;
-
-                        return true;
-                    },
-                    false, 
-                    desc => string.Format("on {0} @ {1:F1}%", (desc as WoWUnit).SafeName(), (desc as WoWUnit).HealthPercent)
-                    )
-                );
-
-        }
-
         public static int DistanceWindAndThunder( int range)
         {
             return _DistanceWindAndThunder + range;
@@ -596,6 +640,7 @@ namespace Singular.ClassSpecific.Warrior
         Bloodbath,
         StormBolt
 #else
+        None = 0,
 
         Juggernaut = 1,
         DoubleTime,

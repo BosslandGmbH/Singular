@@ -30,8 +30,8 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueCombatPull()
         {
             return new PrioritySelector(
+                Common.CreateRogueDismount("Pulling"),
                 Common.CreateRoguePullBuffs(),      // needed because some Bots not calling this behavior
-                Helpers.Common.CreateDismount("Pulling"),
                 Safers.EnsureTarget(),
                 Common.CreateRoguePullSkipNonPickPocketableMob(),
                 Common.CreateRogueControlNearbyEnemyBehavior(),

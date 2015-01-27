@@ -29,6 +29,10 @@ namespace Singular
         {
             return value >= min && value <= max;
         }
+        public static bool Between(this uint value, uint min, uint max)
+        {
+            return value >= min && value <= max;
+        }
 
         public static string AlignLeft(this string s, int width)
         {

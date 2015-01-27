@@ -56,15 +56,6 @@ namespace Singular.ClassSpecific.Warlock
 
                         CreateWarlockDiagnosticOutputBehavior(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),
 
-                        new Decorator(
-                            ret => Me.GotAlivePet && Me.GotTarget() && Me.Pet.CurrentTarget != Me.CurrentTarget,
-                            new Action(ret =>
-                            {
-                                PetManager.CastPetAction("Attack");
-                                return RunStatus.Failure;
-                            })
-                            ),
-
                         Helpers.Common.CreateInterruptBehavior(),
 
                         // even though AOE spell, keep on CD for single target unless AoE turned off

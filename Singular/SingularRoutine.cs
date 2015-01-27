@@ -639,18 +639,18 @@ namespace Singular
             }
         }
 
-        private static void OnPlayerTargetChange(WoWUnit unit)
+        public static void OnPlayerTargetChange(WoWUnit unit)
         {
             // special handling if targeting Training Dummy
             if (ForcedContext == WoWContext.None && unit != null && !IsQuestBotActive && unit.IsTrainingDummy())
             {
                 ForcedContext = SingularRoutine.TrainingDummyBehaviors;
-                Logger.Write( LogColor.Hilite, "^Detected Training Dummy: forcing {0} behaviors", CurrentWoWContext.ToString());
+                Logger.Write( LogColor.Hilite, "^Start Training Dummy: forcing {0} behaviors", CurrentWoWContext.ToString());
             }
             else if (ForcedContext != WoWContext.None && (unit == null || !unit.IsTrainingDummy()))
             {
                 ForcedContext = WoWContext.None;
-                Logger.Write( LogColor.Hilite, "^Detected Training Dummy: reverting to {0} behaviors", CurrentWoWContext.ToString());
+                Logger.Write( LogColor.Hilite, "^Cancel Training Dummy: restoring {0} behaviors", CurrentWoWContext.ToString());
             }
         }
 

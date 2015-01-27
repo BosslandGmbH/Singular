@@ -72,13 +72,31 @@ namespace Singular.Managers
             }
         }
 
+        /// <summary>
+        /// checks if a specific talent is selected for current character
+        /// </summary>
+        /// <param name="index">index (base 1) of index</param>
+        /// <returns>true if selected, false if not</returns>
         public static bool IsSelected(int index)
         {
             // return Talents.FirstOrDefault(t => t.Index == index).Selected;
-            int tier = (index-1) / 3;
+            int tier = (index - 1) / 3;
             if (tier.Between(0, 6))
                 return TalentId[tier] == index;
             return false;
+        }
+
+        /// <summary>
+        /// gets talent selected for a specified tier (since mutually exclusive)
+        /// </summary>
+        /// <param name="index">index (base 1) of index</param>
+        /// <returns>true if selected, false if not</returns>
+        public static int GetSelectedForTier(int tier)
+        {
+            tier--;
+            if (tier.Between(0, 6))
+                return TalentId[tier];
+            return -1;
         }
 
         /// <summary>

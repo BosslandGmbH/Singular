@@ -82,6 +82,27 @@ namespace Singular.Dynamics
                     // Check if our Initialization behavior matches. If not, don't add it!
                     if (IsMatchingMethod(attribute, wowClass, spec, behavior, context))
                     {
+                        if (matchedMethods.ContainsKey(attribute))
+                        {
+                            Logger.Write(LogColor.Hilite, "PROGRAM ERROR: duplicate behaviors. Notify Singular Devs!!!");
+                            Logger.WriteDiagnostic("PROGRAM ERROR: duplicate behaviors. Notify Singular Devs!!!");
+                            Logger.WriteDiagnostic("Error for Attribute: class={0} spec={1} type={2} context={3} priority={4} ",
+                                attribute.SpecificClass,
+                                attribute.SpecificSpec,
+                                attribute.Type,
+                                attribute.SpecificContext,
+                                attribute.PriorityLevel
+                                );
+                            Logger.WriteDiagnostic("    exists {0}:{1}",
+                                matchedMethods[attribute].DeclaringType,
+                                matchedMethods[attribute].Name
+                                );
+                            Logger.WriteDiagnostic("    adding {0}:{1}",
+                                mi.DeclaringType,
+                                mi.Name
+                                );
+                        }
+
                         matchedMethods.Add( attribute, mi);
                     }
                 }

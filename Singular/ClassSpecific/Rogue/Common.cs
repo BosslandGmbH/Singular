@@ -69,6 +69,11 @@ namespace Singular.ClassSpecific.Rogue
             }
         }
 
+        public static Composite CreateRogueDismount(string reason)
+        {
+            // TODO: account for Rogue specific checks for dismount (Stealth, Pick Pocket, etc.)
+            return Helpers.Common.CreateDismount(reason);
+        }
 
         /// <summary>
         /// determines if we should use Cloak and Dagger ability.  this allows encapsulating check for 

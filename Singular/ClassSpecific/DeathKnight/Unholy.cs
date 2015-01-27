@@ -162,7 +162,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.CastOnGround(
                     "Death and Decay",
                     on => Me.CurrentTarget,
-                    req => Common.UnholyRuneSlotsActive >= 2,
+                    req => Spell.UseAOE && Common.UnholyRuneSlotsActive >= 2,
                     false
                     ),
 
@@ -244,7 +244,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.CastOnGround(
                             "Death and Decay",
                             on => Me.CurrentTarget,
-                            req => Common.UnholyRuneSlotsActive >= 2, 
+                            req => Spell.UseAOE && Common.UnholyRuneSlotsActive >= 2, 
                             false
                             ),
                         Spell.Cast("Scourge Strike", ret => Me.UnholyRuneCount == 2 || Me.DeathRuneCount > 0),
@@ -307,7 +307,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                                 Spell.CastOnGround("Death and Decay",
                                     loc => Me.CurrentTarget,
-                                    req => Spell.UseAOE && Common.UnholyRuneSlotsActive >= 2, 
+                                    req => Common.UnholyRuneSlotsActive >= 2, 
                                     false),
 
                                 Spell.Cast("Blood Boil",
@@ -333,8 +333,11 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         // Single target rotation.
 
-                        // Target < 35%, Soul Reaper
-                        Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
+                        // Target < 45%, Soul Reaper
+                        Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 45),
+
+                        // Defile Ground around target
+                        Spell.CastOnGround("Defile", on => Me.CurrentTarget, req => Spell.UseAOE && Me.GotTarget() && !Me.CurrentTarget.IsMoving, false),
 
                         // Diseases
                         Common.CreateApplyDiseases(),
@@ -349,6 +352,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.Cast("Death Coil",
                             req => !Me.GotAlivePet
                                 || !Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")
+                                || Me.RunicPowerPercent > 90
                             ),
 
                         // Scourge Strike on Death or Unholy Runes active
@@ -364,12 +368,8 @@ namespace Singular.ClassSpecific.DeathKnight
                         // Death Coil (Sudden Doom, high RP)
                         Spell.Cast("Death Coil",
                             ret => Me.HasAura(SuddenDoom)
-                                || Me.CurrentRunicPower >= 80
-                                || (Me.BloodRuneCount + Me.FrostRuneCount + Me.UnholyRuneCount + Me.DeathRuneCount == 0)),                       
-
-                        // post Single target
-                        // attack at range if possible
-                        Spell.Cast("Death Coil", req => Me.GotTarget() && !Me.CurrentTarget.IsWithinMeleeRange )
+                                || !Me.CurrentTarget.IsWithinMeleeRange
+                            )
                         )
                     ),
 

@@ -40,7 +40,7 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateAssaRoguePull()
         {
             return new PrioritySelector(
-                Helpers.Common.CreateDismount("Pulling"),
+                Common.CreateRogueDismount("Pulling"),
                 Common.CreateRoguePullBuffs(),      // needed because some Bots not calling this behavior
                 Safers.EnsureTarget(),
                 Common.CreateRoguePullSkipNonPickPocketableMob(),

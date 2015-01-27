@@ -967,7 +967,8 @@ namespace Singular.Helpers
                         WoWApplyAuraType.ModPacifySilence, 
                         WoWApplyAuraType.ModPossess, 
                         WoWApplyAuraType.ModRoot, 
-                        WoWApplyAuraType.ModStun );
+                        WoWApplyAuraType.ModStun 
+                        );
 #endif
         }
 
@@ -1021,7 +1022,7 @@ namespace Singular.Helpers
             // return Lists.BossList.TrainingDummies.Contains(unit.Entry);
             int bannerId = StyxWoW.Me.IsHorde ? BannerOfTheAlliance : BannerOfTheHorde;
             return unit != null && unit.Level > 1 
-                && ((unit.CurrentHealth == 1 && unit.MaxHealth < unit.Level) || unit.HasAura(bannerId));
+                && ((unit.CurrentHealth == 1 && unit.MaxHealth < unit.Level) || unit.HasAura(bannerId) || unit.Name.Contains("Training Dummy"));
         }
 
         /// <summary>
@@ -1441,6 +1442,7 @@ namespace Singular.Helpers
         {
             return ProfileManager.CurrentProfile != null && ProfileManager.CurrentProfile.AvoidMobs != null && ProfileManager.CurrentProfile.AvoidMobs.Contains(unit.Entry);
         }
+
     }
 
     public class CombatScenario
@@ -1451,10 +1453,25 @@ namespace Singular.Helpers
         public int Range { get; set; }
 
         /// <summary>
+        /// spell distance from Me to check
+        /// </summary>
+        public float BaseGcd { get; set; }
+
+        /// <summary>
         /// count of mobs attacking within range.  will be forced to
-        /// 1 if world pvp is recent
+        /// 1 if world pvp is recent or avoidaoe is true
         /// </summary>
         public int MobCount { get; set; }
+
+        /// <summary>
+        /// count of mobs crowd controlled within range.
+        /// </summary>
+        public int CcCount { get; set; }
+
+        /// <summary>
+        /// count of mobs crowd controlled within range.
+        /// </summary>
+        public int PlayerCount { get; set; }
 
         /// <summary>
         /// flag indicating determined best approach is to suppress AOE abilities
@@ -1474,23 +1491,37 @@ namespace Singular.Helpers
         /// </summary>
         public List<WoWUnit> Mobs { get; set; }
 
-        public static CombatScenario Detect(WoWUnit origin, int range)
+        /// <summary>
+        /// 
+        /// </summary>
+        public float GcdTime { get; set; }
+
+        private CombatScenario()
         {
-            return new CombatScenario(origin, range);
+
         }
 
-        private CombatScenario(WoWUnit origin, int range)
+        public CombatScenario( int range, float basegcd )
         {
             Range = range;
+            BaseGcd = basegcd;
+        }
+
+        public void Update(WoWUnit origin)
+        {
+
+            GcdTime = BaseGcd * StyxWoW.Me.SpellHasteModifier;
 
             if (StyxWoW.Me.GotTarget())
                 StyxWoW.Me.TimeToDeath();
 
             bool worldPvp = (DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 15;
-            if (!Spell.UseAOE || worldPvp )
+            if (worldPvp )
             {
                 WorldPvpRecently = worldPvp;
                 AvoidAOE = true;
+                CcCount = 0;
+                PlayerCount = 1;
                 Mobs = !Unit.ValidUnit(StyxWoW.Me.CurrentTarget)
                     ? new List<WoWUnit>()
                     : new List<WoWUnit>(new[] { StyxWoW.Me.CurrentTarget });
@@ -1501,33 +1532,39 @@ namespace Singular.Helpers
                 WorldPvpRecently = false;
                 AvoidAOE = false;
                 MobCount = 0;
+                CcCount = 0;
+                PlayerCount = 0;
 
-                Mobs = Unit.UnfriendlyUnits(range, origin)
+                Mobs = Unit.UnfriendlyUnits(Range, origin)
                     .Where(u =>
                     {
                         if (u == null || !u.IsValid)
                             return false;
 
-                        if (!AvoidAOE)
+                        if (u.IsCrowdControlled())
+                            CcCount++;
+                        else 
                         {
-                            if (u.IsCrowdControlled())
-                                AvoidAOE = true;
-
                             if (u.IsPlayer)
+                                PlayerCount++;
+                            else if (!u.Combat)
                                 AvoidAOE = true;
-                            else if (u.IsNeutral && !u.Combat)
-                                AvoidAOE = true;
-                        }
-
-                        if (u == StyxWoW.Me.CurrentTarget || u.Aggro || u.TaggedByMe)
-                        {
-                            MobCount++;
-                            return true;
+                            else if (u == StyxWoW.Me.CurrentTarget || u.Aggro || u.TaggedByMe || u.IsTargetingUs())
+                            {
+                                MobCount++;
+                                return true;
+                            }
                         }
 
                         return false;
                     })
                     .ToList();
+
+                if (!Spell.UseAOE || CcCount > 0 || PlayerCount > 0)
+                    AvoidAOE = true;
+
+                if (AvoidAOE)
+                    MobCount = MobCount > 1 ? 1 : MobCount;
             }
         }
     }

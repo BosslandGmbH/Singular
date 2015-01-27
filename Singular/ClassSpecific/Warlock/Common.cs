@@ -530,7 +530,7 @@ namespace Singular.ClassSpecific.Warlock
                                         {
                                             if (Me.CurrentSoulShards == 0)
                                                 Logger.WriteDebug("CreateWarlockSummonPet:  no shards so instant pet summon not available");
-                                            else if (false && !Me.Combat && !Unit.NearbyUnfriendlyUnits.Any(u => u.Combat || u.IsPlayer))
+                                            else if (!Me.Combat && !Unit.NearbyUnfriendlyUnits.Any(u => u.Combat || u.IsPlayer))
                                                 Logger.WriteDebug("CreateWarlockSummonPet:  not in combat and no imminent danger nearby, so saving shards");
                                             else if (!Spell.CanCastHack("Soulburn", Me))
                                                 Logger.WriteDebug("soulburn not available, shards={0}", Me.CurrentSoulShards);
@@ -900,7 +900,7 @@ namespace Singular.ClassSpecific.Warlock
         MannorothsFury
 #else
 
-        DarkRegeneration,
+        DarkRegeneration = 1,
         SoulLeech,
         HarvestLife,
         SearingFlames = HarvestLife,

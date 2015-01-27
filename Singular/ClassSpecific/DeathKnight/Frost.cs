@@ -83,7 +83,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         // *** 2 Hand Single Target Priority
                         new Decorator(
                             ctx => !IsDualWielding,
-                            MopCreateFrostSingleTarget2H()
+                            CreateFrostSingleTarget2H()
                             ),
 
                         // *** 3 Lowbie Cast what we have Priority
@@ -285,6 +285,9 @@ namespace Singular.ClassSpecific.DeathKnight
                 // Soul Reaper when target below 35%
                 Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
 
+                // Defile Ground around target
+                Spell.CastOnGround("Defile", on => Me.CurrentTarget, req => Spell.UseAOE && Me.GotTarget() && !Me.CurrentTarget.IsMoving, false),
+
                 // Diseases
                 Common.CreateApplyDiseases(),
 
@@ -320,6 +323,9 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 // Soul Reaper when target below 35%
                 Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
+
+                // Defile Ground around target
+                Spell.CastOnGround("Defile", on => Me.CurrentTarget, req => Spell.UseAOE && Me.GotTarget() && !Me.CurrentTarget.IsMoving, false),
 
                 // Obliterate when Killing Machine is procced and both diseases are on the target
                 Spell.Cast("Obliterate", req => Me.HasAura(KillingMachine) && Me.CurrentTarget.HasAura("Frost Fever") && Me.CurrentTarget.HasAura("Blood Plague")),
@@ -357,6 +363,12 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 // Soul Reaper when target below 35%
                 Spell.Cast("Soul Reaper", req => Me.CurrentTarget.HealthPercent < 35),
+
+                // Defile Ground around target
+                Spell.CastOnGround("Defile", on => Me.CurrentTarget, req => Spell.UseAOE && Me.GotTarget() && !Me.CurrentTarget.IsMoving, false),
+
+                // Maintain Diseases
+                Common.CreateApplyDiseases(),
 
                 // Frost Strike if Killing Machine is procced, or if RP is 89 or higher
                 Spell.Cast("Frost Strike", 
@@ -467,7 +479,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     ),
 
                 // damage
-                Spell.CastOnGround("Death and Decay", on => Me.CurrentTarget, req => Me.UnholyRuneCount >= 1, false),
+                Spell.CastOnGround("Death and Decay", on => Me.CurrentTarget, req => Spell.UseAOE && Me.UnholyRuneCount >= 1, false),
                 Spell.Cast("Howling Blast"),
                 Spell.Cast("Plague Strike", req => Me.UnholyRuneCount >= 2),
                 Spell.Cast("Frost Strike", ret => NeedToDumpRunicPower),

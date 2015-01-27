@@ -523,23 +523,6 @@ namespace Singular
             return inCin;
         }
 
-        public static Composite DetectFightingNearMe(int range)
-        {
-            return new Action(r =>
-            {
-                FightNearMe = CombatScenario.Detect(StyxWoW.Me, range);
-                return RunStatus.Failure;
-            });
-        }
-
-        public static Composite DetectFightingNearTarget(int range)
-        {
-            return new Action(r =>
-            {
-                FightNearTarget = CombatScenario.Detect(StyxWoW.Me.CurrentTarget, range);
-                return RunStatus.Failure;
-            });
-        }
     }
 
     /// <summary>

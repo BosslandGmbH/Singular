@@ -170,12 +170,12 @@ namespace Singular.Helpers
                         {
                             if (Me.GotAlivePet)
                             {
-                                bool petUse = SingularRoutine.IsAllowed(CapabilityFlags.PetUse);
+                                bool petUse = PetManager.IsPetUseAllowed;
                                 if (!petUse)
                                 {
                                     if (Me.Pet.GotTarget() && Me.Pet.Combat)
                                     {
-                                        PetManager.CastAction("Passive");   // set to passive
+                                        PetManager.Passive();   // set to passive
                                     }
                                 }
                                 else if (petUse)

@@ -512,7 +512,7 @@ namespace Singular.ClassSpecific.Priest
         Halo
 #else
 
-        DesperatePrayer,
+        DesperatePrayer = 1,
         SpectralGuise,
         AngelicBulwark,
 

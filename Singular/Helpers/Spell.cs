@@ -503,7 +503,7 @@ namespace Singular.Helpers
 #if HONORBUDDY_GCD_IS_WORKING
             Logger.WriteDebug("GcdInitialize: using HonorBuddy GCD");
 #else
-            Logger.WriteDebug("FixGlobalCooldownInitialize: using Singular GCD");
+            Logger.WriteDebug("GcdInitialize: using Singular GCD");
             switch (StyxWoW.Me.Class)
             {
                 case WoWClass.DeathKnight:
@@ -951,7 +951,7 @@ namespace Singular.Helpers
         /// <param name = "onUnit">The on unit.</param>
         /// <param name = "requirements">The requirements.</param>
         /// <returns>.</returns>
-        public static Composite Cast(int spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, HasGcd gcd = HasGcd.Yes)
+        public static Composite Cast(int spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
             return Cast(id => spellId, onUnit, requirements);
         }
@@ -964,7 +964,7 @@ namespace Singular.Helpers
         /// <param name = "onUnit">The on unit.</param>
         /// <param name = "requirements">The requirements.</param>
         /// <returns>.</returns>
-        public static Composite Cast(SimpleIntDelegate spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, HasGcd gcd = HasGcd.Yes)
+        public static Composite Cast(SimpleIntDelegate spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
             if (spellId == null || onUnit == null || requirements == null)
             {
@@ -1229,7 +1229,7 @@ namespace Singular.Helpers
                 );
         }
 
-        public static Composite Buff(string name, int expirSecs = 3, UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate require = null, bool myBuff = true, params string[] buffNames)
+        public static Composite Buff(string name, int expirSecs, UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate require = null, bool myBuff = true, params string[] buffNames)
         {
             return Buff(sp => name, expirSecs, onUnit, require, myBuff, HasGcd.Yes, buffNames);
         }
@@ -1356,6 +1356,10 @@ namespace Singular.Helpers
             return Buff(name, expirSecs, on => Me, require: requirements, gcd:gcd);
         }
 
+        public static Composite BuffSelfAndWait(string name, SimpleBooleanDelegate requirements = null, int expirSecs = 0, CanRunDecoratorDelegate until = null, bool measure = false, HasGcd gcd = HasGcd.Yes)
+        {
+            return BuffSelfAndWait(b => name, requirements, expirSecs, until, measure, gcd);
+        }
         public static Composite BuffSelfAndWait(SimpleStringDelegate name, SimpleBooleanDelegate requirements = null, int expirSecs = 0, CanRunDecoratorDelegate until = null, bool measure = false, HasGcd gcd = HasGcd.Yes)
         {
             if (requirements == null)
@@ -1496,7 +1500,7 @@ namespace Singular.Helpers
         {
             return new Decorator(
                 req => onUnit(req) != null && onUnit(req).Auras.Values.All(a => a.SpellId != spellId(req)),
-                Cast(spellId, onUnit, requirements, gcd) 
+                Cast(spellId, onUnit, requirements) 
                 );
         }
 
@@ -1735,14 +1739,14 @@ namespace Singular.Helpers
                                 if (gcd == HasGcd.No)
                                 {
                                     if (SingularSettings.DebugSpellCasting)
-                                        Logger.WriteFile("Spell.Cast[{0}]: offgcd and GCD has {1} left, isgcd={2}", cctx.spell.Name, (long)Spell.GcdTimeLeft.TotalMilliseconds, Spell.IsGlobalCooldown(allow).ToYN());
+                                        Logger.WriteFile("Spell.Cast[{0}]: has no GCD, status GCD={1}, remains={2}", cctx.spell.Name, Spell.IsGlobalCooldown(allow).ToYN(), (long)Spell.GcdTimeLeft.TotalMilliseconds);
                                     return true;
                                 }
 
                                 if (cctx.spell.IsInstantCast() && Spell.GcdTimeLeft.TotalMilliseconds > 650)
                                 {
                                     if (SingularSettings.DebugSpellCasting)
-                                        Logger.WriteFile( "Spell.Cast[{0}]: instant cast and GCD has {1} left, isgcd={2}", cctx.spell.Name, (long)Spell.GcdTimeLeft.TotalMilliseconds, Spell.IsGlobalCooldown(allow).ToYN());
+                                        Logger.WriteFile("Spell.Cast[{0}]: is instant, status GCD={1}, remains={2}", cctx.spell.Name, Spell.IsGlobalCooldown(allow).ToYN(), (long)Spell.GcdTimeLeft.TotalMilliseconds);
                                     return true;
                                 }
 
@@ -1785,10 +1789,10 @@ namespace Singular.Helpers
                                 CastContext cctx = r.CastContext();
                                 if (SingularSettings.DebugSpellCasting)
                                 {
-                                    if (gcd == HasGcd.No)
-                                        Logger.WriteFile("Spell.Cast(\"{0}\"): off the global cooldown", cctx.spell.Name);
+                                    if (!Spell.IsGlobalCooldown())
+                                        Logger.WriteFile("Spell.Cast(\"{0}\"): complete, no gcd active, lag={0} hasgcd={1}", cctx.spell.Name, allow, gcd);
                                     else
-                                        Logger.WriteFile("Spell.Cast(\"{0}\"): forcing success, assuming off the global cooldown", cctx.spell.Name);
+                                        Logger.WriteFile("Spell.Cast(\"{0}\"): complete, no cast in progress", cctx.spell.Name);
                                 }
                                 return RunStatus.Success;
                             })
@@ -1800,9 +1804,15 @@ namespace Singular.Helpers
                             new Action(r =>
                             {
                                 CastContext cctx = r.CastContext();
-
                                 if (SingularSettings.DebugSpellCasting)
-                                    Logger.WriteFile( "Spell.Cast(\"{0}\"): no cancel delegate or instant or offgcd", cctx.spell.Name);
+                                {
+                                    if (gcd == HasGcd.No)
+                                        Logger.WriteFile("Spell.Cast(\"{0}\"): complete, hasgcd=No", cctx.spell.Name);
+                                    else if (r.CastContext().spell.IsInstantCast())
+                                        Logger.WriteFile("Spell.Cast(\"{0}\"): complete, is instant cast", cctx.spell.Name);
+                                    else
+                                        Logger.WriteFile("Spell.Cast(\"{0}\"): complete, no cancel delegate given", cctx.spell.Name);
+                                }
                                 return RunStatus.Success;
                             })
                             ),
@@ -1817,7 +1827,7 @@ namespace Singular.Helpers
                                 // Interrupted or finished casting. 
                                 if (!Spell.IsCastingOrChannelling(allow))
                                 {
-                                    Logger.WriteDebug("Spell.Cast(\"{0}\"): cast has ended", cctx.spell.Name);
+                                    Logger.WriteDebug("Spell.Cast(\"{0}\"): complete, iscasting=false", cctx.spell.Name);
                                     return true;
                                 }
 
@@ -1838,7 +1848,7 @@ namespace Singular.Helpers
                         new Action(r =>
                         {
                             CastContext cctx = r.CastContext();
-                            Logger.WriteDebug("Spell.Cast(\"{0}\"): timed out waiting for cast to end", cctx.spell.Name);
+                            Logger.WriteDebug("Spell.Cast(\"{0}\"): aborting, timed out waiting on cast, gcd={1} cast={2} chanl={3}", cctx.spell.Name, Spell.IsGlobalCooldown().ToYN(), Spell.IsCasting().ToYN(), Spell.IsChannelling().ToYN());
                             return RunStatus.Success;
                         })
 

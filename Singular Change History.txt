@@ -1,3 +1,58 @@
+--- Release 4.0.0.4302 ---
+
+General 
+
+fixed - Training Dummy: was not setting correct behaviors (as indicated on Debug tab) when training dummy was selected
+
+
+Death Knight
+
+fixed - All Specs - now suppressed use of Death and Decay / Defile if AOE spells not enabled
+
+fixed - Frost/Unholy - added Defile to single target priorites
+
+
+Druid
+
+fixed - Balance - Starfall: now suppresses cast if not glyphed and would aggro mobs not in combat with
+
+fixed - Balance - Starfall: when glyphed, now allows cast so long as 3+ mobs would be hit
+
+fixed - Balance - Multi-DoT: will now DoT both when 2 mobs present (previously invoked only for 3+ mobs)
+
+fixed - Balance - Travel Form: now correctly detects when needed while in water (previoulsy Aquatic Form)
+
+fixed - Balance - Movement Buff: will no longer cast Cat Form for speed buff unless Travel Form not available
+
+
+Paladin
+
+fixed - Retribution - spell priority revised for WoD
+
+
+Priest
+
+fixed - All Specs - Talents: was incorrectly identifying talents
+
+
+Warlock
+
+fixed - All Specs - Talents: was incorrectly identifying talents
+
+fixed - Affliction - will no longer waste shards on instant Pet Summon while not in combat
+
+
+Warrior
+
+fixed - Arms - replaced instance spell priorities.  Should notice a damage increase compared to prior versions of Singular
+
+fixed - Fury 2H - replaced instance spell priorities.  Should notice a damage increase compared to prior versions of Singular.  Separate 1H specific priority not present but will be added in upcoming release.
+
+fixed - Gladiator - replaced instance spell priorities.  Should notice a damage increase compared to prior versions of Singular
+
+
+
+
 --- Release 4.0.0.4267 ---
 
 General 

@@ -159,13 +159,27 @@ namespace Singular
 
         public static bool IsHeal(this WoWSpell spell)
         {
-            return _AddtlHealSpells.Contains(spell.Id)
+            bool isHeal = _AddtlHealSpells.Contains(spell.Id)
                 || spell.SpellEffects
                     .Any(s => s.EffectType == WoWSpellEffectType.Heal
                         || s.EffectType == WoWSpellEffectType.HealMaxHealth
                         || s.EffectType == WoWSpellEffectType.HealPct
                         || (s.EffectType == WoWSpellEffectType.ApplyAura && (s.AuraType == WoWApplyAuraType.PeriodicHeal || s.AuraType == WoWApplyAuraType.SchoolAbsorb))
                         );
+            if (SingularSettings.Debug)
+            {
+                bool isHbHeal = spell.IsHealingSpell;
+                if (isHeal != isHbHeal)
+                {
+                    if (!isHeal)
+                    {
+                        Logger.WriteDebug("Developer Info: please report to add {0} #{1} as Healing Spell. Dynamically added to Singular in for Debug purposes only", spell.Name, spell.Id);
+                        _AddtlHealSpells.Add(spell.Id);
+                    }
+                }
+            }
+
+            return isHeal;
         }
 
         public static bool IsDamageRedux(this WoWSpell spell)

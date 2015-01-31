@@ -632,6 +632,51 @@ namespace Singular.Helpers
             return unit.GetAllAuras().Any(a => a.SpellId == id && a.StackCount >= stacks && (creator == null || a.CreatorGuid == creator.Guid));
         }
 
+
+		public static bool HasMyOrMyStuffsAura(this WoWUnit unit, string name)
+		{
+			return HasMyOrMyStuffsAura(unit, name, 0);
+		}
+
+		public static bool HasMyOrMyStuffsAura(this WoWUnit unit, int id)
+		{
+			var spell = WoWSpell.FromId(id);
+
+			return spell != null && HasMyOrMyStuffsAura(unit, spell.Name, 0);
+		}
+
+		public static bool HasMyOrMyStuffsAura(this WoWUnit unit, string name, int stacks)
+		{
+			return unit.GetAllAuras().Any(a =>
+			{
+				if (a.Name != name)
+					return false;
+
+				if (a.StackCount < stacks)
+					return false;
+
+				if (!a.CreatorGuid.IsValid)
+					return false;
+
+				var creator = ObjectManager.GetObjectByGuid<WoWUnit>(a.CreatorGuid);
+
+				if (creator == null)
+					return false;
+
+				if (creator.IsMe)
+					return true;
+				
+				var ownedBy = creator.OwnedByRoot;
+
+				if (ownedBy != null && ownedBy.IsMe)
+				{
+					return true;
+				}
+
+				return false;
+			});
+		}
+
         /// <summary>
         ///  Checks for the auras on a specified unit. Returns true if the unit has any aura in the auraNames list.
         /// </summary>
@@ -1445,12 +1490,24 @@ namespace Singular.Helpers
 
     }
 
+    public enum CombatArea
+    {
+        Radius = 1,
+        Facing
+    }
+
     public class CombatScenario
     {
+        
         /// <summary>
         /// spell distance from Me to check
         /// </summary>
         public int Range { get; set; }
+
+        /// <summary>
+        /// area to consider mobs for AOE attack
+        /// </summary>
+        public CombatArea Area { get; set; }
 
         /// <summary>
         /// spell distance from Me to check
@@ -1498,18 +1555,18 @@ namespace Singular.Helpers
 
         private CombatScenario()
         {
-
         }
 
-        public CombatScenario( int range, float basegcd )
+        public CombatScenario( int range, float basegcd, CombatArea area = CombatArea.Radius )
         {
             Range = range;
             BaseGcd = basegcd;
+            Area = area;
+            Mobs = new List<WoWUnit>();                
         }
 
-        public void Update(WoWUnit origin)
+        public void Update(WoWUnit origin )
         {
-
             GcdTime = BaseGcd * StyxWoW.Me.SpellHasteModifier;
 
             if (StyxWoW.Me.GotTarget())
@@ -1551,7 +1608,13 @@ namespace Singular.Helpers
                                 AvoidAOE = true;
                             else if (u == StyxWoW.Me.CurrentTarget || u.Aggro || u.TaggedByMe || u.IsTargetingUs())
                             {
-                                MobCount++;
+                                if (Area == CombatArea.Radius || StyxWoW.Me.IsSafelyFacing(u, 150f))
+                                {
+                                    if (u.InLineOfSpellSight)
+                                    {
+                                        MobCount++;
+                                    }
+                                }
                                 return true;
                             }
                         }
@@ -1566,6 +1629,8 @@ namespace Singular.Helpers
                 if (AvoidAOE)
                     MobCount = MobCount > 1 ? 1 : MobCount;
             }
+
+            System.Diagnostics.Debug.Assert(Mobs != null);
         }
     }
 

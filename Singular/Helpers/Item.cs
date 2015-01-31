@@ -133,7 +133,13 @@ namespace Singular.Helpers
 
         private static void UseItem(WoWItem item)
         {
-            Logger.Write( LogColor.Hilite, "/use {0}", item.Name);
+            Logger.Write(LogColor.Hilite, "/use {0}", item.Name);
+            item.Use();
+        }
+
+        private static void UseItem(WoWItem item, WoWUnit on)
+        {
+            Logger.Write(LogColor.Hilite, "/use {0} on {1} @ {2:F1} yds", item.Name, on.SafeName(), on.SpellDistance());
             item.Use();
         }
 
@@ -749,8 +755,8 @@ namespace Singular.Helpers
 
         public static Composite CreateThunderLordGrappleBehavior()
         {
-            const int FROSTFIRE_RIDGE = 6720;
-            const int THUNDERLORD_GRAPPLE = 101677;
+            const int FROSTFIRE_RIDGE_ZONEID = 6720;
+            const int THUNDERLORD_GRAPPLE_ITEM = 101677;
 
             if (!SingularSettings.Instance.ToysAllowUse)
                 return new ActionAlwaysFail();
@@ -764,45 +770,58 @@ namespace Singular.Helpers
             return new Throttle(
                 15,
                 new Decorator(
-                    req => Me.ZoneId == FROSTFIRE_RIDGE,
+                    req => Me.ZoneId == FROSTFIRE_RIDGE_ZONEID,
                     new Decorator(
                         req => MovementManager.IsClassMovementAllowed   // checks Movement and GapCloser capability flags
-                            && CanUseCarriedItem(THUNDERLORD_GRAPPLE)
+                            && CanUseCarriedItem(THUNDERLORD_GRAPPLE_ITEM)
                             && Me.GotTarget()
-                            && Me.CurrentTarget.Distance.Between(25, 40)
+                            && Me.CurrentTarget.SpellDistance() >= 20
                             && Me.CurrentTarget.InLineOfSight
                             && Me.IsSafelyFacing(Me.CurrentTarget)
                             && (DateTime.Now - Utilities.EventHandlers.LastNoPathFailure) > TimeSpan.FromSeconds(15),
                         new Sequence(
-                            new Action( r => StopMoving.Now()),
+                            new Action(r =>
+                            {
+                                const int THUNDERLORD_GRAPPLE_SPELL = 150258;
+                                WoWSpell grapple = WoWSpell.FromId(THUNDERLORD_GRAPPLE_SPELL);
+                                if (grapple != null && Me.CurrentTarget.SpellDistance() < grapple.MaxRange)
+                                    return RunStatus.Success;
+                                return RunStatus.Failure;
+                            }),
+                            new Action(r => StopMoving.Now()),
                             new Wait(
                                 TimeSpan.FromMilliseconds(500),
                                 until => !Me.IsMoving,
                                 new ActionAlwaysSucceed()
                                 ),
-                            new Action(r => 
+                            new Action(r =>
                             {
-                                Logger.Write(LogColor.Hilite, "^Thunderlord Grapple on {0} @ {1:F1} yds", Me.CurrentTarget.SafeName(), Me.CurrentTarget.SpellDistance());
-                                WoWItem item = FindItem(THUNDERLORD_GRAPPLE);
-                                item.Use();
+                                WoWItem item = FindItem(THUNDERLORD_GRAPPLE_ITEM);
+                                UseItem(item, Me.CurrentTarget);
                             }),
                             new Wait(
                                 1,
                                 until => Spell.IsCastingOrChannelling(),
                                 new ActionAlwaysSucceed()
                                 ),
-                            new Action( r => Logger.WriteDebug("ThunderlordGrapple: start @ {0:F1} yds", Me.CurrentTarget.Distance)),
+                            new Action(r => Logger.WriteDebug("ThunderlordGrapple: start @ {0:F1} yds", Me.CurrentTarget.Distance)),
                             new Wait(
                                 3,
                                 until => !Spell.IsCastingOrChannelling(),
                                 new ActionAlwaysSucceed()
                                 ),
-                            new Wait(
-                                1,
-                                until => !Me.IsMoving || Me.CurrentTarget.IsWithinMeleeRange,
-                                new ActionAlwaysSucceed()
-                                ),
-                            new Action( r => Logger.WriteDebug("ThunderlordGrapple: ended @ {0:F1} yds", Me.CurrentTarget.Distance))
+                            new PrioritySelector(
+                                new Sequence(
+                                    new Wait(
+                                        1,
+                                        until => !Me.IsMoving || Me.CurrentTarget.IsWithinMeleeRange,
+                                        new ActionAlwaysSucceed()
+                                        ),
+                                    new Action(r => Logger.WriteDebug("ThunderlordGrapple: ended @ {0:F1} yds", Me.CurrentTarget.Distance))
+                                    ),
+                                // allow following to Succeed so we Throttle the behavior even on failure at this point
+                                new Action(r => Logger.WriteDebug("ThunderlordGrapple: failed unexpectedly @ {0:F1} yds", Me.CurrentTarget.Distance))
+                                )
                             )
                         )
                     )

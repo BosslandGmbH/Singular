@@ -66,6 +66,22 @@ namespace Singular.Helpers
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
+        public static void Init()
+        {
+            SingularRoutine.OnBotEvent += (src,arg) =>
+            {
+                if (arg.Event == SingularBotEvent.BotStarted)
+                {
+                    UndefinedSpells = new Dictionary<string,long>();
+                }
+                else if (arg.Event == SingularBotEvent.BotStopped)
+                {
+                    ListUndefinedSpells();
+                }
+            };
+
+        }
+
         public static void LogCast(string sname, WoWUnit unit, bool isHeal = false)
         {
             LogCast(sname, unit, unit.HealthPercent, unit.SpellDistance(), isHeal);
@@ -1263,7 +1279,10 @@ namespace Singular.Helpers
 
                     SpellFindResults sfr;
                     if (!SpellManager.FindSpell(_buffName, out sfr))
+                    {
+                        AddUndefinedSpell(_buffName);
                         return false;
+                    }
 
                     WoWSpell spell = sfr.Override ?? sfr.Original;
                     _buffName = spell.Name;
@@ -1637,6 +1656,10 @@ namespace Singular.Helpers
                         if (spellName != null)
                         {
                             return SpellManager.FindSpell(spellName, out sfr);
+                        }
+                        else
+                        {
+                            AddUndefinedSpell(spellName);
                         }
                     }
 
@@ -2032,7 +2055,12 @@ namespace Singular.Helpers
             SpellFindDelegate ssd =
                 (object ctx, out SpellFindResults sfr) =>
                 {
-                    return SpellManager.FindSpell(spellName, out sfr);
+                    if (! SpellManager.FindSpell(spellName, out sfr))
+                    {
+                        AddUndefinedSpell(spellName);
+                        return false;
+                    }
+                    return true;
                 };
 #if ERR
             return new PrioritySelector(
@@ -2074,7 +2102,12 @@ namespace Singular.Helpers
             SpellFindDelegate ssd =
                 (object ctx, out SpellFindResults sfr) =>
                 {
-                    return SpellManager.FindSpell(spellName, out sfr);
+                    if (!SpellManager.FindSpell(spellName, out sfr))
+                    {
+                        AddUndefinedSpell(spellName);
+                        return false;
+                    }
+                    return true;
                 };
 
             return new Decorator(
@@ -2262,6 +2295,7 @@ namespace Singular.Helpers
             if (!SpellManager.FindSpell(castName, out sfr))
             {
                 // Logger.WriteDebug("CanCast: spell [{0}] not known", castName);
+                AddUndefinedSpell(castName);
                 return false;
             }
 
@@ -2696,6 +2730,31 @@ namespace Singular.Helpers
             }
 
             return ret[0] == "1";
+        }
+
+        private static Dictionary<string, long> UndefinedSpells { get; set; }
+
+        private static void AddUndefinedSpell( string s)
+        {
+            if (!SingularSettings.DebugSpellCasting)
+                return;
+
+            if (UndefinedSpells.ContainsKey(s))
+                UndefinedSpells[s] = UndefinedSpells[s] + 1;
+            else
+                UndefinedSpells.Add(s, 1);
+        }
+
+        private static void ListUndefinedSpells()
+        {
+            if (!SingularSettings.DebugSpellCasting)
+                return;
+
+            Logger.WriteDebug("-- Listing {0} Undefined Spells Referenced --", UndefinedSpells.Count());
+            foreach ( var v in UndefinedSpells)
+            {
+                Logger.WriteDebug("   {0}  {1}", v.Key.AlignRight(25), v.Value.ToString().AlignRight(7));
+            }
         }
     }
 

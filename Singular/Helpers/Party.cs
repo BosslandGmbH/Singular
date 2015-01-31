@@ -357,6 +357,7 @@ namespace Singular.Helpers
                     );
         }
 
+
         /// <summary>
         /// checks group members in range if they have a buff providing the benefits 
         /// that this spell does, and if not casts the buff upon them.  understands
@@ -389,39 +390,50 @@ namespace Singular.Helpers
                 ret => IsItTimeToBuff()
                     && SpellManager.HasSpell(name)
                     && (!StyxWoW.Me.Mounted || !PVP.IsPrepPhase),
-                new PrioritySelector(
-                    ctx => Unit.GroupMembers
-                        .FirstOrDefault(m => 
-                        {
-                            if (!m.IsAlive || m.DistanceSqr > 30 * 30)
-                                return false;
-                            PartyBuffType missing = m.GetMissingPartyBuffs();
-                            PartyBuffType bufftyp = GetPartyBuffForSpell(name);
-                            if (PartyBuffType.None == (missing & bufftyp))
-                                return false;
-
-                            if (!Spell.CanCastHack(name, m))
-                                return false;
-
-                            if (!requirements(ctx))
-                                return false;
-
-                            Logger.WriteDiagnostic("BuffGroup: casting '{0}' since {1} missing {2}",
-                                name,
-                                m.SafeName(),
-                                missing & bufftyp
-                                );
-                            if (SingularSettings.Debug)
+                new Sequence(
+                    new DecoratorContinue(
+                        req => myMutexBuffs != null 
+                            && myMutexBuffs.Count() > 0
+                            && Unit.GroupMembers.Any(u => u.HasAnyOfMyAuras(myMutexBuffs) && u.Distance < Spell.ActualMaxRange(name, u)),
+                        new ActionAlwaysFail()
+                        ),
+                    new PrioritySelector(
+                        ctx => Unit.GroupMembers
+                            .FirstOrDefault(m => 
                             {
-                                Logger.WriteDebug("BuffGroup: === {0} has ===", m.SafeName());
-                                foreach (var a in m.GetAllAuras())
+                                if (!m.IsAlive || m.DistanceSqr > 30 * 30)
+                                    return false;
+                                PartyBuffType missing = m.GetMissingPartyBuffs();
+                                PartyBuffType bufftyp = GetPartyBuffForSpell(name);
+                                if (PartyBuffType.None == (missing & bufftyp))
+                                    return false;
+
+                                if (!Spell.CanCastHack(name, m))
+                                    return false;
+
+                                if (!requirements(ctx))
+                                    return false;
+
+                                Logger.WriteDiagnostic("BuffGroup: casting '{0}' since {1} missing {2}",
+                                    name,
+                                    m.SafeName(),
+                                    missing & bufftyp
+                                    );
+                                if (SingularSettings.Debug)
                                 {
-                                    Logger.WriteDebug("BuffGroup:     {0}", a.Name);
+                                    Logger.WriteDebug("BuffGroup: === {0} has ===", m.SafeName());
+                                    foreach (var a in m.GetAllAuras())
+                                    {
+                                        Logger.WriteDebug("BuffGroup:    {0}{1}", 
+                                            a.CreatorGuid == StyxWoW.Me.Guid ? "*" : " ",
+                                            a.Name
+                                            );
+                                    }
                                 }
-                            }
-                            return true;
-                        }),
-                    BuffUnit(name, ctx => (WoWUnit)ctx, req => true, myMutexBuffs)
+                                return true;
+                            }),
+                        BuffUnit(name, ctx => (WoWUnit)ctx, req => true)
+                        )
                     )
                 );
         }

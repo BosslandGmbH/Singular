@@ -375,6 +375,14 @@ namespace Singular.Settings
         [Description("Barkskin will be used at this value. Set this to 100 to enable on cooldown usage.")]
         public int TankFeralBarkskin { get; set; }
 
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Guardian")]
+        [DisplayName("Dream of Cenarius Healing Touch")]
+        [Description("Health Percent to cast Healing Touch if Dream of Cenarius has procced")]
+        public int DreamOfCenariusHealingTouchHealth { get; set; }
+
+
         #endregion
 
         #region Feral

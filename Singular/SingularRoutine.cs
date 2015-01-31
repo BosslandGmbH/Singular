@@ -78,6 +78,7 @@ namespace Singular
             _lastLogLevel = GlobalSettings.Instance.LogLevel;
 
             // When we actually need to use it, we will.
+            Spell.Init();
             Spell.GcdInitialize();
 
             EventHandlers.Init();

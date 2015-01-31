@@ -466,12 +466,14 @@ namespace Singular.Helpers
                 return false;
 
             if (!SingularSettings.Debug)
-                return u.CanInterruptCurrentSpellCast && u.InLineOfSight;
+                return u.CanInterruptCurrentSpellCast && u.InLineOfSight && StyxWoW.Me.IsSafelyFacing(u, 150f);
 
             if (!u.CanInterruptCurrentSpellCast)
                 ;   // Logger.WriteDebug("IsInterruptTarget: {0} casting {1} but CanInterruptCurrentSpellCast == false", u.SafeName(), (u.CastingSpell == null ? "(null)" : u.CastingSpell.Name));
             else if (!u.InLineOfSpellSight)
                 ;   // Logger.WriteDebug("IsInterruptTarget: {0} casting {1} but LoSS == false", u.SafeName(), (u.CastingSpell == null ? "(null)" : u.CastingSpell.Name));
+            else if (!StyxWoW.Me.IsSafelyFacing(u))
+                ;   // Logger.WriteDebug("IsInterruptTarget: {0} casting {1} but Facing == false", u.SafeName(), (u.CastingSpell == null ? "(null)" : u.CastingSpell.Name));
             else if (u.CurrentCastTimeLeft.TotalMilliseconds < 250)
                 ;
             else

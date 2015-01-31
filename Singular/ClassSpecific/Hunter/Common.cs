@@ -362,6 +362,7 @@ namespace Singular.ClassSpecific.Hunter
                                 {
                                     if (!Me.GotTarget())
                                         return null;
+
                                     WoWPoint loc = WoWPoint.RayCast(Me.Location, WoWMathHelper.CalculateNeededFacing(Me.Location, Target.Location), 40f);
                                     IEnumerable<WoWUnit> ienum = Clusters.GetPathToPointCluster(loc, Unit.UnfriendlyUnits(44), 44);
                                     int cntCC = 0;
@@ -407,6 +408,9 @@ namespace Singular.ClassSpecific.Hunter
                                 "Powershot",
                                 on =>
                                 {
+                                    if (Target == null)
+                                        return null;
+
                                     int dist = (int)Target.Distance + 4;
                                     WoWPoint loc = WoWPoint.RayCast(Me.Location, WoWMathHelper.CalculateNeededFacing(Me.Location, Target.Location), 40f);
                                     IEnumerable<WoWUnit> ienum = Clusters.GetPathToPointCluster(loc, Unit.UnfriendlyUnits(dist), dist);
@@ -453,6 +457,7 @@ namespace Singular.ClassSpecific.Hunter
                                 "Barrage",
                                 on =>
                                 {
+                                    // Does not require CurrentTarget to be non=null
                                     WoWPoint loc = WoWPoint.RayCast(Me.Location, Me.RenderFacing, 30f);
                                     IEnumerable<WoWUnit> ienum = Clusters.GetConeCluster(loc, 100f, 46f, Unit.UnfriendlyUnits(50));
                                     int cntCC = 0;
@@ -506,6 +511,7 @@ namespace Singular.ClassSpecific.Hunter
 
                             new Decorator(
                                 req => (!Me.GotAlivePet || Me.Pet.HealthPercent < 20)
+                                    && PetManager.IsPetUseAllowed
                                     && Me.GotTarget()
                                     && Target.SpellDistance().Between(15, 40),
                                 new PrioritySelector(
@@ -934,170 +940,6 @@ namespace Singular.ClassSpecific.Hunter
             return Avoidance.CreateAvoidanceBehavior("Disengage", 20, Disengage.Direction.Backwards, new ActionAlwaysSucceed());
         }
 
-        private static bool useRocketJump;
-        private static WoWUnit mobToGetAwayFrom;
-        private static WoWPoint origSpot;
-        private static WoWPoint safeSpot;
-        private static float needFacing;
-        public static DateTime NextDisengageAllowed = DateTime.Now;
-
-        public static Composite CreateDisengageBehavior()
-        {
-            return
-                new Decorator(
-                    ret => IsDisengageNeeded(),
-                    new Sequence(
-                        new ActionDebugString(ret => "face away from or towards safespot as needed"),
-                        new Action(ret =>
-                        {
-                            origSpot = new WoWPoint( Me.Location.X, Me.Location.Y, Me.Location.Z);
-                            if (useRocketJump)
-                                needFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(Me.Location, safeSpot);
-                            else
-                                needFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(safeSpot, Me.Location);
-
-                            needFacing = WoWMathHelper.NormalizeRadian(needFacing);
-                            float rotation = WoWMathHelper.NormalizeRadian(Math.Abs(needFacing - Me.RenderFacing));
-                            Logger.WriteDebug(Color.Cyan, "DIS: turning {0:F0} degrees {1} safe landing spot",
-                                WoWMathHelper.RadiansToDegrees(rotation), useRocketJump ? "towards" : "away from");
-                            Me.SetFacing(needFacing);
-                        }),
-
-                        new ActionDebugString(ret => "wait for facing to complete"),
-                        new PrioritySelector(
-                            new Wait(new TimeSpan(0, 0, 1), ret => Me.IsDirectlyFacing(needFacing), new ActionAlwaysSucceed()),
-                            new Action(ret =>
-                            {
-                                Logger.WriteDebug(Color.Cyan, "DIS: timed out waiting to face safe spot - need:{0:F4} have:{1:F4}", needFacing, Me.RenderFacing);
-                                return RunStatus.Failure;
-                            })
-                            ),
-
-                        // stop facing
-                        new Action(ret =>
-                        {
-                            Logger.WriteDebug(Color.Cyan, "DIS: cancel facing now we point the right way");
-                            WoWMovement.StopFace();
-                        }),
-
-                        new PrioritySelector(
-                            new Sequence(
-                                new ActionDebugString(ret => "attempting to slow"),
-                                CreateSlowMeleeBehavior(),
-                                new WaitContinue( 1, rdy => !Me.IsCasting && !Spell.IsGlobalCooldown(), new ActionAlwaysSucceed())
-                                ),
-                            new ActionAlwaysSucceed()
-                            ),
-
-                        new ActionDebugString(ret => "set time of disengage just prior"),
-                        new Sequence(
-                            new PrioritySelector(
-                                    new Decorator(ret => !useRocketJump, Spell.BuffSelf("Disengage")),
-                                    new Decorator(ret => useRocketJump, Spell.BuffSelf("Rocket Jump")),
-                                    new Action(ret => {
-                                        Logger.WriteDebug(Color.Cyan, "DIS: {0} cast appears to have failed", useRocketJump ? "Rocket Jump" : "Disengage");
-                                        return RunStatus.Failure;
-                                        })
-                                    ),
-                            new WaitContinue( 1, req => !Me.IsAlive || !Me.IsFalling, new ActionAlwaysSucceed()),
-                            new Action(ret =>
-                            {
-                                NextDisengageAllowed = DateTime.Now.Add(new TimeSpan(0, 0, 0, 0, 750));
-                                Logger.WriteDebug(Color.Cyan, "DIS: finished {0} cast", useRocketJump ? "Rocket Jump" : "Disengage");
-                                Logger.WriteDebug(Color.Cyan, "DIS: jumped {0:F1} yds away from orig={1} to curr={2}", Me.Location.Distance(safeSpot), origSpot, Me.Location);
-                                if (Kite.IsKitingActive())
-                                    Kite.EndKiting(String.Format("BP: Interrupted by {0}", useRocketJump ? "Rocket Jump" : "Disengage"));
-                                return RunStatus.Success;
-                            })
-                            )
-
-                    )
-                );
-        }
-
-        public static bool IsDisengageNeeded()
-        {
-            if (!SingularRoutine.IsAllowed(CapabilityFlags.Movement))
-                return false;
-
-            if (!SingularRoutine.IsAllowed(CapabilityFlags.Kiting))
-                return false;
-
-            if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
-                return false;
-
-            if (!Me.IsAlive || Me.IsFalling || Me.IsCasting)
-                return false;
-
-            if (Me.Stunned || Me.Rooted || Me.IsStunned() || Me.IsRooted())
-                return false;
-
-            if (NextDisengageAllowed > DateTime.Now)
-                return false;
-
-            useRocketJump = false;
-            if (!Spell.CanCastHack("Disengage", Me))
-            {
-                if (!SingularSettings.Instance.UseRacials || Me.Race != WoWRace.Goblin || !Spell.CanCastHack("Rocket Jump", Me))
-                    return false;
-
-                useRocketJump = true;
-            }
-
-            mobToGetAwayFrom = SafeArea.NearestEnemyMobAttackingMe;
-            if (mobToGetAwayFrom == null)
-                return false;
-
-
-            if (SingularRoutine.CurrentWoWContext == WoWContext.Normal )
-            {
-                List<WoWUnit> attackers = SafeArea.AllEnemyMobsAttackingMe.ToList();
-                if ((attackers.Sum( a => a.MaxHealth ) / 4) < Me.MaxHealth &&  Me.HealthPercent > 40)
-                    return false;
-            }
-            else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-            {
-                switch (mobToGetAwayFrom.Class)
-                {
-                    default:
-                        return false;
-
-                    case WoWClass.DeathKnight:
-                    case WoWClass.Druid:
-                    case WoWClass.Monk:
-                    case WoWClass.Paladin:
-                    case WoWClass.Rogue:
-                    case WoWClass.Shaman:
-                        break;
-                }
-            }
-
-            if (mobToGetAwayFrom.Distance > mobToGetAwayFrom.MeleeDistance() + 3f)
-                return false;
-
-            SafeArea sa = new SafeArea();
-            sa.MinScanDistance = TalentManager.HasGlyph("Disengage") ? 21 : 16;    // average disengage distance on flat ground
-            sa.MaxScanDistance = sa.MinScanDistance;
-            sa.RaysToCheck = 36;
-            sa.LineOfSightMob = Target;
-            sa.MobToRunFrom = mobToGetAwayFrom;
-            sa.CheckLineOfSightToSafeLocation = true;
-            sa.CheckSpellLineOfSightToMob = false;
-
-            safeSpot = sa.FindLocation();
-            if (safeSpot == WoWPoint.Empty)
-            {
-                Logger.WriteDebug(Color.Cyan, "DIS: no safe landing spots found for {0}", useRocketJump ? "Rocket Jump" : "Disengage");
-                return false;
-            }
-
-            Logger.WriteDebug(Color.Cyan, "DIS: Attempt safe {0} due to {1} @ {2:F1} yds",
-                useRocketJump ? "Rocket Jump" : "Disengage",
-                mobToGetAwayFrom.SafeName(),
-                mobToGetAwayFrom.Distance);
-
-            return true;
-        }
 
         #endregion
 

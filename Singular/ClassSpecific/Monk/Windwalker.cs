@@ -134,26 +134,6 @@ namespace Singular.ClassSpecific.Monk
                     )
                 );
         }
-		
-		[Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Instances)]
-		public static Composite CreateWindwalkerMonkInstanceCombatBuffs()
-		{
-			return new PrioritySelector(
-				Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
-				Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
-				Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
-				Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPct),
-				Spell.BuffSelf("Zen Sphere", ctx => HasTalent(MonkTalents.ZenSphere) && Me.HealthPercent < 90),
-
-				Spell.BuffSelf(
-					"Invoke Xuen, the White Tiger",
-					req => !Me.IsMoving
-						&& Me.CurrentTarget.IsBoss()
-						&& Me.CurrentTarget.IsWithinMeleeRange
-						&& (PartyBuff.WeHaveBloodlust || PartyBuff.WeHaveSatedDebuff)
-						)
-				);
-		}
 
 	    private static bool HoldForTouchOfDeath
 	    {
@@ -180,11 +160,25 @@ namespace Singular.ClassSpecific.Monk
 				
 				Common.CreateMonkCloseDistanceBehavior(),
 
-				Spell.Cast("Storm, Earth, and Fire", ret => Me.CurrentTarget.HasAura("Storm, Earth, and Fire")),
-				
+				Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
+				Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
+				Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
+				Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPct),
+				Spell.BuffSelf("Zen Sphere", ctx => HasTalent(MonkTalents.ZenSphere) && Me.HealthPercent < 90),
+
+				Spell.BuffSelf(
+					"Invoke Xuen, the White Tiger",
+					req => !Me.IsMoving
+						&& Me.CurrentTarget.IsBoss()
+						&& Me.CurrentTarget.IsWithinMeleeRange
+						&& (PartyBuff.WeHaveBloodlust || PartyBuff.WeHaveSatedDebuff)
+						),
+
+				Spell.Cast("Storm, Earth, and Fire", ret => Me.CurrentTarget.HasMyOrMyStuffsAura("Storm, Earth, and Fire")),
+
 				new PrioritySelector(
-					ctx => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Where(u => u != Me.CurrentTarget && !u.IsCrowdControlled() && !u.HasAura("Storm, Earth, and Fire")).OrderByDescending(u => u.CurrentHealth).FirstOrDefault(),
-					Spell.Cast("Storm, Earth, and Fire", onUnit => (WoWUnit)onUnit, req => !Me.HasAura("Storm, Earth, and Fire", 2))
+					ctx => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Where(u => u != Me.CurrentTarget && !u.IsCrowdControlled() && !u.HasMyOrMyStuffsAura("Storm, Earth, and Fire")).OrderByDescending(u => u.CurrentHealth).FirstOrDefault(),
+					Spell.Cast("Storm, Earth, and Fire", onUnit => (WoWUnit)onUnit, req => !Me.HasMyOrMyStuffsAura("Storm, Earth, and Fire", 2))
 					),
 
 				new Decorator(
@@ -196,13 +190,13 @@ namespace Singular.ClassSpecific.Monk
 						)
 					),
 
-				Spell.Cast("Tiger Palm", ret => Me.HasKnownAuraExpired("Tiger Power")),
-				Spell.Cast("Rising Sun Kick", ret => !SpellManager.HasSpell("Chi Explosion") || Me.CurrentTarget.HasAuraExpired("Rising Sun Kick", 1)),
+				Spell.Cast("Tiger Palm", ret => Me.HasAuraExpired("Tiger Power")),
+				Spell.Cast("Rising Sun Kick", ret => !SpellManager.HasSpell("Chi Explosion") || Me.CurrentTarget.HasAuraExpired("Rising Sun Kick")),
 
 				new Decorator(ret => !HoldForTouchOfDeath,
 					new PrioritySelector(
-						Spell.Cast("Fists of Fury"),
-						Spell.Cast("Chi Explosion", ret => Me.HasAura("Combo Breaker: Chi Explosion") && Me.CurrentChi >= 3),
+						Spell.Cast("Fists of Fury", ret => !Me.HasAuraExpired("Tiger Power", 4) && !Me.CurrentTarget.HasAuraExpired("Rising Sun Kick", 4)),
+						Spell.Cast("Chi Explosion", ret => Me.HasAura("Combo Breaker: Chi Explosion") && Me.CurrentChi >= 2),
 						Spell.Cast("Blackout Kick", ret => Me.HasAura("Combo Breaker: Blackout Kick")),
 						Spell.Cast("Tiger Palm", ret => Me.HasAura("Combo Breaker: Tiger Palm")),
 						Spell.Cast("Chi Wave"),

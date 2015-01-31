@@ -66,10 +66,23 @@ namespace Singular.ClassSpecific.Druid
         #endregion
 
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidGuardian, priority: 99)]
-        public static Composite CreateDruidNonRestoHeal()
+        public static Composite CreateGuardianHeal()
         {
+            const int DREAM_OF_CENARIUS_PROC = 145162;
+
             return new PrioritySelector(
-                CreateGuardianDiagnosticOutputBehavior( "Combat")
+                CreateGuardianDiagnosticOutputBehavior( "Combat"),
+
+                Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < Settings.TankFrenziedRegenerationHealth && Me.CurrentRage >= 60),
+                Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < 30 && Me.CurrentRage >= 15),
+
+                new Sequence(
+                    Spell.Cast("Healing Touch", on => Me, req => Me.HasAura(DREAM_OF_CENARIUS_PROC) && Me.HealthPercent < Settings.DreamOfCenariusHealingTouchHealth),
+                    new Wait( TimeSpan.FromMilliseconds(750), until => !Me.HasAura(DREAM_OF_CENARIUS_PROC), new ActionAlwaysSucceed())
+                    ),
+
+                Spell.Cast("Renewal", on => Me, ret => Me.HealthPercent < Settings.SelfRenewalHealth),
+                Spell.BuffSelf("Cenarion Ward", req => Me.HealthPercent < Settings.SelfCenarionWardHealth)
                 );
         }
 
@@ -79,12 +92,10 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 Common.CastForm( ShapeshiftForm.Bear, req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
-                Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < Settings.TankFrenziedRegenerationHealth && Me.CurrentRage >=60),
-                Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < 30 && Me.CurrentRage >= 15),
                 Spell.BuffSelf("Savage Defense", ret => Me.HealthPercent <= Settings.TankSavageDefense),
                 Spell.BuffSelf("Survival Instincts", ret => Me.HealthPercent <= Settings.TankSurvivalInstinctsHealth),
                 Spell.BuffSelf("Barkskin", ret => Me.HealthPercent <= Settings.TankFeralBarkskin),
-                Spell.Cast("Renewal", on => Me, ret => Me.HealthPercent <= Settings.SelfRenewalHealth)
+                Spell.BuffSelf("Bristling Fur", req => Spell.IsSpellOnCooldown("Barkskin") && Spell.IsSpellOnCooldown("Savage Defense"))
                 );
         }
 
@@ -115,9 +126,20 @@ namespace Singular.ClassSpecific.Druid
                             new PrioritySelector(
 
                                 new Decorator(
-                                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 8) >= 2,
+                                    ret => Unit.UnfriendlyUnits(8).Count() >= 2,
                                     new PrioritySelector(
                                         Spell.Cast("Berserk"),
+                                        Spell.Cast(
+                                            "Mangle", 
+                                            on => Unit.UnfriendlyUnits()
+                                                .Where( 
+                                                    u => u.IsWithinMeleeRange 
+                                                        && Me.IsSafelyFacing(u, 140)
+                                                        && u.InLineOfSpellSight
+                                                    )
+                                                .OrderBy( u => u.HealthPercent)
+                                                .FirstOrDefault()
+                                            ),
                                         Spell.Cast("Thrash"),
                                         Spell.Cast("Maul", ret => StyxWoW.Me.HasAura("Tooth and Claw"))
                                         )
@@ -128,7 +150,7 @@ namespace Singular.ClassSpecific.Druid
                                 Spell.Cast("Mangle"),
                                 Spell.Cast("Thrash", req => Me.CurrentTarget.HasAuraExpired("Thrash", 1)),
                                 Spell.Cast("Maul", ret => StyxWoW.Me.HasAura("Tooth and Claw")),
-
+                                Spell.Cast("Pulverize", req => Me.GetAuraTimeLeft("Pulverize").TotalSeconds < 3.6),
                                 Spell.Cast("Lacerate", req => Me.CurrentTarget.HasAuraExpired("Lacerate", "Lacerate", 3, TimeSpan.FromSeconds(3), true)),
 
                                 Spell.Cast("Maul", ret => Me.CurrentTarget.CurrentTargetGuid != Me.Guid || SingularRoutine.CurrentWoWContext != WoWContext.Instances)

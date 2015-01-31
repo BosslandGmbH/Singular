@@ -310,6 +310,7 @@
 )
 if $(ConfigurationName) == Raphus (
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\HB\Routines\Singular\" /i /f /s /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\Buddy\Honorbuddy\Source\Honorbuddy\Routines\Singular" /i /f /s /v /y
 )
 
 if $(ConfigurationName) == Bobby53 (

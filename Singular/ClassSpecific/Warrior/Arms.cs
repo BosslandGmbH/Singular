@@ -47,6 +47,7 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateArmsInitialize()
         {
             scenario = new CombatScenario(8, 1.5f);
+            Logger.WriteDiagnostic("CreateArmsInitialize: Arms init complete");
             return null;
         }
 

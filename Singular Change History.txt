@@ -1,3 +1,47 @@
+--- Release 4.0.0.4323 ---
+
+General 
+
+fixed - Interrupts: ensures we are facing the selected interrupt target before casting
+
+fixed - Thunderlord Grapple: was used on target > 30 yds
+
+fixed - Group Buff Logic: will now check that no member in range has a mutually exclusive buff cast by us before we cast a replacement
+
+
+Death Knight
+
+*new* - Unholy - Level 100 Instance spell priority 
+
+
+Druid
+
+fixed - Guardian - added Guardian  use of Dream of Cenarius Healing Touch  and user setting in Class Config
+
+fixed - Guardian - added Guardian specific setting and cast of Cenarion Ward
+
+fixed - Guardian - added casts of Bristling Fur and Pulverize
+
+fixed - Guardian - AOE: was missing Mangle casts after Berserk 
+
+
+Hunter
+
+fixed - All Specs - exception occurring when in Combat and no current target selected and Power Shot talent taken
+
+fixed - All Specs - will now check if Pet Usage allowed prior to casting Ice Trap on ranged target and no pet active.  
+
+
+Paladin
+
+fixed - All Specs - will now correctly handle blessing selection when Blessings = Auto 
+
+
+Warrior
+
+fixed - All Specs - exception occurring in some instances where the current combat scenario logic not fully initialized 
+
+
 --- Release 4.0.0.4302 ---
 
 General 

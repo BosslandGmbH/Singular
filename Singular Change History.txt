@@ -1,3 +1,58 @@
+--- Release 4.0.0.4358 ---
+
+General 
+
+change- Garrison Ability: revised trigger when targets MaxHealth more than double your characters, so must also have higher current health than your toon.  Should waste fewer Garrison cooldowns  
+
+fixed - Flask Aura detection: now check for "Flask" anywhere in aura name rather than "Flask" at beginning
+
+
+
+Death Knight
+
+fixed - Blood - Horn of Winter: remaining cast on cooldown removed
+
+*new* - Frost - Instance Priority: revised for Level 100 characters, both 2H and DW
+
+
+Druid
+
+fixed - Feral - Claws of Sirvallah: change revealing passive aura caused it to think it was already in Cat Form when it was not.  
+
+*new* - Feral - Lunar Inspiration talent: supports keeping Moonfire DoT on current target
+
+
+Hunter
+
+change - Marksman/Survival - pruning of Instance priority to remove abilities we only want for Solo and PVP usage.  
+
+change - Marksman/Survival - Barrage: restored logic preventing aggro of room or breaking crowd control  
+
+
+Priest
+
+fixed - Shadow - exception occurring in Instances when no target selected while in combat
+
+
+Warlock
+
+fixed - All Specs - Dark Intent: now buffed as expected.  Passive Blood Pact aura was being seen as a +Stamina/+Spell Power aura so was blocking Dark Intent.  Corrected in buff recognition logic.
+
+*new* - All Specs - support for Demonic Servitude (permanent Infernal / Doomguard).  Also supports Grimoire of Supremecy versions.  
+
+*new* - All Specs - support for Cataclsym talent
+
+*new* - All Specs - support for Demonic 
+
+*new* - Affliction - support for Soulburn: Haunt
+
+change- Affliction - temporarily removed cast of Banish
+
+*new* - All Specs - Shadow Lock: interrupt when using Demonic Servitude: Doomguard
+
+*new* - All Specs - Meteor Strike: AOE when using Demonic Servitude: Infernal
+
+
 --- Release 4.0.0.4323 ---
 
 General 

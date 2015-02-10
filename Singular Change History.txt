@@ -1,5 +1,12 @@
 --- Release 4.0.0.4358 ---
 
+Hunter
+
+fixed - Marksman/Survival - Instances: not performing Pull with botbases that invoke that behavior (like DungeonBuddy)
+
+
+--- Release 4.0.0.4358 ---
+
 General 
 
 change- Garrison Ability: revised trigger when targets MaxHealth more than double your characters, so must also have higher current health than your toon.  Should waste fewer Garrison cooldowns  

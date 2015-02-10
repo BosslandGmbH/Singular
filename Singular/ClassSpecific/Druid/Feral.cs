@@ -98,6 +98,8 @@ namespace Singular.ClassSpecific.Druid
                                     return RunStatus.Failure;
                                 }),
 
+                                Spell.Buff("Moonfire", req => Common.HasTalent(DruidTalents.LunarInspiration)),
+
                                 CreateFeralFaerieFireBehavior(),
 
                                 Spell.Cast("Moonfire", ret => Me.CurrentTarget.Distance < 40),
@@ -289,6 +291,21 @@ namespace Singular.ClassSpecific.Druid
 
                         Spell.Buff("Rake", 3 ),
 
+#if MULTI_DOT_MOONFIRE
+                        // multi-dot with if we can (in range and enough energy)
+                        new Decorator(
+                            req => Common.HasTalent(DruidTalents.LunarInspiration) && Spell.CanCastHack("Moonfire", Me.CurrentTarget),
+                            Spell.Cast(
+                                "Moonfire", 
+                                on => Unit.UnitsInCombatWithUsOrOurStuff(40)
+                                    .Where(u => !u.IsCrowdControlled() && Me.IsSafelyFacing(u) && !Me.CurrentTarget.HasMyAura("Moonfire") && Spell.CanCastHack("Moonfire", u))
+                                    .FirstOrDefault()
+                                )
+                            ),
+#else
+                        Spell.Buff( "Moonfire", req => Common.HasTalent(DruidTalents.LunarInspiration)),
+#endif
+
                         Spell.Cast("Shred"),
 
                         Spell.HandleOffGCD(Spell.Cast("Force of Nature", req => TalentManager.CurrentSpec != WoWSpec.DruidRestoration && Me.CurrentTarget.TimeToDeath() > 8)),
@@ -432,6 +449,9 @@ namespace Singular.ClassSpecific.Druid
 
                                         // 10. Spend Omen of Clarity procs on Thrash if Thrash has less than 6 seconds remaining.
                                         CastThrash(on => Me.CurrentTarget, req => Me.HasAura("Clearcasting"), 6),
+
+                                        // added after bleeds
+                                        Spell.Buff("Moonfire", req => Common.HasTalent(DruidTalents.LunarInspiration)),
 
                                         // 12. Shred to generate combo points if Shred is available (Behind boss, berserk w/glyph, etc)
                                         Spell.Cast("Shred"),

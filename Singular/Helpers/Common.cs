@@ -336,7 +336,10 @@ namespace Singular.Helpers
                         on => _unitInterrupt, 
                         ret => _unitInterrupt != null 
                             && _unitInterrupt.Distance < 40 
-                            && Singular.ClassSpecific.Warlock.Common.GetCurrentPet() == WarlockPet.Felhunter 
+                            && (
+                                Singular.ClassSpecific.Warlock.Common.GetCurrentPet() == WarlockPet.Felhunter 
+                                || Singular.ClassSpecific.Warlock.Common.GetCurrentPet() == WarlockPet.Doomguard 
+                               )
                         )
                     );
             }

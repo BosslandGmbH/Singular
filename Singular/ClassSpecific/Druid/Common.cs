@@ -682,7 +682,7 @@ namespace Singular.ClassSpecific.Druid
             }
 
             return new Decorator(
-                req => Me.Shapeshift != shape && !Me.HasAura(spellName) && (requirements == null || requirements(req)),
+                req => Me.Shapeshift != shape && !Me.HasShapeshiftAura(spellName) && (requirements == null || requirements(req)),
                 new Sequence(
                     new Action(r => Logger.WriteDiagnostic( "CastForm: changing to form='{0}', current='{1}', using spell '{2}'", shape, Me.Shapeshift, spellName)),
                     Spell.BuffSelfAndWait( spellId, requirements)

@@ -113,7 +113,9 @@ namespace Singular.ClassSpecific.Warlock
 
                         CreateAoeBehavior(),
 
-                        CreateApplyDotsBehaviorNormal( on => Me.CurrentTarget ),
+                        Common.CastCataclysm(),
+
+                        CreateApplyDotsBehaviorNormal(on => Me.CurrentTarget),
 
                         Spell.Cast("Drain Life", req => Me.HealthPercent < WarlockSettings.DrainLifeCastPct),
                         Spell.Cast("Drain Soul", mov => true, on => Me.CurrentTarget, req => true, cancel => false),
@@ -298,6 +300,9 @@ namespace Singular.ClassSpecific.Warlock
                                 )
                             )
                         ),
+
+                    Common.CastCataclysm(),
+
                     new Decorator(
                         ret => _mobCount >= 2,
                         new PrioritySelector(
@@ -460,16 +465,41 @@ namespace Singular.ClassSpecific.Warlock
             return new Decorator(
                 req => Me.CurrentSoulShards >= 2,
                 new Sequence(
-                    ctx => onUnit(ctx),              
-                    new Decorator( 
-                        req => needSoulSwap((WoWUnit)req), 
+                    ctx => onUnit(ctx),
+                    new Decorator(
+                        req => needSoulSwap((WoWUnit)req),
                         new ActionAlwaysSucceed()
                         ),
-                    Common.CreateCastSoulburn( req => true ),
+                    Common.CreateCastSoulburn(req => true),
                     new Action(ret =>
                     {
                         Logger.Write(LogColor.SpellNonHeal, string.Format("*Soul Swap on {0} @ {1:F1}% at {2:F1} yds", ((WoWUnit)ret).SafeName(), ((WoWUnit)ret).HealthPercent, ((WoWUnit)ret).SpellDistance()));
                         if (!Spell.CastPrimative("Soul Swap", onUnit(ret)))
+                            return RunStatus.Failure;
+                        return RunStatus.Success;
+                    })
+                    )
+                );
+        }
+
+        public static Composite CreateCastSoulburnHaunt(UnitSelectionDelegate onUnit)
+        {
+            if (!Common.HasTalent(WarlockTalents.SoulburnHaunt))
+                return new ActionAlwaysFail();
+
+            return new Decorator(
+                req => Me.CurrentSoulShards >= 2,
+                new Sequence(
+                    ctx => onUnit(ctx),
+                    new Decorator(
+                        req => NeedSoulburnHauntNormal(req as WoWUnit),
+                        new ActionAlwaysSucceed()
+                        ),
+                    Common.CreateCastSoulburn(req => true),
+                    new Action(ret =>
+                    {
+                        Logger.Write(LogColor.SpellNonHeal, string.Format("*Haunt on {0} @ {1:F1}% at {2:F1} yds", ((WoWUnit)ret).SafeName(), ((WoWUnit)ret).HealthPercent, ((WoWUnit)ret).SpellDistance()));
+                        if (!Spell.CastPrimative("Haunt", onUnit(ret)))
                             return RunStatus.Failure;
                         return RunStatus.Success;
                     })
@@ -482,7 +512,21 @@ namespace Singular.ClassSpecific.Warlock
             if (!unit.IsAlive)
                 return false;
 
-            if (GetSoulSwapDotsNeeded(unit) < 2 )
+            if (GetSoulSwapDotsNeeded(unit) < 2)
+                return false;
+
+            if (unit.SpellDistance() > 40)
+                return false;
+
+            if (!unit.InLineOfSpellSight)
+                return false;
+
+            return true;
+        }
+
+        private static bool NeedSoulburnHauntNormal(WoWUnit unit)
+        {
+            if (!unit.IsAlive)
                 return false;
 
             if (unit.SpellDistance() > 40)

@@ -478,70 +478,76 @@ namespace Singular.ClassSpecific.Priest
 
                         Spell.BuffSelf("Shadowform"),
 
-                        // don't attempt to heal unless below a certain percentage health
-                        Spell.Cast(
-                            "Vampiric Embrace", 
-                            ret => Me, 
-                            ret => Me.CurrentTarget.IsBoss()
-                                && Unit.NearbyGroupMembers.Count( u => u.HealthPercent < PriestSettings.VampiricEmbracePct ) >= PriestSettings.VampiricEmbraceCount
-                            ),
-
-                        // use fade to drop aggro.
-                        Common.CreateFadeBehavior(),
-
-                        // Shadow immune npcs.
-                        // Spell.Cast("Holy Fire", ctx => Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
-
-                        // AoE Rotation
                         new Decorator(
-                            ret => Spell.UseAOE && cntAoeTargets > 1,
+                            req => Me.CurrentTarget != null,
                             new PrioritySelector(
-                                ctx => Me.CurrentTarget,
+                                
+                                // don't attempt to heal unless below a certain percentage health
+                                Spell.Cast(
+                                    "Vampiric Embrace", 
+                                    ret => Me, 
+                                    ret => Me.CurrentTarget.IsBoss()
+                                        && Unit.NearbyGroupMembers.Count( u => u.HealthPercent < PriestSettings.VampiricEmbracePct ) >= PriestSettings.VampiricEmbraceCount
+                                    ),
 
-                                // halo only if nothing near we aren't already in combat with
-                                Spell.Cast("Halo", 
-                                    ret => Unit.NearbyUnfriendlyUnits
-                                        .All(u => Me.SpellDistance(u) < 34 && !u.IsCrowdControlled() && u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))),
-                                Spell.Cast("Divine Star"),
-                                Spell.Cast("Cascade"),
+                                // use fade to drop aggro.
+                                Common.CreateFadeBehavior(),
 
+                                // Shadow immune npcs.
+                                // Spell.Cast("Holy Fire", ctx => Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
+
+                                // AoE Rotation
                                 new Decorator(
-                                    req => cntAoeTargets <= 4,
+                                    ret => Spell.UseAOE && cntAoeTargets > 1,
                                     new PrioritySelector(
-                                        ctx => AoeTargets.FirstOrDefault(u => !u.HasAllMyAuras("Shadow Word: Pain", "Vampiric Touch")),
-                                        Spell.Buff("Vampiric Touch", on => (WoWUnit) on),
-                                        Spell.Buff("Shadow Word: Pain", on => (WoWUnit) on)
+                                        ctx => Me.CurrentTarget,
+
+                                        // halo only if nothing near we aren't already in combat with
+                                        Spell.Cast("Halo", 
+                                            ret => Unit.NearbyUnfriendlyUnits
+                                                .All(u => Me.SpellDistance(u) < 34 && !u.IsCrowdControlled() && u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))),
+                                        Spell.Cast("Divine Star"),
+                                        Spell.Cast("Cascade"),
+
+                                        new Decorator(
+                                            req => cntAoeTargets <= 4,
+                                            new PrioritySelector(
+                                                ctx => AoeTargets.FirstOrDefault(u => !u.HasAllMyAuras("Shadow Word: Pain", "Vampiric Touch")),
+                                                Spell.Buff("Vampiric Touch", on => (WoWUnit) on),
+                                                Spell.Buff("Shadow Word: Pain", on => (WoWUnit) on)
+                                                )
+                                            ),
+
+                                        Spell.Cast("Mind Sear", 
+                                            mov => true, 
+                                            ctx => BestMindSearTarget, 
+                                            ret => true, 
+                                            cancel => Me.HealthPercent < PriestSettings.ShadowFlashHeal ),
+
+                                        new PrioritySelector(
+                                            ctx => AoeTargets.FirstOrDefault(u => !u.HasAllMyAuras("Shadow Word: Pain", "Vampiric Touch")),
+                                            Spell.Buff("Vampiric Touch", on => (WoWUnit) on),
+                                            Spell.Buff("Shadow Word: Pain", on => (WoWUnit) on)
+                                            )
                                         )
                                     ),
 
-                                Spell.Cast("Mind Sear", 
-                                    mov => true, 
-                                    ctx => BestMindSearTarget, 
-                                    ret => true, 
-                                    cancel => Me.HealthPercent < PriestSettings.ShadowFlashHeal ),
+                                // Single target rotation
+                                Spell.BuffSelf( "Dispersion", req => Me.ManaPercent < PriestSettings.DispersionMana),
 
-                                new PrioritySelector(
-                                    ctx => AoeTargets.FirstOrDefault(u => !u.HasAllMyAuras("Shadow Word: Pain", "Vampiric Touch")),
-                                    Spell.Buff("Vampiric Touch", on => (WoWUnit) on),
-                                    Spell.Buff("Shadow Word: Pain", on => (WoWUnit) on)
-                                    )
-                                )
-                            ),
-
-                        // Single target rotation
-                        Spell.BuffSelf( "Dispersion", req => Me.ManaPercent < PriestSettings.DispersionMana),
-
-                        Spell.BuffSelf("Power Infusion", req => !Me.IsMoving && Spell.CanCastHack("Shadow Word: Pain", Me.CurrentTarget, skipWowCheck: true) && !Me.CurrentTarget.IsMoving),
+                                Spell.BuffSelf("Power Infusion", req => !Me.IsMoving && Spell.CanCastHack("Shadow Word: Pain", Me.CurrentTarget, skipWowCheck: true) && !Me.CurrentTarget.IsMoving),
                         
-                        Spell.Cast("Devouring Plague", req => OrbCount >= 3),
-                        CastMindBlast(),
+                                Spell.Cast("Devouring Plague", req => OrbCount >= 3),
+                                CastMindBlast(),
 
-                        Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20 && OrbCount < MaxOrbs),
-                        Spell.Cast("Mind Spike", ret => Me.HasAura(SURGE_OF_DARKNESS)),
-                        CastInsanity(),
-                        Spell.Buff("Shadow Word: Pain", 5, on => Me.CurrentTarget, req => true),
-                        Spell.Buff("Vampiric Touch", 4, on => Me.CurrentTarget, req => true),
-                        CastMindFlay()
+                                Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20 && OrbCount < MaxOrbs),
+                                Spell.Cast("Mind Spike", ret => Me.HasAura(SURGE_OF_DARKNESS)),
+                                CastInsanity(),
+                                Spell.Buff("Shadow Word: Pain", 5, on => Me.CurrentTarget, req => true),
+                                Spell.Buff("Vampiric Touch", 4, on => Me.CurrentTarget, req => true),
+                                CastMindFlay()
+                                )
+                            )
                         )
                     )
                 );

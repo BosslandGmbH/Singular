@@ -958,6 +958,14 @@ namespace Singular.Helpers
         }
 
 
+        public static bool HasShapeshiftAura(this WoWUnit unit, string auraName)
+        {
+            WoWAura aura = unit.GetAllAuras()
+                .Where(a => a.ApplyAuraType == WoWApplyAuraType.ModShapeshift && a.Name == auraName)
+                .FirstOrDefault();
+            return aura != null;
+        }
+
         public static bool IsNeutral(this WoWUnit unit)
         {
             return unit.GetReactionTowards(StyxWoW.Me) == WoWUnitReaction.Neutral;
@@ -1549,6 +1557,15 @@ namespace Singular.Helpers
         public List<WoWUnit> Mobs { get; set; }
 
         /// <summary>
+        /// maximum number of milliseconds that a damage record should be retained.
+        /// this is applicable only to tanks
+        /// </summary>
+        public float MaxAgeForDamage { get; set; }
+        public long AllDamage { get; set; }
+        public float RecentAgeForDamage { get; set; }
+        public long RecentDamage { get; set; }
+
+        /// <summary>
         /// 
         /// </summary>
         public float GcdTime { get; set; }
@@ -1557,11 +1574,12 @@ namespace Singular.Helpers
         {
         }
 
-        public CombatScenario( int range, float basegcd, CombatArea area = CombatArea.Radius )
+        public CombatScenario( int range, float basegcd, CombatArea area = CombatArea.Radius, float maxdmgtime = 0f)
         {
             Range = range;
             BaseGcd = basegcd;
             Area = area;
+            MaxAgeForDamage = maxdmgtime;
             Mobs = new List<WoWUnit>();                
         }
 
@@ -1628,6 +1646,14 @@ namespace Singular.Helpers
 
                 if (AvoidAOE)
                     MobCount = MobCount > 1 ? 1 : MobCount;
+            }
+
+            if (MaxAgeForDamage > 0)
+            {
+                long alld, recentd;
+                EventHandlers.GetRecentDamage(MaxAgeForDamage, out alld, RecentAgeForDamage, out recentd);
+                AllDamage = alld;
+                RecentDamage = recentd;
             }
 
             System.Diagnostics.Debug.Assert(Mobs != null);

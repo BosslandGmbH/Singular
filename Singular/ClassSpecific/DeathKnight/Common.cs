@@ -83,6 +83,7 @@ namespace Singular.ClassSpecific.DeathKnight
             talent.breath_of_sindragosa_enabled = Common.HasTalent(DeathKnightTalents.BreathOfSindragosa);
             talent.defile_enabled = Common.HasTalent(DeathKnightTalents.Defile);
             talent.unholy_blight_enabled = Common.HasTalent(DeathKnightTalents.UnholyBlight);
+
             return null;
         }
 
@@ -836,19 +837,33 @@ namespace Singular.ClassSpecific.DeathKnight
         public static double unholy_blight_remains { get { return Spell.GetSpellCooldown("Unholy Blight").TotalSeconds; } }
     }
 
+    public static class obliterate
+    {
+        public static double ready_in
+        {
+            get
+            {
+                return 0;
+            }
+        }
+    }
     public static class talent
     {
         public static bool necrotic_plague_enabled { get; set; }
         public static bool breath_of_sindragosa_enabled { get; set; }
         public static bool defile_enabled { get; set; }
         public static bool unholy_blight_enabled { get; set; }
+
+        public static bool runic_empowerment_enabled { get; set; }
+
+        public static bool blood_tap_enabled { get; set; }
     }
 
     public static class disease
     {
         static string[] listbase = { "Blood Plague", "Frost Fever" };
         static string[] listwithnp = { "Necrotic Plague" };
-        static string[] diseaselist { get { return talent.necrotic_plague_enabled ? listwithnp : listbase;  } }
+        static string[] diseaselist { get { return talent.necrotic_plague_enabled ? listwithnp : listbase; } }
 
         public static bool ticking
         {
@@ -868,25 +883,61 @@ namespace Singular.ClassSpecific.DeathKnight
 
         public static bool ticking_on(WoWUnit unit)
         {
-            return unit.HasAnyOfMyAuras(diseaselist);
+            return unit.HasAllMyAuras(diseaselist);
         }
+
         public static double min_remains_on(WoWUnit unit)
         {
             double min = double.MaxValue;
             foreach (var s in diseaselist)
             {
-                if (SpellManager.HasSpell(s))
-                {
-                    double rmn = unit.GetAuraTimeLeft(s).TotalSeconds;
-                    if (rmn < min)
-                        min = rmn;
-                }
+                double rmn = unit.GetAuraTimeLeft(s).TotalSeconds;
+                if (rmn < min)
+                    min = rmn;
             }
 
             if (min == double.MaxValue)
                 min = 0;
 
             return min;
+        }
+
+        public static double max_remains
+        {
+            get
+            {
+                return max_remains_on(StyxWoW.Me.CurrentTarget);
+            }
+        }
+        public static double max_remains_on(WoWUnit unit)
+        {
+            double max = double.MinValue;
+            foreach (var s in diseaselist)
+            {
+                double rmn = unit.GetAuraTimeLeft(s).TotalSeconds;
+                if (rmn > max)
+                    max = rmn;
+            }
+
+            if (max == double.MinValue)
+                max = 0;
+
+            return max;
+        }
+
+        public static bool min_ticking { get { return ticking; } }
+
+        public static bool max_ticking
+        {
+            get
+            {
+                return max_ticking_on(StyxWoW.Me.CurrentTarget);
+            }
+        }
+
+        private static bool max_ticking_on(WoWUnit unit)
+        {
+            return unit.HasAnyOfMyAuras(diseaselist);
         }
     }
 

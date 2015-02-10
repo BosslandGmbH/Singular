@@ -1036,8 +1036,8 @@ namespace Singular.Helpers
             string key = DoubleCastKey(unit.Guid, spellName);
             if (_DoubleCastPreventionDict.ContainsKey(key))
                 _DoubleCastPreventionDict[key] = expir;
-
-            _DoubleCastPreventionDict.Add(key, expir);
+            else
+                _DoubleCastPreventionDict.Add(key, expir);
         }
 
 
@@ -1379,6 +1379,34 @@ namespace Singular.Helpers
         {
             return BuffSelfAndWait(b => name, requirements, expirSecs, until, measure, gcd);
         }
+
+        public static Composite BuffSelfAndWait(int id, SimpleBooleanDelegate requirements = null, HasGcd gcd = HasGcd.Yes)
+        {
+            WoWSpell spell = WoWSpell.FromId(id);
+            if (spell == null || !SpellManager.HasSpell(spell.Id))
+                return new ActionAlwaysFail();
+
+            if (requirements == null)
+                requirements = req => true;
+
+            return new Sequence(
+                BuffSelf(idd => id, requirements, gcd),
+                new PrioritySelector(
+                    new DynaWait(
+                        time => TimeSpan.FromMilliseconds(Me.Combat ? 500 : 1000),
+                        until => StyxWoW.Me.HasAura(id),
+                        new ActionAlwaysSucceed()
+                        ),
+                    new Action(r =>
+                    {
+                        WoWSpell s = WoWSpell.FromId(id);
+                        Logger.WriteDiagnostic("BuffSelfAndWait: aura [{0}] #{1} not applied!!!", s == null ? "(null)" : s.Name, id);
+                        return RunStatus.Failure;
+                    })
+                    )
+                );
+        }
+
         public static Composite BuffSelfAndWait(SimpleStringDelegate name, SimpleBooleanDelegate requirements = null, int expirSecs = 0, CanRunDecoratorDelegate until = null, bool measure = false, HasGcd gcd = HasGcd.Yes)
         {
             if (requirements == null)
@@ -1405,29 +1433,35 @@ namespace Singular.Helpers
                 );
         }
 
-        public static Composite BuffSelfAndWait( int id, SimpleBooleanDelegate requirements = null, HasGcd gcd = HasGcd.Yes)
+        public static Composite BuffSelfAndWaitPassive(SimpleStringDelegate name, SimpleBooleanDelegate requirements = null, int expirSecs = 0, CanRunDecoratorDelegate until = null, HasGcd gcd = HasGcd.Yes)
         {
-            WoWSpell spell = WoWSpell.FromId(id);
-            if (spell == null || !SpellManager.HasSpell(spell.Id))
-                return new ActionAlwaysFail();
-
             if (requirements == null)
                 requirements = req => true;
 
-            return new Sequence(
-                BuffSelf(idd => id, requirements, gcd),
-                new PrioritySelector(
-                    new DynaWait(
-                        time => TimeSpan.FromMilliseconds(Me.Combat ? 500 : 1000),
-                        until => StyxWoW.Me.HasAura(id),
-                        new ActionAlwaysSucceed()
-                        ),
-                    new Action(r =>
-                    {
-                        WoWSpell s = WoWSpell.FromId(id);
-                        Logger.WriteDiagnostic("BuffSelfAndWait: aura [{0}] #{1} not applied!!!", s == null ? "(null)" : s.Name, id);
-                        return RunStatus.Failure;
-                    })
+            if (until == null)
+                until = u => StyxWoW.Me.HasAura(name(u));
+
+            return new PrioritySelector(
+                ctx => name(ctx),
+                new Decorator(
+                    req => SpellManager.HasSpell( req as string)
+                        && !Me.HasAura(req as string)
+                        && !DoubleCastContains(Me, req as string),
+                    new Sequence(
+                        Spell.Cast( sp => sp as string, mov => true, on => Me, requirements, cancel => false, LagTolerance.Yes, false, null, gcd: gcd),
+                        new PrioritySelector(
+                            new DynaWait(
+                                time => TimeSpan.FromMilliseconds(Me.Combat ? 500 : 1000),
+                                until,
+                                new Action( r => UpdateDoubleCast( r as string, Me, 3000 ))
+                                ),
+                            new Action(r =>
+                            {
+                                Logger.WriteDiagnostic("BuffSelfAndWaitPassive: buff of [{0}] failed", name(r));
+                                return RunStatus.Failure;
+                            })
+                            )
+                        )
                     )
                 );
         }

@@ -235,10 +235,8 @@ namespace Singular.ClassSpecific.DeathKnight
         [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightFrost, WoWContext.Instances)]
         public static Composite CreateDeathKnightFrostInstanceCombat()
         {
-            /*
             if (Me.Level >= 100)
                 return CreateDeathKnightInstanceCombatSimc();
-            */
 
             return new PrioritySelector(
 
@@ -300,45 +298,6 @@ namespace Singular.ClassSpecific.DeathKnight
                 // Defile Ground around target
                 Spell.CastOnGround("Defile", on => Me.CurrentTarget, req => Spell.UseAOE && Me.GotTarget() && !Me.CurrentTarget.IsMoving, false),
 
-                // Diseases
-                Common.CreateApplyDiseases(),
-
-                // Frost Strike if RP capped
-                Spell.Cast("Frost Strike", ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.CurrentRunicPower >= 89 ),
-
-                // Obliterate when Killing Machine is procced and both diseases are on the target
-                Spell.Cast("Obliterate", req => Me.HasAura(KillingMachine) && Me.CurrentTarget.HasAura("Frost Fever") && Me.CurrentTarget.HasAura("Blood Plague")),
-
-                // Obliterate When any runes are capped
-                Spell.Cast("Obliterate", req => Common.BloodRuneSlotsActive >= 2 || Common.FrostRuneSlotsActive >= 2 || Common.UnholyRuneSlotsActive >= 2),
-
-                // Frost Strike 
-                Spell.Cast("Frost Strike", ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
-
-                // Howling Blast if Rime procced
-                Spell.Cast(sp => Spell.UseAOE ? "Howling Blast" : "Icy Touch", mov => false, on => Me.CurrentTarget, req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.HasAura("Freezing Fog")),
-
-                // Frost Strike
-                Spell.Cast("Frost Strike"),
-
-                // Obliterate
-                Spell.Cast("Obliterate"),
-
-                // Plague Leech
-                Spell.Cast("Plague Leech", req => Common.CanCastPlagueLeech)
-                );
-
-        }
-        private static Composite MopCreateFrostSingleTarget2H()
-        {
-            return new PrioritySelector(
-
-                // Soul Reaper when target below 35%
-                Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
-
-                // Defile Ground around target
-                Spell.CastOnGround("Defile", on => Me.CurrentTarget, req => Spell.UseAOE && Me.GotTarget() && !Me.CurrentTarget.IsMoving, false),
-
                 // Obliterate when Killing Machine is procced and both diseases are on the target
                 Spell.Cast("Obliterate", req => Me.HasAura(KillingMachine) && Me.CurrentTarget.HasAura("Frost Fever") && Me.CurrentTarget.HasAura("Blood Plague")),
 
@@ -368,60 +327,8 @@ namespace Singular.ClassSpecific.DeathKnight
 
         private static Composite CreateFrostSingleTargetDW()
         {           
-            if (false)
-                return MopCreateFrostSingleTargetDW();
-
             return new PrioritySelector(
 
-                // Soul Reaper when target below 35%
-                Spell.Cast("Soul Reaper", req => Me.CurrentTarget.HealthPercent < 35),
-
-                // Defile Ground around target
-                Spell.CastOnGround("Defile", on => Me.CurrentTarget, req => Spell.UseAOE && Me.GotTarget() && !Me.CurrentTarget.IsMoving, false),
-
-                // Maintain Diseases
-                Common.CreateApplyDiseases(),
-
-                // Frost Strike if Killing Machine is procced, or if RP is 89 or higher
-                Spell.Cast("Frost Strike", 
-                    ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)
-                        && (Me.CurrentRunicPower >= 89 || Me.HasAura(KillingMachine))),
-                                
-                // Howling Blast with both frost or both death off cooldown
-                Spell.Cast( sp => Spell.UseAOE ? "Howling Blast" : "Icy Touch", mov => false, on => Me.CurrentTarget, req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && (Common.FrostRuneSlotsActive == 2 || Me.DeathRuneCount >= 2)),
-
-                // Plague Strike if one Unholy Rune is off cooldown and blood plague is down/nearly down
-                Spell.Cast("Plague Strike", req => Common.UnholyRuneSlotsActive == 1 && Me.CurrentTarget.HasAuraExpired("Blood Plague")),
-
-                // Howling Blast if Rime procced
-                Spell.Cast( sp => Spell.UseAOE ? "Howling Blast" : "Icy Touch", mov => false, on => Me.CurrentTarget, req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.HasAura("Freezing Fog")),
-
-                // Frost Strikeif RP is 77 or higher
-                Spell.Cast("Frost Strike", req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.CurrentRunicPower >= 77),
-
-                // Obliterate when 1 or more Unholy Runes are off cooldown and killing machine is down
-                Spell.Cast("Obliterate", req => !Me.HasAura(KillingMachine) && Common.UnholyRuneSlotsActive >= 1),
-
-                // Howling Blast
-                Spell.Cast( sp => Spell.UseAOE ? "Howling Blast" : "Icy Touch", mov => false, on => Me.CurrentTarget, req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
-
-                // Blood Tap
-                Spell.BuffSelf("Blood Tap", req => Common.NeedBloodTap()),
-
-                // Frost Strikeif RP is 40 or higher
-                Spell.Cast("Frost Strike", req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.CurrentRunicPower >= 40),
-
-                // Plague Leech
-                Spell.Cast("Plague Leech", req => Common.CanCastPlagueLeech),
-
-                // Empower Rune Weapon
-                Spell.BuffSelf("Empower Rune Weapon")
-                );
-        }
-
-        private static Composite MopCreateFrostSingleTargetDW()
-        {
-            return new PrioritySelector(
                 // Blood Tap if you have 11 or more stacks of blood charge
                 // in CombatBuffs
 
@@ -508,7 +415,10 @@ namespace Singular.ClassSpecific.DeathKnight
             }
         }
 
-        /*
+        /// <summary>
+        /// instance priority as defined by SimulationCraft default profile for 1H and 2H
+        /// </summary>
+        /// <returns></returns>
         private static Composite CreateDeathKnightInstanceCombatSimc()
         {
 
@@ -571,8 +481,6 @@ namespace Singular.ClassSpecific.DeathKnight
                 // actions+=/arcane_torrent
                 Spell.BuffSelfAndWait("Arcane Torrent"),
                 // actions+=/run_action_list,name=aoe,if=active_enemies>=3
-                // actions+=/run_action_list,name=single_target,if=active_enemies<3
-                // 
                 new Decorator(
                     req => Common.scenario.MobCount >= 3,
                     new PrioritySelector(
@@ -615,6 +523,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         )
                     ),
 
+                // actions+=/run_action_list,name=single_target,if=active_enemies<3
                 new Decorator(
                     req => Common.scenario.MobCount < 3,
                     new PrioritySelector(
@@ -782,8 +691,12 @@ namespace Singular.ClassSpecific.DeathKnight
                         // actions.aoe+=/plague_strike,if=unholy==1
                         Spell.Buff("Plague Strike", req => unholy==1),
                         // actions.aoe+=/empower_rune_weapon
-                        Spell.BuffSelf("Empower Rune Weapon"),
-                        // 
+                        Spell.BuffSelf("Empower Rune Weapon")
+                        )
+                    ),
+                new Decorator(
+                    req => Common.scenario.MobCount < 4,
+                    new PrioritySelector(
                         // actions.single_target==plague_leech,if=disease.min_remains<1
                         Spell.Cast("Plague Leech", req => disease.min_remains<1),
                         // actions.single_target+=/soul_reaper,if=target.health_pct-3*(target.health_pct%target.time_to_die)<=35
@@ -794,14 +707,14 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.CastOnGround("Defile", on => Me.CurrentTarget, req => true),
                         // actions.single_target+=/blood_tap,if=talent.defile_enabled&&cooldown.defile_remains==0
                         Spell.Cast("Blood Tap", req => talent.defile_enabled&&cooldown.defile_remains==0),
-                        // actions.single_target+=/howling_blast,if=buff.rime.react&&disease.min_remains>5&&buff.killing_machine.react
-                        Spell.Cast("Howling Blast", req => buff.rime.react&&disease.min_remains>5&&buff.killing_machine.react),
-                        // actions.single_target+=/obliterate,if=buff.killing_machine.react
-                        Spell.Cast("Obliterate", req => buff.killing_machine.react),
-                        // actions.single_target+=/blood_tap,if=buff.killing_machine.react
-                        Spell.Cast("Blood Tap", req => buff.killing_machine.react),
-                        // actions.single_target+=/howling_blast,if=!talent.necrotic_plague_enabled&&!dot.frost_fever_ticking&&buff.rime.react
-                        Spell.Cast("Howling Blast", req => !talent.necrotic_plague_enabled&&!dot.frost_fever_ticking&&buff.rime.react),
+                        // actions.single_target+=/howling_blast,if=buff.rime_react&&disease.min_remains>5&&buff.killing_machine_react
+                        Spell.Cast("Howling Blast", req => buff.rime_react&&disease.min_remains>5&&buff.killing_machine_react),
+                        // actions.single_target+=/obliterate,if=buff.killing_machine_react
+                        Spell.Cast("Obliterate", req => buff.killing_machine_react),
+                        // actions.single_target+=/blood_tap,if=buff.killing_machine_react
+                        Spell.Cast("Blood Tap", req => buff.killing_machine_react),
+                        // actions.single_target+=/howling_blast,if=!talent.necrotic_plague_enabled&&!dot.frost_fever_ticking&&buff.rime_react
+                        Spell.Cast("Howling Blast", req => !talent.necrotic_plague_enabled&&!dot.frost_fever_ticking&&buff.rime_react),
                         // actions.single_target+=/outbreak,if=!disease.max_ticking
                         Spell.Cast("Outbreak", req => !disease.max_ticking),
                         // actions.single_target+=/unholy_blight,if=!disease.min_ticking
@@ -827,26 +740,26 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.Cast("Blood Tap", req => buff.blood_charge_stack>10&&runic_power>76),
                         // actions.single_target+=/frost_strike,if=runic_power>76
                         Spell.Cast("Frost Strike", req => runic_power>76),
-                        // actions.single_target+=/howling_blast,if=buff.rime.react&&disease.min_remains>5&&(blood.frac>=1.8||unholy.frac>=1.8||frost.frac>=1.8)
-                        Spell.Cast("Howling Blast", req => buff.rime.react&&disease.min_remains>5&&(blood.frac>=1.8||unholy.frac>=1.8||frost.frac>=1.8)),
-                        // actions.single_target+=/obliterate,if=blood.frac>=1.8||unholy.frac>=1.8||frost.frac>=1.8
-                        Spell.Cast("Obliterate", req => blood.frac>=1.8||unholy.frac>=1.8||frost.frac>=1.8),
-                        // actions.single_target+=/plague_leech,if=disease.min_remains<3&&((blood.frac<=0.95&&unholy.frac<=0.95)||(frost.frac<=0.95&&unholy.frac<=0.95)||(frost.frac<=0.95&&blood.frac<=0.95))
-                        Spell.Cast("Plague Leech", req => disease.min_remains<3&&((blood.frac<=0.95&&unholy.frac<=0.95)||(frost.frac<=0.95&&unholy.frac<=0.95)||(frost.frac<=0.95&&blood.frac<=0.95))),
-                        // actions.single_target+=/frost_strike,if=talent.runic_empowerment_enabled&&(frost==0||unholy==0||blood==0)&&(!buff.killing_machine.react||!obliterate.ready_in<=1)
-                        Spell.Cast("Frost Strike", req => ),
-                        // actions.single_target+=/frost_strike,if=talent.blood_tap_enabled&&buff.blood_charge_stack<=10&&(!buff.killing_machine.react||!obliterate.ready_in<=1)
-                        Spell.Cast("Frost Strike", req => ),
-                        // actions.single_target+=/howling_blast,if=buff.rime.react&&disease.min_remains>5
-                        Spell.Cast("Howling Blast", req => ),
-                        // actions.single_target+=/obliterate,if=blood.frac>=1.5||unholy.frac>=1.6||frost.frac>=1.6||buff.bloodlust.up||cooldown.plague_leech_remains<=4
-                        Spell.Cast("Obliterate", req => ),
-                        // actions.single_target+=/blood_tap,if=(buff.blood_charge_stack>10&&runic_power>=20)||(blood.frac>=1.4||unholy.frac>=1.6||frost.frac>=1.6)
-                        Spell.Cast("Blood Tap", req => ),
-                        // actions.single_target+=/frost_strike,if=!buff.killing_machine.react
-                        Spell.Cast("Frost Strike", req => ),
-                        // actions.single_target+=/plague_leech,if=(blood.frac<=0.95&&unholy.frac<=0.95)||(frost.frac<=0.95&&unholy.frac<=0.95)||(frost.frac<=0.95&&blood.frac<=0.95)
-                        Spell.Cast("Plague Leech", req => ),
+                        // actions.single_target+=/howling_blast,if=buff.rime_react&&disease.min_remains>5&&(blood_frac>=1.8||unholy_frac>=1.8||frost_frac>=1.8)
+                        // Spell.Cast("Howling Blast", req => buff.rime_react&&disease.min_remains>5&&(blood_frac>=1.8||unholy_frac>=1.8||frost_frac>=1.8)),
+                        // actions.single_target+=/obliterate,if=blood_frac>=1.8||unholy_frac>=1.8||frost_frac>=1.8
+                        // Spell.Cast("Obliterate", req => blood_frac>=1.8||unholy_frac>=1.8||frost_frac>=1.8),
+                        // actions.single_target+=/plague_leech,if=disease.min_remains<3&&((blood_frac<=0.95&&unholy_frac<=0.95)||(frost_frac<=0.95&&unholy_frac<=0.95)||(frost_frac<=0.95&&blood_frac<=0.95))
+                        // Spell.Cast("Plague Leech", req => disease.min_remains<3&&((blood_frac<=0.95&&unholy_frac<=0.95)||(frost_frac<=0.95&&unholy_frac<=0.95)||(frost_frac<=0.95&&blood_frac<=0.95))),
+                        // actions.single_target+=/frost_strike,if=talent.runic_empowerment_enabled&&(frost==0||unholy==0||blood==0)&&(!buff.killing_machine_react||!obliterate.ready_in<=1)
+                        //Spell.Cast("Frost Strike", req => talent.runic_empowerment_enabled&&(frost==0||unholy==0||blood==0)&&(!buff.killing_machine_react||!obliterate.ready_in<=1)),
+                        // actions.single_target+=/frost_strike,if=talent.blood_tap_enabled&&buff.blood_charge_stack<=10&&(!buff.killing_machine_react||!obliterate.ready_in<=1)
+                        //Spell.Cast("Frost Strike", req => talent.blood_tap_enabled&&buff.blood_charge_stack<=10&&(!buff.killing_machine_react||!obliterate.ready_in<=1)),
+                        // actions.single_target+=/howling_blast,if=buff.rime_react&&disease.min_remains>5
+                        Spell.Cast("Howling Blast", req => buff.rime_react&&disease.min_remains>5),
+                        // actions.single_target+=/obliterate,if=blood_frac>=1.5||unholy_frac>=1.6||frost_frac>=1.6||buff.bloodlust.up||cooldown.plague_leech_remains<=4
+                        // Spell.Cast("Obliterate", req => blood_frac>=1.5||unholy_frac>=1.6||frost_frac>=1.6||buff.bloodlust.up||cooldown.plague_leech_remains<=4),
+                        // actions.single_target+=/blood_tap,if=(buff.blood_charge_stack>10&&runic_power>=20)||(blood_frac>=1.4||unholy_frac>=1.6||frost_frac>=1.6)
+                        // Spell.Cast("Blood Tap", req => (buff.blood_charge_stack>10&&runic_power>=20)||(blood_frac>=1.4||unholy_frac>=1.6||frost_frac>=1.6)),
+                        // actions.single_target+=/frost_strike,if=!buff.killing_machine_react
+                        Spell.Cast("Frost Strike", req => !buff.killing_machine_react),
+                        // actions.single_target+=/plague_leech,if=(blood_frac<=0.95&&unholy_frac<=0.95)||(frost_frac<=0.95&&unholy_frac<=0.95)||(frost_frac<=0.95&&blood_frac<=0.95)
+                        // Spell.Cast("Plague Leech", req => (blood_frac<=0.95&&unholy_frac<=0.95)||(frost_frac<=0.95&&unholy_frac<=0.95)||(frost_frac<=0.95&&blood_frac<=0.95)),
                         // actions.single_target+=/empower_rune_weapon
                         Spell.Cast("Empower Rune Weapon"),
 
@@ -862,30 +775,49 @@ namespace Singular.ClassSpecific.DeathKnight
 
         private static Composite CreateFrostSingleTarget2H_bos_st()
         {
-            // actions.bos_st==obliterate,if=buff.killing_machine.react
-            // actions.bos_st+=/blood_tap,if=buff.killing_machine.react&&buff.blood_charge_stack>=5
-            // actions.bos_st+=/plague_leech,if=buff.killing_machine.react
-            // actions.bos_st+=/blood_tap,if=buff.blood_charge_stack>=5
-            // actions.bos_st+=/plague_leech
-            // actions.bos_st+=/obliterate,if=runic_power<76
-            // actions.bos_st+=/howling_blast,if=((death==1&&frost==0&&unholy==0)||death==0&&frost==1&&unholy==0)&&runic_power<88
-            // 
+            return new PrioritySelector(
+                // actions.bos_st==obliterate,if=buff.killing_machine_react
+                Spell.Cast("Obliterate", req =>buff.killing_machine_react),
+                // actions.bos_st+=/blood_tap,if=buff.killing_machine_react&&buff.blood_charge_stack>=5
+                Spell.Cast("Blood Tap", req =>buff.killing_machine_react&&buff.blood_charge_stack>=5),
+                // actions.bos_st+=/plague_leech,if=buff.killing_machine_react
+                Spell.Cast("Plague Leech", req =>buff.killing_machine_react),
+                // actions.bos_st+=/blood_tap,if=buff.blood_charge_stack>=5
+                Spell.Cast("Blood Tap", req =>buff.blood_charge_stack>=5),
+                // actions.bos_st+=/plague_leech
+                Spell.Cast("Plague Leech"),
+                // actions.bos_st+=/obliterate,if=runic_power<76
+                Spell.Cast("Obliterate", req =>runic_power<76),
+                // actions.bos_st+=/howling_blast,if=((death==1&&frost==0&&unholy==0)||death==0&&frost==1&&unholy==0)&&runic_power<88
+                Spell.Cast("Howling Blast", req =>((death==1&&frost==0&&unholy==0)||death==0&&frost==1&&unholy==0)&&runic_power<88),
+
+                new ActionAlwaysFail()
+                );
         }
 
         private static Composite CreateFrost2H_bos_aoe()
         {
-            // actions.bos_aoe==howling_blast
-            // actions.bos_aoe+=/blood_tap,if=buff.blood_charge_stack>10
-            // actions.bos_aoe+=/death_and_decay,if=unholy==1
-            // actions.bos_aoe+=/plague_strike,if=unholy==2
-            // actions.bos_aoe+=/blood_tap
-            // actions.bos_aoe+=/plague_leech
-            // actions.bos_aoe+=/plague_strike,if=unholy==1
-            // actions.bos_aoe+=/empower_rune_weapon
-            // 
+            return new PrioritySelector(               
+                // actions.bos_aoe==howling_blast
+                Spell.Cast("Howling Blast"),
+                // actions.bos_aoe+=/blood_tap,if=buff.blood_charge_stack>10
+                Spell.Cast("Blood Tap", req =>buff.blood_charge_stack>10),
+                // actions.bos_aoe+=/death_and_decay,if=unholy==1
+                Spell.CastOnGround("Death and Decay", on => Me.CurrentTarget, req =>unholy==1),
+                // actions.bos_aoe+=/plague_strike,if=unholy==2
+                Spell.Cast("Plague Strike", req =>unholy==2),
+                // actions.bos_aoe+=/blood_tap
+                Spell.Cast("Blood Tap"),
+                // actions.bos_aoe+=/plague_leech
+                Spell.Cast("Plague Leech"),
+                // actions.bos_aoe+=/plague_strike,if=unholy==1
+                Spell.Cast("Plague Strike", req =>unholy==1),
+                // actions.bos_aoe+=/empower_rune_weapon
+                Spell.Cast("Empower Rune Weapon"),
+                // 
+                new ActionAlwaysFail()
+                );
         }
-
-        */
 
         public static class set_bonus
         {

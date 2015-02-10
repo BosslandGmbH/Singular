@@ -552,7 +552,7 @@ namespace Singular
                 {
                     _lastPetGuid = Me.Pet.Guid;
                     _lastPetAlive = Me.Pet.IsAlive;
-                    Logger.WriteDebug("YourCurrentPet: #{0}, Name={1}, Level={2}, Type={3}, Talents={4}", Me.PetNumber, Me.Pet.Name, Me.Pet.Level, Me.Pet.CreatureType, PetManager.GetPetTalentTree());
+                    Logger.WriteDebug("YourCurrentPet: #{0}, Name={1}, Level={2}, Type={3}, Talents={4}", Me.PetNumber, Me.Pet.SafeName(), Me.Pet.Level, Me.Pet.CreatureType, PetManager.GetPetTalentTree());
                 }
 
                 // now check pets target

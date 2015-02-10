@@ -16,6 +16,7 @@ using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using System.Drawing;
 using CommonBehaviors.Actions;
+using System.Collections.Generic;
 
 namespace Singular.ClassSpecific.Hunter
 {
@@ -143,8 +144,58 @@ namespace Singular.ClassSpecific.Hunter
 				Spell.Cast("Glaive Toss"),
 				Spell.Cast("Multi-Shot", req => Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 6),
 				Spell.Cast("Aimed Shot", ret => Me.HasAura("Thrill of the Hunt")),
-				Spell.Cast("Barrage"),
-				Spell.Cast("Steady Shot", req => TalentManager.IsSelected(10) && Me.HasKnownAuraExpired("Steady Focus", 2)),
+
+                Spell.Cast(
+                    "Barrage",
+                    on =>
+                    {
+                        if (!Spell.UseAOE)
+                            return null;
+
+                        // Does not require CurrentTarget to be non=null
+                        WoWPoint loc = WoWPoint.RayCast(Me.Location, Me.RenderFacing, 30f);
+                        IEnumerable<WoWUnit> ienum = Clusters.GetConeCluster(loc, 60f, 42f, Unit.UnfriendlyUnits(50));
+                        int cntCC = 0;
+                        int cntTarget = 0;
+                        int cntNeutral = 0;
+                        WoWUnit target = null;
+
+                        foreach (WoWUnit u in ienum)
+                        {
+                            cntTarget++;
+                            if (u.IsCrowdControlled())
+                                cntCC++;
+                            if (!u.Combat && !u.IsTrivial() && !u.Aggro && !u.PetAggro && !(u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))
+                                cntNeutral++;
+                            if (target == null)
+                                target = u;
+                            if (Me.CurrentTargetGuid == u.Guid)
+                                target = u;
+                        }
+
+                        if (cntNeutral > 0)
+                        {
+                            Logger.WriteDebug("Barrage: skipping, {0} additional targets would be pulled", cntNeutral);
+                            return null;
+                        }
+
+                        if (cntCC > 0)
+                        {
+                            Logger.WriteDebug("Barrage: skipping, {0} crowd controlled targets", cntCC);
+                            return null;
+                        }
+
+                        if (cntTarget == 0)
+                        {
+                            Logger.WriteDebug("Barrage: skipping, no targets would be hit");
+                            return null;
+                        }
+
+                        return target;
+                    }
+                    ),
+
+                Spell.Cast("Steady Shot", req => TalentManager.IsSelected(10) && Me.HasKnownAuraExpired("Steady Focus", 2)),
 				Common.CreateHunterTrapBehavior("Explosive Trap", true, onUnit => Me.CurrentTarget, req => Unit.UnfriendlyUnitsNearTarget(10f).Any()),
 				Spell.Cast("Aimed Shot"),
 				Spell.Cast("Focusing Shot"),

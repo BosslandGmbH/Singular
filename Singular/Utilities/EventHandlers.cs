@@ -25,6 +25,9 @@ namespace Singular.Utilities
 {
     public static class EventHandlers
     {
+        public static Queue<Damage> DamageHistory { get; set; }
+        public static bool TrackDamage { get; set; }
+
         private static bool _combatLogAttached;
         private static bool _combatFilterAdded;
 
@@ -37,6 +40,9 @@ namespace Singular.Utilities
             LastLineOfSightFailure = DateTime.MinValue;
             LastUnitNotInfrontFailure = DateTime.MinValue;
             SuppressShapeshiftUntil = DateTime.MinValue;
+
+            // reset the damage history
+            DamageHistory = new Queue<Damage>(50);
 
             // hook combat log event if we are debugging or not in performance critical circumstance
             if (SingularSettings.Debug || (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds && !StyxWoW.Me.CurrentMap.IsRaid))
@@ -165,14 +171,22 @@ namespace Singular.Utilities
                     + " and args[4] ~= args[8]"
                     + " and bit.band(args[6], COMBATLOG_OBJECT_CONTROL_PLAYER) > 0"
                     + " and 'Player' == args[4]:sub(1,6)"
-                    + " and (args[2] == 'SPELL_DAMAGE' or args[2] == 'RANGE_DAMAGE' or args[2] == 'SWING_DAMAGE')"
+                    + " and (args[2] == 'SPELL_DAMAGE' or args[2] == 'SPELL_PERIODIC_DAMAGE' or args[2] == 'RANGE_DAMAGE' or args[2] == 'SWING_DAMAGE')"
                     + ")"
                     + " or";
                 // filterCriteria += " (args[8] == UnitGUID('player') and args[8] ~= args[4] and 0x000 == bit.band(tonumber('0x'..strsub(guid, 3,5)),0x00f)) or";
             }
-            else if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+            else if (SingularRoutine.CurrentWoWContext == WoWContext.Instances && TankManager.NeedTankTargeting)
+            {
                 filterCriteria +=
-                    " (args[2] == 'UNIT_DIED') or";
+                    " ("
+                    + " args[8] == " + "'" + myGuid + "'"
+                    + " and args[4] ~= " + "'" + myGuid + "'"
+                    + " and (args[2] == 'SPELL_DAMAGE' or args[2] == 'SPELL_PERIODIC_DAMAGE' or args[2] == 'RANGE_DAMAGE' or args[2] == 'SWING_DAMAGE')"
+                    + ")"
+                    + " or";
+                // filterCriteria += " (args[8] == UnitGUID('player') and args[8] ~= args[4] and 0x000 == bit.band(tonumber('0x'..strsub(guid, 3,5)),0x00f)) or";
+            }
 
             // standard portion of filter
             filterCriteria += 
@@ -225,14 +239,14 @@ namespace Singular.Utilities
             // convert args to usable form
             var e = new CombatLogEventArgs(args.EventName, args.FireTimeStamp, args.Args);
 
-            if (e.DestGuid == StyxWoW.Me.Guid)
+            if (e.DestGuid == StyxWoW.Me.Guid && e.SourceGuid != StyxWoW.Me.Guid)
             {
-                Logger.WriteDiagnostic("GankDetect: received {0} src={1} dst={2}", args.EventName, e.SourceGuid, e.DestGuid);
-                if (e.SourceGuid != StyxWoW.Me.Guid)
+                if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
                 {
                     WoWUnit enemy = e.SourceUnit;
                     if (Unit.ValidUnit(enemy) && enemy.IsPlayer)
                     {
+                        Logger.WriteDiagnostic("GankDetect: received {0} src={1} dst={2}", args.EventName, e.SourceGuid, e.DestGuid);
                         AttackingEnemyPlayer = enemy;
                         LastAttackedByEnemyPlayer = DateTime.Now;
 
@@ -244,12 +258,40 @@ namespace Singular.Utilities
                                 extra = string.Format(" using {0}", e.SpellName);
 
                             Logger.WriteDiagnostic("GankDetect: attacked by Level {0} {1}{2}", enemy.Level, enemy.SafeName(), extra);
-                            if ( SingularSettings.Instance.TargetWorldPvpRegardless && (BotPoi.Current == null || BotPoi.Current.Guid != enemy.Guid))
+                            if (SingularSettings.Instance.TargetWorldPvpRegardless && (BotPoi.Current == null || BotPoi.Current.Guid != enemy.Guid))
                             {
-                                Logger.Write( LogColor.Hilite, "GankDetect: setting {0} as BotPoi Kill Target", enemy.SafeName());
+                                Logger.Write(LogColor.Hilite, "GankDetect: setting {0} as BotPoi Kill Target", enemy.SafeName());
                                 BotPoi.Current = new BotPoi(enemy, PoiType.Kill);
                             }
                         }
+                    }
+                }
+
+                if (TrackDamage)
+                {
+                    long damageAmount = 0;
+                    switch (e.EventName)
+                    {
+                        case "SWING_DAMAGE":
+                            damageAmount = (long)e.Args[11];
+                            Logger.WriteDebug("HandleCombatLog(Damage): {0} = {1}", e.EventName, damageAmount);
+                            break;
+
+                        case "SPELL_DAMAGE":
+                        case "SPELL_PERIODIC_DAMAGE":
+                        case "RANGE_DAMAGE":
+                            damageAmount = (long)e.Args[14];
+                            Logger.WriteDebug("HandleCombatLog(Damage): {0} = {1}", e.EventName, damageAmount);
+                            break;
+
+                        default:
+                            LogUndesirableEvent("On Character", e);
+                            break;
+                    }
+
+                    if (damageAmount > 0)
+                    {
+                        DamageHistory.Enqueue(new Damage(DateTime.UtcNow, damageAmount));
                     }
                 }
 
@@ -261,36 +303,7 @@ namespace Singular.Utilities
             switch (e.Event)
             {
                 default:
-                    if (SingularSettings.Debug)
-                    {
-                        string sourceName;
-                        string destName;
-                        try
-                        {
-                            sourceName = e.SourceUnit.SafeName();
-                        }
-                        catch
-                        {
-                            sourceName = "unknown";
-                        }
-                        try
-                        {
-                            destName = e.DestUnit.SafeName();
-                        }
-                        catch
-                        {
-                            destName = "unknown";
-                        }
-                        Logger.WriteDebug("[CombatLog] filter out {0} - {1} {2} - {3} {4} on {5} {6}",
-                            e.EventName,
-                            e.SourceGuid,
-                            sourceName,
-                            e.SpellName,
-                            e.SpellId,
-                            e.DestGuid,
-                            destName
-                            );
-                    }
+                    LogUndesirableEvent( "From Character", e );
                     break;
 
                 // spell_cast_failed only passes filter in Singular debug mode
@@ -449,6 +462,41 @@ namespace Singular.Utilities
                     {
                     }
                     break;
+            }
+        }
+
+        private static void LogUndesirableEvent(string p, CombatLogEventArgs e)
+        {
+            if (SingularSettings.Debug)
+            {
+                string sourceName;
+                string destName;
+                try
+                {
+                    sourceName = e.SourceUnit.SafeName();
+                }
+                catch
+                {
+                    sourceName = "unknown";
+                }
+                try
+                {
+                    destName = e.DestUnit.SafeName();
+                }
+                catch
+                {
+                    destName = "unknown";
+                }
+                Logger.WriteDiagnostic("Programmer Error - Combat Log Event {0}: filter out {1} - {2} {3} - {4} {5} on {6} {7}",
+                    p,
+                    e.EventName,
+                    e.SourceGuid,
+                    sourceName,
+                    e.SpellName,
+                    e.SpellId,
+                    e.DestGuid,
+                    destName
+                    );
             }
         }
 
@@ -651,6 +699,99 @@ namespace Singular.Utilities
             string cmd = string.Format("EndBoundTradeable('{0}')", argval);
             Logger.WriteDiagnostic("END_BOUND_TRADEABLE: confirm with \"{0}\"", cmd);
             Lua.DoString(cmd);
+        }
+        
+        /// <summary>
+        /// gets the damage occuring in the last maxage seconds.  removes damage
+        /// entries from queue older than maxage
+        /// </summary>
+        /// <param name="maxage">seconds to calculate damage received</param>
+        /// <returns>damage received</returns>
+        public static long GetRecentDamage(float maxage)
+        {
+            DateTime since = DateTime.UtcNow - TimeSpan.FromSeconds(maxage);
+            while (DamageHistory.Any())
+            { 
+                Damage next = DamageHistory.Peek();
+                if (next.Time >= since)
+                    break;
+
+                DamageHistory.Dequeue();
+            }
+
+            long sum = 0;
+            foreach ( var q in DamageHistory)
+            {
+                if (SingularSettings.Debug)
+                {
+                    if (q.Time < since)
+                    {
+                        Logger.WriteDebug("GetRecentDamage: Program Error: entry {0} {1:HH:mm:ss.FFFF} older than {2:HH:mm:ss.FFFF}", q.Amount, q.Time, since);
+                    }
+                }
+                sum += q.Amount;
+            }
+            return DamageHistory.Sum( v => v.Amount);
+        }
+    
+        /// <summary>
+        /// gets the damage occuring in the last maxage seconds.  removes damage
+        /// entries from queue older than maxage.  additionally calculates damage
+        /// at another time boundary less than maxage (referred to as recent)
+        /// </summary>
+        /// <param name="maxage">seconds to calculate damage received</param>
+        /// <param name="alldmg">damage received since maxage</param>
+        /// <param name="recentage">more recent timeframe</param>
+        /// <param name="recentdmg">damage since more recent timeframe</param>
+        public static void GetRecentDamage(float maxage, out long alldmg, float recentage, out long recentdmg)
+        {
+            DateTime now = DateTime.UtcNow;
+            DateTime sinceoldest = now - TimeSpan.FromSeconds(maxage);
+            DateTime sincerecent = now - TimeSpan.FromSeconds(recentage);
+
+            recentdmg = 0;
+            alldmg = 0;
+
+            if (DamageHistory == null)
+                return;
+
+            while (DamageHistory.Any())
+            {
+                Damage next = DamageHistory.Peek();
+                if (next.Time >= sinceoldest)
+                    break;
+
+                DamageHistory.Dequeue();
+            }
+
+            foreach (var q in DamageHistory)
+            {
+                alldmg += q.Amount;
+                if (q.Time < sincerecent)
+                    recentage += q.Amount;
+
+                if (SingularSettings.Debug)
+                {
+                    if (q.Time < sinceoldest)
+                    {
+                        Logger.WriteDebug("GetRecentDamage: Program Error: entry {0} {1:HH:mm:ss.FFFF} older than {2:HH:mm:ss.FFFF}", q.Amount, q.Time, sinceoldest);
+                    }
+                }
+            }
+
+            return;
+        }
+    }
+
+    public class Damage
+    {
+        public DateTime Time { get; set; }
+        public long Amount { get; set; }
+
+        public Damage( DateTime time, long amt)
+        {
+            Time = time;
+            Amount = amt;
         }
     }
 }

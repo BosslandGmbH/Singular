@@ -114,6 +114,8 @@ namespace Singular.ClassSpecific.Warlock
 
             #region CurrentTarget DoTs
 
+                        Common.CastCataclysm(),
+
                 // check two main DoTs so we cast based upon current state before we look at entering/leaving Metamorphosis
                         Spell.Cast("Corruption", req => !Me.HasAura("Metamorphosis") && Me.CurrentTarget.HasAuraExpired("Corruption", 3)),
                         new Throttle(1,
@@ -357,6 +359,8 @@ namespace Singular.ClassSpecific.Warlock
                         Pet.CreateCastPetAction("Felstorm")
                         ),
 */
+                    Common.CastCataclysm(),
+
                     new Decorator(
                         ret => Me.HasAura("Metamorphosis"),
                         new PrioritySelector(

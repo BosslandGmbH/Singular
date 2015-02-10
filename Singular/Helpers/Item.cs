@@ -228,7 +228,7 @@ namespace Singular.Helpers
                 new Decorator(
                     req => !StyxWoW.Me.Auras
                         .Any(aura => 
-                            !aura.Key.StartsWith("Flask of ")
+                            !aura.Key.Contains("Flask")
                             && !aura.Key.StartsWith("Enhanced ")
                             && !flaskAura.Contains( aura.Value.SpellId )
                             ), 
@@ -252,7 +252,7 @@ namespace Singular.Helpers
                                         ts => TimeSpan.FromMilliseconds(Math.Max(500, SingularRoutine.Latency * 2)),
                                         until => StyxWoW.Me.Auras
                                             .Any(aura => 
-                                                aura.Key.StartsWith("Flask of ")
+                                                aura.Key.Contains("Flask")
                                                 || aura.Key.StartsWith("Enhanced ")
                                                 || flaskAura.Contains( aura.Value.SpellId )
                                                 ),
@@ -507,9 +507,11 @@ namespace Singular.Helpers
             if (Me.Inventory.Equipped.Trinket2 != null)
                 Logger.WriteFile("Trinket2: {0} #{1}", Me.Inventory.Equipped.Trinket2.Name, Me.Inventory.Equipped.Trinket2.Entry);
 
+            WoWItem item;
             if (Me.Inventory.Equipped.Hands != null)
             {
-                WoWItem item = Me.Inventory.Equipped.Hands;
+                /*
+                item = Me.Inventory.Equipped.Hands;
                 if (!item.Usable)
                     Logger.WriteDiagnostic("Hands: {0} #{1} - are not usable and will be ignored", item.Name, item.Entry);
                 else 
@@ -520,6 +522,7 @@ namespace Singular.Helpers
                     else
                         Logger.WriteFile("Hands: {0} #{1} - found [{2}] and will use as per user settings", item.Name, item.Entry, itemSpell);
                 }
+                */
 
                 /*
                 // debug logic:  try another method to check for Engineering Tinkers
@@ -530,16 +533,16 @@ namespace Singular.Helpers
                         Logger.WriteFile("Hands (double check): {0} #{1} - found enchant [{2}] #{3} (debug info only)", item.Name, item.Entry, ench.Name, ench.Id);
                 }
                 */
+            }
 
-                item = Me.Inventory.Equipped.Waist;
-                if (item != null)
+            item = Me.Inventory.Equipped.Waist;
+            if (item != null)
+            {
+                foreach (var enchName in BeltEnchants)
                 {
-                    foreach (var enchName in BeltEnchants)
-                    {
-                        WoWItem.WoWItemEnchantment ench = item.GetEnchantment(enchName);
-                        if (ench != null)
-                            Logger.WriteFile("Belt (double check): {0} #{1} - found enchant [{2}] #{3} (debug info only)", item.Name, item.Entry, ench.Name, ench.Id);
-                    }
+                    WoWItem.WoWItemEnchantment ench = item.GetEnchantment(enchName);
+                    if (ench != null)
+                        Logger.WriteFile("Belt (double check): {0} #{1} - found enchant [{2}] #{3} (debug info only)", item.Name, item.Entry, ench.Name, ench.Id);
                 }
             }
         }

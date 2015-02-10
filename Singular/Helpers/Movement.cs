@@ -45,6 +45,10 @@ namespace Singular.Helpers
             return CreateMoveToLosBehavior(ret => Me.CurrentTarget);
         }
 
+        private static MoveResult _lastLossMoveResult;
+        private static WoWGuid _lastLossGuid;
+        private static DateTime _nextLossMessage = DateTime.MinValue;
+
         public static Composite CreateMoveToLosBehavior(UnitSelectionDelegate toUnit, bool stopInLoss = false)
         {
             return new Decorator(
@@ -53,13 +57,26 @@ namespace Singular.Helpers
                     && toUnit(ret) != null
                     && !toUnit(ret).IsMe
                     && !InLineOfSpellSight(toUnit(ret)),
-                new Sequence(
-                    new Action(ret => Logger.WriteDebug(Color.White, "MoveToLoss: moving to LoSS of {0} @ {1:F1} yds", toUnit(ret).SafeName(), toUnit(ret).Distance)),
-                    new Action(ret => Navigator.MoveTo(toUnit(ret).Location)),
-                    !stopInLoss
-                        ? new ActionAlwaysSucceed()
-                        : new Action(ret => StopMoving.InLosOfUnit(toUnit(ret)))
-                    )
+                new Action(ret =>
+                {
+                    WoWUnit unit = toUnit == null ? null : toUnit(ret);
+                    if (unit != null && !unit.IsMe && !InLineOfSpellSight(unit))
+                    {
+                        MoveResult moveRes = Navigator.MoveTo(unit.Location);
+                        if (unit.Guid != _lastLossGuid || moveRes != _lastLossMoveResult || DateTime.UtcNow > _nextLossMessage)
+                        {
+                            _lastLossGuid = unit.Guid;
+                            _lastLossMoveResult = moveRes;
+                            _nextLossMessage = DateTime.UtcNow + TimeSpan.FromMilliseconds(250);
+                            Logger.WriteDebug(Color.White, "MoveToLoss[{0}]: moving within LoSS of {1} @ {2:F1} yds", moveRes, unit.SafeName(), unit.SpellDistance());
+                        }
+
+                        if (moveRes != MoveResult.Failed && moveRes != MoveResult.PathGenerationFailed)
+                            return RunStatus.Success;
+                    }
+                    return RunStatus.Failure;
+                })
+
                 );
         }
 

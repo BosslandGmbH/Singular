@@ -388,9 +388,11 @@ namespace Singular.ClassSpecific
                                     return true;
                                 if (StyxWoW.Me.CurrentTarget.IsPlayer)
                                     return true;
-                                if (StyxWoW.Me.CurrentTarget.MaxHealth > (StyxWoW.Me.MaxHealth * 2))
+                                if (StyxWoW.Me.CurrentTarget.MaxHealth > (StyxWoW.Me.MaxHealth * 2) && StyxWoW.Me.CurrentTarget.CurrentHealth > StyxWoW.Me.CurrentHealth)
                                     return true;
                                 if (StyxWoW.Me.CurrentTarget.TappedByAllThreatLists)
+                                    return true;
+                                if (StyxWoW.Me.HealthPercent < SingularSettings.Instance.GarrisonAbilityHealth / 2)
                                     return true;
                             }
                         }

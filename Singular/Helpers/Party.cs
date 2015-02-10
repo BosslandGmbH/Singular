@@ -25,6 +25,7 @@ namespace Singular.Helpers
     /// masks to represent a single aura that provides buffs in multiple categories, such as 
     /// Arcane Brilliance being PartyBuff.Spellpower+PartyBuff.Crit
     /// </summary>
+    [Flags]
     public enum PartyBuffType
     {
         // from http://www.wowhead.com/guide=1100
@@ -34,11 +35,12 @@ namespace Singular.Helpers
         AttackPower = 1 << 2,    // Horn of Winter, Trueshot Aura, Battle Shout
         SpellPower = 1 << 3, // Arcane Brilliance, Dalaran Brilliance, Dark Intent, Still Water
         Haste = 1 << 4,  // Unholy Aura, Swiftblade's Cunning, Unleashed Rage, Crackling Howl, Serpent's Swiftness
-        SpellHaste = 1 << 5, // Moonkin Aura, Shadowform, Elemental Oath, Mind Quickening
-        Crit = 1 << 6,   // Leader of the Pack, Arcane Brilliance, Dalaran Brilliance, Legacy of the White Tiger, Bellowing Roar, Furious Howl, Terrifying Roar, Fearless Roar, Still Water
-        Mastery = 1 << 7, // Blessing of Might, Grace of Air, Roar of Courage, Spirit Beast Blessing
-        MultiStrike = 1 << 8,
-        Versatility = 1 << 9,
+        Crit = 1 << 5,   // Leader of the Pack, Arcane Brilliance, Dalaran Brilliance, Legacy of the White Tiger, Bellowing Roar, Furious Howl, Terrifying Roar, Fearless Roar, Still Water
+        Mastery = 1 << 6, // Blessing of Might, Grace of Air, Roar of Courage, Spirit Beast Blessing
+        MultiStrike = 1 << 7,
+        Versatility = 1 << 8,
+
+        All = Stats | Stamina | AttackPower | SpellPower | Haste | Crit | Mastery | MultiStrike | Versatility
     }
 
     public class PartyBuffEntry
@@ -73,7 +75,7 @@ namespace Singular.Helpers
             new PartyBuffEntry( "Strength of the Earth",              PartyBuffType.Stats ), 
 
             new PartyBuffEntry( "Power Word: Fortitude",              PartyBuffType.Stamina),
-            new PartyBuffEntry( "Blood Pact",                         PartyBuffType.Stamina | PartyBuffType.SpellPower ),
+            new PartyBuffEntry( "Blood Pact",                         PartyBuffType.Stamina),
             new PartyBuffEntry( "Commanding Shout",                   PartyBuffType.Stamina),
             new PartyBuffEntry( "Lone Wolf: Fortitude of the Bear",   PartyBuffType.Stamina),
             new PartyBuffEntry( "Invigorating Roar",                  PartyBuffType.Stamina),
@@ -86,9 +88,9 @@ namespace Singular.Helpers
             new PartyBuffEntry( "Trueshot Aura",                      PartyBuffType.AttackPower),
             new PartyBuffEntry( "Battle Shout",                       PartyBuffType.AttackPower),
 
-            new PartyBuffEntry( "Arcane Brilliance",                  PartyBuffType.SpellPower | PartyBuffType.Crit),
-            new PartyBuffEntry( "Dalaran Brilliance",                 PartyBuffType.SpellPower | PartyBuffType.Crit),
-            new PartyBuffEntry( "Dark Intent",                        PartyBuffType.SpellPower | PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Arcane Brilliance",                  PartyBuffType.SpellPower),
+            new PartyBuffEntry( "Dalaran Brilliance",                 PartyBuffType.SpellPower),
+            new PartyBuffEntry( "Dark Intent",                        PartyBuffType.SpellPower),
             new PartyBuffEntry( "Lone Wolf: Wisdom of the Serpent",   PartyBuffType.SpellPower | PartyBuffType.Crit),
             new PartyBuffEntry( "Still Water",                        PartyBuffType.SpellPower),
             new PartyBuffEntry( "Serpent's Cunning",                  PartyBuffType.SpellPower),
@@ -104,59 +106,57 @@ namespace Singular.Helpers
             new PartyBuffEntry( "Speed of the Swarm",                     PartyBuffType.Haste),
 
             new PartyBuffEntry( "Leader of the Pack",                 PartyBuffType.Crit),
-            // new PartyBuffEntry( "Arcane Brilliance",               new BuffCategory[] new PartyBuffEntry(PartyBuff.SpellPower | PartyBuff.Crit), // here for doc only... see SpellPower section
-            // new PartyBuffEntry( "Dalaran Brilliance",              new BuffCategory[] new PartyBuffEntry(PartyBuff.SpellPower | PartyBuff.Crit), // here for doc only... see SpellPower section
             new PartyBuffEntry( "Bellowing Roar",                     PartyBuffType.Crit),
             new PartyBuffEntry( "Legacy of the White Tiger",          PartyBuffType.Crit),
             new PartyBuffEntry( "Furious Howl",                       PartyBuffType.Crit),
-            new PartyBuffEntry( "Terrifying Roar",                    PartyBuffType.Crit),
-            new PartyBuffEntry( "Fearless Roar",                      PartyBuffType.Crit),
-            new PartyBuffEntry( "Dalaran Brilliance",                    PartyBuffType.Crit),
-            new PartyBuffEntry( "Dalaran Brilliance",                    PartyBuffType.Crit),
+            new PartyBuffEntry( "Terrifying Roar",              PartyBuffType.Crit),
+            new PartyBuffEntry( "Fearless Roar",                PartyBuffType.Crit),
+            new PartyBuffEntry( "Arcane Brilliance",           PartyBuffType.Crit),
+            new PartyBuffEntry( "Dalaran Brilliance",           PartyBuffType.Crit),
             new PartyBuffEntry( "Lone Wolf: Ferocity of the Raptor",                    PartyBuffType.Crit),
-            new PartyBuffEntry( "Terrifying Roar",                    PartyBuffType.Crit),
-            new PartyBuffEntry( "Fearless Roar",                    PartyBuffType.Crit),
-            new PartyBuffEntry( "Strength of the Pack",                    PartyBuffType.Crit),
-            new PartyBuffEntry( "Embrace of the Shale Spider",                    PartyBuffType.Crit),
-            new PartyBuffEntry( "Still Water",                    PartyBuffType.Crit),
-            new PartyBuffEntry( "Furious Howl",                    PartyBuffType.Crit),
+            new PartyBuffEntry( "Terrifying Roar",              PartyBuffType.Crit),
+            new PartyBuffEntry( "Fearless Roar",                PartyBuffType.Crit),
+            new PartyBuffEntry( "Strength of the Pack",         PartyBuffType.Crit),
+            new PartyBuffEntry( "Embrace of the Shale Spider",  PartyBuffType.Crit),
+            new PartyBuffEntry( "Still Water",                  PartyBuffType.Crit),
+            new PartyBuffEntry( "Furious Howl",                 PartyBuffType.Crit),
 
-            new PartyBuffEntry( "Windflurry",                  PartyBuffType.MultiStrike ),
-            new PartyBuffEntry( "Mind Quickening",                  PartyBuffType.MultiStrike ),
-            new PartyBuffEntry( "Swiftblade's Cunning",                  PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Windflurry",                   PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Mind Quickening",              PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Swiftblade's Cunning",         PartyBuffType.MultiStrike ),
             new PartyBuffEntry( "Dark Intent",                  PartyBuffType.MultiStrike ),
             new PartyBuffEntry( "Lone Wolf: Quickness of the Dragonhawk",                  PartyBuffType.MultiStrike ),
             new PartyBuffEntry( "Sonic Focus",                  PartyBuffType.MultiStrike ),
-            new PartyBuffEntry( "Wild Strength",                  PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Wild Strength",                PartyBuffType.MultiStrike ),
             new PartyBuffEntry( "Double Bite",                  PartyBuffType.MultiStrike ),
-            new PartyBuffEntry( "Spry Attacks",                  PartyBuffType.MultiStrike ),
-            new PartyBuffEntry( "Breath of the Winds",                  PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Spry Attacks",                 PartyBuffType.MultiStrike ),
+            new PartyBuffEntry( "Breath of the Winds",          PartyBuffType.MultiStrike ),
 
             new PartyBuffEntry( "Unholy Aura",                  PartyBuffType.Versatility ),
             new PartyBuffEntry( "Mark of the Wild",                  PartyBuffType.Versatility ),
             new PartyBuffEntry( " Sanctity Aura",                  PartyBuffType.Versatility ),
             new PartyBuffEntry( "Inspiring Presence",                  PartyBuffType.Versatility ),
             new PartyBuffEntry( "Lone Wolf: Versatility of the Ravager",                  PartyBuffType.Versatility ),
-            new PartyBuffEntry( "Tenacity",                  PartyBuffType.Versatility ),
+            new PartyBuffEntry( "Tenacity",                     PartyBuffType.Versatility ),
             new PartyBuffEntry( "Indomitable",                  PartyBuffType.Versatility ),
             new PartyBuffEntry( "Wild Strength",                  PartyBuffType.Versatility ),
             new PartyBuffEntry( "Defensive Quills",                  PartyBuffType.Versatility ),
             new PartyBuffEntry( "Chitinous Armor",                  PartyBuffType.Versatility ),
-            new PartyBuffEntry( "Grace",                  PartyBuffType.Versatility ),
+            new PartyBuffEntry( "Grace",                        PartyBuffType.Versatility ),
             new PartyBuffEntry( "Strength of the Earth",                  PartyBuffType.Versatility ),
 
             new PartyBuffEntry( "Blessing of Might",                  PartyBuffType.Mastery),
             new PartyBuffEntry( "Grace of Air",                       PartyBuffType.Mastery),
             new PartyBuffEntry( "Roar of Courage",                    PartyBuffType.Mastery),
             new PartyBuffEntry( "Power of the Grave",              PartyBuffType.Mastery),
-            new PartyBuffEntry( "Moonkin Aura",              PartyBuffType.Mastery),
+            new PartyBuffEntry( "Moonkin Aura",                 PartyBuffType.Mastery),
             new PartyBuffEntry( "Blessing of Might",              PartyBuffType.Mastery),
-            new PartyBuffEntry( "Grace of Air",              PartyBuffType.Mastery),
+            new PartyBuffEntry( "Grace of Air",                 PartyBuffType.Mastery),
             new PartyBuffEntry( "Lone Wolf: Grace of the Cat",              PartyBuffType.Mastery),
             new PartyBuffEntry( "Roar of Courage",              PartyBuffType.Mastery),
-            new PartyBuffEntry( "Keen Senses",              PartyBuffType.Mastery),
+            new PartyBuffEntry( "Keen Senses",                  PartyBuffType.Mastery),
             new PartyBuffEntry( "Spirit Beast Blessing",              PartyBuffType.Mastery),
-            new PartyBuffEntry( "Plainswalking",              PartyBuffType.Mastery),
+            new PartyBuffEntry( "Plainswalking",                PartyBuffType.Mastery),
         };
 
         private static Dictionary<string, PartyBuffType> dictBuffs = null;
@@ -233,7 +233,7 @@ namespace Singular.Helpers
         /// <returns>PartyBuff mask representing all buffs that are missing</returns>
         public static PartyBuffType GetMissingPartyBuffs(this WoWUnit unit)
         {
-            PartyBuffType buffMask = PartyBuffType.Stats | PartyBuffType.Stamina | PartyBuffType.AttackPower | PartyBuffType.SpellPower | PartyBuffType.Haste | PartyBuffType.SpellHaste | PartyBuffType.Crit | PartyBuffType.Mastery;
+            PartyBuffType buffMask = PartyBuffType.All;
             PartyBuffType buffs = GetPartyBuffs(unit);
             buffs = (~buffs) & buffMask;
             return buffs;

@@ -21,6 +21,8 @@ namespace Singular.Settings
         Succubus    = 17,
         Felhunter   = 15,
         Felguard    = 29,
+        Doomguard   = 19,
+        Infernal	= 108,
         Other       = 99999     // a quest or other pet forced upon us for some reason
     }
 

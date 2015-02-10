@@ -127,6 +127,9 @@ namespace Singular.ClassSpecific.Warlock
                         Spell.Cast("Shadowburn", ret => Me.CurrentTarget.HealthPercent < 20),
                         Spell.Buff("Immolate", 4, on => Me.CurrentTarget, ret => true),
                         Spell.Cast("Conflagrate", req => Spell.GetCharges("Conflagrate") >= 2),
+
+                        Common.CastCataclysm(),
+
                         Spell.Cast("Chaos Bolt", ret => Me.CurrentTarget.HealthPercent >= 20 && BackdraftStacks < 3),
 
                         Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => Spell.UseAOE && _InstantRoF && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire") && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => !u.Aggro || u.IsCrowdControlled()), false),
@@ -190,6 +193,8 @@ namespace Singular.ClassSpecific.Warlock
                                 Spell.Cast("Conflagrate"),
                                 Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => Spell.UseAOE && _InstantRoF && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire") && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => !u.Aggro || u.IsCrowdControlled()), false),
 
+                                Common.CastCataclysm(),
+
                                 Spell.Cast("Chaos Bolt", ret => Me.CurrentTarget.HealthPercent >= 20 && BackdraftStacks < 3),
                                 Spell.Cast("Incinerate"),
 
@@ -220,6 +225,8 @@ namespace Singular.ClassSpecific.Warlock
                                 Spell.Buff("Immolate", 3, on => Me.CurrentTarget, ret => true),
                                 Spell.Cast("Conflagrate", req => Spell.GetCharges("Conflagrate") >= 2),
                                 Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => Spell.UseAOE && _InstantRoF && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire") && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => !u.Aggro || u.IsCrowdControlled()), false),
+
+                                Common.CastCataclysm(),
 
                                 Spell.Cast("Chaos Bolt", ret =>
                                 {
@@ -263,6 +270,8 @@ namespace Singular.ClassSpecific.Warlock
                         ctx => Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && !u.HasMyAura("Havoc ")),
                         Spell.Buff("Havoc", on => ((WoWUnit)on) ?? Unit.NearbyUnitsInCombatWithMeOrMyStuff.Where(u => u.Guid != Me.CurrentTargetGuid).OrderByDescending( u => u.CurrentHealth).FirstOrDefault())
                         ),
+
+                    Common.CastCataclysm(),
 
                     new Decorator(
                         ret => _mobCount >= 4,

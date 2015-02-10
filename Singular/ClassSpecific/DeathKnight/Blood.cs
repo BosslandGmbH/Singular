@@ -25,6 +25,7 @@ namespace Singular.ClassSpecific.DeathKnight
         private static DeathKnightSettings DeathKnightSettings { get { return SingularSettings.Instance.DeathKnight(); } }
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
+
         #region CombatBuffs
 
         [Behavior(BehaviorType.CombatBuffs, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood)]
@@ -232,8 +233,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.Cast("Death Coil", ret => StyxWoW.Me.CurrentRunicPower >= 80),
                         Spell.Cast("Death Strike"),
                         Spell.Cast("Icy Touch"),
-                        Spell.Cast("Death Coil"),
-                        Spell.Cast("Horn of Winter")
+                        Spell.Cast("Death Coil")
                         )
                     ),
 
@@ -260,7 +260,6 @@ namespace Singular.ClassSpecific.DeathKnight
                     new Decorator(
                         ret => !Spell.IsGlobalCooldown(),
                         new PrioritySelector(
-                            Spell.BuffSelf("Horn of Winter"),
                             Spell.Cast("Outbreak"),
                             Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                             Spell.Cast("Plague Strike"),
@@ -443,7 +442,6 @@ namespace Singular.ClassSpecific.DeathKnight
                     ),
 
                 Spell.Cast("Death Coil"),
-                Spell.Cast("Horn of Winter", on => Me),
 
                 new Decorator(
                     req => Spell.UseAOE && Me.HasAura("Crimson Scourge"),

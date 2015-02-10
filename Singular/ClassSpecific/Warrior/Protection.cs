@@ -19,6 +19,7 @@ using Styx.WoWInternals.WoWObjects;
 using Styx.Common;
 using System.Drawing;
 using CommonBehaviors.Actions;
+using Singular.Utilities;
 
 namespace Singular.ClassSpecific.Warrior
 {
@@ -173,6 +174,8 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateProtectionCombat()
         {
             UpdateWhetherWarriorNeedsTankTargeting();
+            scenario.MaxAgeForDamage = 5;
+            EventHandlers.TrackDamage = true;
 
             return new PrioritySelector(
                 // set context to current target
@@ -275,8 +278,7 @@ namespace Singular.ClassSpecific.Warrior
                 // Generate Rage
                 Spell.Cast("Shield Slam", ret => Me.CurrentRage < RageBuild && HasShieldInOffHand),
                 Spell.Cast("Revenge"),
-                Spell.Cast("Execute", ret => Me.CurrentRage > RageDump && Me.CurrentTarget.HealthPercent <= 20),
-                Spell.Cast("Thunder Clap", ret => Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8) && !Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
+                Spell.Cast("Execute", req => Me.CurrentRage >= RageDump && Me.CurrentTarget.HealthPercent <= 20),
 
                 // Filler
                 Spell.Cast("Devastate"),
@@ -286,7 +288,7 @@ namespace Singular.ClassSpecific.Warrior
                     Spell.Cast(
                         "Heroic Strike", 
                         on => Me.CurrentTarget,
-                        req => (Spell.UseAOE || !scenario.AvoidAOE || !glyphCleave) 
+                        req => (!scenario.AvoidAOE || !glyphCleave) 
                             && (HasUltimatum || Me.CurrentRage > RageDump || !SpellManager.HasSpell("Devastate") || !HasShieldInOffHand),
                         gcd: HasGcd.No
                         )
@@ -384,12 +386,6 @@ namespace Singular.ClassSpecific.Warrior
             Generic.SuppressGenericRacialBehavior = true;
 
             return new PrioritySelector(
-
-                new Action(r =>
-                {
-                    scenario.Update(Target);
-                    return RunStatus.Failure;
-                }),
 
                 CreateGladiatorDiagnosticOutput(),
 
@@ -605,7 +601,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             get
             {
-                return (int)Me.MaxRage - 5;
+                return RageDump;
             }
         }
 
@@ -693,13 +689,15 @@ namespace Singular.ClassSpecific.Warrior
                 1, TimeSpan.FromMilliseconds(1500), RunStatus.Failure,
                 new Action(ret =>
                     {
-                    string log = string.Format("... [prot] h={0:F1}%/r={1:F1}%, stnc={2}, Ultim={3}, aoe={4}, cc={5}",
+                    string log = string.Format("... [prot] h={0:F1}%/r={1:F1}%, stnc={2}, Ultim={3}, aoe={4}, cc={5}, dmg1500={6}, dmg5000={7}",
                         Me.HealthPercent,
                         Me.CurrentRage,
                         (WarriorStance) Me.Shapeshift,
                         HasUltimatum,
                         scenario.MobCount,
-                        scenario.CcCount
+                        scenario.CcCount,
+                        scenario.RecentDamage,
+                        scenario.AllDamage
                         );
 
                     WarriorTalents tier3 = Common.GetTierTalent(3);
@@ -758,7 +756,7 @@ namespace Singular.ClassSpecific.Warrior
                 1, TimeSpan.FromMilliseconds(1500), RunStatus.Failure, 
                 new Action(ret =>
                 {
-                    string log = string.Format("... [glad] h={0:F1}%/r={1:F1}%, gstnc={2}, Ultim={3}, SChgStk={4}, SChgBuf={5}, aoe={6}, cc={7}",
+                    string log = string.Format("... [glad] h={0:F1}%/r={1:F1}%, gstnc={2}, Ultim={3}, SChgStk={4}, SChgBuf={5}, aoe={6}, cc={7}, dmg1500={8}, dmg5000={9}",
                         Me.HealthPercent,
                         Me.CurrentRage,
                         (WarriorStance)Me.Shapeshift,
@@ -766,7 +764,9 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.GetCharges("Shield Charge"),
                         (long)Me.GetAuraTimeLeft("Shield Charge").TotalMilliseconds,
                         scenario.MobCount,
-                        scenario.CcCount
+                        scenario.CcCount,
+                        scenario.RecentDamage,
+                        scenario.AllDamage
                         );
 
                     WarriorTalents tier3 = Common.GetTierTalent(3);

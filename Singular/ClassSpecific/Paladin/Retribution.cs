@@ -7,11 +7,13 @@ using Styx;
 
 using Styx.CommonBot;
 using Styx.TreeSharp;
+using Action = Styx.TreeSharp.Action;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Rest = Singular.Helpers.Rest;
 using System.Drawing;
 using CommonBehaviors.Actions;
+using System;
 
 namespace Singular.ClassSpecific.Paladin
 {
@@ -385,13 +387,12 @@ namespace Singular.ClassSpecific.Paladin
                 return new Action( ret => { return RunStatus.Failure; } );
 
             return new Sequence(
-                new Action( r => SingularRoutine.UpdateDiagnosticCastingState() ),
-                new Action(r => TMsg.ShowTraceMessages = false),
-                new ThrottlePasses(1, 1, 
+                new ThrottlePasses(
+                    1, 
+                    TimeSpan.FromMilliseconds(1500), 
+                    RunStatus.Failure,
                     new Action(ret =>
                     {
-                        TMsg.ShowTraceMessages = true;
-
                         string sMsg;
                         sMsg = string.Format(".... h={0:F1}%, m={1:F1}%, moving={2}, mobs={3}",
                             Me.HealthPercent,

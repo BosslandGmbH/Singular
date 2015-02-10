@@ -93,13 +93,14 @@ namespace Singular.ClassSpecific.Hunter
 
 		#region Instance Rotation
 
-		[Behavior(BehaviorType.Pull, WoWClass.Hunter, WoWSpec.HunterMarksmanship, WoWContext.Instances)]
+        // place holder for Raph
 	    public static Composite CreateMarksmanHunterInstancePull()
 	    {
 		    return new PrioritySelector();
 	    }
 
-		[Behavior(BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterMarksmanship, WoWContext.Instances)]
+        [Behavior(BehaviorType.Pull, WoWClass.Hunter, WoWSpec.HunterMarksmanship, WoWContext.Instances)]
+        [Behavior(BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterMarksmanship, WoWContext.Instances)]
 		public static Composite CreateMarksmanHunterInstanceCombat()
 		{
 			return new PrioritySelector(

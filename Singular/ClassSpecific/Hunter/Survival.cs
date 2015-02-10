@@ -98,13 +98,14 @@ namespace Singular.ClassSpecific.Hunter
 
 		#region Instance Rotation
 
-		[Behavior(BehaviorType.Pull, WoWClass.Hunter, WoWSpec.HunterSurvival, WoWContext.Instances)]
+        // place holder for Raph
 	    public static Composite CreateHunterSurvivalInstancesPull()
 	    {
 		    return new PrioritySelector();
 	    }
 
-		[Behavior(BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterSurvival, WoWContext.Instances)]
+        [Behavior(BehaviorType.Pull, WoWClass.Hunter, WoWSpec.HunterSurvival, WoWContext.Instances)]
+        [Behavior(BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterSurvival, WoWContext.Instances)]
 		public static Composite CreateHunterSurvivalInstancesCombat()
 		{
 			return new PrioritySelector(

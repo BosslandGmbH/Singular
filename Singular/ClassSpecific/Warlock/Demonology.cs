@@ -58,6 +58,9 @@ namespace Singular.ClassSpecific.Warlock
 
                         Helpers.Common.CreateInterruptBehavior(),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         // even though AOE spell, keep on CD for single target unless AoE turned off
                         new Decorator(
                             ret => Spell.UseAOE && WarlockSettings.FelstormMobCount > 0 && Common.GetCurrentPet() == WarlockPet.Felguard && !Spell.IsSpellOnCooldown("Command Demon") && Me.Pet.GotTarget(),

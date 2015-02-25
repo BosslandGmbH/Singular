@@ -120,6 +120,7 @@ namespace Singular.Helpers
             new PartyBuffEntry( "Embrace of the Shale Spider",  PartyBuffType.Crit),
             new PartyBuffEntry( "Still Water",                  PartyBuffType.Crit),
             new PartyBuffEntry( "Furious Howl",                 PartyBuffType.Crit),
+            new PartyBuffEntry( "Spirit Beast Blessing",        PartyBuffType.Crit),
 
             new PartyBuffEntry( "Windflurry",                   PartyBuffType.MultiStrike ),
             new PartyBuffEntry( "Mind Quickening",              PartyBuffType.MultiStrike ),

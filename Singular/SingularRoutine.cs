@@ -21,6 +21,7 @@ using Singular.Settings;
 using Styx.Common.Helpers;
 using Styx.CommonBot.POI;
 using System.Text;
+using Styx.WoWInternals.DBC;
 
 namespace Singular
 {
@@ -500,6 +501,8 @@ namespace Singular
                 Spell.MaintainDoubleCast();
 
                 HotkeyDirector.Pulse();
+
+                WatchAurasForProcs();
             }
 
             // Output if Target changed 
@@ -523,6 +526,62 @@ namespace Singular
                 if (bot != null && (bot.PulseFlags & PulseFlags.Targeting) != PulseFlags.Targeting)
                 {
                     TankManager.Instance.Pulse();
+                }
+            }
+
+        }
+
+        public struct AuraEntry
+        {
+            public string Name;
+            public int SpellId;
+            public uint EffectId;
+        }
+        private Dictionary<int, AuraEntry> Auras { get; set; }
+        private DateTime NextAuraCheck = DateTime.MinValue;
+        private void WatchAurasForProcs()
+        {
+            if (!SingularSettings.Instance.EnableDebugTraceBuffPresence)
+                return;
+
+            if (DateTime.UtcNow < NextAuraCheck)
+                return;
+
+            NextAuraCheck = DateTime.UtcNow + TimeSpan.FromSeconds(1);
+            if (Auras == null)
+                Auras = new Dictionary<int, AuraEntry>();
+            
+            Dictionary<int, AuraEntry> found = new Dictionary<int,AuraEntry>();
+            foreach (var a in Me.GetAllAuras().Where(a => !a.IsHarmful && a.TimeLeft > TimeSpan.Zero))
+            {
+                SpellEffect se = a.Spell.SpellEffects.FirstOrDefault( s => s != null);
+                if (se != null)
+                {
+                    AuraEntry ae = new AuraEntry() { Name = a.Name, SpellId = a.SpellId, EffectId = se.Id  };
+                    if (found.ContainsKey(ae.SpellId))
+                    {
+                        Logger.WriteDiagnostic("Aura: *dup* [{0}] #{1} EffId:{2}", ae.Name, ae.SpellId, ae.EffectId);
+                    }
+                    else
+                    {
+                        found.Add(a.SpellId, ae);
+                        if (!Auras.ContainsKey(a.SpellId))
+                        {
+                            Logger.WriteDiagnostic("Aura: +new+ [{0}] #{1} EffId:{2} Typ:{3} Remn:{4:F2}", ae.Name, ae.SpellId, ae.EffectId, a.ApplyAuraType, a.TimeLeft.TotalSeconds);
+                            Auras.Add(a.SpellId, ae);
+                        }
+                    }
+                }
+            }
+
+            int i = Auras.Count();
+            while (i-- > 0)
+            {
+                KeyValuePair<int, AuraEntry> kvp = Auras.ElementAt(i);
+                if (!found.ContainsKey(kvp.Key))
+                {
+                    Logger.WriteDiagnostic("Aura: -exp- [{0}] #{1}", kvp.Value.Name, kvp.Value.SpellId);
+                    Auras.Remove(kvp.Key);
                 }
             }
 
@@ -557,6 +616,7 @@ namespace Singular
 
                 // now check pets target
                 CheckTarget(Me.Pet.CurrentTarget, ref _lastCheckPetsTargetGuid, "PetsCurrentTarget", (x) => { });
+
             }
 
         }

@@ -104,6 +104,11 @@ namespace Singular.ClassSpecific.Shaman
 
                         Common.CreateShamanDpsShieldBehavior(),
 
+                        Totems.CreateTotemsBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         // grinding or questing, if target meets these cast Flame Shock if possible
                         // 1. mob is less than 12 yds, so no benefit from delay in Lightning Bolt missile arrival
                         // 2. area has another player competing for mobs (we want to tag the mob quickly)
@@ -129,8 +134,6 @@ namespace Singular.ClassSpecific.Shaman
                                 Spell.Cast("Earth Shock", ret => !SpellManager.HasSpell("Flame Shock"))
                                 )
                             ),
-
-                        Totems.CreateTotemsBehavior(),
 
                         // have a big attack loaded up, so don't waste it
                         Spell.Cast("Earth Shock", ret => StyxWoW.Me.HasAura("Lightning Shield", 5)),
@@ -164,13 +167,17 @@ namespace Singular.ClassSpecific.Shaman
                     new PrioritySelector(
 
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Totems.CreateTotemsBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Dispelling.CreatePurgeEnemyBehavior("Purge"),
 
                         Common.CreateShamanDpsShieldBehavior(),
 
                         Spell.BuffSelf("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Count( u => u.Distance < 10f ) >= 3),
-
-                        Totems.CreateTotemsBehavior(),
 
                         new Decorator(
                             ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled()),
@@ -178,14 +185,19 @@ namespace Singular.ClassSpecific.Shaman
                                 new Action( act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
 
                                 new Decorator(
-                                    req => SpellManager.HasSpell("Improved Chain Lightning") 
-                                        && Me.HasAuraExpired("Improved Chain Lightning", 1)
-                                        && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,                                        
+                                    req => SpellManager.HasSpell("Enhanced Chain Lightning")
+                                        && Me.HasAuraExpired("Enhanced Chain Lightning", 0)
+                                        && Unit.UnfriendlyUnitsNearTarget(12f).Count() >= 3,                                        
                                     new Throttle(
                                         3,
                                         new Sequence(
-                                            Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12)),
-                                            new Wait( 1, until => !Me.HasAuraExpired("Improved Chain Lightning"), new ActionAlwaysSucceed())
+                                            ctx => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(20f), ClusterType.Chained, 12),
+                                            Spell.Cast(
+                                                "Chain Lightning", 
+                                                on => (WoWUnit) on,
+                                                req => 3 <= Clusters.GetChainedClusterCount((WoWUnit) req, Unit.UnfriendlyUnitsNearTarget(20f), 12)                                                    
+                                                ),
+                                            new WaitContinue( 1, until => !Me.HasAuraExpired("Enhanced Chain Lightning"), new ActionAlwaysSucceed())
                                             )
                                         )
                                     ),
@@ -200,7 +212,7 @@ namespace Singular.ClassSpecific.Shaman
                                     new Wait( TimeSpan.FromMilliseconds(500), until => Me.CurrentTarget.HasMyAura("Earthquake"), new ActionAlwaysSucceed())
                                     ),
 
-                                Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
+                                Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(20f), ClusterType.Chained, 12))
                                 )
                             ),
 
@@ -241,11 +253,15 @@ namespace Singular.ClassSpecific.Shaman
                     new PrioritySelector(
 
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Totems.CreateTotemsPvPBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Dispelling.CreatePurgeEnemyBehavior("Purge"),
 
                         Common.CreateShamanDpsShieldBehavior(),
-
-                        Totems.CreateTotemsPvPBehavior(),
 
                         // Burst if 7 Stacks
                         new Decorator(
@@ -320,11 +336,15 @@ namespace Singular.ClassSpecific.Shaman
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Totems.CreateTotemsInstanceBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Dispelling.CreatePurgeEnemyBehavior("Purge"),
 
                         Common.CreateShamanDpsShieldBehavior(),
-
-                        Totems.CreateTotemsInstanceBehavior(),
 
                         new Decorator(
                             ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled()),

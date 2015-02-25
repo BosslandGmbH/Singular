@@ -81,6 +81,9 @@ namespace Singular.ClassSpecific.Warrior
 
                         new Throttle( 2, Spell.BuffSelf(Common.SelectedShoutAsSpellName)),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
                         Common.CreateChargeBehavior(),
@@ -192,6 +195,9 @@ namespace Singular.ClassSpecific.Warrior
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         CreateDiagnosticOutputBehavior("Combat"),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         Helpers.Common.CreateInterruptBehavior(),
 
@@ -329,6 +335,9 @@ namespace Singular.ClassSpecific.Warrior
                         }),
 
                         CreateDiagnosticOutputBehavior("Combat"),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         Helpers.Common.CreateInterruptBehavior(),
 
@@ -629,6 +638,9 @@ namespace Singular.ClassSpecific.Warrior
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         CreateDiagnosticOutputBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         Helpers.Common.CreateInterruptBehavior(),
 

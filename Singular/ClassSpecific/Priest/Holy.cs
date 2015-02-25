@@ -531,6 +531,10 @@ VoidShift               Void Shift
 
                                 Spell.BuffSelf("Power Word: Shield", ret => Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull && PriestSettings.UseShieldPrePull && !Me.HasAura("Weakened Soul")),
                                 Helpers.Common.CreateInterruptBehavior(),
+
+                                Movement.WaitForFacing(),
+                                Movement.WaitForLineOfSpellSight(),
+
                                 Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
                                 Spell.Buff("Shadow Word: Pain", true),
                                 Spell.Buff("Holy Word: Chastise", ret => StyxWoW.Me.HasAura( "Chakra: Chastise")),

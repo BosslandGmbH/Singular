@@ -19,6 +19,9 @@ namespace Singular.ClassSpecific.Paladin
                 new Decorator(
                     req => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Spell.Cast("Judgment"),
                         Spell.Cast("Crusader Strike")
                         )
@@ -61,6 +64,9 @@ namespace Singular.ClassSpecific.Paladin
                     req => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         Helpers.Common.CreateInterruptBehavior(),
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Spell.Cast("Crusader Strike"),
                         Spell.Cast("Judgment")
                         )

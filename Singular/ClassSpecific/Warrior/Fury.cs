@@ -83,6 +83,9 @@ namespace Singular.ClassSpecific.Warrior
                         //Buff up
                         Spell.BuffSelf(Common.SelectedShoutAsSpellName),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
                         Common.CreateChargeBehavior(),
@@ -170,6 +173,9 @@ namespace Singular.ClassSpecific.Warrior
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         CreateDiagnosticOutputBehavior("Combat"),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         // special "in combat" pull logic for mobs not tagged and out of melee range
                         Common.CreateWarriorCombatPullMore(),
@@ -278,6 +284,9 @@ namespace Singular.ClassSpecific.Warrior
                         }),
 
                         CreateDiagnosticOutputBehavior("Combat"),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         Helpers.Common.CreateInterruptBehavior(),
 

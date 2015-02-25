@@ -57,15 +57,6 @@ namespace Singular.ClassSpecific.Mage
                         )
                     )
                 );
-
-            return new Decorator(
-                ret => !Spell.IsCasting() && !Spell.IsGlobalCooldown(),
-                new PrioritySelector(
-
-                    Common.CreateHealWaterElemental()
-
-                    )
-                );
         }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Mage, WoWSpec.MageFrost, WoWContext.All, 1)]
@@ -96,6 +87,9 @@ namespace Singular.ClassSpecific.Mage
                     new PrioritySelector(
 
 						Common.CreateMagePullBuffs(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
             #region TRIVIAL MOB FARM SUPPORT
                         new Decorator(
@@ -298,6 +292,9 @@ namespace Singular.ClassSpecific.Mage
 
                         Helpers.Common.CreateInterruptBehavior(),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         // stack buffs for some burst... only every few minutes, but we'll use em if we got em
                         new Decorator(
                              req => Me.GotTarget() && !Me.CurrentTarget.IsTrivial() && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TimeToDeath(-1) > 40 || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3),
@@ -463,6 +460,9 @@ namespace Singular.ClassSpecific.Mage
 
                         Helpers.Common.CreateInterruptBehavior(),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                          // Snipe Kills
                         new PrioritySelector(
                             ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent.Between(1, 10) && u.SpellDistance() < 40 && Me.IsSafelyFacing(u, 150)),
@@ -572,6 +572,10 @@ namespace Singular.ClassSpecific.Mage
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateMagePullBuffs(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Spell.Cast("Icy Veins", req => Me.GotTarget() && Me.CurrentTarget.SpellDistance() < 40),
 
                         new Decorator(ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10).Count() > 1,

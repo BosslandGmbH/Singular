@@ -92,6 +92,12 @@ namespace Singular.Settings
 
         #region Windwalker
 
+		[Setting]
+		[DefaultValue(true)]
+		[Category("Windwalker")]
+		[DisplayName("Use Storm, Earth, and Fire")]
+		public bool UseSef { get; set; }
+
         [Setting]
         [DefaultValue(true)]
         [Category("Windwalker")]

@@ -504,6 +504,16 @@ namespace Singular.Settings
         [Description("None: disable debug logic, FileOnly: debug output to file, WindowAndFile: debug output to log window and file")]
         public DebugOutputDest DebugOutput { get; set; }
 
+        // code should reference SingularSettings.DebugBuffAuraPresence
+        //
+        [Browsable(false)]
+        [Setting, ReadOnly(false)]
+        [DefaultValue(false)]
+        [Category("Debug")]
+        [DisplayName("Debug Spell Casting Detection")]
+        [Description("Enables logging of GCD/Cast/Channeling in Singular. Debug Logging setting must also be true")]
+        public bool EnableDebugTraceBuffPresence { get; set; }
+
         #endregion
 
         #region Window Layout

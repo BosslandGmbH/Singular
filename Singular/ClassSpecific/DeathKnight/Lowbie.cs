@@ -34,6 +34,9 @@ namespace Singular.ClassSpecific.DeathKnight
                     new PrioritySelector(
                         Helpers.Common.CreateInterruptBehavior(),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         // Anti-magic shell - no cost and doesnt trigger GCD 
                         Spell.BuffSelf("Anti-Magic Shell", ret => Unit.NearbyUnfriendlyUnits.Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == StyxWoW.Me.Guid)),
 
@@ -42,7 +45,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.Buff(
                             "Icy Touch", 
                             3, 
-                            on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsTargetingMeOrPet && u.HasAuraExpired("Frost Fever") && Me.SpellDistance(u) < 30 && Me.IsSafelyFacing(u) && u.InLineOfSpellSight), 
+                            on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsTargetingMeOrPet && u.NeedsFrostFever() && Me.SpellDistance(u) < 30 && Me.IsSafelyFacing(u) && u.InLineOfSpellSight), 
                             req => true, 
                             true, 
                             "Frost Fever"
@@ -50,13 +53,13 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.Buff(
                             "Plague Strike", 
                             3, 
-                            on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsTargetingMeOrPet && u.HasAuraExpired("Blood Plague") && u.IsWithinMeleeRange && Me.IsSafelyFacing(u) && u.InLineOfSpellSight), 
+                            on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsTargetingMeOrPet && u.NeedsBloodPlague() && u.IsWithinMeleeRange && Me.IsSafelyFacing(u) && u.InLineOfSpellSight), 
                             req => true, 
                             true, 
                             "Blood Plague"
                             ),
-                        Spell.Cast("Icy Touch"),
-                        Spell.Cast("Plague Strike")
+                        Spell.Buff("Icy Touch"),
+                        Spell.Buff("Plague Strike")
                         )
                     ),
 

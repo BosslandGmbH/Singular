@@ -754,6 +754,10 @@ namespace Singular.ClassSpecific.Druid
                             req => !Spell.IsGlobalCooldown(),
                             new PrioritySelector(
                                 Helpers.Common.CreateInterruptBehavior(),
+
+                                Movement.WaitForFacing(),
+                                Movement.WaitForLineOfSpellSight(),
+
                                 Spell.Buff("Moonfire"),
                                 Spell.Cast("Wrath"),
                                 Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 35f, 30f)
@@ -778,6 +782,9 @@ namespace Singular.ClassSpecific.Druid
                             req => !Spell.IsGlobalCooldown(),
                             new PrioritySelector(
                                 Helpers.Common.CreateInterruptBehavior(),
+
+                                Movement.WaitForFacing(),
+                                Movement.WaitForLineOfSpellSight(),
 
                                 new Decorator(
                                     ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,

@@ -15,7 +15,13 @@ namespace Singular.ClassSpecific.Priest
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMediumRange(),
+
+                Spell.WaitForGcdOrCastOrChannel(),
+
                 Helpers.Common.CreateInterruptBehavior(),
+
+                Movement.WaitForFacing(),
+                Movement.WaitForLineOfSpellSight(),
 
                 Spell.BuffSelf("Power Word: Shield", ret => !StyxWoW.Me.HasAura("Weakened Soul")),
                 Spell.Cast("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= 40),

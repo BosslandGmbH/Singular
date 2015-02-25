@@ -158,6 +158,9 @@ namespace Singular.ClassSpecific.Priest
 
                         Spell.BuffSelf("Shadowform"),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Spell.Buff("Devouring Plague", req => OrbCount >= 3),
                         CastMindBlast(),
                         Spell.Buff("Vampiric Touch", true),
@@ -190,6 +193,10 @@ namespace Singular.ClassSpecific.Priest
                             new PrioritySelector(
 
                                 Helpers.Common.CreateInterruptBehavior(),
+
+                                Movement.WaitForFacing(),
+                                Movement.WaitForLineOfSpellSight(),
+
                                 Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
 
                                 // Mana Management stuff - send in the fiends
@@ -373,6 +380,10 @@ namespace Singular.ClassSpecific.Priest
                             ),
 
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
 
                         // Defensive stuff
@@ -474,6 +485,10 @@ namespace Singular.ClassSpecific.Priest
                         CreateFightAssessment(),
 
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
 
                         Spell.BuffSelf("Shadowform"),

@@ -17,6 +17,8 @@ using Styx.CommonBot;
 using System.Drawing;
 using System.Text.RegularExpressions;
 using Singular.Managers;
+using Styx.WoWInternals.DBC;
+using Styx.WoWInternals.DB;
 
 namespace Singular.Helpers
 {
@@ -502,10 +504,61 @@ namespace Singular.Helpers
             }
 
             if (Me.Inventory.Equipped.Trinket1 != null)
-                Logger.WriteFile("Trinket1: {0} #{1}", Me.Inventory.Equipped.Trinket1.Name, Me.Inventory.Equipped.Trinket1.Entry);
+            {
+                int itemeffectid = 0;
+                uint spelleffectid = 0;
+                SpellEffect se;
+
+                try
+                {
+                    ItemEffect ie = Me.Inventory.Equipped.Trinket1.Effects.FirstOrDefault(e => e != null);
+                    if (ie != null)
+                    {
+                        itemeffectid = ie.SpellId;
+                        se = ie.Spell.SpellEffects.FirstOrDefault(s => s != null);
+                        if (se != null)
+                            spelleffectid = se.Id;
+                    }
+                }
+                catch { }
+
+                Logger.WriteFile(
+                    "Trinket1: {0} #{1} ItemEffect:{2} SpellEffect:{3}",
+                    Me.Inventory.Equipped.Trinket1.Name,
+                    Me.Inventory.Equipped.Trinket1.Entry,
+                    itemeffectid,
+                    spelleffectid
+                    );
+            }
 
             if (Me.Inventory.Equipped.Trinket2 != null)
-                Logger.WriteFile("Trinket2: {0} #{1}", Me.Inventory.Equipped.Trinket2.Name, Me.Inventory.Equipped.Trinket2.Entry);
+            {
+                int itemeffectid = 0;
+                uint spelleffectid = 0;
+                SpellEffect se;
+
+                try
+                {
+                    ItemEffect ie = Me.Inventory.Equipped.Trinket2.Effects.FirstOrDefault(e => e != null);
+                    if (ie != null)
+                    {
+                        itemeffectid = ie.SpellId;
+                        se = ie.Spell.SpellEffects.FirstOrDefault(s => s != null);
+                        if (se != null)
+                            spelleffectid = se.Id;
+                    }
+                }
+                catch { }
+
+                Logger.WriteFile(
+                    "Trinket2: {0} #{1} ItemEffect:{2} SpellEffect:{3}",
+                    Me.Inventory.Equipped.Trinket2.Name,
+                    Me.Inventory.Equipped.Trinket2.Entry,
+                    itemeffectid,
+                    spelleffectid
+                    );
+            }
+
 
             WoWItem item;
             if (Me.Inventory.Equipped.Hands != null)

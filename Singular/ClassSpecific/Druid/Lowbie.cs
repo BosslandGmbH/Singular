@@ -51,6 +51,9 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         new Action(r => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
 
                         Spell.Buff("Entangling Roots", ret => !SpellManager.HasSpell("Cat Form")),
@@ -77,6 +80,10 @@ namespace Singular.ClassSpecific.Druid
                             req => !Spell.IsGlobalCooldown(),
                             new PrioritySelector(
                                 Helpers.Common.CreateInterruptBehavior(),
+
+                                Movement.WaitForFacing(),
+                                Movement.WaitForLineOfSpellSight(),
+
                                 Spell.Cast("Rejuvenation", on => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= DruidSettings.SelfRejuvenationHealth && StyxWoW.Me.HasAuraExpired("Rejuvenation", 1)),
                                 Spell.Buff("Moonfire"),
 
@@ -105,6 +112,9 @@ namespace Singular.ClassSpecific.Druid
 
                         Common.CastForm( ShapeshiftForm.Cat, req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         new Decorator(
                             ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat,

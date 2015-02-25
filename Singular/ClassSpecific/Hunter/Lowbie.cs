@@ -26,6 +26,10 @@ namespace Singular.ClassSpecific.Hunter
 
                         // Heal pet when below 70
                         Spell.Cast("Mend Pet", ret =>StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.HealthPercent < 70 && !StyxWoW.Me.Pet.HasAura("Mend Pet")),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Spell.Cast(
                             "Concussive Shot",
                             ret => StyxWoW.Me.CurrentTarget.CurrentTarget == null || StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me),

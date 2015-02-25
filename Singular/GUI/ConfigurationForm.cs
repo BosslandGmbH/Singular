@@ -105,7 +105,7 @@ namespace Singular.GUI
             InitializeDebugOutputDropdown();
             chkDebugCasting.Checked = SingularSettings.Instance.EnableDebugSpellCasting;
             chkDebugTrace.Checked = SingularSettings.Instance.EnableDebugTrace;
-
+            chkTraceBuffs.Checked = SingularSettings.Instance.EnableDebugTraceBuffPresence;
             chkDebugLogging_CheckedChanged(this, new EventArgs());
 
             InitializeHealContextDropdown(StyxWoW.Me.Class);
@@ -313,6 +313,7 @@ namespace Singular.GUI
                 SingularSettings.Instance.DebugOutput = (DebugOutputDest) GetComboBoxEnum(cboDebugOutput);               
                 SingularSettings.Instance.EnableDebugSpellCasting = chkDebugCasting.Checked;
                 SingularSettings.Instance.EnableDebugTrace = chkDebugTrace.Checked;
+                SingularSettings.Instance.EnableDebugTraceBuffPresence = chkTraceBuffs.Checked;
                 Extensions.ShowPlayerNames = ShowPlayerNames.Checked;
 
                 SingularRoutine.TrainingDummyBehaviors = (WoWContext) GetComboBoxEnum(cboForceUseOf);

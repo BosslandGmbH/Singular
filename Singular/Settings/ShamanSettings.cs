@@ -451,7 +451,6 @@ namespace Singular.Settings
                     HealingSurge = 85;
                     AncestralSwiftness = 40;
                     HealingStreamTotem = 90;
-                    HealingTideTotem = 60;
 
                     MinHealingRainCount = 3;
                     MinHealingTideCount = 2;
@@ -462,7 +461,6 @@ namespace Singular.Settings
                     HealingSurge = 80;
                     AncestralSwiftness = 35;
                     HealingStreamTotem = 90;
-                    HealingTideTotem = 60;
 
                     MinHealingRainCount = 4;
                     MinHealingTideCount = 2;
@@ -504,13 +502,6 @@ namespace Singular.Settings
         [DisplayName("% Healing Stream Totem")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int HealingStreamTotem { get; set; }
-
-        [Setting]
-        [DefaultValue(70)]
-        [Category("Talents")]
-        [DisplayName("Healing Tide Totem %")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int HealingTideTotem { get; set; }
 
         [Setting]
         [DefaultValue(4)]

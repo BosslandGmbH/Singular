@@ -182,6 +182,9 @@ namespace Singular.ClassSpecific.Druid
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         // grinding or questing, if target meets these criteria cast an instant to tag quickly
                         // 1. mob is less than 12 yds, so no benefit from delay in Wrath/Starsurge missile arrival
                         // 2. area has another player possibly competing for mobs (we want to tag the mob quickly)
@@ -240,6 +243,9 @@ namespace Singular.ClassSpecific.Druid
                             return RunStatus.Failure;
                         }),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         // Spell.Buff("Entangling Roots", ret => Me.CurrentTarget.Distance > 12),
                         CreateBalanceFaerieFireBehavior(),
 
@@ -262,7 +268,7 @@ namespace Singular.ClassSpecific.Druid
                                     "Starfall",
                                     req =>
                                     {
-                                        if (TalentManager.HasGlyph("Guided Stars"))
+                                        if (!TalentManager.HasGlyph("Untamed Stars"))
                                         {
                                             if (3 <= scenario.Mobs.Count(u => u.HasAnyOfMyAuras("Sunfire", "Moonfire")))
                                                 return true;
@@ -399,6 +405,9 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Cast("Typhoon",
                             ret => Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8f) >= 1),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         // use every Shooting Stars proc
                         Spell.Cast("Starsurge", on => Me.CurrentTarget, req => Me.ActiveAuras.ContainsKey("Shooting Stars"), cancel => false),
 
@@ -484,6 +493,9 @@ namespace Singular.ClassSpecific.Druid
                         Common.CastForm( ShapeshiftForm.Moonkin, req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
                         // Spell.Cast("Mighty Bash", ret => Me.CurrentTarget.IsWithinMeleeRange),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         new PrioritySelector(
                             ctx => !Spell.UseAOE ? 1 : Unit.UnfriendlyUnitsNearTarget(10f).Count(),

@@ -50,6 +50,9 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Helpers.Common.CreateInterruptBehavior(),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Common.CreateDeathKnightPullMore(),
 
                         Common.CreateGetOverHereBehavior(),
@@ -133,8 +136,8 @@ namespace Singular.ClassSpecific.DeathKnight
                                 Spell.Buff("Plague Strike", true, on => Me.CurrentTarget, req => true, "Blood Plague"),
                                 Spell.Cast("Death Strike", req => Me.HealthPercent < 90),
                                 Spell.Cast("Death Coil"),
-                                Spell.Cast("Icy Touch"),
-                                Spell.Cast("Plague Strike")
+                                Spell.Buff("Icy Touch"),
+                                Spell.Buff("Plague Strike")
                                 )
                             )
                         )
@@ -213,6 +216,9 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Helpers.Common.CreateInterruptBehavior(),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Common.CreateGetOverHereBehavior(),
 
                         Common.CreateDarkSuccorBehavior(),
@@ -236,14 +242,11 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
 
                         // Diseases
-                        Spell.Cast("Outbreak",
-                            ret => !Me.CurrentTarget.HasMyAura("Frost Fever") 
-                                || !Me.CurrentTarget.HasAura("Blood Plague")
-                                ),
+                        Spell.Cast("Outbreak", ret => !disease.ticking_on(Me.CurrentTarget) ),
 
-                        Spell.Buff("Icy Touch", true, ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), "Frost Fever"),
+                        Spell.Buff("Icy Touch", true, ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), talent.necrotic_plague_enabled ? "Necrotic Plague" : "Frost Fever"),
 
-                        Spell.Buff("Plague Strike", true, on => Me.CurrentTarget, req => true, "Blood Plague"),
+                        Spell.Buff("Plague Strike", true, on => Me.CurrentTarget, req => true, talent.necrotic_plague_enabled ? "Necrotic Plague" : "Blood Plague"),
 
                         Spell.Cast("Dark Transformation",
                             on => Me.Pet,
@@ -273,7 +276,7 @@ namespace Singular.ClassSpecific.DeathKnight
         #region Instance Rotations
 
         [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightUnholy, WoWContext.Instances)]
-        public static Composite CreateDeathKnightUnholyInstanceCombat()
+        public static Composite CreateDeathKnightUnholyInstanceSimCCombat()
         {
             if (Me.Level < 100)
                 return CreateDeathKnightUnholyInstanceCombatLowerLevels();
@@ -298,6 +301,9 @@ namespace Singular.ClassSpecific.DeathKnight
                         }),
 
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         // # Executed every time the actor is available.
                         // 
@@ -609,6 +615,9 @@ namespace Singular.ClassSpecific.DeathKnight
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         // *** Cool downs ***
                         Spell.Cast(

@@ -55,6 +55,9 @@ namespace Singular.ClassSpecific.Monk
 #else
                         Common.CreateMonkCloseDistanceBehavior( ),
 #endif
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         // Spell.Cast(sp => "Crackling Jade Lightning", mov => true, on => Me.CurrentTarget, req => !Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.SpellDistance() < 40, cancel => false),
                         Spell.Cast("Provoke", ret => !Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.Combat && Me.CurrentTarget.SpellDistance().Between(20, 40)),
 
@@ -140,7 +143,7 @@ namespace Singular.ClassSpecific.Monk
 		    get
 		    {
 				return Me.CurrentTarget != null && Me.CurrentTarget.TimeToDeath(long.MaxValue) < 10L && SpellManager.HasSpell("Touch of Death") &&
-			           Spell.GetSpellCooldown("Touch of Death").TotalSeconds < 8d && Me.MaxChi != Me.CurrentChi;
+			           Spell.GetSpellCooldown("Touch of Death").TotalSeconds < 8d && Me.MaxChi - Me.CurrentChi >= 2;
 		    }
 	    }
 		
@@ -156,54 +159,88 @@ namespace Singular.ClassSpecific.Monk
 
 				Common.CastTouchOfDeath(),
 
-				Spell.WaitForCastOrChannel(FaceDuring.Yes),
-				
-				Common.CreateMonkCloseDistanceBehavior(),
+				Spell.WaitForCastOrChannel(FaceDuring.Yes, LagTolerance.No),
 
-				Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
-				Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
-				Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
-				Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPct),
-				Spell.BuffSelf("Zen Sphere", ctx => HasTalent(MonkTalents.ZenSphere) && Me.HealthPercent < 90),
+                Common.CreateMonkCloseDistanceBehavior(),
 
-				Spell.BuffSelf(
+                Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
+                Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
+                Spell.Cast("Chi Brew", ctx => Me, ret => Me.MaxChi - Me.CurrentChi >= 2),
+                Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPct),
+                Spell.BuffSelf("Zen Sphere", ctx => HasTalent(MonkTalents.ZenSphere)),
+
+				Spell.Cast(
 					"Invoke Xuen, the White Tiger",
-					req => !Me.IsMoving
-						&& Me.CurrentTarget.IsBoss()
-						&& Me.CurrentTarget.IsWithinMeleeRange
-						&& (PartyBuff.WeHaveBloodlust || PartyBuff.WeHaveSatedDebuff)
-						),
+					req => !Me.IsMoving && Me.CurrentTarget.IsBoss() && Me.CurrentTarget.IsWithinMeleeRange),
+					
 
-				Spell.Cast("Storm, Earth, and Fire", ret => Me.CurrentTarget.HasMyOrMyStuffsAura("Storm, Earth, and Fire")),
-
-				new PrioritySelector(
-					ctx => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Where(u => u != Me.CurrentTarget && !u.IsCrowdControlled() && !u.HasMyOrMyStuffsAura("Storm, Earth, and Fire")).OrderByDescending(u => u.CurrentHealth).FirstOrDefault(),
-					Spell.Cast("Storm, Earth, and Fire", onUnit => (WoWUnit)onUnit, req => !Me.HasMyOrMyStuffsAura("Storm, Earth, and Fire", 2))
-					),
-
-				new Decorator(
-					req => Me.MaxChi - Me.CurrentChi >= 3 || HoldForTouchOfDeath,
+				new Decorator(ctx => MonkSettings.UseSef,
 					new PrioritySelector(
-						Spell.Cast("Spinning Crane Kick", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3),
-						Spell.Cast("Expel Harm", ret => StyxWoW.Me.HealthPercent < 80),
-						Spell.Cast("Jab")
-						)
-					),
+						// Cancel SEF from mobs that we should no longer be SEFing
+						ctx => 
+							Unit.NearbyUnitsInCombatWithUsOrOurStuff
+								.FirstOrDefault(u => u.HasMyOrMyStuffsAura("Storm, Earth, and Fire") && 
+													(u == Me.CurrentTarget || u.IsImmune(WoWSpellSchool.Physical) || u.IsCrowdControlled())),
+						Spell.Cast("Storm, Earth, and Fire", onUnit => (WoWUnit)onUnit),
 
-				Spell.Cast("Tiger Palm", ret => Me.HasAuraExpired("Tiger Power")),
-				Spell.Cast("Rising Sun Kick", ret => !SpellManager.HasSpell("Chi Explosion") || Me.CurrentTarget.HasAuraExpired("Rising Sun Kick")),
+						new PrioritySelector(
+							ctx => 
+								Unit.NearbyUnitsInCombatWithUsOrOurStuff
+									.Where(u => u != Me.CurrentTarget && !u.IsImmune(WoWSpellSchool.Physical) && 
+												!u.IsCrowdControlled() && !u.HasMyOrMyStuffsAura("Storm, Earth, and Fire"))
+									.OrderByDescending(u => u.CurrentHealth)
+									.FirstOrDefault(),
+							Spell.Cast("Storm, Earth, and Fire", onUnit => (WoWUnit)onUnit, req => !Me.HasMyOrMyStuffsAura("Storm, Earth, and Fire", 2))
+							))),
+
+                //-- prior to this cast without line of sight or facing or currenttarget --
+                Movement.WaitForLineOfSpellSight(),
+
+                //-- prior to this cast without facing or currenttarget --
+                Movement.WaitForFacing(),
+
+                //-- following have line of sight and facing (even when disabled) --
+
+                Spell.Cast("Serenity", ret => Me.HasAura("Tiger Power") && Me.CurrentTarget.HasMyAura("Rising Sun Kick")),
 
 				new Decorator(ret => !HoldForTouchOfDeath,
 					new PrioritySelector(
-						Spell.Cast("Fists of Fury", ret => !Me.HasAuraExpired("Tiger Power", 4) && !Me.CurrentTarget.HasAuraExpired("Rising Sun Kick", 4)),
-						Spell.Cast("Chi Explosion", ret => Me.HasAura("Combo Breaker: Chi Explosion") && Me.CurrentChi >= 2),
-						Spell.Cast("Blackout Kick", ret => Me.HasAura("Combo Breaker: Blackout Kick")),
+						Spell.Cast("Tiger Palm", ret => Me.HasAuraExpired("Tiger Palm", "Tiger Power", 4)),
+						Spell.Cast("Rising Sun Kick", 
+							ret => !SpellManager.HasSpell("Chi Explosion") || 
+									Me.CurrentTarget.HasAuraExpired("Rising Sun Kick") ||
+									Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(Me.CurrentTarget.Location) <= 8 * 8) <= 1),
+						Spell.Cast("Fists of Fury", ret => !Me.HasAuraExpired("Tiger Palm", "Tiger Power", 4) && !Me.CurrentTarget.HasAuraExpired("Rising Sun Kick", 4)),
+						Spell.Cast("Chi Explosion", 
+							ret => Me.CurrentChi >= 4 && Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(Me.CurrentTarget.Location) <= 8 * 8) >= 2 &&
+									(!SpellManager.HasSpell("Fists of Fury") || SpellManager.Spells["Fists of Fury"].CooldownTimeLeft.TotalSeconds > 4)),
+						Spell.Cast("Chi Explosion", 
+							ret => Me.HasAura("Combo Breaker: Chi Explosion") && Me.CurrentChi >= 2 &&
+									Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(Me.CurrentTarget.Location) <= 8 * 8) <= 1 &&
+									(!SpellManager.HasSpell("Fists of Fury") || SpellManager.Spells["Fists of Fury"].CooldownTimeLeft.TotalSeconds > 2)),
+						Spell.Cast("Blackout Kick", ret => Me.HasAura("Combo Breaker: Blackout Kick") || Me.HasAura("Serenity")),
 						Spell.Cast("Tiger Palm", ret => Me.HasAura("Combo Breaker: Tiger Palm")),
 						Spell.Cast("Chi Wave"),
-						Spell.Cast("Chi Explosion", ret => Me.CurrentChi >= 4 || Me.CurrentChi >= 3 && Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(Me.CurrentTarget.Location) <= 8 * 8) < 2),
-						Spell.Cast("Blackout Kick", ret => !SpellManager.HasSpell("Chi Explosion"))
+						Spell.Cast("Chi Explosion", 
+							ret => Me.CurrentChi >= 3 && Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(Me.CurrentTarget.Location) <= 8 * 8) <= 1 &&
+									(!SpellManager.HasSpell("Fists of Fury") || SpellManager.Spells["Fists of Fury"].CooldownTimeLeft.TotalSeconds > 4)),
+						Spell.Cast("Blackout Kick", ret => !SpellManager.HasSpell("Chi Explosion") && Me.MaxChi - Me.CurrentChi < 2)
 						)
 				),
+
+				new Decorator(
+					ctx => Me.MaxChi - Me.CurrentChi >= 1 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3,
+					new PrioritySelector(
+						Spell.Cast("Rushing Jade Wind"),
+						Spell.Cast("Spinning Crane Kick", ret => !SpellManager.HasSpell("Rushing Jade Wind"))
+						)),
+
+				new Decorator(
+					req => Me.MaxChi - Me.CurrentChi >= 2,
+					new PrioritySelector(
+						Spell.Cast("Expel Harm", ret => StyxWoW.Me.HealthPercent < 95),
+						Spell.Cast("Jab"))
+					),
 
 				Movement.CreateMoveToMeleeBehavior(true)
 				);
@@ -240,7 +277,8 @@ namespace Singular.ClassSpecific.Monk
 
                         Helpers.Common.CreateInterruptBehavior(),
 
-                        Spell.Cast("Leg Sweep", ret => Spell.UseAOE && MonkSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.CurrentTarget.IsWithinMeleeRange),
+                        Movement.WaitForLineOfSpellSight(),
+                        Movement.WaitForFacing(),
 
 #if USE_OLD_ROLL
                         new Decorator(
@@ -256,8 +294,11 @@ namespace Singular.ClassSpecific.Monk
                                 )
                             ),
 #else
-                        Common.CreateMonkCloseDistanceBehavior( ),
+                        Common.CreateMonkCloseDistanceBehavior(),
 #endif
+
+                        Spell.Cast("Leg Sweep", ret => Spell.UseAOE && MonkSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.CurrentTarget.IsWithinMeleeRange),
+
 
 
                         Common.CastTouchOfDeath(),
@@ -354,6 +395,9 @@ namespace Singular.ClassSpecific.Monk
                         Helpers.Common.CreateInterruptBehavior(),
 
                         // ranged attack on the run when chasing
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         Spell.Cast("Leg Sweep", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange && !u.IsCrowdControlled())),
 

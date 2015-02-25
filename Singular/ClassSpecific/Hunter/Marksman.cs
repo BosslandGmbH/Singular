@@ -48,6 +48,9 @@ namespace Singular.ClassSpecific.Hunter
 
                         Common.CreateHunterAvoidanceBehavior(null, null),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateHunterNormalCrowdControl(),
@@ -72,7 +75,7 @@ namespace Singular.ClassSpecific.Hunter
                                 ctx => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Where(u => u.InLineOfSpellSight).OrderByDescending(u => (uint) u.HealthPercent).FirstOrDefault(),
                                 Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), req => Me.HealthPercent < 85),
                                 Spell.Cast("Multi-Shot", ctx => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f)),
-                                Common.CreateHunterTrapBehavior("Explosive Trap", true, on => Me.CurrentTarget, req => true),
+                                Common.CreateHunterTrapBehavior("Explosive Trap", true, on => Me.CurrentTarget, req => Spell.UseAOE ),
                                 Common.CastSteadyShot(on => Me.CurrentTarget)
                                 )
                             ),
@@ -197,7 +200,7 @@ namespace Singular.ClassSpecific.Hunter
                     ),
 
                 Spell.Cast("Steady Shot", req => TalentManager.IsSelected(10) && Me.HasKnownAuraExpired("Steady Focus", 2)),
-				Common.CreateHunterTrapBehavior("Explosive Trap", true, onUnit => Me.CurrentTarget, req => Unit.UnfriendlyUnitsNearTarget(10f).Any()),
+                Common.CreateHunterTrapBehavior("Explosive Trap", true, onUnit => Me.CurrentTarget, req => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Any()),
 				Spell.Cast("Aimed Shot"),
 				Spell.Cast("Focusing Shot"),
 				Spell.Cast("Steady Shot"),
@@ -233,6 +236,9 @@ namespace Singular.ClassSpecific.Hunter
                 // Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateHunterPvpCrowdControl(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         Spell.Cast("Tranquilizing Shot", req => Me.GetAllAuras().Any(a => a.Spell.DispelType == WoWDispelType.Enrage)),
 

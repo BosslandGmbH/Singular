@@ -87,6 +87,10 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     req => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
                         Common.CreateChargeBehavior(),
@@ -209,6 +213,9 @@ namespace Singular.ClassSpecific.Warrior
 
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         new Decorator(
                             req => Me.GotTarget() && Me.Shapeshift != (ShapeshiftForm) WarriorStance.GladiatorStance,

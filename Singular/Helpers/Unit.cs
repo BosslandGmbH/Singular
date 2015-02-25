@@ -484,6 +484,21 @@ namespace Singular.Helpers
             return maxh <= TrivialHealth;
         }
 
+        public static bool IsStressful(this WoWUnit unit)
+        {
+            if (SingularRoutine.CurrentWoWContext != WoWContext.Normal)
+                return true;
+
+            if (unit == null)
+                return false;
+
+            if (unit.IsPlayer)
+                return true;
+
+            uint maxh = unit.MaxHealth;
+            return maxh > StyxWoW.Me.MaxHealth * 2 || unit.Level > (StyxWoW.Me.Level + (unit.Elite ? -10 : 2));
+        }
+
         public static WoWPlayer GetPlayerParent(WoWUnit unit)
         {
             // If it is a pet/minion/totem, lets find the root of ownership chain
@@ -764,9 +779,7 @@ namespace Singular.Helpers
             if (!SpellManager.HasSpell(spell))
                 return false;
 
-            WoWAura wantedAura = u.GetAllAuras()
-                .Where(a => a != null && string.Compare(a.Name, auraName, false) == 0 && a.TimeLeft > TimeSpan.Zero && (!myAura || a.CreatorGuid == StyxWoW.Me.Guid))
-                .FirstOrDefault();
+            WoWAura wantedAura = u.GetAllAuras().FirstOrDefault(a => a != null && a.Name.Equals(auraName, StringComparison.OrdinalIgnoreCase) && a.TimeLeft > TimeSpan.Zero && (!myAura || a.CreatorGuid == StyxWoW.Me.Guid));
 
             if (wantedAura == null)
                 return true;
@@ -1069,10 +1082,11 @@ namespace Singular.Helpers
 
         private const int BannerOfTheAlliance = 61573;
         private const int BannerOfTheHorde = 61574;
-        
+
         public static bool IsTrainingDummy(this WoWUnit unit)
         {
             // return Lists.BossList.TrainingDummies.Contains(unit.Entry);
+            
             int bannerId = StyxWoW.Me.IsHorde ? BannerOfTheAlliance : BannerOfTheHorde;
             return unit != null && unit.Level > 1 
                 && ((unit.CurrentHealth == 1 && unit.MaxHealth < unit.Level) || unit.HasAura(bannerId) || unit.Name.Contains("Training Dummy"));
@@ -1460,7 +1474,7 @@ namespace Singular.Helpers
         /// any enemy player including in Sanctuary, not PVP flagged, etc where a player
         /// is not attackable
         /// </summary>
-        public static bool CanWeAttack(this WoWUnit unit)
+        public static bool CanWeAttack(this WoWUnit unit, bool restoreFocus = true)
         {
             if (unit == null)
                 return false;
@@ -1482,10 +1496,13 @@ namespace Singular.Helpers
                 WoWUnit focusSave = StyxWoW.Me.FocusedUnit;
                 StyxWoW.Me.SetFocus(unit);
                 canAttack = Lua.GetReturnVal<bool>("return UnitCanAttack(\"player\",\"focus\")", 0);
-                if (focusSave == null || !focusSave.IsValid)
-                    StyxWoW.Me.SetFocus(WoWGuid.Empty);
-                else
-                    StyxWoW.Me.SetFocus(focusSave);
+                if (restoreFocus)
+                {
+                    if (focusSave == null || !focusSave.IsValid)
+                        StyxWoW.Me.SetFocus(WoWGuid.Empty);
+                    else
+                        StyxWoW.Me.SetFocus(focusSave);
+                }
             }
 
             return canAttack;
@@ -1622,7 +1639,7 @@ namespace Singular.Helpers
                         {
                             if (u.IsPlayer)
                                 PlayerCount++;
-                            else if (!u.Combat)
+                            else if (!u.Combat && u != StyxWoW.Me.CurrentTarget)
                                 AvoidAOE = true;
                             else if (u == StyxWoW.Me.CurrentTarget || u.Aggro || u.TaggedByMe || u.IsTargetingUs())
                             {

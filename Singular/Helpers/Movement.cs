@@ -51,16 +51,19 @@ namespace Singular.Helpers
 
         public static Composite CreateMoveToLosBehavior(UnitSelectionDelegate toUnit, bool stopInLoss = false)
         {
-            return new Decorator(
-                ret => !MovementManager.IsMovementDisabled
-                    && toUnit != null
-                    && toUnit(ret) != null
-                    && !toUnit(ret).IsMe
-                    && !InLineOfSpellSight(toUnit(ret)),
+            return new Sequence(
+
+                ctx => (WoWUnit) (toUnit == null ? null : toUnit(ctx)),
+
+                new DecoratorContinue(
+                    req => req == null || InLineOfSpellSight((req as WoWUnit)) || (req as WoWUnit).IsMe,
+                    new ActionAlwaysFail()
+                    ),
+
                 new Action(ret =>
                 {
-                    WoWUnit unit = toUnit == null ? null : toUnit(ret);
-                    if (unit != null && !unit.IsMe && !InLineOfSpellSight(unit))
+                    WoWUnit unit = (WoWUnit) ret;
+                    if (unit != null)
                     {
                         MoveResult moveRes = Navigator.MoveTo(unit.Location);
                         if (unit.Guid != _lastLossGuid || moveRes != _lastLossMoveResult || DateTime.UtcNow > _nextLossMessage)
@@ -76,9 +79,43 @@ namespace Singular.Helpers
                     }
                     return RunStatus.Failure;
                 })
-
                 );
         }
+
+        public static Composite WaitForLineOfSpellSight(UnitSelectionDelegate toUnit = null)
+        {
+            toUnit = toUnit ?? (u => Me.CurrentTarget);
+
+            return new Sequence(
+                
+                ctx => toUnit(ctx),
+
+                new DecoratorContinue(
+                    req => req != null && (InLineOfSpellSight(req as WoWUnit) || (req as WoWUnit).IsMe),
+                    new ActionAlwaysFail()
+                    ),
+
+                new DecoratorContinue(
+                    req => req == null,
+                    new PrioritySelector(
+                        new Throttle(5, new Action(r => Logger.Write(LogColor.Diagnostic, "warning: waiting for line of sight, but no target selected"))),
+                        new ActionAlwaysSucceed()
+                        )
+                    ),
+
+                new DecoratorContinue(
+                    req => req != null && MovementManager.IsMovementDisabled,
+                    new Sequence(
+                        new Throttle(5, new Action(r => Logger.Write(LogColor.Diagnostic, "warning: movement disabled and not in line of sight of {0} @ {1:F1} yds", (r as WoWUnit).SafeName(), (r as WoWUnit).SpellDistance()))),
+                        new ActionAlwaysFail()
+                        )
+                    ),
+
+                // at this point, we have target, movement allowed, so return Success until in line of sight
+                new ActionAlwaysSucceed()
+                );
+        }
+
 
         /// <summary>
         /// true if Target in line of spell sight AND a spell hasn't just failed due
@@ -98,7 +135,12 @@ namespace Singular.Helpers
             {
                 if ((DateTime.Now - EventHandlers.LastLineOfSightFailure).TotalMilliseconds < timeOut)
                 {
-                    Logger.WriteDebug( Color.White, "InLineOfSpellSight: last LoS error < {0} ms, pretending still not in LoS", timeOut);
+                    if (nextLossMessage < DateTime.UtcNow)
+                    {
+                        nextLossMessage = DateTime.UtcNow + TimeSpan.FromMilliseconds(timeOut / 3);
+                        Logger.WriteDebug(Color.White, "InLineOfSpellSight: last LoS error < {0} ms, pretending still not in LoS", timeOut);
+                    }
+
                     return false;
                 }
 
@@ -107,6 +149,8 @@ namespace Singular.Helpers
 
             return false;
         }
+
+        static DateTime nextLossMessage { get; set; }
 
         /// <summary>
         ///   Creates the ensure movement stopped behavior. if no range specified, will stop immediately.  if range given, will stop if within range yds of current target
@@ -177,77 +221,114 @@ namespace Singular.Helpers
 
         public static Composite CreateFaceTargetBehavior(UnitSelectionDelegate toUnit, float viewDegrees = 100f, bool waitForFacing = true)
         {
-            if (toUnit == null)
-                return new ActionAlwaysFail();
+            System.Diagnostics.Debug.Assert( toUnit != null);
 
-            return new Decorator(
-                ret => !MovementManager.IsFacingDisabled
-                    && toUnit(ret) != null 
-                    && !Me.IsMoving 
-                    && !toUnit(ret).IsMe 
-                    && !Me.IsSafelyFacing(toUnit(ret), viewDegrees),
-                new Sequence(
+            return new Sequence(
+                ctx => toUnit(ctx),
 
-                    ctx => toUnit(ctx),
+                new DecoratorContinue(
+                    req => req == null || MovementManager.IsFacingDisabled || Me.IsSafelyFacing(toUnit(req), viewDegrees) || (req as WoWUnit).IsMe,
+                    new ActionAlwaysFail()
+                    ),
 
-                    new Action( ret => 
+                new Action(ret => 
+                {
+                    WoWUnit unit = (WoWUnit) ret;
+                    WoWMovement.MovementDirection strafe = WoWMovement.MovementDirection.None;
+                    const int StrafeTime = 150;
+
+                    if (unit.Distance < 0.1)
                     {
-                        WoWUnit unit = (WoWUnit) ret;
-                        WoWMovement.MovementDirection strafe = WoWMovement.MovementDirection.None;
-                        const int StrafeTime = 150;
+                        strafe = (((int)DateTime.Now.Second) & 1) == 0 ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
+                        Logger.Write( LogColor.Hilite, "FaceTarget: {0} for {1} ms since too close to target @ {2:F2} yds", strafe, StrafeTime, unit.Distance);
+                        WoWMovement.Move(strafe, TimeSpan.FromMilliseconds(StrafeTime));
+                    }
+                }),
 
-                        if (unit.Distance < 0.1)
-                        {
-                            strafe = (((int)DateTime.Now.Second) & 1) == 0 ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
-                            Logger.Write( LogColor.Hilite, "FaceTarget: {0} for {1} ms since too close to target @ {2:F2} yds", strafe, StrafeTime, unit.Distance);
-                            WoWMovement.Move(strafe, TimeSpan.FromMilliseconds(StrafeTime));
-                        }
-                    }),
-                    new ThrottlePasses( 
-                        1, TimeSpan.FromMilliseconds(500), RunStatus.Success, 
-                        new Action( ret => {
-                            if (SingularSettings.Debug)
-                                Logger.WriteDebug("FaceTarget: facing since more than {0} degrees", (long) viewDegrees);
+                new PrioritySelector(
+                    new Throttle( 
+                        TimeSpan.FromSeconds(0.5),
+                        new Action( ret => 
+                            {
+                                if (SingularSettings.Debug)
+                                    Logger.WriteDebug("FaceTarget: facing since more than {0} degrees", (long) viewDegrees);
+                                return RunStatus.Success;
                             })
                         ),
-                    new Action( ret => {
-                        RunStatus rslt;
-                        WoWUnit unit = (WoWUnit)ret;
+                    new ActionAlwaysSucceed()
+                    ),
 
-                        unit.Face();
+                new Action( ret => {
+                    RunStatus rslt;
+                    WoWUnit unit = (WoWUnit)ret;
 
-                        if (!waitForFacing)
-                            rslt = RunStatus.Failure;
+                    unit.Face();
 
-                        // even though we may want a tighter conical facing check, allow
-                        // .. behavior to continue if 150 or better so we can cast while turning
-                        else if (Me.IsSafelyFacing(unit, 150f))
-                            rslt = RunStatus.Failure;
+                    if (!waitForFacing)
+                        rslt = RunStatus.Failure;
 
-                        // special handling for when consumed by Direglob and other mobs we are inside/on top of 
-                        // .. as facing sometimes won't matter
-                        else if (Me.InVehicle)
-                        {
-                            Logger.WriteDebug("FaceTarget: don't wait to face {0} since in vehicle", unit.SafeName());
-                            rslt = RunStatus.Failure;
-                        }
-                        else
-                        {
-                            // Logger.WriteDebug("FaceTarget: not yet facing {0}", unit.SafeName());
-                            rslt = RunStatus.Success;
-                        }
-    /*
-                        if (strafe != WoWMovement.MovementDirection.None)
-                        {
-                            Logger.WriteDebug("FaceTarget: cancelling strafe for target @ {0:F2} yds", unit.Distance);
-                            WoWMovement.MoveStop(strafe);
-                        }
-    */
-                        // otherwise, indicate behavior complete so begins again while
-                        // .. waiting for facing to occur
-                        return rslt;
-                        })
-                    )
+                    // even though we may want a tighter conical facing check, allow
+                    // .. behavior to continue if 150 or better so we can cast while turning
+                    else if (Me.IsSafelyFacing(unit, 150f))
+                        rslt = RunStatus.Failure;
+
+                    // special handling for when consumed by Direglob and other mobs we are inside/on top of 
+                    // .. as facing sometimes won't matter
+                    else if (Me.InVehicle)
+                    {
+                        Logger.WriteDebug("FaceTarget: don't wait to face {0} since in vehicle", unit.SafeName());
+                        rslt = RunStatus.Failure;
+                    }
+                    else
+                    {
+                        // Logger.WriteDebug("FaceTarget: not yet facing {0}", unit.SafeName());
+                        rslt = RunStatus.Success;
+                    }
+/*
+                    if (strafe != WoWMovement.MovementDirection.None)
+                    {
+                        Logger.WriteDebug("FaceTarget: cancelling strafe for target @ {0:F2} yds", unit.Distance);
+                        WoWMovement.MoveStop(strafe);
+                    }
+*/
+                    // otherwise, indicate behavior complete so begins again while
+                    // .. waiting for facing to occur
+                    return rslt;
+                    })
+                );
+        }
+
+        public static Composite WaitForFacing(UnitSelectionDelegate toUnit = null, float viewDegrees = 100f)
+        {
+            toUnit = toUnit ?? (u => Me.CurrentTarget);
+
+            return new Sequence(
+
+                ctx => toUnit(ctx),
+
+                new DecoratorContinue(
+                    req => req != null && (Me.IsSafelyFacing(req as WoWUnit, viewDegrees) || (req as WoWUnit).IsMe),
+                    new ActionAlwaysFail()
+                    ),
+
+                new DecoratorContinue(
+                    req => req == null,
+                    new PrioritySelector(
+                        new Throttle(5, new Action(r => Logger.WriteDiagnostic("warning: waiting to face target, but no target selected"))),
+                        new ActionAlwaysSucceed()
+                        )
+                    ),
+
+                new DecoratorContinue(
+                    req => req != null && MovementManager.IsFacingDisabled,
+                    new PrioritySelector(
+                        new Throttle(5, new Action(r => Logger.Write(LogColor.Diagnostic, "warning: facing disabled and not facing {0} @ {1:F1} yds", (r as WoWUnit).SafeName(), (r as WoWUnit).SpellDistance()))),
+                        new ActionAlwaysSucceed()
+                        )
+                    ),
+
+                // at this point, we have target, movement allowed, so return Success until in line of sight
+                new ActionAlwaysSucceed()
                 );
         }
 
@@ -936,6 +1017,7 @@ namespace Singular.Helpers
                 else
                 {
                     Navigator.PlayerMover.MoveStop();
+                    WoWMovement.MoveStop();
 
                     if (SingularSettings.DebugStopMoving)
                     {

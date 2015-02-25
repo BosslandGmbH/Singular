@@ -19,14 +19,23 @@ namespace Singular.ClassSpecific.Monk
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateInterruptBehavior(),
-                Spell.Cast("Tiger Palm", ret => !SpellManager.HasSpell("Blackout Kick") && StyxWoW.Me.CurrentChi >= 1),
-                Spell.Cast("Tiger Palm", ret => SpellManager.HasSpell("Blackout Kick") && StyxWoW.Me.CurrentChi >= 1 && StyxWoW.Me.HasKnownAuraExpired("Tiger Power")),
-                Spell.Cast("Blackout Kick", ret => StyxWoW.Me.CurrentChi >= 2),
-                Spell.Cast("Jab"),
-                //Only roll to get to the mob quicker. 
-                Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !SingularSettings.Instance.Monk().DisableRoll && StyxWoW.Me.CurrentTarget.Distance > 12),
-                Movement.CreateMoveToMeleeBehavior(true)
+                Spell.WaitForCastOrChannel(),
+                new Decorator(                    
+                    req => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
+                        Spell.Cast("Tiger Palm", ret => !SpellManager.HasSpell("Blackout Kick") && StyxWoW.Me.CurrentChi >= 1),
+                        Spell.Cast("Tiger Palm", ret => SpellManager.HasSpell("Blackout Kick") && StyxWoW.Me.CurrentChi >= 1 && StyxWoW.Me.HasKnownAuraExpired("Tiger Power")),
+                        Spell.Cast("Blackout Kick", ret => StyxWoW.Me.CurrentChi >= 2),
+                        Spell.Cast("Jab"),
+                        //Only roll to get to the mob quicker. 
+                        Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !SingularSettings.Instance.Monk().DisableRoll && StyxWoW.Me.CurrentTarget.Distance > 12)
+                        )
+                    )
                 );
         }
 

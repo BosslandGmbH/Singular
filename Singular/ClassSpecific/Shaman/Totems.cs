@@ -753,9 +753,6 @@ namespace Singular.ClassSpecific.Shaman
                 case WoWTotem.Capacitor:
                     return 8f;
 
-                case WoWTotem.Stormlash:
-                    return 30f;
-
                 case WoWTotem.Windwalk:
                     return 40f;
 

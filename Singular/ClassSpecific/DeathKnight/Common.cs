@@ -18,7 +18,7 @@ using System.Collections.Generic;
 
 namespace Singular.ClassSpecific.DeathKnight
 {
-    public class Common
+    public static class Common
     {
         internal const uint Ghoul = 26125;
         internal const int SuddenDoom = 81340;
@@ -54,15 +54,30 @@ namespace Singular.ClassSpecific.DeathKnight
             Lua.DoString("DestroyTotem(1)");
         }
 
+        internal static bool NeedsFrostFever(this WoWUnit u)
+        {
+            if (talent.necrotic_plague_enabled)
+                return u.NeedsNecroticPlague();
+            return u.HasAuraExpired("Icy Touch", "Frost Fever");
+        }
+        internal static bool NeedsBloodPlague(this WoWUnit u)
+        {
+            if (talent.necrotic_plague_enabled)
+                return u.NeedsNecroticPlague();
+            return u.HasAuraExpired("Plague Strike", "Blood Plague");
+        }
+
+        internal static bool NeedsNecroticPlague(this WoWUnit u)
+        {
+            return !talent.necrotic_plague_enabled ? false : u.HasKnownAuraExpired("Necrotic Plague");
+        }
+
         internal static bool ShouldSpreadDiseases
         {
             get
             {
-                int radius = TalentManager.HasGlyph("Blood Boil") ? 15 : 10;
-
-                return !Me.CurrentTarget.HasAuraExpired("Blood Plague") 
-                    && !Me.CurrentTarget.HasAuraExpired("Frost Fever") 
-                    && Unit.NearbyUnfriendlyUnits.Any(u => Me.SpellDistance(u) < radius && u.HasAuraExpired( "Blood Plague") && u.HasAuraExpired("Frost Fever"));
+                return disease.ticking_on(Me.CurrentTarget) 
+                    && Unit.UnfriendlyUnits(Common.BloodBoilRange).Any(u => !disease.ticking_on(u));
             }
         }
 
@@ -158,11 +173,15 @@ namespace Singular.ClassSpecific.DeathKnight
                     req => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         CreateDarkSuccorBehavior(),
                         Common.CreateGetOverHereBehavior(),
                         Spell.Cast("Outbreak"),
                         Spell.Cast("Howling Blast"),
-                        Spell.Cast("Icy Touch")
+                        Spell.Buff("Icy Touch")
                         )
                     ),
 
@@ -182,9 +201,12 @@ namespace Singular.ClassSpecific.DeathKnight
                 new Decorator( 
                     req => !Spell.IsGlobalCooldown(),
                         new PrioritySelector(
-                        Spell.Cast("Howling Blast"),
-                        Spell.Cast("Icy Touch")
-                        )
+                            Movement.WaitForFacing(),
+                            Movement.WaitForLineOfSpellSight(),
+
+                            Spell.Cast("Howling Blast"),
+                            Spell.Buff("Icy Touch")
+                            )
                     ),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
@@ -368,6 +390,31 @@ namespace Singular.ClassSpecific.DeathKnight
                 new PrioritySelector(
 
                         // *** Offensive Cooldowns ***
+                        
+                        Spell.BuffSelf(
+                            "Remorseless Winter", 
+                            req => 
+                            {
+                                if (Spell.IsSpellOnCooldown("Remorseless Winter"))
+                                    return false;
+
+                                if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
+                                {
+                                    if (!Me.GotTarget())
+                                        return false;
+                                    if (!Me.CurrentTarget.IsPlayer || Me.CurrentTarget.SpellDistance() > 8)
+                                        return false;
+                                    Logger.Write(LogColor.Hilite, "^Remorseless Winter: slowing {0} @ {1:F1} yds", Me.CurrentTarget.SafeName(), Me.CurrentTarget.SpellDistance());
+                                    return true;
+                                }
+
+                                WoWUnit unit = Unit.UnfriendlyUnits(8).FirstOrDefault( u => u.IsPlayer && !u.IsMelee());
+                                if (unit == null)
+                                    return false;
+
+                                Logger.Write(LogColor.Hilite, "^Remorseless Winter: slowing non-melee {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
+                                return true;
+                            }),
 
                         // I need to use Empower Rune Weapon to use Death Strike
                         Spell.BuffSelf("Empower Rune Weapon",
@@ -524,7 +571,7 @@ namespace Singular.ClassSpecific.DeathKnight
             // we have aura AND (target is about to die OR aura expires in less than 3 secs)
             return new Decorator(
                 req => Me.GetAuraTimeLeft("Dark Succor").TotalMilliseconds > 250
-                    && (Me.HealthPercent < 80 || Me.GetAuraTimeLeft("Dark Succor").TotalMilliseconds < 3000 || (Me.GotTarget() && Me.CurrentTarget.TimeToDeath() < 6) 
+                    && (Me.HealthPercent < 80 || Me.GetAuraTimeLeft("Dark Succor").TotalMilliseconds < 3000 || (Me.GotTarget() && Me.CurrentTarget.TimeToDeath(99) < 6) 
                     && Me.CurrentTarget.InLineOfSpellSight 
                     && Me.IsSafelyFacing( Me.CurrentTarget)
                     && Spell.CanCastHack("Death Strike", Me.CurrentTarget)),
@@ -660,15 +707,54 @@ namespace Singular.ClassSpecific.DeathKnight
             return new PrioritySelector(
                 ctx =>
                 {
-                    WoWUnit totem = ObjectManager.GetObjectsOfTypeFast<WoWUnit>()
-                        .Where(u => u.IsTotem && u.SummonedByUnit != null && u.SummonedByUnit.IsPlayer && u.SummonedByUnit.Class == WoWClass.Shaman 
-                            && Unit.ValidUnit(u.SummonedByUnit) && u.IsWithinMeleeRange && Me.IsSafelyFacing(u, 150) && u.InLineOfSpellSight)
+                    WoWUnit unit = ObjectManager.GetObjectsOfTypeFast<WoWUnit>()
+                        .Where(u => IsSoulReaperHasteTarget(u))
+                        .OrderBy(u => u.CurrentHealth)
                         .FirstOrDefault();
-                    return totem;
+                    return unit;
                 },
 
                 Spell.Cast("Soul Reaper", on => (WoWUnit)on, req => req != null && !Me.HasAura("Soul Reaper"))
                 );
+        }
+
+        /// <summary>
+        /// check if target likely to die within 6 seconds and we have a reasonable
+        /// shot at getting Soul Reaper haste buff
+        /// </summary>
+        /// <param name="u"></param>
+        /// <returns></returns>
+        private static bool IsSoulReaperHasteTarget(WoWUnit u)
+        {
+            if ( u.IsTotem )
+            {
+                if (u.SummonedByUnit == null || !u.SummonedByUnit.IsPlayer || u.SummonedByUnit.Class != WoWClass.Shaman || !Unit.ValidUnit(u.SummonedByUnit))
+                {
+                    return false;
+                }
+            }
+            else if (u.Guid == Me.CurrentTargetGuid)
+            {
+                if (u.TimeToDeath(99) > 3)
+                {
+                    return false;
+                }
+            }
+            else if (u.IsTrivial())
+            {
+
+            }
+            else if (u.IsStressful())
+            {
+                return false;
+            }
+            else if (u.HealthPercent > 5)
+            {
+                return false;
+            }
+
+            bool inAttackablePosition = u.IsWithinMeleeRange && Me.IsSafelyFacing(u, 150) && u.InLineOfSpellSight;
+            return inAttackablePosition;
         }
 
         public static Composite CreateApplyDiseases()
@@ -680,25 +766,26 @@ namespace Singular.ClassSpecific.DeathKnight
                     Spell.BuffSelf(
                         "Unholy Blight",
                         req => Spell.CanCastHack("Unholy Blight")
-                            && Unit.NearbyUnfriendlyUnits.Any(u => (u.IsPlayer || u.IsBoss()) && u.Distance < (u.MeleeDistance() + 5) && u.HasAuraExpired("Blood Plague"))),
+                            && Unit.NearbyUnfriendlyUnits.Any(u => (u.IsPlayer || u.IsBoss()) && u.Distance < (u.MeleeDistance() + 5) && u.NeedsBloodPlague())),
 
-                    Spell.Cast("Outbreak", req => Me.CurrentTarget.HasAuraExpired("Frost Fever") || Me.CurrentTarget.HasAuraExpired("Blood Plague")),
+                    Spell.Cast("Outbreak", req => Me.CurrentTarget.NeedsFrostFever() || Me.CurrentTarget.NeedsBloodPlague()),
 
                     // now Rune based abilities
-                    Spell.Cast(
+                    Spell.Buff(
                         "Plague Strike",
                         req => TalentManager.CurrentSpec == WoWSpec.DeathKnightUnholy
-                            && (Me.CurrentTarget.HasAuraExpired("Frost Fever") || Me.CurrentTarget.HasAuraExpired("Blood Plague"))),
+                            && (Me.CurrentTarget.NeedsFrostFever() || Me.CurrentTarget.NeedsBloodPlague())
+                        ),
 
                     new Decorator(
-                        req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.CurrentTarget.HasAuraExpired("Frost Fever"),
+                        req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.CurrentTarget.NeedsFrostFever(),
                         new PrioritySelector(
                             Spell.Cast("Howling Blast", req => Spell.UseAOE && TalentManager.CurrentSpec == WoWSpec.DeathKnightFrost),
-                            Spell.Cast("Icy Touch", req => !Spell.UseAOE || TalentManager.CurrentSpec != WoWSpec.DeathKnightFrost)
+                            Spell.Buff("Icy Touch", req => !Spell.UseAOE || TalentManager.CurrentSpec != WoWSpec.DeathKnightFrost)
                             )
                         ),
 
-                    Spell.Cast("Plague Strike", req => Me.CurrentTarget.HasAuraExpired("Blood Plague"))
+                    Spell.Buff("Plague Strike", req => Me.CurrentTarget.NeedsBloodPlague())
                     )
                 );
         }
@@ -731,7 +818,7 @@ namespace Singular.ClassSpecific.DeathKnight
                             new WaitContinue( 1, until => (until as WoWUnit).IsWithinMeleeRange, new ActionAlwaysSucceed())
                             ),
                         Spell.Cast("Outbreak"),
-                        Spell.Cast("Icy Touch"),
+                        Spell.Buff("Icy Touch"),
                         Spell.Cast("Death Siphon"),
                         Spell.Cast("Dark Command", req => Me.Specialization == WoWSpec.DeathKnightBlood ),
                         Spell.Cast("Death Coil")

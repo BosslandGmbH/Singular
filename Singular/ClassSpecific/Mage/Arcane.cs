@@ -49,6 +49,9 @@ namespace Singular.ClassSpecific.Mage
                         Common.CreateMagePullBuffs(),
                         Spell.BuffSelf("Arcane Power"),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         new Action(r =>
                         {
                             useArcaneNow = false;
@@ -121,6 +124,9 @@ namespace Singular.ClassSpecific.Mage
 
                         Spell.BuffSelf("Arcane Power"),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         // AoE comes first
                         new Decorator(
                             ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
@@ -182,6 +188,9 @@ namespace Singular.ClassSpecific.Mage
                         Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 11 && !u.TreatAsFrozen())),
                         Common.CreateMagePolymorphOnAddBehavior(),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Spell.BuffSelf("Arcane Power"),
                         Spell.BuffSelf("Mirror Image"),
 
@@ -241,6 +250,9 @@ namespace Singular.ClassSpecific.Mage
 
                         Common.CreateMagePullBuffs(),
                         Spell.BuffSelf("Arcane Power"),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         // AoE comes first
                         new Decorator(

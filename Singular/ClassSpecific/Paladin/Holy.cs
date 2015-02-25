@@ -87,6 +87,9 @@ namespace Singular.ClassSpecific.Paladin
                             new PrioritySelector(
                                 Helpers.Common.CreateInterruptBehavior(),
 
+                                Movement.WaitForFacing(),
+                                Movement.WaitForLineOfSpellSight(),
+
                                 Common.CreatePaladinPullMore(),
 
                                 Common.CreatePaladinBlindingLightBehavior(),
@@ -98,9 +101,7 @@ namespace Singular.ClassSpecific.Paladin
                                 Spell.Cast("Crusader Strike"),
                                 Spell.Cast("Denounce")
                                 )
-                            ),
-
-                        Movement.CreateMoveToMeleeBehavior(true)
+                            )
                         )
                     )
                 );

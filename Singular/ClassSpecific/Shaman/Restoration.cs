@@ -185,9 +185,12 @@ namespace Singular.ClassSpecific.Shaman
                         CreateRestoDiagnosticOutputBehavior( on => null ),
 
                         Helpers.Common.CreateInterruptBehavior(),
-                        Dispelling.CreatePurgeEnemyBehavior("Purge"),
-
                         Totems.CreateTotemsBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
+                        Dispelling.CreatePurgeEnemyBehavior("Purge"),
 
                         Common.CastElementalBlast(),
                         Spell.Buff("Flame Shock", 3, on => Me.CurrentTarget, req => true),
@@ -234,9 +237,12 @@ namespace Singular.ClassSpecific.Shaman
                             new PrioritySelector(
 
                                 Helpers.Common.CreateInterruptBehavior(),
-                                Dispelling.CreatePurgeEnemyBehavior("Purge"),
-
                                 Totems.CreateTotemsBehavior(),
+
+                                Movement.WaitForFacing(),
+                                Movement.WaitForLineOfSpellSight(),
+
+                                Dispelling.CreatePurgeEnemyBehavior("Purge"),
 
                                 Common.CastElementalBlast(),
                                 Spell.Buff("Flame Shock", 3, on => Me.CurrentTarget, req => true ),
@@ -324,7 +330,12 @@ namespace Singular.ClassSpecific.Shaman
                             new PrioritySelector(
                                 Helpers.Common.CreateInterruptBehavior(),
 
-                                Common.CastElementalBlast( cancel: c => HealerManager.CancelHealerDPS()),
+                                Totems.CreateTotemsBehavior(),
+
+                                Movement.WaitForFacing(),
+                                Movement.WaitForLineOfSpellSight(),
+
+                                Common.CastElementalBlast(cancel: c => HealerManager.CancelHealerDPS()),
                                 Spell.Buff("Flame Shock", 3, on => Me.CurrentTarget, req => true),
                                 Spell.Cast("Lava Burst", on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS()),
                                 Spell.Cast("Frost Shock"),

@@ -938,6 +938,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(int spellId, SimpleBooleanDelegate requirements)
         {
+            System.Diagnostics.Debug.Assert(requirements != null);
             return Cast(spellId, ret => StyxWoW.Me.CurrentTarget, requirements);
         }
 
@@ -953,6 +954,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(int spellId, UnitSelectionDelegate onUnit)
         {
+            System.Diagnostics.Debug.Assert(onUnit != null);
             return Cast(spellId, onUnit, ret => true);
         }
 
@@ -969,6 +971,8 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(int spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
+            System.Diagnostics.Debug.Assert(onUnit != null);
+            System.Diagnostics.Debug.Assert(requirements != null);
             return Cast(id => spellId, onUnit, requirements);
         }
 
@@ -1201,6 +1205,9 @@ namespace Singular.Helpers
 
         public static Composite Buff(SimpleStringDelegate name, bool myBuff, UnitSelectionDelegate onUnit, SimpleBooleanDelegate require, params string[] buffNames)
         {
+            System.Diagnostics.Debug.Assert(name != null);
+            System.Diagnostics.Debug.Assert(onUnit != null);
+
             return new Decorator(
                 ret =>
                 {
@@ -1214,6 +1221,13 @@ namespace Singular.Helpers
                     _buffName = name(ret);
                     if (_buffName == null)
                         return false;
+
+                    SpellFindResults sfr;
+                    if (!SpellManager.FindSpell(_buffName, out sfr))
+                        return false;
+
+                    if (sfr.Override != null)
+                        _buffName = sfr.Override.Name;
 
                     if (DoubleCastContains(_buffUnit, _buffName))
                         return false;
@@ -1501,6 +1515,7 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite Buff(int spellId, SimpleBooleanDelegate requirements)
         {
+            System.Diagnostics.Debug.Assert(requirements != null);
             return Buff(spellId, ret => StyxWoW.Me.CurrentTarget, requirements);
         }
 
@@ -1516,6 +1531,8 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite Buff(int spellId, UnitSelectionDelegate onUnit)
         {
+            System.Diagnostics.Debug.Assert(onUnit != null);
+
             return Buff(spellId, onUnit, ret => true);
         }
 
@@ -1532,6 +1549,9 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite Buff(int spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
+            System.Diagnostics.Debug.Assert(onUnit != null);
+            System.Diagnostics.Debug.Assert(requirements != null);
+
             return new Decorator(
                 req => onUnit(req) != null && onUnit(req).Auras.Values.All(a => a.SpellId != spellId),
                 Cast(spellId, onUnit, requirements)
@@ -1587,6 +1607,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite BuffSelf(int spellId, SimpleBooleanDelegate requirements)
         {
+            System.Diagnostics.Debug.Assert(requirements != null);
             return Buff(spellId, ret => StyxWoW.Me, requirements);
         }
 
@@ -1602,6 +1623,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite BuffSelf(SimpleIntDelegate spellId, SimpleBooleanDelegate requirements)
         {
+            System.Diagnostics.Debug.Assert(requirements != null);
             return Buff(spellId, ret => StyxWoW.Me, requirements);
         }
 

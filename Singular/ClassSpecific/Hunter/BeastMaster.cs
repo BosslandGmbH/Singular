@@ -42,11 +42,17 @@ namespace Singular.ClassSpecific.Hunter
 
                     new PrioritySelector(
 
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+
                         CreateBeastMasteryDiagnosticOutputBehavior(),
 
                         Common.CreateMisdirectionBehavior(),
 
                         Common.CreateHunterAvoidanceBehavior(null, null),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         Helpers.Common.CreateInterruptBehavior(),
 
@@ -71,7 +77,7 @@ namespace Singular.ClassSpecific.Hunter
                             new PrioritySelector(
                                 ctx => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Where(u => u.InLineOfSpellSight).OrderByDescending(u => (uint)u.HealthPercent).FirstOrDefault(),
                                 Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
-                                Common.CreateHunterTrapBehavior("Explosive Trap", true, on => Me.CurrentTarget, req => !TalentManager.HasGlyph("Explosive Trap")),
+                                Common.CreateHunterTrapBehavior("Explosive Trap", true, on => Me.CurrentTarget, req => Spell.UseAOE && !TalentManager.HasGlyph("Explosive Trap")),
                                 Spell.Cast("Multi-Shot", ctx => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f), req => Me.CurrentFocus > 60 || Me.HasAura("Thrill of the Hunt")),
                                 Spell.Cast( "Cobra Shot", on => (WoWUnit) on),
                                 Common.CastSteadyShot(on => (WoWUnit)on, ret => !SpellManager.HasSpell("Cobra Shot"))
@@ -114,6 +120,9 @@ namespace Singular.ClassSpecific.Hunter
 
                         // Helpers.Common.CreateInterruptBehavior(),
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         Common.CreateHunterPvpCrowdControl(),
 

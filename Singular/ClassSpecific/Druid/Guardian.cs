@@ -46,6 +46,9 @@ namespace Singular.ClassSpecific.Druid
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         //Shoot flying targets
                         new Decorator(
                             ret => Me.CurrentTarget.IsFlying || !Styx.Pathing.Navigator.CanNavigateFully(Me.Location, Me.CurrentTarget.Location),
@@ -120,6 +123,9 @@ namespace Singular.ClassSpecific.Druid
                         Helpers.Common.CreateInterruptBehavior(),
 
                         CreateGuardianTauntBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         new Decorator(
                             req => true,    // Noxxic

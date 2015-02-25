@@ -32,6 +32,9 @@ namespace Singular.ClassSpecific.Mage
                          Helpers.Common.CreateInterruptBehavior(),
                          Common.CreateMagePolymorphOnAddBehavior(),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                          Spell.BuffSelf("Frost Nova", ret => LowbieNeedsFrostNova),
                          // only Fire Blast if already in Combat
                          Spell.Cast("Fire Blast", ret => Me.CurrentTarget.Combat && Me.CurrentTarget.IsTargetingMeOrPet),
@@ -70,6 +73,9 @@ namespace Singular.ClassSpecific.Mage
                          Helpers.Common.CreateInterruptBehavior(),
                          Common.CreateMageAvoidanceBehavior(),
                          Common.CreateMagePolymorphOnAddBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                          Spell.BuffSelf("Frost Nova", ret => LowbieNeedsFrostNova),
                          Spell.Cast("Fire Blast"),

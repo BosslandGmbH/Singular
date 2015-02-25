@@ -76,6 +76,10 @@ namespace Singular.ClassSpecific.Monk
                     new PrioritySelector(
                         Helpers.Common.CreateInterruptBehavior(),
                         CreateCloseDistanceBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         CastDizzyingHaze(),
                         Spell.Cast("Tiger Palm"),
                         Spell.Cast("Expel Harm", on => Common.BestExpelHarmTarget(), ret => Me.HealthPercent < 80 && Me.CurrentTarget.Distance < 10),
@@ -146,6 +150,9 @@ namespace Singular.ClassSpecific.Monk
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         // keep these auras up!
                         Spell.Cast("Tiger Palm", ret => Me.HasKnownAuraExpired("Tiger Power", 1)),
@@ -249,6 +256,9 @@ namespace Singular.ClassSpecific.Monk
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         // Execute if we can
                         Common.CastTouchOfDeath(),

@@ -585,6 +585,10 @@ namespace Singular.ClassSpecific.Priest
 
                         Spell.BuffSelf("Power Word: Shield", ret => PriestSettings.UseShieldPrePull && CanWePwsUnit(Me)),
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
                         Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => !Unit.NearbyUnfriendlyUnits.Any(u => u.Aggro), cancel => false),
                         Spell.Buff("Shadow Word: Pain", req => Me.CurrentTarget.HasAuraExpired("Shadow Word: Pain", 1) && Me.CurrentTarget.TimeToDeath(99) >= 8),
@@ -616,6 +620,10 @@ namespace Singular.ClassSpecific.Priest
                         CreateDiscDiagnosticOutputBehavior(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),
 
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
                         Spell.Buff("Shadow Word: Pain", req => Me.CurrentTarget.HasAuraExpired("Shadow Word: Pain", 1) && Me.CurrentTarget.TimeToDeath(99) >= 8),
                         Spell.Buff("Shadow Word: Pain", true, on =>
@@ -660,6 +668,10 @@ namespace Singular.ClassSpecific.Priest
                     ret => !Spell.IsGlobalCooldown() && HealerManager.AllowHealerDPS(),
                     new PrioritySelector(
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
                         Spell.Cast("Shadow Word: Pain", req => Me.CurrentTarget.IsPlayer && Me.CurrentTarget.HasAuraExpired("Shadow Word: Pain", 1)),
                         Spell.Cast("Penance", mov => true, on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS()),
@@ -715,6 +727,10 @@ namespace Singular.ClassSpecific.Priest
                             ret => !Spell.IsGlobalCooldown(),
                             new PrioritySelector(
                                 Helpers.Common.CreateInterruptBehavior(),
+
+                                Movement.WaitForFacing(),
+                                Movement.WaitForLineOfSpellSight(),
+
                                 Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
                                 Spell.Buff("Shadow Word: Pain", req => Me.CurrentTarget.HasAuraExpired("Shadow Word: Pain", 1) && Me.CurrentTarget.TimeToDeath(99) >= 8),
                                 Spell.Buff("Shadow Word: Pain", true, on =>

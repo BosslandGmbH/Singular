@@ -48,6 +48,10 @@ namespace Singular.ClassSpecific.Paladin
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         Spell.BuffSelf("Sacred Shield"),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Spell.Cast("Judgment"),
                         Spell.Cast("Avenger's Shield", ret => Spell.UseAOE),
                         Spell.Cast("Reckoning", ret => !Me.CurrentTarget.IsPlayer)
@@ -157,6 +161,9 @@ namespace Singular.ClassSpecific.Paladin
                         CreateProtDiagnosticOutputBehavior(),
 
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         Common.CreatePaladinPullMore(),
 

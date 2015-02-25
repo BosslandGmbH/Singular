@@ -17,6 +17,8 @@ using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using Styx.CommonBot.POI;
 using System.Drawing;
+using Styx.WoWInternals.DBC;
+using Styx.Patchables;
 
 namespace Singular.ClassSpecific.Warlock
 {
@@ -31,6 +33,9 @@ namespace Singular.ClassSpecific.Warlock
 
         #endregion
 
+        public const int EmberMaster = 145164;
+        public const int ArchmagesGreaterIncandescence = 177176;
+
         #region Talents
 
         public static bool HasTalent(WarlockTalents tal)
@@ -40,11 +45,49 @@ namespace Singular.ClassSpecific.Warlock
 
         #endregion
 
+        internal static CombatScenario scenario { get; set; }
+
+
+        [Behavior(BehaviorType.Initialize, WoWClass.Warlock, priority: 9999)]
+        public static Composite CreateWarlockInitialize()
+        {
+            scenario = new CombatScenario(44, 1.5f);
+
+            SpellFindResults sfr;
+            if (!SpellManager.FindSpell("Dark Soul", out sfr))
+                buff.dark_soul_name = "";
+            else
+                buff.dark_soul_name = (sfr.Override ?? sfr.Original).Name;
+
+            talent.archimondes_darkness_enabled = Common.HasTalent(WarlockTalents.ArchimondesDarkness);
+            talent.grimoire_of_service_enabled = Common.HasTalent(WarlockTalents.GrimoireOfService);
+            talent.demonic_servitude_enabled = Common.HasTalent(WarlockTalents.DemonicServitude);
+            talent.charred_remains_enabled = Common.HasTalent(WarlockTalents.CharredRemains);
+            talent.cataclysm_enabled = Common.HasTalent(WarlockTalents.Cataclysm);
+            return null;
+        }
+
         #region Rest
 
         [Behavior(BehaviorType.Rest, WoWClass.Warlock)]
         public static Composite CreateWarlockRest()
         {
+            int id = 0;
+            if (id > 0)
+            {
+                WoWSpell spell = WoWSpell.FromId(id);
+                Logger.WriteDebug("Warlock: found spell {0} #{1}", spell.Name, spell.Id);
+                SpellEffect se = spell.SpellEffects.FirstOrDefault( s => s != null);
+                if (se != null)
+                {
+                    var row = StyxWoW.Db[ClientDb.SpellEffect].GetRow(se.Id);
+                    var internalInfo = row.GetStruct<WoWSpell.SpellEffectEntry>();
+                    Logger.Write("Warlock: spellentry: {0}", se);
+                    Logger.Write("Warlock: internalInfo: {0}", internalInfo);
+                }
+                spell = spell;
+            }
+
             return new PrioritySelector(
 
                 new Decorator(
@@ -924,7 +967,112 @@ namespace Singular.ClassSpecific.Warlock
             }
         }
 
+        public static Composite Cataclysm(int count, SimpleBooleanDelegate requirements = null)
+        {
+            if (requirements == null)
+                requirements = r => !Me.CurrentTarget.IsMoving
+                        && !Common.scenario.AvoidAOE
+                        && count <= Common.scenario.Mobs.Count(u => u.Location.Distance(Me.CurrentTarget.Location) <= 8);
+
+            if (!Common.HasTalent(WarlockTalents.Cataclysm))
+                return new ActionAlwaysFail();
+
+            return new Sequence(
+                Spell.CastOnGround(
+                    "Cataclysm",
+                    on => Me.CurrentTarget,
+                    req => Me.GotTarget()
+                        && requirements(req),
+                    true
+                    ),
+                Spell.WaitForCastOrChannel()
+                );
+        }
     }
+
+
+    #region Locals - SimC Synonyms
+
+    public static class target
+    {
+        public static double health_pct { get { return StyxWoW.Me.CurrentTarget.HealthPercent; } }
+        public static long time_to_die { get { return StyxWoW.Me.CurrentTarget.TimeToDeath(); } }
+    }
+
+    class action
+    {
+        public static double immolate_cast_time { get { return Spell.GetSpellCastTime("Immolate").TotalSeconds; } }
+        public static double chaos_bolt_cast_time { get { return Spell.GetSpellCastTime("Chaos Bolt").TotalSeconds; } }
+
+        public static int conflagrate_charges { get { return Spell.GetCharges("Conflagrate"); } }
+
+        public static double rain_of_fire_tick_time { get { return 1;  } }
+    }
+
+    class buff
+    {
+        public static string dark_soul_name { get; set; }
+        public static bool dark_soul_up { get { return dark_soul_remains > 0; } }
+        public static bool dark_soul_down { get { return !dark_soul_up; } }
+        public static double dark_soul_remains { get { return StyxWoW.Me.GetAuraTimeLeft(dark_soul_name).TotalSeconds; } }
+        public static double dark_soul_charges { get { return Spell.GetCharges(dark_soul_name); } }
+        
+        public static bool fire_and_brimstone_up { get { return fire_and_brimstone_remains > 0; } }
+        public static bool fire_and_brimstone_down { get { return !fire_and_brimstone_up; } }
+        public static double fire_and_brimstone_remains { get { return StyxWoW.Me.GetAuraTimeLeft("Fire and Brimstone").TotalSeconds; } }
+
+        public static bool mannoroths_fury_up { get { return mannoroths_fury_remains > 0; } }
+        public static bool mannoroths_fury_down { get { return !mannoroths_fury_up; } }
+        public static double mannoroths_fury_remains { get { return StyxWoW.Me.GetAuraTimeLeft("Mannoroth's Fury").TotalSeconds; } }
+
+        public static uint havoc_stack { get { return StyxWoW.Me.GetAuraStacks("Havoc"); } }
+        public static double havoc_remains { get { return StyxWoW.Me.GetAuraTimeLeft("Havoc").TotalSeconds; } }
+        public static uint backdraft_stack { get { return StyxWoW.Me.GetAuraStacks("Backdraft"); } }
+
+        public static double rain_of_fire_remains { get { return StyxWoW.Me.GetAuraTimeLeft("Rain of Fire").TotalSeconds; } }
+
+        public static bool ember_master_react { get { return StyxWoW.Me.HasAura(Common.EmberMaster); } }
+        public static bool archmages_greater_incandescence_int_react { get { return StyxWoW.Me.HasAura(Common.ArchmagesGreaterIncandescence); } }
+    }
+
+
+    public static class cooldown
+    {
+        public static double cataclysm_remains { get { return Spell.GetSpellCooldown("Cataclysm").TotalSeconds; } }
+    }
+
+    public static class talent
+    {
+        public static bool archimondes_darkness_enabled { get; set; }
+        public static bool grimoire_of_service_enabled { get; set; }
+        public static bool demonic_servitude_enabled { get; set; }
+        public static bool charred_remains_enabled { get; set; }
+        public static bool cataclysm_enabled { get; set; }
+    }
+
+
+    public static class dot
+    {
+        public static bool immolate_ticking { get { return immolate_remains > 0;  } }
+        public static double immolate_remains { get { return StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Immolate").TotalSeconds; } }
+        public static double immolate_duration { get { return 15; } }
+    }
+
+    /*
+    public static class trinket
+    {
+        public static bool 
+                proc.intellect_remains>cast_time
+                trinket_stacking_proc.intellect_remains>=cast_time
+                trinket.proc.crit_remains>cast_time
+                trinket_stacking_proc.multistrike_remains>=cast_time
+                trinket.proc.multistrike_remains>cast_time
+                trinket.proc.versatility_remains>cast_time
+                trinket.proc.mastery_remains>cast_time
+
+    }
+    */
+    #endregion
 
     public enum WarlockTalents
     {

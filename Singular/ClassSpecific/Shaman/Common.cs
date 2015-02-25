@@ -20,6 +20,7 @@ using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using Styx.CommonBot.POI;
 using Singular.Dynamics;
+using Singular.Utilities;
 
 namespace Singular.ClassSpecific.Shaman
 {
@@ -263,16 +264,43 @@ namespace Singular.ClassSpecific.Shaman
                     Spell.Cast("Hex", onUnit => (WoWUnit)onUnit)
                     ),
 
-                Spell.BuffSelf(PartyBuff.BloodlustSpellName,
-                    ret => ShamanSettings.UseBloodlust
-                        && MovementManager.IsClassMovementAllowed
-                        && IsPvpFightWorthLusting),
+                new Decorator(
+                    req => {
+                        if (!Unit.ValidUnit( Me.CurrentTarget))
+                            return false;
+                        if (Me.Specialization == WoWSpec.ShamanEnhancement && !Me.CurrentTarget.IsWithinMeleeRange)
+                            return false;
 
-                Spell.BuffSelf("Ascendance",
-                    ret => ShamanSettings.UseAscendance && ((Me.GotTarget() && Me.CurrentTarget.HealthPercent > 70) || Unit.NearbyUnfriendlyUnits.Count() > 1)),
+                        if (Me.CurrentTarget.TimeToDeath() > 5 || Me.CurrentTarget.HealthPercent > 20 || Me.HealthPercent < Me.CurrentTarget.HealthPercent)
+                            return true;
+                        if (Unit.UnfriendlyUnits(40).Count(u => u.IsTargetingMyStuff()) >= 2)
+                            return true;
 
-                Spell.BuffSelf("Elemental Mastery", ret => !PartyBuff.WeHaveBloodlust)
+                        return false;
+                    },
+                    new PrioritySelector(
+                        Spell.BuffSelfAndWait(PartyBuff.BloodlustSpellName,
+                            req => ShamanSettings.UseBloodlust
+                                && MovementManager.IsClassMovementAllowed
+                                && IsPvpFightWorthLusting,
+                            gcd: HasGcd.No
+                            ),
 
+                        Spell.BuffSelf(
+                            "Ascendance",
+                            req => ShamanSettings.UseAscendance 
+                                && ((Me.GotTarget() && Me.CurrentTarget.HealthPercent > 70) 
+                                || Unit.NearbyUnfriendlyUnits.Count() > 1),
+                            gcd: HasGcd.No
+                            ),
+
+                        Spell.BuffSelf(
+                            "Elemental Mastery", 
+                            req => !PartyBuff.WeHaveBloodlust, 
+                            gcd: HasGcd.No
+                            )
+                        )
+                    )
                 // , Spell.BuffSelf("Spiritwalker's Grace", ret => Me.IsMoving && Me.Combat)
 
                 );
@@ -349,6 +377,31 @@ namespace Singular.ClassSpecific.Shaman
                                     )
                                 ),
 
+                            new Decorator(
+                                req => !Me.IsMoving && ShamanSettings.SelfHealingStreamTotem > 0 && !Totems.Exist(WoWTotemType.Water),
+                                Spell.BuffSelf(
+                                    WoWTotem.HealingStream.ToSpellId(), 
+                                    req => 
+                                    {
+                                        int count = Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count(u => !u.IsTrivial());
+                                        if (count > 1)
+                                            return true;
+                                        if (count > 0 && Me.HealthPercent < ShamanSettings.SelfHealingStreamTotem)
+                                        {
+                                            if (!Me.GotTarget() || Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TimeToDeath() > 5)
+                                            {
+                                                return true;
+                                            }
+                                            if (Me.HealthPercent < (ShamanSettings.SelfHealingStreamTotem / 2))
+                                            {
+                                                return true;
+                                            }
+                                        }
+                                        return false;
+                                    }
+                                    )
+                                ),
+
                             // save myself if possible
                             new Decorator(
                                 ret => (!Me.IsInGroup() || Battlegrounds.IsInsideBattleground)
@@ -418,19 +471,6 @@ namespace Singular.ClassSpecific.Shaman
             #endregion
 
             #region AoE Heals
-
-            behavs.AddBehavior(Restoration.HealthToPriority(ShamanSettings.OffHealSettings.HealingTideTotem) + 400,
-                string.Format("Healing Tide Totem @ {0}% Count={1}", ShamanSettings.OffHealSettings.HealingTideTotem, ShamanSettings.OffHealSettings.MinHealingTideCount),
-                "Healing Tide Totem",
-                new Decorator(
-                    ret => (Me.Combat || ((WoWUnit)ret).Combat) && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid),
-                    Spell.Cast(
-                        "Healing Tide Totem",
-                        on => Me,
-                        req => Me.Combat && HealerManager.Instance.TargetList.Count(p => p.PredictedHealthPercent() < ShamanSettings.OffHealSettings.HealingTideTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= ShamanSettings.OffHealSettings.MinHealingTideCount
-                        )
-                    )
-                );
 
             behavs.AddBehavior(Restoration.HealthToPriority(ShamanSettings.OffHealSettings.HealingStreamTotem) + 300,
                 string.Format("Healing Stream Totem @ {0}%", ShamanSettings.OffHealSettings.HealingStreamTotem),

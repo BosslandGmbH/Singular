@@ -282,6 +282,9 @@ namespace Singular.ClassSpecific.Monk
 
                             Helpers.Common.CreateInterruptBehavior(),
 
+                            Movement.WaitForFacing(),
+                            Movement.WaitForLineOfSpellSight(),
+
                             Common.CastTouchOfDeath(),
 
                             Spell.Cast("Paralysis",

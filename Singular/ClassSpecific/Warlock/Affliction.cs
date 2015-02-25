@@ -105,6 +105,9 @@ namespace Singular.ClassSpecific.Warlock
 
                         Helpers.Common.CreateInterruptBehavior(),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         new Action(ret =>
                         {
                             _mobCount = Common.TargetsInCombat.Count();
@@ -212,6 +215,9 @@ namespace Singular.ClassSpecific.Warlock
                             _mobCount = Common.TargetsInCombat.Count();
                             return RunStatus.Failure;
                         }),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
 #if NOT_NOW
                         new Throttle( 4, 

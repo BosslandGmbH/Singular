@@ -1000,7 +1000,7 @@ namespace Singular.ClassSpecific.Hunter
                                 CreateHunterTrapBehavior("Ice Trap", false, onUnit => (WoWUnit)onUnit),
                                 CreateHunterTrapBehavior("Snake Trap", false, onUnit => (WoWUnit)onUnit, ret => SpellManager.HasSpell("Entrapment")),
                                 CreateHunterTrapBehavior("Freezing Trap", false, onUnit => (WoWUnit)onUnit, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null),
-                                CreateHunterTrapBehavior("Explosive Trap", false, onUnit => (WoWUnit)onUnit, ret => TalentManager.HasGlyph("Explosive Trap"))
+                                CreateHunterTrapBehavior("Explosive Trap", false, onUnit => (WoWUnit)onUnit, ret => Spell.UseAOE && TalentManager.HasGlyph("Explosive Trap"))
                                 )
                             ),
                         new Decorator(
@@ -1024,7 +1024,7 @@ namespace Singular.ClassSpecific.Hunter
                     ctx => SafeArea.NearestEnemyMobAttackingMe,
                     Spell.Buff("Kill Shot", on => (WoWUnit)on),
                     Spell.Cast("Chimaera Shot", on => (WoWUnit)on),
-                    Spell.Cast("Explosive Shot", on => (WoWUnit)on),
+                    Spell.Cast("Explosive Shot", on => (WoWUnit)on, req => Spell.UseAOE),
                     Spell.Cast("Black Arrow", on => (WoWUnit) on),
                     Spell.CastHack("Kill Command", on => (WoWUnit) on, req => Me.GotAlivePet && Me.Pet.CurrentTargetGuid == ((WoWUnit)req).Guid && Me.Pet.SpellDistance((WoWUnit) req) < 25f),
                     Spell.Cast("Glaive Toss", on => (WoWUnit) on ),
@@ -1140,7 +1140,7 @@ namespace Singular.ClassSpecific.Hunter
                             Common.CreateHunterTrapBehavior("Snake Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Entrapment")),
                             Common.CreateHunterTrapBehavior("Ice Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Ice Trap")),
                             Spell.Cast("Concussive Shot", on => ccUnit),
-                            Common.CreateHunterTrapBehavior("Explosive Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Explosive Trap"))
+                            Common.CreateHunterTrapBehavior("Explosive Trap", true, on => ccUnit, req => Spell.UseAOE && TalentManager.HasGlyph("Explosive Trap"))
                             ),
                         new Action(ret => { if (ccUnit != null) Blacklist.Add(ccUnit, BlacklistFlags.Combat, TimeSpan.FromSeconds(2)); })
                         )

@@ -22,7 +22,10 @@ namespace Singular.ClassSpecific.Warlock
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         Helpers.Common.CreateInterruptBehavior(),
-                        
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         // Spell.PreventDoubleCast("Immolate"),
                         Spell.Cast("Life Tap", ret => StyxWoW.Me.ManaPercent < 50 && StyxWoW.Me.HealthPercent > 70),
                         Spell.Cast("Drain Life", ret => StyxWoW.Me.HealthPercent < 70),

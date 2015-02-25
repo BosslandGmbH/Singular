@@ -53,6 +53,9 @@ namespace Singular.ClassSpecific.Mage
 
                         Common.CreateMagePullBuffs(),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Spell.Cast("Combustion", ret => Me.CurrentTarget.HasMyAura("Ignite")),
                         Spell.Cast("Inferno Blast", ret => Me.HasAura("Heating Up")), // Me.ActiveAuras.ContainsKey("Heating Up")),
                         //new Throttle( 3, Spell.Cast("Frostfire Bolt", req => Me.CurrentTarget.SpellDistance() > 20) ),
@@ -106,6 +109,9 @@ namespace Singular.ClassSpecific.Mage
                     new PrioritySelector(
 
                         new Action( r => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; } ),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         // move to highest in priority to ensure this is cast
                         new Decorator( 
@@ -207,6 +213,9 @@ namespace Singular.ClassSpecific.Mage
 
                         Common.CreateMagePullBuffs(),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         // Cooldowns
                         Spell.BuffSelf("Mirror Image"),
                         Spell.BuffSelf("Mage Ward", ret => Me.HealthPercent <= 75),
@@ -261,6 +270,9 @@ namespace Singular.ClassSpecific.Mage
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateMagePullBuffs(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         // AoE comes first
                         new Decorator(

@@ -85,6 +85,9 @@ namespace Singular.ClassSpecific.Druid
                     ret => !Spell.IsGlobalCooldown(), 
                     new PrioritySelector(
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         //Shoot flying targets
                         new Decorator(
                             ret => Me.CurrentTarget.IsAboveTheGround(),
@@ -249,6 +252,9 @@ namespace Singular.ClassSpecific.Druid
 
                         Helpers.Common.CreateInterruptBehavior(),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         CreateFeralAoeCombat(),
 
                         //Single target
@@ -344,6 +350,9 @@ namespace Singular.ClassSpecific.Druid
 
                         // updated time to death tracking values before we need them
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         CreateFeralAoeCombat(),
 

@@ -53,6 +53,9 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Helpers.Common.CreateInterruptBehavior(),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         Common.CreateDeathKnightPullMore(),
 
                         Common.CreateGetOverHereBehavior(),
@@ -112,8 +115,9 @@ namespace Singular.ClassSpecific.DeathKnight
                                     ),
                                 Spell.Cast("Death Strike", ret => Me.HealthPercent < 90),
                                 Spell.Cast("Frost Strike"),
-                                Spell.Cast(sp => Spell.UseAOE ? "Howling Blast" : "Icy Touch"),
-                                Spell.Cast("Plague Strike")
+                                Spell.Cast("Howling Blast", req => Spell.UseAOE),
+                                Spell.Buff("Icy Touch"),
+                                Spell.Buff("Plague Strike")
                                 )
                             )
                         )
@@ -142,6 +146,9 @@ namespace Singular.ClassSpecific.DeathKnight
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         Common.CreateDarkSuccorBehavior(),
 
@@ -253,6 +260,9 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Helpers.Common.CreateInterruptBehavior(),
 
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+
                         // Cooldowns
                         Spell.BuffSelf("Pillar of Frost", req => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange ),
 
@@ -299,7 +309,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.CastOnGround("Defile", on => Me.CurrentTarget, req => Spell.UseAOE && Me.GotTarget() && !Me.CurrentTarget.IsMoving, false),
 
                 // Obliterate when Killing Machine is procced and both diseases are on the target
-                Spell.Cast("Obliterate", req => Me.HasAura(KillingMachine) && Me.CurrentTarget.HasAura("Frost Fever") && Me.CurrentTarget.HasAura("Blood Plague")),
+                Spell.Cast("Obliterate", req => Me.HasAura(KillingMachine) && disease.ticking_on(Me.CurrentTarget)),
 
                 // Diseases
                 Common.CreateApplyDiseases(),
@@ -344,7 +354,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.Cast("Soul Reaper", req => Me.CurrentTarget.HealthPercent < 35),
 
                 // Plague Strike if one Unholy Rune is off cooldown and blood plague is down/nearly down
-                Spell.Cast("Plague Strike", req => Common.UnholyRuneSlotsActive == 1 && Me.CurrentTarget.HasAuraExpired("Blood Plague")),
+                Spell.Cast("Plague Strike", req => Common.UnholyRuneSlotsActive == 1 && Me.CurrentTarget.NeedsBloodPlague()),
 
                 // Howling Blast if Rime procced
                 Spell.Cast(sp => Spell.UseAOE ? "Howling Blast" : "Icy Touch", mov => false, on => Me.CurrentTarget, req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.HasAura("Freezing Fog")),
@@ -385,16 +395,16 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.Cast("Soul Reaper", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 35 && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
 
                 // aoe aware disease apply - only checking current target because of ability to spread
-                Spell.Cast("Unholy Blight", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 10 && u.HasAuraExpired("Blood Plague"))),
-                Spell.Cast("Howling Blast", ret => Me.CurrentTarget.HasAuraExpired("Frost Fever")),
-                Spell.Cast("Outbreak", ret => Me.CurrentTarget.HasAuraExpired("Blood Plague")),   // only care about blood plague for this one
-                Spell.Cast("Plague Strike", ret => Me.CurrentTarget.HasAuraExpired("Blood Plague")),
+                Spell.Cast("Unholy Blight", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 10 && u.NeedsBloodPlague())),
+                Spell.Cast("Howling Blast", ret => Me.CurrentTarget.NeedsFrostFever()),
+                Spell.Cast("Outbreak", ret => Me.CurrentTarget.NeedsBloodPlague()),   // only care about blood plague for this one
+                Spell.Cast("Plague Strike", ret => Me.CurrentTarget.NeedsBloodPlague()),
 
                 // spread disease
                 new Throttle( 2, 
                     Spell.Cast("Blood Boil",
-                        ret => Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.HasAuraExpired("Blood Plague"))
-                            && Unit.UnfriendlyUnitsNearTarget(10).Any(u => !u.HasAuraExpired("Blood Plague")))
+                        ret => Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.NeedsBloodPlague())
+                            && Unit.UnfriendlyUnitsNearTarget(10).Any(u => !u.NeedsBloodPlague()))
                     ),
 
                 // damage
@@ -443,6 +453,9 @@ namespace Singular.ClassSpecific.DeathKnight
                         }),
 
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         // *** Dual Weld Single Target Priority
                         new Decorator(

@@ -1,3 +1,75 @@
+
+--- Release 4.0.0.4419 ---
+
+General
+
+*new* - Capability Flags for Facing and Movement - Singular behaviors which Face the target and Move towards the target can be disabled by the BotBase, Profile, or other components via Capability Flags.  Have added logging to indicate when the character is not facing or not in line of spell sight of the target but the CapabilityFlag for that is set to Dissallow.
+
+change- Facing and Line of Sight - revised implementation so attacks and abilities are not cast if not facing and in line of sight of target.  Previously it would face and move to line of sight, but also allow attempts at casting abilities on the assumption that at most one would fail.  Since this can be selectively disabled by other components but abilities continue to cast, have added additional checks to deal with this in all spell priorities for all Class Specializations, Class Lowbie implementations, etc.
+
+fixed - Casting Buffs: will now correctly handle overrides and check for the correct aura name
+
+
+Death Knight
+
+fixed - All Specs - fixed issues with applying diseases
+
+fixed - All Specs - fixed issues with not recognizing Necrotic Strike as override for Frost Fever and Blood Plague
+
+fixed - Blood - AOE spell priority used in Normal, Battleground, and Instance contexts
+
+fixed - Blood - recognition of Crimson Scourge procs
+
+fixed - Frost/Unholy - Remorseless Winter: Normal context - cast if targeting enemy player within 8 yds 
+
+fixed - Frost/Unholy - Remorseless Winter: Battleground contexts - cast if within 8 yds of enemy player (casters only)
+
+fixed - All Specs - Dark Succor Death Strike: was being cast immediately due to bug in time to death logic regardless of player health or time remaining on buff.  Now correctly checks target will die within 6 seconds
+
+fixed - All Specs - Soul Reaper: revised kill sniping logic to generate haste buff more frequently
+
+
+Hunter
+
+fixed - All Specs - Explosive Shot was still being cast when AOE was disabled
+
+fixed - All Specs - Explosive Trap was still being cast when AOE was disabled
+
+
+Monk
+
+change- Windwalker - Instances: change to spell priority
+
+
+Shaman
+
+fixed - Elemental - Totems: were not being set during Pull 
+
+fixed - All Specs - Normal Context - Totems: Healing Stream Totem will be set correctly while soloing using the SelfHeal setting in Class Config
+
+change- Elemental/Enhancement - Totems: setting totems while in Combat made higher priority
+
+change- Elemental/Enhancement - Totems: removed Healing Tide Totem from off-heal settings
+
+change- Enhancement - Ghost Wolf in PVP: will use Ghost Wolf more frequently to close distance to ranged target without breaking form with a spell cast.  Applies to Battlegrounds and World PVP
+
+
+Warlock
+
+*new* - Destruction - Instance priority based on SimulationCraft profile for Level 100 only.  Supports Level 100 talents
+
+
+Warrior
+
+fixed - Lowbie - checks if AOE spells are allowed prior to casting Thunder Clap.  Typically Lowbie's are Level 9 or lower, so this is a very rare occurence.  Would happen only when has disabled Select Talents in HonorBuddy Settings and no specialization has been selected.
+
+
+
+
+
+
+
+
 --- Release 4.0.0.4358 ---
 
 Hunter

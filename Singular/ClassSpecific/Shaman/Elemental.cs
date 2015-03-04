@@ -186,7 +186,7 @@ namespace Singular.ClassSpecific.Shaman
 
                                 new Decorator(
                                     req => SpellManager.HasSpell("Enhanced Chain Lightning")
-                                        && Me.GetAuraTimeLeft("Enhanced Chain Lightning") == TimeSpan.Zero
+                                        && Me.HasAuraExpired("Enhanced Chain Lightning", 0)
                                         && Unit.UnfriendlyUnitsNearTarget(12f).Count() >= 3,                                        
                                     new Throttle(
                                         3,
@@ -195,10 +195,9 @@ namespace Singular.ClassSpecific.Shaman
                                             Spell.Cast(
                                                 "Chain Lightning", 
                                                 on => (WoWUnit) on,
-                                                req => 3 <= Clusters.GetChainedClusterCount((WoWUnit) req, Unit.UnfriendlyUnitsNearTarget(20f), 12),
-                                                cancel => false
+                                                req => 3 <= Clusters.GetChainedClusterCount((WoWUnit) req, Unit.UnfriendlyUnitsNearTarget(20f), 12)                                                    
                                                 ),
-                                            new WaitContinue(TimeSpan.FromSeconds(0.5), until => Me.GetAuraTimeLeft("Enhanced Chain Lightning") > TimeSpan.Zero, new ActionAlwaysSucceed())
+                                            new WaitContinue( 1, until => !Me.HasAuraExpired("Enhanced Chain Lightning"), new ActionAlwaysSucceed())
                                             )
                                         )
                                     ),
@@ -208,8 +207,8 @@ namespace Singular.ClassSpecific.Shaman
                                         on => StyxWoW.Me.CurrentTarget,
                                         req => StyxWoW.Me.GotTarget() 
                                             && StyxWoW.Me.CurrentTarget.Distance < 34
-                                            && (StyxWoW.Me.ManaPercent > 60 || Me.GetAuraTimeLeft( "Lucidity") > TimeSpan.Zero) 
-                                            && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 5),
+                                            && (StyxWoW.Me.ManaPercent > 60 || StyxWoW.Me.HasAura( "Clearcasting")) 
+                                            && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 6),
                                     new Wait( TimeSpan.FromMilliseconds(500), until => Me.CurrentTarget.HasMyAura("Earthquake"), new ActionAlwaysSucceed())
                                     ),
 

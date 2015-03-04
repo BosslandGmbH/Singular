@@ -309,7 +309,7 @@ namespace Singular.ClassSpecific.Warrior
             return new PrioritySelector(
                 ctx => Me.CurrentTarget,
                 new Decorator(
-                    req => (req as WoWUnit).IsGapCloserAllowed(),
+                    req => Spell.UseAOE && (req as WoWUnit).IsGapCloserAllowed(),
                     Spell.CastOnGround(
                         "Heroic Leap",
                         loc =>

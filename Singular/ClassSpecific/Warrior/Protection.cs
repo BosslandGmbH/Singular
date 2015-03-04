@@ -34,6 +34,8 @@ namespace Singular.ClassSpecific.Warrior
 
         public static bool talentGladiator { get; set; }
         public static bool glyphCleave { get; set; }
+
+        public static bool glyphHinderingStrikes { get; set; }
         private static CombatScenario scenario { get; set; }
 
 
@@ -42,6 +44,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             talentGladiator = Common.HasTalent(WarriorTalents.GladiatorsResolve);
             glyphCleave = TalentManager.HasGlyph("Cleave");
+            glyphHinderingStrikes = TalentManager.HasGlyph("Hindering Strikes");
             scenario = new CombatScenario(8, 1.5f);
             return null;
         }
@@ -256,8 +259,10 @@ namespace Singular.ClassSpecific.Warrior
 
                 new Sequence(
                     new Decorator(
-                        ret => Common.IsSlowNeeded(Me.CurrentTarget),
-                        new PrioritySelector(
+                        ret => Me.GotTarget() && Me.CurrentTarget.IsPlayer && Common.IsSlowNeeded(Me.CurrentTarget),
+                        new DecoratorIfElse(
+                            req => glyphHinderingStrikes && Me.CurrentRage > 50,
+                            Spell.HandleOffGCD(Spell.Buff("Heroic Strike", on => Me.CurrentTarget, req => true, gcd: HasGcd.No)),
                             Spell.Buff("Hamstring")
                             )
                         ),
@@ -333,15 +338,14 @@ namespace Singular.ClassSpecific.Warrior
 
                 new Sequence(
                     new Decorator(
-                        ret => SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || (Me.GotTarget() && Me.CurrentTarget.IsPlayer)
-                            && Common.IsSlowNeeded(Me.CurrentTarget),
-                        new Sequence(
-                            new PrioritySelector(
-                                Spell.Buff("Hamstring")
-                                ),
-                            new Wait(TimeSpan.FromMilliseconds(500), until => !Common.IsSlowNeeded(Me.CurrentTarget), new ActionAlwaysSucceed())
+                        ret => Me.GotTarget() && Me.CurrentTarget.IsPlayer && Common.IsSlowNeeded(Me.CurrentTarget),
+                        new DecoratorIfElse(
+                            req => glyphHinderingStrikes && Me.CurrentRage > 50,
+                            Spell.HandleOffGCD(Spell.Buff("Heroic Strike", on => Me.CurrentTarget, req => true, gcd: HasGcd.No)),
+                            Spell.Buff("Hamstring")
                             )
-                        )
+                        ),
+                    new Wait(TimeSpan.FromMilliseconds(500), until => !Common.IsSlowNeeded(Me.CurrentTarget), new ActionAlwaysSucceed())
                     ),
 
                 CreateProtectionInterrupt(),

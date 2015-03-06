@@ -1,4 +1,48 @@
 
+--- Release 4.0.0.4449 ---
+
+General
+
+*new* - Necklace - support /use of heirloom or any other  necklace that on use casts Heal and in Combat and currnet Health % is below the settings configured for Potions and Healthstones
+
+change- Use Flasks setting - existing setting which controlled use of Alchemist Flasks, but extended to control other items.  Updated name and description so it was clear to new users that it also controls use of Crystal of Insanity, Orialus' Whispering Crystal, etc.
+
+change- Use Flasks setting - default was changed from 'false' to 'true'.  Only uses items which are not destroyed, but 'false' setting resulted in users not realizing that Crystals were supported.
+
+change- Facing - Melee Characters: should now begin attacks slightly sooner when the character is not initially facing enemy
+
+fixed - Line of Sight - fixed issue where Singular was not respecting the CapabilityFlag.Facing and causing an issue in DungeonBuddy when running from certain bosses or effects
+
+
+Druid
+
+*new* - Balance - added message confirming to user that Glyph of Untamed Stars was recognized
+
+
+Monk
+
+*new* - Windwalker - Instances: will cast Zen Sphere on nearest friendly player
+
+
+Paladin
+
+fixed - Protection/Retribution - Seal of Righteousness:  no longer spams and correctly detects if already applied
+
+
+Shaman
+
+fixed - Elemental - Lucidity: now correctly detects this aura and if present, will allow Earthquake cast if condition warrants regardless of current Mana %
+
+
+Warrior
+
+fixed - Arms - Exception: fixed error interfering with Battleground PvP
+
+fixed - Fury - Battle Stance:  now correctly switches to this stance if in Defensive Stance
+
+fixed - All Specs - Heroic Leap: will suppress usage if AOE spells are disabled
+
+
 --- Release 4.0.0.4419 ---
 
 General
@@ -62,13 +106,6 @@ Warlock
 Warrior
 
 fixed - Lowbie - checks if AOE spells are allowed prior to casting Thunder Clap.  Typically Lowbie's are Level 9 or lower, so this is a very rare occurence.  Would happen only when has disabled Select Talents in HonorBuddy Settings and no specialization has been selected.
-
-
-
-
-
-
-
 
 --- Release 4.0.0.4358 ---
 

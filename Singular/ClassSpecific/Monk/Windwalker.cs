@@ -188,7 +188,7 @@ namespace Singular.ClassSpecific.Monk
 								Unit.NearbyUnitsInCombatWithUsOrOurStuff
 									.Where(u => u != Me.CurrentTarget && !u.IsImmune(WoWSpellSchool.Physical) && 
 												!u.IsCrowdControlled() && !u.HasMyOrMyStuffsAura("Storm, Earth, and Fire"))
-									.OrderByDescending(u => u.CurrentHealth)
+									.OrderBy(u => u.DistanceSqr)
 									.FirstOrDefault(),
 							Spell.Cast("Storm, Earth, and Fire", onUnit => (WoWUnit)onUnit, req => !Me.HasMyOrMyStuffsAura("Storm, Earth, and Fire", 2))
 							))),
@@ -221,6 +221,7 @@ namespace Singular.ClassSpecific.Monk
 						Spell.Cast("Blackout Kick", ret => Me.HasAura("Combo Breaker: Blackout Kick") || Me.HasAura("Serenity")),
 						Spell.Cast("Tiger Palm", ret => Me.HasAura("Combo Breaker: Tiger Palm")),
 						Spell.Cast("Chi Wave"),
+						Spell.Cast("Zen Sphere", onUnit => Unit.NearbyFriendlyPlayers.OrderBy(p => p.DistanceSqr).FirstOrDefault()),
 						Spell.Cast("Chi Explosion", 
 							ret => Me.CurrentChi >= 3 && Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(Me.CurrentTarget.Location) <= 8 * 8) <= 1 &&
 									(!SpellManager.HasSpell("Fists of Fury") || SpellManager.Spells["Fists of Fury"].CooldownTimeLeft.TotalSeconds > 4)),

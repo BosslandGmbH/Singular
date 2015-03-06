@@ -11,7 +11,6 @@ namespace Singular.Settings
     {
         Auto,
         BattleStance        = Styx.ShapeshiftForm.BattleStance ,
-        BerserkerStance     = Styx.ShapeshiftForm.BattleStance ,    // keep this to avoid errors for existing users
         DefensiveStance     = Styx.ShapeshiftForm.DefensiveStance,
         GladiatorStance     = 33
     }
@@ -102,8 +101,8 @@ namespace Singular.Settings
         [DefaultValue(WarriorStance.Auto)]
         [Category("DPS")]
         [DisplayName("Warrior DPS Stance")]
-        [Description("The stance to use while DPSing. Battle stance if there is little incoming damage, Berserker otherwise. Protection will always use Defensive stance.")]
-        public WarriorStance Stance { get; set; }
+        [Description("The stance to use while DPSing. Battle stance if there is little incoming damage. Protection will always use Defensive stance.")]
+        public WarriorStance StanceSelected { get; set; }
 
         #endregion
 

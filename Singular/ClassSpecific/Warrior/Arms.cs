@@ -845,13 +845,30 @@ namespace Singular.ClassSpecific.Warrior
                             );
                     }
 
+                    int mobc;
+                    bool avoidaoe;
+                    int mobcc;
+
+                    if (scenario == null)
+                    {
+                        mobc = 0;
+                        avoidaoe = false;
+                        mobcc = 0;
+                    }
+                    else
+                    {
+                        mobc = scenario.MobCount;
+                        avoidaoe = scenario.AvoidAOE;
+                        mobcc = scenario.Mobs.Count();
+                    }
+
                     log += string.Format(
                         "cdcs={0:F2}, cdms={1:F2}, mobs={2}, avoidaoe={3}, enemies={4}",
                         CooldownColossusSmash,
                         CooldownMortalStrike,
-                        scenario.MobCount,
-                        scenario.AvoidAOE.ToYN(),
-                        scenario.Mobs.Count()
+                        mobc,
+                        avoidaoe.ToYN(),
+                        mobcc
                         );
 
                     Logger.WriteDebug(Color.AntiqueWhite, log);

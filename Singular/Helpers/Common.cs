@@ -661,7 +661,7 @@ namespace Singular.Helpers
                 Safers.EnsureTarget(),
                 Helpers.Common.CreatePetAttack(),
                 Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Movement.CreateFaceTargetBehavior( 180, false),
                 new Decorator(
                     req => Me.GotTarget() && Me.CurrentTarget.Distance < SingularSettings.Instance.MeleeDismountRange,
                     Helpers.Common.CreateDismount( Dynamics.CompositeBuilder.CurrentBehaviorType.ToString())   // should be Pull or Combat 99% of the time

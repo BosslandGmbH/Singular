@@ -56,7 +56,7 @@ namespace Singular.Helpers
                 ctx => (WoWUnit) (toUnit == null ? null : toUnit(ctx)),
 
                 new DecoratorContinue(
-                    req => req == null || InLineOfSpellSight((req as WoWUnit)) || (req as WoWUnit).IsMe,
+                    req => req == null || MovementManager.IsMovementDisabled || InLineOfSpellSight((req as WoWUnit)) || (req as WoWUnit).IsMe,
                     new ActionAlwaysFail()
                     ),
 
@@ -258,7 +258,8 @@ namespace Singular.Helpers
                     new ActionAlwaysSucceed()
                     ),
 
-                new Action( ret => {
+                new Action( ret => 
+                {
                     RunStatus rslt;
                     WoWUnit unit = (WoWUnit)ret;
 
@@ -268,8 +269,8 @@ namespace Singular.Helpers
                         rslt = RunStatus.Failure;
 
                     // even though we may want a tighter conical facing check, allow
-                    // .. behavior to continue if 150 or better so we can cast while turning
-                    else if (Me.IsSafelyFacing(unit, 150f))
+                    // .. behavior to continue if 180 or better so we can cast while turning
+                    else if (Me.IsSafelyFacing(unit, 180f))
                         rslt = RunStatus.Failure;
 
                     // special handling for when consumed by Direglob and other mobs we are inside/on top of 
@@ -294,11 +295,11 @@ namespace Singular.Helpers
                     // otherwise, indicate behavior complete so begins again while
                     // .. waiting for facing to occur
                     return rslt;
-                    })
+                })
                 );
         }
 
-        public static Composite WaitForFacing(UnitSelectionDelegate toUnit = null, float viewDegrees = 100f)
+        public static Composite WaitForFacing(UnitSelectionDelegate toUnit = null, float viewDegrees = 180f)
         {
             toUnit = toUnit ?? (u => Me.CurrentTarget);
 
@@ -314,7 +315,7 @@ namespace Singular.Helpers
                 new DecoratorContinue(
                     req => req == null,
                     new PrioritySelector(
-                        new Throttle(5, new Action(r => Logger.WriteDiagnostic("warning: waiting to face target, but no target selected"))),
+                        new Throttle(5, new Action(r => Logger.WriteDiagnostic(LogColor.Diagnostic, "waiting: for WaitFaceTarget, but no target selected"))),
                         new ActionAlwaysSucceed()
                         )
                     ),
@@ -326,6 +327,15 @@ namespace Singular.Helpers
                         new ActionAlwaysSucceed()
                         )
                     ),
+
+                new DecoratorContinue(
+                    req => req != null && !MovementManager.IsFacingDisabled,
+                    new PrioritySelector(
+                        new Throttle(1, new Action(r => Logger.WriteDebug(LogColor.Diagnostic, "waiting: for WaitFaceTarget, attempting to face {0} @ {1:F1} yds", (r as WoWUnit).SafeName(), (r as WoWUnit).SpellDistance()))),
+                        new ActionAlwaysSucceed()
+                        )
+                    ),
+
 
                 // at this point, we have target, movement allowed, so return Success until in line of sight
                 new ActionAlwaysSucceed()

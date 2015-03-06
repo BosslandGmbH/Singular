@@ -182,7 +182,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             get
             {
-                var stance = WarriorSettings.Stance;
+                var stance = WarriorSettings.StanceSelected;
                 if (stance == WarriorStance.Auto)
                 {
                     switch (TalentManager.CurrentSpec)
@@ -255,12 +255,13 @@ namespace Singular.ClassSpecific.Warrior
 
         private static bool IsGapCloserAllowed(this WoWUnit unit)
         {
-            return MovementManager.IsClassMovementAllowed
-                && unit != null
+            return unit != null
+                && MovementManager.IsClassMovementAllowed
+                && Spell.UseAOE
                 && !unit.IsPathErrorTarget()
                 && !Me.HasAura("Charge")
                 && !unit.HasAnyOfMyAuras("Charge Stun", "Warbringer")
-                && unit.InLineOfSight;  
+                && Movement.InLineOfSpellSight(unit);  
         }
 
         public static Composite CreateChargeCloser()

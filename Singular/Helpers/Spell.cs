@@ -1453,10 +1453,19 @@ namespace Singular.Helpers
                 requirements = req => true;
 
             if (until == null)
-                until = u => StyxWoW.Me.HasAura(name(u));
+                until = u => StyxWoW.Me.HasAura(u as string);
 
             return new PrioritySelector(
-                ctx => name(ctx),
+                ctx => 
+                {
+                    string spellName = name(ctx);
+                    SpellFindResults sfr;
+                    if (SpellManager.FindSpell(spellName, out sfr))
+                    {
+                        spellName = (sfr.Override ?? sfr.Original).Name;
+                    }
+                    return spellName;
+                },
                 new Decorator(
                     req => SpellManager.HasSpell( req as string)
                         && !Me.HasAura(req as string)

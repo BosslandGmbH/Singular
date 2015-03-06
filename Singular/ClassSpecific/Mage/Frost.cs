@@ -279,7 +279,7 @@ namespace Singular.ClassSpecific.Mage
                  Safers.EnsureTarget(),
                  Common.CreateStayAwayFromFrozenTargetsBehavior(),
                  Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                 Movement.CreateFaceTargetBehavior( 5f, true),
+                 Movement.CreateFaceTargetBehavior( 5f, false),
                  Spell.WaitForCastOrChannel(FaceDuring.Yes),
 
                  new Decorator(

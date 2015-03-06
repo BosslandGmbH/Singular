@@ -38,6 +38,7 @@ namespace Singular.ClassSpecific.Druid
         public static bool newEclipseDotNeeded;
 
         private static bool glyphFlappingOwl { get; set; }
+        private static bool glyphUntamedStars { get; set; }
 
         private static int CurrentEclipse { get { return BitConverter.ToInt32(BitConverter.GetBytes(StyxWoW.Me.CurrentEclipse), 0); } }
 
@@ -66,11 +67,17 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.Initialize, WoWClass.Druid, WoWSpec.DruidBalance)]
         public static Composite CreateDruidBalanceInitialize()
         {
-            scenario = new CombatScenario(42, 1.5f);
+            scenario = new CombatScenario(44, 1.5f);
 
             glyphFlappingOwl = TalentManager.HasGlyph("Flapping Owl");
             if (glyphFlappingOwl)
                 Logger.Write(LogColor.Init, "Glyph of Flapping Owl: will [Flap] when falling");
+
+            glyphUntamedStars = TalentManager.HasGlyph("Untamed Stars");
+            if (glyphUntamedStars)
+                Logger.Write(LogColor.Init, "Glyph of Untamed Stars: will avoid pulling additional mobs");
+            else
+                Logger.Write(LogColor.Init, "Starfall: Untamed Stars not equipped, can safely cast without aggro");
 
             return null;
         }
@@ -264,19 +271,7 @@ namespace Singular.ClassSpecific.Druid
                                 Spell.HandleOffGCD(Spell.Cast("Force of Nature", req => !Me.CurrentTarget.IsTrivial() && Me.CurrentTarget.TimeToDeath() > 8)),
 
                                 // Starfall:  verify either not glyphed -or- at least 3 targets have DoT
-                                Spell.Cast(
-                                    "Starfall",
-                                    req =>
-                                    {
-                                        if (!TalentManager.HasGlyph("Untamed Stars"))
-                                        {
-                                            if (3 <= scenario.Mobs.Count(u => u.HasAnyOfMyAuras("Sunfire", "Moonfire")))
-                                                return true;
-                                            return false;
-                                        }
-
-                                        return !scenario.AvoidAOE;
-                                    }),
+                                Spell.Cast( "Starfall", req => IsStarfallNeeded),
 
                                 new PrioritySelector(
                                     ctx => scenario.Mobs.Where(u => u.Combat && !u.IsCrowdControlled() && Me.IsSafelyFacing(u)).ToList(),
@@ -435,7 +430,7 @@ namespace Singular.ClassSpecific.Druid
                                 )
                             ),
 
-                        Spell.Cast("Starfall"),
+                        Spell.Cast("Starfall", req => IsStarfallNeeded),
 
                         new Decorator(
                             ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid),
@@ -504,7 +499,7 @@ namespace Singular.ClassSpecific.Druid
                                 req => ((int)req) > 1,
                                 new PrioritySelector(
 
-                                    Spell.Cast("Starfall", ret => StyxWoW.Me),
+                                    Spell.Cast("Starfall", req => IsStarfallNeeded),
 
                                     Spell.CastOnGround("Hurricane", on => Me.CurrentTarget, req => ((int)req) > 6, false),
 
@@ -730,6 +725,20 @@ namespace Singular.ClassSpecific.Druid
 
         #endregion
 
+        private static bool IsStarfallNeeded
+        {
+            get
+            {
+                if (!glyphUntamedStars)
+                {
+                    if (3 <= scenario.Mobs.Count(u => u.HasAnyOfMyAuras("Sunfire", "Moonfire")))
+                        return true;
+                    return false;
+                }
+
+                return !scenario.AvoidAOE;
+            }
+        }
         private static Composite CreateBalanceFaerieFireBehavior()
         {
             if (!SpellManager.HasSpell("Faerie Swarm"))

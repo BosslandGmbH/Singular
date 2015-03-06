@@ -108,7 +108,7 @@ namespace Singular.ClassSpecific.Paladin
                         ret => _seal != PaladinSeal.None
                             && !Me.HasMyAura(SealSpell(_seal))
                             && Spell.CanCastHack(SealSpell(_seal), Me),
-                        Spell.Cast( s => SealSpell(_seal), on => Me, ret => !Me.HasAura(SealSpell(_seal)))
+                        Spell.BuffSelfAndWaitPassive( s => SealSpell(_seal))
                         )
                     )
                 );

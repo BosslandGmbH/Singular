@@ -168,6 +168,17 @@ namespace Singular.Helpers
                     select i).FirstOrDefault();
         }
 
+        public static bool IsUsableItemBySpell(WoWItem i, params string[] spellNames)
+        {
+            return i.Usable
+                && i.Cooldown == 0
+                && i.ItemInfo != null
+                && i.ItemInfo.RequiredLevel <= StyxWoW.Me.Level
+                && i.Effects != null
+                && i.Effects.Count != 0
+                && i.Effects.Any(s => s.Spell != null && spellNames.Contains(s.Spell.Name));
+        }
+
         /// <summary>
         ///  Returns true if you have a wand equipped, false otherwise.
         /// </summary>
@@ -198,8 +209,15 @@ namespace Singular.Helpers
                             new Sequence(
                                 new Action(ret => Logger.Write(LogColor.SpellHeal, "/use {0} @ {1:F1}% Health", ((WoWItem)ret).Name, StyxWoW.Me.HealthPercent )),
                                 new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                Helpers.Common.CreateWaitForLagDuration()))
-                        )),
+                                Helpers.Common.CreateWaitForLagDuration()
+                                )
+                            ),
+                        new Decorator(
+                            req => Me.Inventory.Equipped.Neck != null && Item.IsUsableItemBySpell(Me.Inventory.Equipped.Neck, "Heal"),
+                            Item.UseEquippedItem((uint) WoWInventorySlot.Neck)
+                            )
+                        )
+                    ),
                 new Decorator(
                     ret => Me.PowerType == WoWPowerType.Mana && StyxWoW.Me.ManaPercent < manaPercent,
                     new PrioritySelector(
@@ -209,7 +227,11 @@ namespace Singular.Helpers
                             new Sequence(
                                 new Action(ret => Logger.Write(LogColor.Hilite, "/use {0} @ {1:F1}% Mana", ((WoWItem)ret).Name, StyxWoW.Me.ManaPercent )),
                                 new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                Helpers.Common.CreateWaitForLagDuration()))))
+                                Helpers.Common.CreateWaitForLagDuration()
+                                )
+                            )
+                        )
+                    )
                 );
         }
 

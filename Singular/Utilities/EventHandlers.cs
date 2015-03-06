@@ -159,7 +159,7 @@ namespace Singular.Utilities
             _combatLogAttached = true;
 
             string myGuid = Lua.GetReturnVal<string>("return UnitGUID('player');", 0);
-            Logger.WriteDiagnostic("MyGuid = {0}", myGuid);
+            //Logger.WriteDiagnostic("MyGuid = {0}", myGuid);
 
             string filterCriteria = "return";
 

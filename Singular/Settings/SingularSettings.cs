@@ -964,11 +964,11 @@ namespace Singular.Settings
 
         #region Category: Items
 
-        [Setting,ReadOnly(false)]
+        [Setting,ReadOnly(true)]
         [DefaultValue(true)]
         [Category("Items")]
-        [DisplayName("Use Flasks")]
-        [Description("Uses flasks not consumed on use (Alchemist Flasks, Crystal of Insanity, others ...?)")]
+        [DisplayName("Use Flasks/Crystals/etc")]
+        [Description("Uses flasks not consumed on use (Alchemist Flasks, Crystal of Insanity, Orialius' Whispering Crystal, others ...?)")]
         public bool UseAlchemyFlasks { get; set; }
 
         [Setting,ReadOnly(false)]

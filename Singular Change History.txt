@@ -1,4 +1,126 @@
 
+--- Release 4.0.0.4524 ---
+
+General
+
+*new* - Healer: Proving Grounds - will now heal party  
+
+*new* - Facing - separation of logic which initiates facing and logic which blocks abilities waiting for facing.  All characters should allow non-facing abilities to cast sooner when not facing. Melee characters should initiate combat slightly quicker when not initially facing
+
+fixed - Bottled Nethergron Vapor: suppressed from use.  
+
+*new* - Excess Potion of Accelerated Learning: will apply to keep buff up if in inventory and less than Level 100
+
+fixed - Facing: several fixes and enhancements to seperate point in priorities where we attempt to face from where we require facing
+
+fixed - Drinking/Eating: will no longer spam attempts to eat or drink when Stunned
+
+fixed - Use Flasks Setting: setting is no longer Read Only
+
+
+Druid
+
+change- Resto - Regrowth: fixed several issues where was not handling presence/absence of Glyph of Regrowth
+
+fixed - Resto - Genesis: now correctly checks heal target range when determining count of players below Genesis Health % with active Rejuvenation
+
+*new* - Resto - Harmony: support for keeping Harmony buff active at all times in Combat.  Controlled by new Group Healing setting
+
+fixed - Resto - Lifebloom: corrected error with applying to multiple targets in some cases. 
+
+fixed - Resto - Rejuvenation: in some cases was double casting to apply HotKey
+
+fixed - Resto - Cenarion Ward: now correctly applied on cooldown.  Favors Lifebloom target
+
+fixed - Resto - Clearcasting: now correctly recognizes this proc and casts Regrowth if needed -or- Clearcasting would expire without use
+
+fixed - Resto - Regrowth vs Healing Touch: logic intended for lowbies to use Regrowth sooner prior to learning Healing Touch causing Regrowth to cast too frequently even after Healing Touch is learned
+
+
+Priest 
+
+fixed - All Specs - spin of death movement reported fixed
+
+change- Disc - Pull: when solo, will use Smite for Pull spell if we don't have aggro yet and no other players (friendly or hostile) in area that we are competing for mobs with
+
+fixed - Disc - Spirit Shell: will cancel aura if Out of Combat 
+
+fixed - Disc - Surge of Light: now correctly recognizes proc and will force cast regardless of health if at 2 stacks or aura about to expire
+
+fixed - Disc - Borrowed Time: will keep buff up during combat
+
+*new* - Disc - Clarity of Will: now supported.  Will keep up on Tanks during combat
+
+*new* - Disc - Target Selection: priority placed upon Tanks and Healers at low-health above all else
+
+*new* - Disc - Saving Grace: will use once on essential targets only (Tank/Healer) if trying to save.  Setting added to control health cast at
+
+change- Disc - Atonement: additional setting added to cancel Atonement if any target falls below % in addition to settings controlling multiple targets below health %.  
+
+change- Disc - Atonement: setting added to enable/disable use of Smite in Atonement healing.  Defaults to false
+
+change- Disc - Pull More: enabled when Disc Priest learns Mind Sear
+
+fixed - Disc - Archangel: better use of this buff throughout rotation
+
+fixed - Disc - Holy Nova: added support as AOE Heal
+
+change- Shadow - Cooldowns: will disable use when facing Trivial target
+
+
+Rogue
+
+fixed - All Specs - Talents: now correctly recognizes Rogue talents selected
+
+fixed - All Specs - Stealth: now correctly recognizes Stealth setting in Class Config in all contexts.  All Stealth issues cited should be resolved
+
+fixed - All Specs - Blind: was missing some opportunies to Blind adds  due to target selection logic no accounting for range, etc.
+
+change- All Specs - Kill Sapped Mobs: additional logic to override BotBase decideing to abandon a mobs under effect of Sap or Blind.  Only invoked if BotBase calls Combat behavior, so BotBase can still decide that killing is not ncessary
+
+fixed - Combat - Eviscerate: was not being cast at 5 combo points in all cases
+
+fixed - Combat - Blade Flurry: now correctly handled as Off GCD
+
+fixed - Combat/Subtlety - Energy Recovery: prevents casts of combo point builders while waiting for energy regen for closer
+
+fixed - Combat - Energy Recovery: prevents casts of combo point builders while waiting for energy regen for closer
+
+change- All Specs - Recuperate: will no longer use remaining Combat Points out of combat if at 90% health or more
+
+
+Shaman
+
+fixed - Elemental/Enhancement - Healing: will now correctly use defensive cooldowns when trying to self-heal
+
+*new* - Resto - Cloudburst Totem: now supported.  Settings to control added in Group Heal
+
+fixed - Resto - Unleash Life: now cast prior to Chain Heal
+
+fixed - All Specs - Elemental Totems: now correctly casts under expected circumstances
+
+fixed - All Specs - Primal Elementalist: now correctly controls Elementals as Pets sending at attack targets based upon settings
+
+fixed - All Specs - Shamanistic Rage: added setting to control Health % cast at
+
+change- Resto - Healing Stream: default Health % changed to 100
+
+
+Warrior
+
+fixed - All Specs - Berserker Rage: improved use for crowd control break
+
+fixed - Protection - Intimidating Shout: improved use in PVP combat
+
+
+
+
+
+
+
+
+
+
 --- Release 4.0.0.4449 ---
 
 General

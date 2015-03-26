@@ -321,7 +321,7 @@ namespace Singular.ClassSpecific.Shaman
 
         #region Instance Rotation
 
-        private static bool _doWeWantAcendance;
+        // private static bool _doWeWantAcendance;
 
         [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Instances)]
         public static Composite CreateElementalInstancePullAndCombat()

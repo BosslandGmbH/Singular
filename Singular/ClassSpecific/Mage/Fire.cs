@@ -45,7 +45,7 @@ namespace Singular.ClassSpecific.Mage
                 Common.CreateStayAwayFromFrozenTargetsBehavior(),
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
-                Spell.WaitForCastOrChannel(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -102,7 +102,7 @@ namespace Singular.ClassSpecific.Mage
                         )
                     ),
 */
-                Spell.WaitForCastOrChannel(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -194,7 +194,7 @@ namespace Singular.ClassSpecific.Mage
                 Safers.EnsureTarget(),
                 Common.CreateStayAwayFromFrozenTargetsBehavior(),
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCastOrChannel(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -261,7 +261,7 @@ namespace Singular.ClassSpecific.Mage
                                         )
                                     ),
                 */
-                Spell.WaitForCastOrChannel(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

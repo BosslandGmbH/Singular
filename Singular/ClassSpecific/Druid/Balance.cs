@@ -235,7 +235,7 @@ namespace Singular.ClassSpecific.Druid
 
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCast(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -366,13 +366,16 @@ namespace Singular.ClassSpecific.Druid
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 // Ensure we do /petattack if we have treants up.
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCast(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(), 
                     new PrioritySelector(
 
                         Common.CastForm( ShapeshiftForm.Moonkin, req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
+
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
 
                         CreateBalanceFaerieFireBehavior(),
 
@@ -479,7 +482,7 @@ namespace Singular.ClassSpecific.Druid
 
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCast(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

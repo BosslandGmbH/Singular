@@ -51,6 +51,8 @@ namespace Singular.ClassSpecific.Shaman
 
         #region Status and Config Helpers
 
+        public static bool talentTotemicPersistance { get; set; }
+
         public static bool HasTalent(ShamanTalents tal)
         {
             return TalentManager.IsSelected((int)tal);
@@ -95,6 +97,19 @@ namespace Singular.ClassSpecific.Shaman
         }
 
         #endregion
+
+        #region INIT
+
+        [Behavior(BehaviorType.Initialize, WoWClass.Shaman)]
+        public static Composite CreateShamanInitialize()
+        {
+            PetManager.NeedsPetSupport = HasTalent(ShamanTalents.PrimalElementalist);
+            talentTotemicPersistance = HasTalent(ShamanTalents.TotemicPersistence);
+            return null;
+        }
+
+        #endregion
+
 
         /// <summary>
         /// invoke on CurrentTarget if not tagged. use ranged instant casts first
@@ -173,10 +188,6 @@ namespace Singular.ClassSpecific.Shaman
 
                     Totems.CreateTotemsBehavior(),
 
-                    Spell.BuffSelf("Astral Shift", ret => Me.HealthPercent < ShamanSettings.AstralShiftPercent || Common.StressfulSituation),
-                    Spell.BuffSelf(WoWTotem.StoneBulwark.ToSpellId(), ret => !Me.IsMoving && (Common.StressfulSituation || Me.HealthPercent < ShamanSettings.StoneBulwarkTotemPercent && !Totems.Exist(WoWTotem.EarthElemental))),
-                    Spell.BuffSelf("Shamanistic Rage", ret => Me.HealthPercent < 70 || Me.ManaPercent < 70 || Common.StressfulSituation),
-
                     // hex someone if they are not current target, attacking us, and 12 yds or more away
                     new Decorator(
                         req => Me.GotTarget() && (TalentManager.CurrentSpec != WoWSpec.ShamanEnhancement || !ShamanSettings.AvoidMaelstromDamage),
@@ -187,7 +198,7 @@ namespace Singular.ClassSpecific.Shaman
                                             && Me.CurrentTargetGuid != u.Guid
                                             && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
                                             && !u.IsCrowdControlled()
-                                            && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && u.Location.Distance(Me.CurrentTarget.Location) > 10)
+                                            && u.SpellDistance().Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && u.Location.Distance(Me.CurrentTarget.Location) > 10)
                                     .OrderByDescending(u => u.Distance)
                                     .FirstOrDefault(),
                                 Spell.Cast("Hex", onUnit => (WoWUnit)onUnit)
@@ -368,6 +379,10 @@ namespace Singular.ClassSpecific.Shaman
                         ret => Me.Combat,
 
                         new PrioritySelector(
+
+                            Spell.BuffSelf("Astral Shift", ret => Me.HealthPercent < ShamanSettings.AstralShiftPercent || Common.StressfulSituation),
+                            Spell.BuffSelf(WoWTotem.StoneBulwark.ToSpellId(), ret => !Me.IsMoving && (Common.StressfulSituation || Me.HealthPercent < ShamanSettings.StoneBulwarkTotemPercent && !Totems.Exist(WoWTotem.EarthElemental))),
+                            Spell.BuffSelf("Shamanistic Rage", ret => Me.HealthPercent < ShamanSettings.ShamanisticRagePercent || Common.StressfulSituation),
 
                             Spell.HandleOffGCD( 
                                 Spell.BuffSelf("Ancestral Guidance", 

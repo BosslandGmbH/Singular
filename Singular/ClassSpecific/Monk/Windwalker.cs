@@ -32,7 +32,7 @@ namespace Singular.ClassSpecific.Monk
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCast(),
 
                 // close distance if at range
                 new Decorator(
@@ -159,7 +159,7 @@ namespace Singular.ClassSpecific.Monk
 
 				Common.CastTouchOfDeath(),
 
-				Spell.WaitForCastOrChannel(FaceDuring.Yes, LagTolerance.No),
+				Spell.WaitForCastOrChannel(LagTolerance.No),
 
                 Common.CreateMonkCloseDistanceBehavior(),
 
@@ -265,7 +265,7 @@ namespace Singular.ClassSpecific.Monk
 
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
-                Spell.WaitForCastOrChannel(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -382,7 +382,7 @@ namespace Singular.ClassSpecific.Monk
                     })
                     ),
 
-                Spell.WaitForCastOrChannel(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -465,7 +465,7 @@ namespace Singular.ClassSpecific.Monk
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCast(),
 
 #if USE_OLD_ROLL
                 new Decorator(

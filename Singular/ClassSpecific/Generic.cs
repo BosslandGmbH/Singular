@@ -21,7 +21,7 @@ namespace Singular.ClassSpecific
 {
     public static class Generic
     {
-        [Behavior(BehaviorType.Initialize, priority: 9000)]
+        [Behavior(BehaviorType.Initialize, WoWClass.None, priority: 9000)]
         public static Composite CreateGenericInitializeBehaviour()
         {
             SuppressGenericRacialBehavior = false;

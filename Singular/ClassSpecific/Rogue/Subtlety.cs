@@ -52,7 +52,7 @@ namespace Singular.ClassSpecific.Rogue
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
                         // ok, everything else failed so just hit him!!!!
-                        Spell.HandleOffGCD(Spell.Buff("Premeditation", req => Common.AreStealthAbilitiesAvailable && Me.ComboPoints < 4 && Me.IsWithinMeleeRange)),
+                        Spell.HandleOffGCD(Spell.Buff("Premeditation", req => Common.AreStealthAbilitiesAvailable && Me.ComboPoints < 4 && Me.CurrentTarget.IsWithinMeleeRange)),
                         Spell.Cast("Hemorrhage")
                         )
                     )
@@ -62,7 +62,7 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueSubtletyNormalCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
+                Common.RogueEnsureWeKillSappedMobs(),
                 Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
@@ -96,7 +96,7 @@ namespace Singular.ClassSpecific.Rogue
                         new Decorator(
                             ret => Common.AoeCount >= 3 && !Me.CurrentTarget.IsPlayer,
                             new PrioritySelector(
-                                Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
+                                Spell.Buff("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
                                 Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
                                 Spell.Cast("Hemorrhage", ret => !SpellManager.HasSpell("Fan of Knives")),
@@ -110,19 +110,29 @@ namespace Singular.ClassSpecific.Rogue
                                 && !Me.HasAuraExpired("Slice and Dice", 3)
                                 && Me.ComboPoints < 2),
 
-                        Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
-                        Spell.Buff("Rupture", true, ret => Me.ComboPoints >= 5),
-                        Spell.Cast("Eviscerate", ret => Me.ComboPoints >= 5),
+                        Spell.Buff("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
+                        new Decorator(
+                            req => Me.ComboPoints >= 5,
+                            new PrioritySelector(                                
+                                Spell.Buff("Rupture", true, ret => Me.CurrentTarget.TimeToDeath() > 20),
+                                Spell.Cast("Eviscerate")
+                                )
+                            ),
 
                         // lets try a big hit if stealthed and behind before anything
                         Spell.Cast(sp => "Ambush", chkMov => false, on => Me.CurrentTarget, req => Common.IsAmbushNeeded(), canCast: Common.RogueCanCastOpener),
 
-                        Spell.Buff("Hemorrhage"),
-                        Spell.Cast("Backstab", ret => Me.IsBehindOrSide(Me.CurrentTarget) && Common.HasDaggerInMainHand),
-                        Spell.BuffSelf("Fan of Knives", ret => !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount),
+                        new Decorator(
+                            req => Me.ComboPoints < 5,
+                            new PrioritySelector(                                
+                                Spell.Buff("Hemorrhage"),
+                                Spell.Cast("Backstab", ret => Me.IsBehindOrSide(Me.CurrentTarget) && Common.HasDaggerInMainHand),
+                                Spell.BuffSelf("Fan of Knives", ret => !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount),
 
-                // following cast is as a Combo Point builder if we can't cast Backstab
-                        Spell.Cast("Hemorrhage", ret => Me.CurrentEnergy >= 35 || !SpellManager.HasSpell("Backstab") || !Me.IsBehindOrSide(Me.CurrentTarget)),
+                        // following cast is as a Combo Point builder if we can't cast Backstab
+                                Spell.Cast("Hemorrhage", ret => !SpellManager.HasSpell("Backstab") || !Me.IsBehindOrSide(Me.CurrentTarget))
+                                )
+                            ),
 
                         Common.CheckThatDaggersAreEquippedIfNeeded()
                         )

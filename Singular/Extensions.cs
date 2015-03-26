@@ -246,7 +246,7 @@ namespace Singular
             return float.MaxValue;
         }
 
-        private static string _lastGetPredictedError;
+        //private static string _lastGetPredictedError;
         public static float PredictedHealthPercent(this WoWUnit u, bool includeMyHeals = false)
         {
 #if true

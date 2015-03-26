@@ -238,7 +238,7 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCast(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(), 
@@ -339,7 +339,7 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCast(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -619,12 +619,13 @@ namespace Singular.ClassSpecific.Druid
                 new Action(ret =>
                 {
                     string log;
-                    log = string.Format(context + " h={0:F1}%/e={1:F1}%/m={2:F1}%, shape={3}, prowl={4}, savage={5}, tfury={6}, brsrk={7}, predswf={8}, omen={9}, pts={10}",
+                    log = string.Format(context + " h={0:F1}%/e={1:F1}%/m={2:F1}%, shp={3}, prwl={4}, mov={5}, savg={6}, tfury={7}, brsrk={8}, predswf={9}, omen={10}, pts={11}",
                         Me.HealthPercent,
                         Me.EnergyPercent,
                         Me.ManaPercent,
                         Me.Shapeshift.ToString().Length < 4 ? Me.Shapeshift.ToString() : Me.Shapeshift.ToString().Substring(0, 4),
                         Me.HasAura("Prowl").ToYN(),
+                        Me.IsMoving.ToYN(),
                         (long)Me.GetAuraTimeLeft("Savage Roar", true).TotalMilliseconds,
                         (long)Me.GetAuraTimeLeft("Tiger's Fury", true).TotalMilliseconds,
                         (long)Me.GetAuraTimeLeft("Berserk", true).TotalMilliseconds,

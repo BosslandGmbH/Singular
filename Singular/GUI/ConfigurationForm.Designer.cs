@@ -45,12 +45,14 @@
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.lblTankToStayNear = new System.Windows.Forms.Label();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.chkTraceBuffs = new System.Windows.Forms.CheckBox();
             this.cboDebugOutput = new System.Windows.Forms.ComboBox();
             this.cboForceUseOf = new System.Windows.Forms.ComboBox();
             this.label6 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.chkDebugCasting = new System.Windows.Forms.CheckBox();
             this.ShowPlayerNames = new System.Windows.Forms.CheckBox();
+            this.chkDebugTraceHeal = new System.Windows.Forms.CheckBox();
             this.chkDebugTrace = new System.Windows.Forms.CheckBox();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.lblPoi = new System.Windows.Forms.Label();
@@ -67,7 +69,6 @@
             this.lblBuildTime = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.chkTraceBuffs = new System.Windows.Forms.CheckBox();
             this.tabControl1.SuspendLayout();
             this.tabGeneral.SuspendLayout();
             this.tabClass.SuspendLayout();
@@ -97,7 +98,7 @@
             this.tabControl1.Multiline = true;
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(347, 407);
+            this.tabControl1.Size = new System.Drawing.Size(347, 422);
             this.tabControl1.TabIndex = 4;
             this.tabControl1.SelectedIndexChanged += new System.EventHandler(this.tabControl1_SelectedIndexChanged);
             this.tabControl1.Selected += new System.Windows.Forms.TabControlEventHandler(this.tabControl1_Selected);
@@ -229,7 +230,7 @@
             this.tabDebug.Location = new System.Drawing.Point(4, 22);
             this.tabDebug.Name = "tabDebug";
             this.tabDebug.Padding = new System.Windows.Forms.Padding(3);
-            this.tabDebug.Size = new System.Drawing.Size(339, 381);
+            this.tabDebug.Size = new System.Drawing.Size(339, 396);
             this.tabDebug.TabIndex = 2;
             this.tabDebug.Text = "Debugging";
             this.tabDebug.UseVisualStyleBackColor = true;
@@ -265,14 +266,27 @@
             this.groupBox3.Controls.Add(this.label5);
             this.groupBox3.Controls.Add(this.chkDebugCasting);
             this.groupBox3.Controls.Add(this.ShowPlayerNames);
+            this.groupBox3.Controls.Add(this.chkDebugTraceHeal);
             this.groupBox3.Controls.Add(this.chkDebugTrace);
             this.groupBox3.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
-            this.groupBox3.Location = new System.Drawing.Point(7, 275);
+            this.groupBox3.Location = new System.Drawing.Point(7, 277);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(314, 96);
+            this.groupBox3.Size = new System.Drawing.Size(314, 109);
             this.groupBox3.TabIndex = 3;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Miscellaneous Debug Settings";
+            // 
+            // chkTraceBuffs
+            // 
+            this.chkTraceBuffs.AutoSize = true;
+            this.chkTraceBuffs.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.chkTraceBuffs.Location = new System.Drawing.Point(175, 52);
+            this.chkTraceBuffs.Name = "chkTraceBuffs";
+            this.chkTraceBuffs.Size = new System.Drawing.Size(81, 17);
+            this.chkTraceBuffs.TabIndex = 5;
+            this.chkTraceBuffs.Text = "Trace Buffs";
+            this.toolTip1.SetToolTip(this.chkTraceBuffs, "Enable Singular Behavior tracing -- EXTREMELY VERBOSE!!!");
+            this.chkTraceBuffs.UseVisualStyleBackColor = true;
             // 
             // cboDebugOutput
             // 
@@ -287,9 +301,9 @@
             // 
             this.cboForceUseOf.ForeColor = System.Drawing.SystemColors.ControlText;
             this.cboForceUseOf.FormattingEnabled = true;
-            this.cboForceUseOf.Location = new System.Drawing.Point(6, 69);
+            this.cboForceUseOf.Location = new System.Drawing.Point(151, 82);
             this.cboForceUseOf.Name = "cboForceUseOf";
-            this.cboForceUseOf.Size = new System.Drawing.Size(130, 21);
+            this.cboForceUseOf.Size = new System.Drawing.Size(154, 21);
             this.cboForceUseOf.TabIndex = 3;
             this.toolTip1.SetToolTip(this.cboForceUseOf, "*not saved* - Select behaviors to use on Taining Dummy");
             // 
@@ -307,17 +321,18 @@
             // 
             this.label5.AutoSize = true;
             this.label5.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.label5.Location = new System.Drawing.Point(143, 72);
+            this.label5.Location = new System.Drawing.Point(3, 85);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(147, 13);
+            this.label5.Size = new System.Drawing.Size(148, 13);
             this.label5.TabIndex = 7;
-            this.label5.Text = "behaviors on Training Dummy";
+            this.label5.Text = "Behaviors on Training Dummy";
+            this.label5.Click += new System.EventHandler(this.label5_Click);
             // 
             // chkDebugCasting
             // 
             this.chkDebugCasting.AutoSize = true;
             this.chkDebugCasting.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.chkDebugCasting.Location = new System.Drawing.Point(6, 42);
+            this.chkDebugCasting.Location = new System.Drawing.Point(6, 44);
             this.chkDebugCasting.Name = "chkDebugCasting";
             this.chkDebugCasting.Size = new System.Drawing.Size(132, 17);
             this.chkDebugCasting.TabIndex = 2;
@@ -330,7 +345,7 @@
             // 
             this.ShowPlayerNames.AutoSize = true;
             this.ShowPlayerNames.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.ShowPlayerNames.Location = new System.Drawing.Point(164, 51);
+            this.ShowPlayerNames.Location = new System.Drawing.Point(6, 63);
             this.ShowPlayerNames.Name = "ShowPlayerNames";
             this.ShowPlayerNames.Size = new System.Drawing.Size(121, 17);
             this.ShowPlayerNames.TabIndex = 6;
@@ -338,11 +353,22 @@
             this.toolTip1.SetToolTip(this.ShowPlayerNames, "*not saved* - Use Player Name in log output instad of class name");
             this.ShowPlayerNames.UseVisualStyleBackColor = true;
             // 
+            // chkDebugTraceHeal
+            // 
+            this.chkDebugTraceHeal.AutoSize = true;
+            this.chkDebugTraceHeal.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.chkDebugTraceHeal.Location = new System.Drawing.Point(175, 33);
+            this.chkDebugTraceHeal.Name = "chkDebugTraceHeal";
+            this.chkDebugTraceHeal.Size = new System.Drawing.Size(93, 17);
+            this.chkDebugTraceHeal.TabIndex = 4;
+            this.chkDebugTraceHeal.Text = "Trace Healing";
+            this.chkDebugTraceHeal.UseVisualStyleBackColor = true;
+            // 
             // chkDebugTrace
             // 
             this.chkDebugTrace.AutoSize = true;
             this.chkDebugTrace.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.chkDebugTrace.Location = new System.Drawing.Point(164, 17);
+            this.chkDebugTrace.Location = new System.Drawing.Point(175, 14);
             this.chkDebugTrace.Name = "chkDebugTrace";
             this.chkDebugTrace.Size = new System.Drawing.Size(124, 17);
             this.chkDebugTrace.TabIndex = 4;
@@ -434,7 +460,7 @@
             this.grpFooter.Controls.Add(this.label1);
             this.grpFooter.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.grpFooter.ForeColor = System.Drawing.SystemColors.Control;
-            this.grpFooter.Location = new System.Drawing.Point(0, 410);
+            this.grpFooter.Location = new System.Drawing.Point(0, 425);
             this.grpFooter.Margin = new System.Windows.Forms.Padding(0);
             this.grpFooter.Name = "grpFooter";
             this.grpFooter.Padding = new System.Windows.Forms.Padding(0);
@@ -510,23 +536,11 @@
             this.label1.TabIndex = 4;
             this.label1.Text = "Singular";
             // 
-            // chkTraceBuffs
-            // 
-            this.chkTraceBuffs.AutoSize = true;
-            this.chkTraceBuffs.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.chkTraceBuffs.Location = new System.Drawing.Point(164, 34);
-            this.chkTraceBuffs.Name = "chkTraceBuffs";
-            this.chkTraceBuffs.Size = new System.Drawing.Size(81, 17);
-            this.chkTraceBuffs.TabIndex = 5;
-            this.chkTraceBuffs.Text = "Trace Buffs";
-            this.toolTip1.SetToolTip(this.chkTraceBuffs, "Enable Singular Behavior tracing -- EXTREMELY VERBOSE!!!");
-            this.chkTraceBuffs.UseVisualStyleBackColor = true;
-            // 
             // ConfigurationForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(347, 481);
+            this.ClientSize = new System.Drawing.Size(347, 496);
             this.Controls.Add(this.grpFooter);
             this.Controls.Add(this.tabControl1);
             this.MaximizeBox = false;
@@ -601,5 +615,6 @@
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.Button btnDump;
         private System.Windows.Forms.CheckBox chkTraceBuffs;
+        private System.Windows.Forms.CheckBox chkDebugTraceHeal;
     }
 }

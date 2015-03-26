@@ -333,7 +333,7 @@ namespace Singular.Managers
         private static Keys _lastMovementTemporarySuspendKey;
 
         // save keys used at last Register
-        public static Keys[] _registeredMovementSuspendKeys;
+        //public static Keys[] _registeredMovementSuspendKeys;
 
         // state prior to last puls saved here
         private static bool last_IsAoeEnabled;

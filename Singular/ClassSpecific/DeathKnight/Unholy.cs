@@ -30,6 +30,17 @@ namespace Singular.ClassSpecific.DeathKnight
         static int unholy { get { return Common.UnholyRuneSlotsActive; } }
         static int death { get { return Common.DeathRuneSlotsActive; } }
 
+        #region INIT
+
+        [Behavior(BehaviorType.Initialize, WoWClass.DeathKnight, WoWSpec.DeathKnightUnholy)]
+        public static Composite CreateUnholyDeathKnightInitialize()
+        {
+            PetManager.NeedsPetSupport = true;
+            return null;
+        }
+
+        #endregion
+
 
         #region Normal Rotation
 

@@ -175,6 +175,7 @@ namespace Singular.Helpers
                 // Make sure we're a class with mana, if not, just ignore drinking all together! Other than that... same for food.
                         new Decorator(
                             ret => !Me.Combat
+                                && !Me.Stunned
                                 && !Me.IsSwimming && (Me.PowerType == WoWPowerType.Mana || Me.Class == WoWClass.Druid)
                                 && Me.ManaPercent <= SingularSettings.Instance.MinMana
                                 && !Me.HasAnyAura("Drink", "Refreshment") && Consumable.GetBestDrink(false) != null,
@@ -198,6 +199,7 @@ namespace Singular.Helpers
                 // Check if we're allowed to eat (and make sure we have some food. Don't bother going further if we have none.
                         new Decorator(
                             ret => !Me.Combat 
+                                && !Me.Stunned
                                 && !Me.IsSwimming
                                 && Me.PredictedHealthPercent(includeMyHeals: true) <= SingularSettings.Instance.MinHealth
                                 && !Me.HasAnyAura("Food", "Refreshment") && Consumable.GetBestFood(false) != null,

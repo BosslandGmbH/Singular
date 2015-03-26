@@ -105,6 +105,7 @@ namespace Singular.GUI
             InitializeDebugOutputDropdown();
             chkDebugCasting.Checked = SingularSettings.Instance.EnableDebugSpellCasting;
             chkDebugTrace.Checked = SingularSettings.Instance.EnableDebugTrace;
+            chkDebugTraceHeal.Checked = SingularSettings.Instance.EnableDebugHealTrace;
             chkTraceBuffs.Checked = SingularSettings.Instance.EnableDebugTraceBuffPresence;
             chkDebugLogging_CheckedChanged(this, new EventArgs());
 
@@ -313,6 +314,7 @@ namespace Singular.GUI
                 SingularSettings.Instance.DebugOutput = (DebugOutputDest) GetComboBoxEnum(cboDebugOutput);               
                 SingularSettings.Instance.EnableDebugSpellCasting = chkDebugCasting.Checked;
                 SingularSettings.Instance.EnableDebugTrace = chkDebugTrace.Checked;
+                SingularSettings.Instance.EnableDebugHealTrace = chkDebugTraceHeal.Checked;
                 SingularSettings.Instance.EnableDebugTraceBuffPresence = chkTraceBuffs.Checked;
                 Extensions.ShowPlayerNames = ShowPlayerNames.Checked;
 
@@ -588,6 +590,11 @@ namespace Singular.GUI
         {
             Singular.SingularRoutine.PullMoreQuestTargetsDump();
         }
+
+        private void label5_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 
     public class CboItem
@@ -616,6 +623,11 @@ namespace Singular.GUI
         public override bool Equals(object obj)
         {
             return ToString() == obj.ToString();
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
         }
 
         public override string ToString()

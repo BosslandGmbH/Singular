@@ -103,6 +103,8 @@ namespace Singular.ClassSpecific.Hunter
         [Behavior(BehaviorType.Initialize, WoWClass.Hunter)]
         public static Composite CreateHunterInitialize()
         {
+            PetManager.NeedsPetSupport = true;
+
             if (SingularRoutine.CurrentWoWContext == WoWContext.Normal || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
             {
                 Composite jturn = null;

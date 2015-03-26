@@ -40,11 +40,13 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMediumRange(),
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCast(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         CreateLowbieDiagnosticOutputBehavior(),
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
                         Spell.Cast("Earth Shock", ret => Me.CurrentTarget.Combat && Me.CurrentTarget.IsTargetingMeOrPet),
                         Spell.Cast("Lightning Bolt")
                         )
@@ -68,12 +70,14 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMediumRange(),
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCast(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         CreateLowbieDiagnosticOutputBehavior(),
-                        Spell.Cast("Earth Shock", req => Me.CurrentTarget.Distance < 15 || !Me.CurrentTarget.IsMoving  ),      // always use
+                        Movement.WaitForFacing(),
+                        Movement.WaitForLineOfSpellSight(),
+                        Spell.Cast("Earth Shock", req => Me.CurrentTarget.Distance < 15 || !Me.CurrentTarget.IsMoving),      // always use
                         Spell.Cast("Primal Strike"),    // always use
                         Spell.Cast("Lightning Bolt")
                         )

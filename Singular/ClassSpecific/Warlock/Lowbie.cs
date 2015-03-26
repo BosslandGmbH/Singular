@@ -16,7 +16,7 @@ namespace Singular.ClassSpecific.Warlock
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCast(),
 
                 new Decorator( 
                     ret => !Spell.IsGlobalCooldown(),

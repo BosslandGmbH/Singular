@@ -9,6 +9,8 @@ namespace Singular.Helpers
 {
     internal static class Group
     {
+        const int ZONE_PROVING_GROUNDS = 6852;
+        const int OTO_THE_PROTECTOR = 72218;
         public static bool MeIsTank
         {
             get
@@ -23,45 +25,53 @@ namespace Singular.Helpers
             get { return (StyxWoW.Me.Role & WoWPartyMember.GroupRole.Healer) != 0; }
         }
 
-        public static List<WoWPlayer> Tanks
+        public static List<WoWUnit> Tanks
         {
             get
             {
                 if (!StyxWoW.Me.GroupInfo.IsInParty)
-                    return new List<WoWPlayer>(); ;
+                    return new List<WoWUnit>(); ;
+
+                if (StyxWoW.Me.ZoneId == ZONE_PROVING_GROUNDS)
+                    return Unit.GroupMembers.Where(u => u.Entry == OTO_THE_PROTECTOR).ToList();
 
                 return StyxWoW.Me.GroupInfo.RaidMembers.Where(p => p.HasRole(WoWPartyMember.GroupRole.Tank))
                     .Select(p => p.ToPlayer())
                     .Union(new[] { RaFHelper.Leader })
                     .Where(p => p != null && p.IsValid)
                     .Distinct()
-                    .ToList();
+                    .ToList<WoWUnit>();
             }
         }
 
-        public static List<WoWPlayer> Healers
+        public static List<WoWUnit> Healers
         {
             get
             {
                 if (!StyxWoW.Me.GroupInfo.IsInParty)
-                    return new List<WoWPlayer>(); ;
+                    return new List<WoWUnit>(); ;
 
                 return StyxWoW.Me.GroupInfo.RaidMembers.Where(p => p.HasRole(WoWPartyMember.GroupRole.Healer))
-                    .Select(p => p.ToPlayer()).Where(p => p != null).ToList();
+                    .Select(p => p.ToPlayer())
+                    .Where(p => p != null)
+                    .ToList<WoWUnit>();
 
             }
         }
 
 
-        public static List<WoWPlayer> Dps
+        public static List<WoWUnit> Dps
         {
             get
             {
                 if (!StyxWoW.Me.GroupInfo.IsInParty)
-                    return new List<WoWPlayer>(); ;
+                    return new List<WoWUnit>(); ;
 
-                return StyxWoW.Me.GroupInfo.RaidMembers.Where(p => !p.HasRole(WoWPartyMember.GroupRole.Tank) && !p.HasRole(WoWPartyMember.GroupRole.Healer))
-                    .Select(p => p.ToPlayer()).Where(p => p != null).ToList();
+                return StyxWoW.Me.GroupInfo.RaidMembers
+                    .Where(p => !p.HasRole(WoWPartyMember.GroupRole.Tank) && !p.HasRole(WoWPartyMember.GroupRole.Healer))
+                    .Select(p => p.ToPlayer())
+                    .Where(p => p != null)
+                    .ToList<WoWUnit>();
 
             }
         }

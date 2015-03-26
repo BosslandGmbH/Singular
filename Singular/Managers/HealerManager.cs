@@ -61,15 +61,30 @@ namespace Singular.Managers
             // Targeting requires a list of WoWObjects - so it's not bound to any specific type of object. Just casting it down to WoWObject will work fine.
             // return ObjectManager.ObjectList.Where(o => o is WoWPlayer).ToList();
             List<WoWObject> heallist;
+
+            //if (Me.GroupInfo.IsInRaid || Me.GroupInfo.IsInParty)
+            //{
+            //    if (!SingularSettings.Instance.IncludeCompanionssAsHealTargets)
+            //        heallist = ObjectManager.ObjectList
+            //            .Where(o => o is WoWPlayer && o.ToPlayer().IsInMyRaid)
+            //            .ToList();
+            //    else
+            //        heallist = ObjectManager.ObjectList
+            //            .Where(o => (o is WoWPlayer && o.ToPlayer().IsInMyRaid) || (o is WoWUnit && o.ToUnit().SummonedByUnitGuid == Me.Guid && !o.ToUnit().IsPet))
+            //            .ToList();
+            //}
+
+            //if (Me.ZoneId == 6852)
             if (Me.GroupInfo.IsInRaid || Me.GroupInfo.IsInParty)
             {
+                HashSet<WoWGuid> raidmember = new HashSet<WoWGuid>(Me.GroupInfo.RaidMemberGuids);
                 if (!SingularSettings.Instance.IncludeCompanionssAsHealTargets)
                     heallist = ObjectManager.ObjectList
-                        .Where(o => o is WoWPlayer && o.ToPlayer().IsInMyRaid)
+                        .Where(o => raidmember.Contains(o.Guid))
                         .ToList();
                 else
                     heallist = ObjectManager.ObjectList
-                        .Where(o => (o is WoWPlayer && o.ToPlayer().IsInMyRaid) || (o is WoWUnit && o.ToUnit().SummonedByUnitGuid == Me.Guid && !o.ToUnit().IsPet))
+                        .Where(o => raidmember.Contains(o.Guid) || (o is WoWUnit && o.ToUnit().SummonedByUnitGuid == Me.Guid && !o.ToUnit().IsPet))
                         .ToList();
             }
             else
@@ -78,8 +93,8 @@ namespace Singular.Managers
                     heallist = new List<WoWObject>() { Me };
                 else
                     heallist = ObjectManager.ObjectList
-                    .Where(o => o is WoWUnit && o.ToUnit().SummonedByUnitGuid == Me.Guid && !o.ToUnit().IsPet)
-                    .ToList();
+                        .Where(o => o is WoWUnit && o.ToUnit().SummonedByUnitGuid == Me.Guid && !o.ToUnit().IsPet)
+                        .ToList();
             }
 
             return heallist;
@@ -112,9 +127,9 @@ namespace Singular.Managers
 
                     outgoingUnits.Add(incomingUnit);
 
-                    var player = incomingUnit as WoWPlayer;
-                    if (SingularSettings.Instance.IncludePetsAsHealTargets && player != null && player.GotAlivePet)
-                        outgoingUnits.Add(player.Pet);
+                    var unit = incomingUnit as WoWUnit;
+                    if (SingularSettings.Instance.IncludePetsAsHealTargets && unit != null && unit.GotAlivePet)
+                        outgoingUnits.Add(unit.Pet);
                 }
                 catch (System.AccessViolationException)
                 {
@@ -200,7 +215,7 @@ namespace Singular.Managers
 
                         // They're not in our party/raid. So ignore them. We can't heal them anyway.
                         /*
-                        if (!p.IsInMyPartyOrRaid)
+                        if (!p.IsInMyPartyOrRaid())
                         {
                             units.RemoveAt(i);
                             continue;
@@ -403,12 +418,17 @@ namespace Singular.Managers
         /// <returns></returns>
         public static WoWUnit FindHighestPriorityTarget()
         {
-            WoWUnit target = Group.Tanks.Union( Group.Healers )
-                .Where( t => t.IsAlive && t.HealthPercent < 35 && t.SpellDistance() < 40)
-                .OrderBy( k => k.HealthPercent )
-                .FirstOrDefault();
+            WoWUnit target = FindLowestHealthEssentialTarget();
+            return target ?? FindLowestHealthTarget();
+        }
 
-            return target ?? FindLowestHealthTarget();    
+        public static WoWUnit FindLowestHealthEssentialTarget()
+        {
+            WoWUnit target = Group.Tanks.Union(Group.Healers)
+                .Where(t => t.IsAlive && t.HealthPercent < 35 && t.SpellDistance() < 40 && t.PredictedHealthPercent() < 35)
+                .OrderBy(k => k.HealthPercent)
+                .FirstOrDefault();
+            return target;
         }
 
         /// <summary>
@@ -590,17 +610,23 @@ namespace Singular.Managers
                 tank = HealerManager.TankToStayNear;
 
             if (tank == null)
-                ;
-            else if (!tank.Combat)
-                ;
-            else if (tank.IsMoving)
-                ;
-            else if (!tank.GotTarget() || tank.SpellDistance(tank.CurrentTarget) > 8)
-                ;
-            else
-                return true;
+            {
+                return false;
+            }
+            if (!tank.Combat)
+            {
+                return false;
+            }
+            if (tank.IsMoving)
+            {
+                return false;
+            }
+            if (!tank.GotTarget() || tank.SpellDistance(tank.CurrentTarget) > 8)
+            {
+                return false;
+            }
 
-            return false;
+            return true;
         }
 
         /// <summary>
@@ -960,7 +986,7 @@ namespace Singular.Managers
     /// </summary>
     internal class HmmContext
     {
-        internal WoWPoint loc;
+        //internal WoWPoint loc;
         internal WoWUnit target;
         internal WoWUnit tank;
         internal bool behind;
@@ -1023,7 +1049,16 @@ namespace Singular.Managers
             PrioritySelector pri = new PrioritySelector();
             foreach (PrioritizedBehavior pb in blist)
             {
-                pri.AddChild(new CallTrace(pb.Name, pb.behavior));
+                if (!SingularSettings.TraceHeals)
+                    pri.AddChild(pb.behavior);
+                else 
+                {
+                    CallTrace ct = new CallTrace(pb.Name, pb.behavior);
+                    ct.TraceActive = true;
+                    ct.TraceEnter = false;
+                    ct.TraceExit = true;
+                    pri.AddChild( ct );
+                }
             }
 
             return pri;

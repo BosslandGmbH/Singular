@@ -603,21 +603,15 @@ namespace Singular.Helpers
 
         #region Wait
 
-        public static Composite WaitForGlobalCooldown(FaceDuring faceDuring = FaceDuring.No, LagTolerance allow = LagTolerance.Yes)
+        public static Composite WaitForGlobalCooldown(LagTolerance allow = LagTolerance.Yes)
         {
-            return new PrioritySelector(
-                new Decorator(
-                    ret => faceDuring == FaceDuring.Yes,
-                    Movement.CreateFaceTargetBehavior()
-                    ),
-                new Action(ret =>
+            return new Action(ret =>
                 {
                     if (IsGlobalCooldown(allow))
                         return RunStatus.Success;
 
                     return RunStatus.Failure;
-                })
-                );
+                });
         }
 
         public static bool IsGlobalCooldown(LagTolerance allow = LagTolerance.Yes)
@@ -641,21 +635,15 @@ namespace Singular.Helpers
         /// <param name = "faceDuring">Whether or not to face during casting</param>
         /// <param name = "allow">Whether or not to allow lag tollerance for spell queueing</param>
         /// <returns></returns>
-        public static Composite WaitForCast(FaceDuring faceDuring = FaceDuring.No, LagTolerance allow = LagTolerance.Yes)
+        public static Composite WaitForCast(LagTolerance allow = LagTolerance.Yes)
         {
-            return new PrioritySelector(
-                new Decorator(
-                    ret => faceDuring == FaceDuring.Yes,
-                    Movement.CreateFaceTargetBehavior()
-                    ),
-                new Action(ret =>
+            return new Action(ret =>
                 {
                     if (IsCasting(allow))
                         return RunStatus.Success;
 
                     return RunStatus.Failure;
-                })
-                );
+                });
         }
 
         public static bool IsCasting(LagTolerance allow = LagTolerance.Yes)
@@ -695,21 +683,15 @@ namespace Singular.Helpers
         /// <param name = "faceDuring">Whether or not to face during casting</param>
         /// <param name = "allow">Whether or not to allow lag tollerance for spell queueing</param>
         /// <returns></returns>
-        public static Composite WaitForChannel(FaceDuring faceDuring = FaceDuring.No, LagTolerance allow = LagTolerance.Yes)
+        public static Composite WaitForChannel(LagTolerance allow = LagTolerance.Yes)
         {
-            return new PrioritySelector(
-                new Decorator(
-                    ret => faceDuring == FaceDuring.Yes,
-                    Movement.CreateFaceTargetBehavior()
-                    ),
-                new Action(ret =>
+            return new Action(ret =>
                 {
                     if (IsChannelling(allow))
                         return RunStatus.Success;
 
                     return RunStatus.Failure;
-                })
-                );
+                });
         }
 
         public static bool IsChannelling(LagTolerance allow = LagTolerance.Yes)
@@ -730,20 +712,20 @@ namespace Singular.Helpers
             return IsCasting(allow) || IsChannelling();
         }
 
-        public static Composite WaitForCastOrChannel(FaceDuring faceDuring = FaceDuring.No, LagTolerance allow = LagTolerance.Yes)
+        public static Composite WaitForCastOrChannel(LagTolerance allow = LagTolerance.Yes)
         {
             return new PrioritySelector(
-                WaitForCast(faceDuring, allow),
-                WaitForChannel(faceDuring, allow)
+                WaitForCast(allow),
+                WaitForChannel(allow)
                 );
         }
 
-        public static Composite WaitForGcdOrCastOrChannel(FaceDuring faceDuring = FaceDuring.No, LagTolerance allow = LagTolerance.Yes)
+        public static Composite WaitForGcdOrCastOrChannel(LagTolerance allow = LagTolerance.Yes)
         {
             return new PrioritySelector(
-                WaitForGlobalCooldown(faceDuring,allow),
-                WaitForCast(faceDuring, allow),
-                WaitForChannel(faceDuring, allow)
+                WaitForGlobalCooldown(allow),
+                WaitForCast(allow),
+                WaitForChannel(allow)
                 );
         }
 
@@ -1784,7 +1766,14 @@ namespace Singular.Helpers
                         // save status of queueing spell (lag tolerance - the prior spell still completing)
                         cctx.IsSpellBeingQueued = allow == LagTolerance.Yes && (Spell.GcdActive || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling);
 
-                        LogCast(cctx.spell.Name, cctx.unit, cctx.health, cctx.distance, cctx.spell.IsHeal());
+                        const int PENANCE = 047540;
+                        LogCast(
+                            cctx.spell.Name, 
+                            cctx.unit, 
+                            cctx.health, 
+                            cctx.distance,
+                            cctx.spell.IsHeal() ? true : (cctx.spell.Id == PENANCE && cctx.unit.IsFriendly)
+                            );
 
                         if (SingularSettings.DebugSpellCasting)
                             Logger.WriteDebug("Cast('{0}'): dist:{1:F3}, need({2}), hitbox:{3:F3}",
@@ -2532,9 +2521,9 @@ namespace Singular.Helpers
 
                 if (unit.Guid == Me.CurrentTargetGuid)
                     sTarget = "target";
-                else if (unit.IsPlayer && unit.ToPlayer().IsInMyPartyOrRaid)
+                else if (unit.IsPlayer && unit.ToPlayer().IsInMyPartyOrRaid())
                     sTarget = unit.Name;
-                else if (unit.IsPet && unit.OwnedByUnit != null && unit.OwnedByUnit.IsPlayer && unit.OwnedByUnit.ToPlayer().IsInMyPartyOrRaid)
+                else if (unit.IsPet && unit.OwnedByUnit != null && unit.OwnedByUnit.IsPlayer && unit.OwnedByUnit.ToPlayer().IsInMyPartyOrRaid())
                     sTarget = unit.OwnedByUnit.Name + "-pet";
                 else if (Me.GotAlivePet)
                 {

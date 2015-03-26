@@ -85,7 +85,7 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateAssaRogueNormalCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
+                Common.RogueEnsureWeKillSappedMobs(),
                 Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 

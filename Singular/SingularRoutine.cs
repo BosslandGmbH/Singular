@@ -486,16 +486,7 @@ namespace Singular
                 // Pulse our StopAt manager
                 StopMoving.Pulse();
 
-                //Only pulse for classes with pets
-                switch (StyxWoW.Me.Class)
-                {
-                    case WoWClass.Hunter:
-                    case WoWClass.DeathKnight:
-                    case WoWClass.Warlock:
-                    case WoWClass.Mage:
-                        PetManager.Pulse();
-                        break;
-                }
+                PetManager.Pulse();
 
                 // Double cast maintenance
                 Spell.MaintainDoubleCast();

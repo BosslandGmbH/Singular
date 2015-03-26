@@ -27,6 +27,14 @@ namespace Singular.ClassSpecific.Mage
 
         const int FINGERS_OF_FROST = 44544;
 
+        [Behavior(BehaviorType.Initialize, WoWClass.Mage, WoWSpec.MageFrost)]
+        public static Composite CreateMageFrostInit()
+        {
+            PetManager.NeedsPetSupport = true;
+            return null;
+        }
+
+
         [Behavior(BehaviorType.Rest, WoWClass.Mage, WoWSpec.MageFrost, WoWContext.All, 1)]
         public static Composite CreateMageFrostRest()
         {
@@ -80,7 +88,7 @@ namespace Singular.ClassSpecific.Mage
                 Safers.EnsureTarget(),
                 Common.CreateStayAwayFromFrozenTargetsBehavior(),
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCastOrChannel(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -280,7 +288,7 @@ namespace Singular.ClassSpecific.Mage
                  Common.CreateStayAwayFromFrozenTargetsBehavior(),
                  Helpers.Common.EnsureReadyToAttackFromLongRange(),
                  Movement.CreateFaceTargetBehavior( 5f, false),
-                 Spell.WaitForCastOrChannel(FaceDuring.Yes),
+                 Spell.WaitForCastOrChannel(),
 
                  new Decorator(
                      ret => !Spell.IsGlobalCooldown(),
@@ -447,7 +455,7 @@ namespace Singular.ClassSpecific.Mage
                  Safers.EnsureTarget(),
                  Common.CreateStayAwayFromFrozenTargetsBehavior(),
                  Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                 Spell.WaitForCastOrChannel(FaceDuring.Yes),
+                 Spell.WaitForCastOrChannel(),
 
                  new Decorator(
                      ret => !Spell.IsGlobalCooldown(),
@@ -563,7 +571,7 @@ namespace Singular.ClassSpecific.Mage
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
                 Movement.CreateFaceTargetBehavior( 5f),
-                Spell.WaitForCastOrChannel(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

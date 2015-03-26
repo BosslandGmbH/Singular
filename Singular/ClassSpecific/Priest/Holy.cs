@@ -47,8 +47,8 @@ namespace Singular.ClassSpecific.Priest
         }
 
         private static WoWUnit _lightwellTarget = null;
-        private static WoWUnit _moveToHealTarget = null;
-        private static WoWUnit _lastMoveToTarget = null;
+        //private static WoWUnit _moveToHealTarget = null;
+        //private static WoWUnit _lastMoveToTarget = null;
 
         public static Composite CreateHolyHealOnlyBehavior(bool selfOnly, bool moveInRange)
         {
@@ -493,11 +493,7 @@ VoidShift               Void Shift
 
                         Common.CreateLeapOfFaithBehavior(),
 
-                        Spell.Cast("Power Infusion", ret => StyxWoW.Me.ManaPercent <= 75 || HealerManager.Instance.TargetList.Any( h => h.HealthPercent < 40)),
-
-                        // Spell.Cast("Power Word: Solace", req => Me.GotTarget() && Unit.ValidUnit(Me.CurrentTarget) && Me.IsSafelyFacing( Me.CurrentTarget) && Me.CurrentTarget.InLineOfSpellSight )
-                        // Spell.Cast(129250, req => Me.GotTarget() && Unit.ValidUnit(Me.CurrentTarget) && Me.IsSafelyFacing(Me.CurrentTarget) && Me.CurrentTarget.InLineOfSpellSight),
-                        Spell.CastHack("Power Word: Solace", req => Me.GotTarget() && Unit.ValidUnit(Me.CurrentTarget) && Me.IsSafelyFacing(Me.CurrentTarget) && Me.CurrentTarget.InLineOfSpellSight)
+                        Spell.Cast("Power Infusion", ret => StyxWoW.Me.ManaPercent <= 75 || HealerManager.Instance.TargetList.Any( h => h.HealthPercent < 40))
                         )
                     )
                 );

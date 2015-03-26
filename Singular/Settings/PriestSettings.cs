@@ -713,7 +713,6 @@ namespace Singular.Settings
                     CountPowerWordBarrier = 3;
                     AtonementAbovePercent = 90;
                     AtonementAboveCount = 1;
-                    AtonementWhenIdle = true;
                 }
                 else if (ctx == Singular.HealingContext.Instances)
                 {
@@ -731,7 +730,6 @@ namespace Singular.Settings
                     CountPowerWordBarrier = 3;
                     AtonementAbovePercent = 90;
                     AtonementAboveCount = 1;
-                    AtonementWhenIdle = true;
                 }
                 else if (ctx == Singular.HealingContext.Raids)
                 {
@@ -749,7 +747,6 @@ namespace Singular.Settings
                     CountPowerWordBarrier = 3;
                     AtonementAbovePercent = 90;
                     AtonementAboveCount = 1;
-                    AtonementWhenIdle = true;
                 }
                 // omit case for WoWContext.Normal and let it use DefaultValue() values
             }
@@ -805,6 +802,13 @@ namespace Singular.Settings
         public int PrayerOfHealing { get; set; }
 
         [Setting]
+        [DefaultValue(89)]
+        [Category("Healing")]
+        [DisplayName("% Holy Nova")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int HolyNova { get; set; }
+
+        [Setting]
         [DefaultValue(0)]
         [Category("Healing")]
         [DisplayName("% Pain Suppression")]
@@ -833,6 +837,13 @@ namespace Singular.Settings
         public int SpiritShell { get; set; }
 
         [Setting]
+        [DefaultValue(15)]
+        [Category("Health %")]
+        [DisplayName("% Saving Grace")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int SavingGrace { get; set; }
+
+        [Setting]
         [DefaultValue(3)]
         [Category("Target Minimum")]
         [DisplayName("Count Level 90 Talent")]
@@ -845,6 +856,13 @@ namespace Singular.Settings
         [DisplayName("Count Prayer of Healing")]
         [Description("Min number of players healed")]
         public int CountPrayerOfHealing { get; set; }
+
+        [Setting]
+        [DefaultValue(2)]
+        [Category("Target Minimum")]
+        [DisplayName("Count Holy Nova")]
+        [Description("Min number of players healed")]
+        public int CountHolyNova { get; set; }
 
         [Setting]
         [DefaultValue(3)]
@@ -882,12 +900,25 @@ namespace Singular.Settings
         public int AtonementAboveCount { get; set; }
 
         [Setting]
-        [DefaultValue(true)]
-        [Category("Healing")]
-        [DisplayName("Atonement When Idle")]
-        [Description("True: DPS with Atonement spells if no healing needed")]
-        public bool AtonementWhenIdle { get; set; }
+        [DefaultValue(80)]
+        [Category("Discipline")]
+        [DisplayName("Atonement Cancel Health %")]
+        [Description("Cancel Atonement Healing if any below this Health %")]
+        public int AtonementCancelBelowHealthPercent { get; set; }
 
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Discipline")]
+        [DisplayName("Atonement Cancel Mana %")]
+        [Description("Cancel Atonement Healing if any below this Mana %")]
+        public int AtonementCancelBelowManaPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Discipline")]
+        [DisplayName("Atonement Use Smite")]
+        [Description("Use Smite as part of Atonement spell priority")]
+        public bool AtonementUseSmite { get; set; }
 
     }
 }

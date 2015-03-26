@@ -184,7 +184,7 @@ namespace Singular.ClassSpecific.Paladin
                                 ret => (WoWUnit)ret,
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().HolyLightHealth),
                             new Decorator(
-                                ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget() && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
+                                ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget() && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid()) == 0,
                                 new PrioritySelector(
                                     Helpers.Common.EnsureReadyToAttackFromMelee(),
                                     Helpers.Common.CreateInterruptBehavior(),
@@ -205,8 +205,6 @@ namespace Singular.ClassSpecific.Paladin
                         )
                     );
         }
-
-        private static WoWUnit _rebirthTarget;
 
         public static Composite CreateRebirthBehavior()
         {

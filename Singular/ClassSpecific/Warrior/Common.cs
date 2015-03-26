@@ -125,8 +125,18 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateWarriorLossOfControlBehavior()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Berserker Rage", ret => Me.Fleeing || (Me.Stunned && Me.HasAuraWithMechanic(Styx.WoWInternals.WoWSpellMechanic.Sapped))),
-                // StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing, WoWSpellMechanic.Sapped, WoWSpellMechanic.Incapacitated, WoWSpellMechanic.Horrified)),
+                Spell.BuffSelfAndWait(
+                    "Berserker Rage",
+                    req =>
+                    {
+                        if (Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing, WoWSpellMechanic.Sapped, WoWSpellMechanic.Incapacitated, WoWSpellMechanic.Turned))
+                            return true;
+                        if (Me.Fleeing)
+                            return true;
+                        return false;
+                    },
+                    gcd: HasGcd.No
+                    ),
 
                 CreateWarriorEnragedRegeneration()
                 );

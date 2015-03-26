@@ -47,7 +47,7 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMediumRange(),
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCast(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
@@ -75,7 +75,7 @@ namespace Singular.ClassSpecific.Druid
                     req => !SpellManager.HasSpell("Cat Form"),
                     new PrioritySelector(
                         Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                        Spell.WaitForCast(FaceDuring.Yes),
+                        Spell.WaitForCast(),
                         new Decorator(
                             req => !Spell.IsGlobalCooldown(),
                             new PrioritySelector(
@@ -97,7 +97,7 @@ namespace Singular.ClassSpecific.Druid
 
 
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCast(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(

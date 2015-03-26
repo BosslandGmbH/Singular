@@ -614,14 +614,11 @@ namespace Singular.Settings
                 if (ctx == Singular.HealingContext.Battlegrounds)
                 {
                     Rejuvenation = 95;
-                    Nourish = 0;
                     HealingTouch = 0;
                     Regrowth = 75;
                     WildGrowth = 90;
                     CountWildGrowth = 3;
                     Swiftmend = 74;
-                    WildMushroomBloom = 60;
-                    CountMushroomBloom = 1;
                     Tranquility = 0;
                     CountTranquility = 0;
                     TreeOfLife = 60;
@@ -634,14 +631,11 @@ namespace Singular.Settings
                 else if (ctx == Singular.HealingContext.Instances)
                 {
                     Rejuvenation = 95;
-                    Nourish = 85;
                     HealingTouch = 70;
                     Regrowth = 40;
                     WildGrowth = 85;
                     CountWildGrowth = 3;
                     Swiftmend = 70;
-                    WildMushroomBloom = 85;
-                    CountMushroomBloom = 2;
                     Tranquility = 60;
                     CountTranquility = 3;
                     TreeOfLife = 70;
@@ -654,14 +648,11 @@ namespace Singular.Settings
                 else if (ctx == Singular.HealingContext.Raids)
                 {
                     Rejuvenation = 94;
-                    Nourish = 95;
                     HealingTouch = 60;
                     Regrowth = 40;
                     WildGrowth = 90;
                     CountWildGrowth = 4;
                     Swiftmend = 85;
-                    WildMushroomBloom = 95;
-                    CountMushroomBloom = 3;
                     Tranquility = 70;
                     CountTranquility = 5;
                     TreeOfLife = 75;
@@ -692,13 +683,6 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(70)]
         [Category("Restoration")]
-        [DisplayName("% Nourish")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int Nourish { get; set; }
-
-        [Setting]
-        [DefaultValue(70)]
-        [Category("Restoration")]
         [DisplayName("% Healing Touch")]
         [Description("Health % to cast this ability at. Set to 0 to disable. Overridden by Regrowth if Glyphed")]
         public int HealingTouch { get; set; }
@@ -718,32 +702,11 @@ namespace Singular.Settings
         public int WildGrowth { get; set; }
 
         [Setting]
-        [DefaultValue(4)]
-        [Category("Restoration")]
-        [DisplayName("Wild Growth Min Count")]
-        [Description("Min number of players below Healing Rain % in area")]
-        public int CountWildGrowth { get; set; }
-
-        [Setting]
         [DefaultValue(70)]
         [Category("Restoration")]
         [DisplayName("% Swiftmend")]
         [Description("Health % to cast this ability at based upon single player health. Set to 0 to disable.")]
         public int Swiftmend { get; set; }
-
-        [Setting]
-        [DefaultValue(70)]
-        [Category("Restoration")]
-        [DisplayName("% Wild Mushroom: Bloom")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int WildMushroomBloom { get; set; }
-
-        [Setting]
-        [DefaultValue(3)]
-        [Category("Restoration")]
-        [DisplayName("Mushroom: Bloom Min Count")]
-        [Description("Min number of players below Mushroom: Bloom % in area")]
-        public int CountMushroomBloom { get; set; }
 
         [Setting]
         [DefaultValue(91)]
@@ -753,13 +716,6 @@ namespace Singular.Settings
         public int Tranquility { get; set; }
 
         [Setting]
-        [DefaultValue(4)]
-        [Category("Restoration")]
-        [DisplayName("Tranquility Min Count")]
-        [Description("Min number of players below Healing Rain % in area")]
-        public int CountTranquility { get; set; }
-
-        [Setting]
         [DefaultValue(60)]
         [Category("Restoration")]
         [DisplayName("% Tree of Life Form")]
@@ -767,25 +723,11 @@ namespace Singular.Settings
         public int TreeOfLife { get; set; }
 
         [Setting]
-        [DefaultValue(3)]
-        [Category("Restoration")]
-        [DisplayName("Tree of Life Min Count")]
-        [Description("Min number of players below Tree of Life % in area")]
-        public int CountTreeOfLife { get; set; }
-
-        [Setting]
         [DefaultValue(60)]
         [Category("Restoration")]
         [DisplayName("% Genesis")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int Genesis { get; set; }
-
-        [Setting]
-        [DefaultValue(3)]
-        [Category("Restoration")]
-        [DisplayName("Genesis Min Count")]
-        [Description("Min number of players with Rejuvenation below % in area")]
-        public int CountGenesis { get; set; }
 
         [Setting]
         [DefaultValue(60)]
@@ -823,11 +765,46 @@ namespace Singular.Settings
         public int HeartOfTheWild { get; set; }
 
         [Setting]
+        [DefaultValue(4)]
+        [Category("Restoration")]
+        [DisplayName("Wild Growth Min Count")]
+        [Description("Min number of players below Healing Rain % in area")]
+        public int CountWildGrowth { get; set; }
+
+        [Setting]
+        [DefaultValue(4)]
+        [Category("Restoration")]
+        [DisplayName("Tranquility Min Count")]
+        [Description("Min number of players below Healing Rain % in area")]
+        public int CountTranquility { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Restoration")]
+        [DisplayName("Tree of Life Min Count")]
+        [Description("Min number of players below Tree of Life % in area")]
+        public int CountTreeOfLife { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Restoration")]
+        [DisplayName("Genesis Min Count")]
+        [Description("Min number of players with Rejuvenation below % in area")]
+        public int CountGenesis { get; set; }
+
+        [Setting]
         [DefaultValue(5)]
         [Category("Restoration")]
         [DisplayName("Heart of the Wild Min Count")]
         [Description("Minimum number of players below Heart of the Wild % to cast this ability.")]
         public int CountHeartOfTheWild { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Restoration")]
+        [DisplayName("Buff Harmony in Combat")]
+        [Description("Cast Healing Touch to gain Harmony buff if missing")]
+        public bool BuffHarmony { get; set; }
 
         [Setting]
         [DefaultValue(0)]

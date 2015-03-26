@@ -115,6 +115,10 @@ namespace Singular
                 TreeHooks.Instance.ReplaceHook(HookName(BehaviorType.Rest), Helpers.Rest.CreateDefaultRestBehaviour());
             }
 
+#if TEST_BEHAVIOR
+            TreeHooks.Instance.ReplaceHook(HookName(BehaviorType.Rest), TestThrottle());
+#endif
+
 #if SHOW_BEHAVIOR_LOAD_DESCRIPTION
             // display concise single line describing what behaviors we are loading
             if (!silent)
@@ -644,7 +648,7 @@ namespace Singular
             if (!SingularSettings.Instance.RestCombatAllowed)
                 return false;
 
-            if (Unit.ValidUnit(EventHandlers.AttackingEnemyPlayer) && (DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer) < TimeSpan.FromSeconds(25))
+            if (Unit.ValidUnit(EventHandlers.AttackingEnemyPlayer) && EventHandlers.TimeSinceAttackedByEnemyPlayer < TimeSpan.FromSeconds(25))
                 return true;
 
             return false;
@@ -837,7 +841,7 @@ namespace Singular
 
         private static int _prevPullDistance = -1;
         private static Bots.Grind.BehaviorFlags _prevBehaviorFlags = Bots.Grind.BehaviorFlags.All;
-        private static Styx.CommonBot.Routines.CapabilityFlags _prevCapabilityFlags = Styx.CommonBot.Routines.CapabilityFlags.All;
+        //private static Styx.CommonBot.Routines.CapabilityFlags _prevCapabilityFlags = Styx.CommonBot.Routines.CapabilityFlags.All;
         private static void MonitorPullDistance()
         {
             if (_prevPullDistance != CharacterSettings.Instance.PullDistance)
@@ -901,7 +905,7 @@ namespace Singular
 
         #region Pull More Support
 
-        [Behavior(BehaviorType.Initialize, priority: 999)]
+        [Behavior(BehaviorType.Initialize, WoWClass.None, priority: 999)]
         public static Composite InitializeBehaviors()
         {
             IsPullMoreActive = IsPullMoreAllowed();
@@ -1013,12 +1017,15 @@ namespace Singular
                     break;
 
                 case WoWSpec.PriestDiscipline:
+                    PullMoreNeedSpell = "Mind Sear";    // 28
+                    break;
+
                 case WoWSpec.PriestHoly:
                     // none
                     break;
 
                 case WoWSpec.PriestShadow:
-                    PullMoreNeedSpell = "Shadow Word: Pain";    // 3 (10 since specialization needed)
+                    PullMoreNeedSpell = "Shadow Word: Pain";    // 3 (effectively 10 since specialization needed)
                     break;
 
                 case WoWSpec.RogueCombat:
@@ -1161,10 +1168,10 @@ namespace Singular
                             ),
 
                         new Decorator(
-                            req => ((DateTime.Now - Singular.Utilities.EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 15),
+                            req => (Singular.Utilities.EventHandlers.TimeSinceAttackedByEnemyPlayer.TotalSeconds < 15),
                             new Action(r =>
                             {
-                                Logger.WriteDiagnostic(Color.White, "Pull More: attacked by player {0:F1} seconds ago, disabling pull more until out of combat", (DateTime.Now - Singular.Utilities.EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds);
+                                Logger.WriteDiagnostic(Color.White, "Pull More: attacked by player {0:F1} seconds ago, disabling pull more until out of combat", Singular.Utilities.EventHandlers.TimeSinceAttackedByEnemyPlayer.TotalSeconds);
                                 _allowPullMoreUntil = DateTime.Now;
                             })
                             ),
@@ -1479,14 +1486,15 @@ namespace Singular
                     {
                         if (wd.ObjectivesDone == null)
                             Logger.WriteDebug("PullMoreQuestTargets: quest:{0}  obj:{1}  wd:{2} - WoWDescriptorQuest has unexpected Done tracking list", playerQuest.Id, objective.ID, wd.Id);
-                        else if (objective.Count == 0)
-                            ;   // assume 0 when no objective and quest is complete when picked up
-                        else if (objective.Index < wd.ObjectivesDone.GetLowerBound(0))
-                            Logger.WriteDebug("PullMoreQuestTargets: quest:{0}  obj:{1}  wd:{2} - Done.LowerBound:{3} but obj.Index{4} too low", playerQuest.Id, objective.ID, wd.Id, wd.ObjectivesDone.GetLowerBound(0), objective.Index);
-                        else if (objective.Index > wd.ObjectivesDone.GetUpperBound(0))
-                            Logger.WriteDebug("PullMoreQuestTargets: quest:{0}  obj:{1}  wd:{2} - Done.UpperBound:{3} but obj.Index{4} too high", playerQuest.Id, objective.ID, wd.Id, wd.ObjectivesDone.GetUpperBound(0), objective.Index);
-                        else 
-                            addObjectiveToKillList = wd.ObjectivesDone[objective.Index] < objective.Count;
+                        else if (objective.Count >= 0)
+                        {
+                            if (objective.Index < wd.ObjectivesDone.GetLowerBound(0))
+                                Logger.WriteDebug("PullMoreQuestTargets: quest:{0}  obj:{1}  wd:{2} - Done.LowerBound:{3} but obj.Index{4} too low", playerQuest.Id, objective.ID, wd.Id, wd.ObjectivesDone.GetLowerBound(0), objective.Index);
+                            else if (objective.Index > wd.ObjectivesDone.GetUpperBound(0))
+                                Logger.WriteDebug("PullMoreQuestTargets: quest:{0}  obj:{1}  wd:{2} - Done.UpperBound:{3} but obj.Index{4} too high", playerQuest.Id, objective.ID, wd.Id, wd.ObjectivesDone.GetUpperBound(0), objective.Index);
+                            else 
+                                addObjectiveToKillList = wd.ObjectivesDone[objective.Index] < objective.Count;
+                        }
                     }
 
                     if (addObjectiveToKillList)
@@ -1544,7 +1552,7 @@ namespace Singular
             return u => _pmGuids.Contains(u.Guid)  ;
         }
 
-        private static uint _prevQuestId;
+        //private static uint _prevQuestId;
         public static void PullMoreQuestTargetsDump()
         {
             if (!IsQuestProfileLoaded)
@@ -1612,10 +1620,9 @@ namespace Singular
                             if (string.IsNullOrEmpty(questItems))
                                 questItems = "-no quest items found-";
 
-                            Logger.WriteDiagnostic("      QuestCache: {0} #{1} - cid={2} id0={3} id1={4} questitems={5}",
+                            Logger.WriteDiagnostic("      QuestCache: {0} #{1} - id0={2} id1={3} questitems={4}",
                                 u.SafeName(),
                                 u.Entry,
-                                cacheEntry.Id,
                                 cacheEntry.GroupID[0],
                                 cacheEntry.GroupID[1],
                                 questItems
@@ -1827,73 +1834,6 @@ namespace Singular
 
         #endregion
 
-        private static Composite TestDynaWait()
-        {
-            return new PrioritySelector(
-                    new Sequence(
-                    new PrioritySelector(
-                        new Sequence(
-                            new DynaWait(ts => TimeSpan.FromSeconds(2), until => false, new ActionAlwaysSucceed(), true),
-                            new Action(r => { Logger.Write("1. RunStatus.Success - TEST FAILED"); return RunStatus.Success; })
-                            ),
-                        new Action(r => { Logger.Write("1. RunStatus.Failure - Test Succeeded!"); return RunStatus.Success; })
-                        ),
-                    new ActionAlwaysFail()
-                    ),
-                new Sequence(
-                    new PrioritySelector(
-                        new Sequence(
-                            new DynaWait(ts => TimeSpan.FromSeconds(2), until => true, new ActionAlwaysSucceed(), true),
-                            new Action(r => { Logger.Write("2. RunStatus.Success - Test Succeeded!"); return RunStatus.Success; })
-                            ),
-                        new Action(r => { Logger.Write("2. RunStatus.Failure - TEST FAILED"); return RunStatus.Success; })
-                        ),
-                    new ActionAlwaysFail()
-                    ),
-
-                new Sequence(
-                    new PrioritySelector(
-                        new Sequence(
-                            new DynaWait(ts => TimeSpan.FromSeconds(2), until => true, new ActionAlwaysFail(), true),
-                            new Action(r => { Logger.Write("3. RunStatus.Success - TEST FAILED"); return RunStatus.Success; })
-                            ),
-                        new Action(r => { Logger.Write("3. RunStatus.Failure - Test Succeeded!"); return RunStatus.Success; })
-                        ),
-                    new ActionAlwaysFail()
-                    ),
-                new Sequence(
-                    new PrioritySelector(
-                        new Sequence(
-                            new DynaWaitContinue(ts => TimeSpan.FromSeconds(2), until => false, new ActionAlwaysSucceed(), true),
-                            new Action(r => { Logger.Write("4. RunStatus.Success - Test Succeeded!"); return RunStatus.Success; })
-                            ),
-                        new Action(r => { Logger.Write("4. RunStatus.Failure - TEST FAILED"); return RunStatus.Success; })
-                        ),
-                    new ActionAlwaysFail()
-                    ),
-                new Sequence(
-                    new PrioritySelector(
-                        new Sequence(
-                            new DynaWaitContinue(ts => TimeSpan.FromSeconds(2), until => true, new ActionAlwaysSucceed(), true),
-                            new Action(r => { Logger.Write("5. RunStatus.Success - Test Succeeded!"); return RunStatus.Success; })
-                            ),
-                        new Action(r => { Logger.Write("5. RunStatus.Failure - TEST FAILED"); return RunStatus.Success; })
-                        ),
-                    new ActionAlwaysFail()
-                    ),
-
-                new Sequence(
-                    new PrioritySelector(
-                        new Sequence(
-                            new DynaWaitContinue(ts => TimeSpan.FromSeconds(2), until => true, new ActionAlwaysFail(), true),
-                            new Action(r => { Logger.Write("6. RunStatus.Success - TEST FAILED"); return RunStatus.Success; })
-                            ),
-                        new Action(r => { Logger.Write("6. RunStatus.Failure - Test Succeeded!"); return RunStatus.Success; })
-                        ),
-                    new ActionAlwaysFail()
-                    )
-                );
-        }
     }
 
     public class CallWatch : PrioritySelector
@@ -2000,9 +1940,9 @@ namespace Singular
             else
             {
                 DateTime started = DateTime.Now;
-                Logger.WriteDebug(Color.DodgerBlue, "enter: {0}", Name);
+                Logger.WriteTrace(Color.DodgerBlue, "enter: {0}", Name);
                 ret = base.Tick(context);
-                Logger.WriteDebug(Color.DodgerBlue, "leave: {0}, status={1} and took {2} ms", Name, ret.ToString(), (ulong)(DateTime.Now - started).TotalMilliseconds);
+                Logger.WriteTrace(Color.DodgerBlue, "leave: {0}, status={1} and took {2} ms", Name, ret.ToString(), (ulong)(DateTime.Now - started).TotalMilliseconds);
             }
 
             LastCallToSingular = DateTime.Now;
@@ -2014,7 +1954,9 @@ namespace Singular
     {
         public static DateTime LastCall { get; set; }
         public static ulong CountCall { get; set; }
-        public static bool TraceActive { get { return SingularSettings.Trace; } }
+        public bool TraceActive { get; set; }
+        public bool TraceEnter { get; set; }
+        public bool TraceExit { get; set; }
 
         public string Name { get; set; }
 
@@ -2035,6 +1977,9 @@ namespace Singular
 
             Name = name;
             LastCall = DateTime.MinValue;
+            TraceActive = SingularSettings.Trace;
+            TraceEnter = TraceActive;
+            TraceExit = TraceActive;
         }
 
         public override RunStatus Tick(object context)
@@ -2049,9 +1994,11 @@ namespace Singular
             else
             {
                 DateTime started = DateTime.Now;
-                Logger.WriteDebug(Color.LightBlue, "... enter: {0}", Name);
+                if (TraceEnter)
+                    Logger.WriteTrace(Color.LightBlue, "... enter: {0}", Name);
                 ret = base.Tick(context);
-                Logger.WriteDebug(Color.LightBlue, "... leave: {0}, took {1} ms", Name, (ulong)(DateTime.Now - started).TotalMilliseconds);
+                if (TraceExit)
+                    Logger.WriteTrace(Color.LightBlue, "... leave: {0}, took {1} ms", Name, (ulong)(DateTime.Now - started).TotalMilliseconds);
             }
 
             return ret;

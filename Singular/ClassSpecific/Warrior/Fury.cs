@@ -161,7 +161,7 @@ namespace Singular.ClassSpecific.Warrior
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCast(),
 
                 Common.CheckIfWeShouldCancelBladestorm(),
 
@@ -265,7 +265,7 @@ namespace Singular.ClassSpecific.Warrior
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCast(),
 
                 Common.CheckIfWeShouldCancelBladestorm(),
 

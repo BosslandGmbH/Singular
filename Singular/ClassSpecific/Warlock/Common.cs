@@ -51,6 +51,8 @@ namespace Singular.ClassSpecific.Warlock
         [Behavior(BehaviorType.Initialize, WoWClass.Warlock, priority: 9999)]
         public static Composite CreateWarlockInitialize()
         {
+            PetManager.NeedsPetSupport = true;
+
             scenario = new CombatScenario(44, 1.5f);
 
             SpellFindResults sfr;
@@ -85,7 +87,7 @@ namespace Singular.ClassSpecific.Warlock
                     Logger.Write("Warlock: spellentry: {0}", se);
                     Logger.Write("Warlock: internalInfo: {0}", internalInfo);
                 }
-                spell = spell;
+                id = spell.Id;
             }
 
             return new PrioritySelector(

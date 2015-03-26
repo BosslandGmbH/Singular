@@ -164,12 +164,21 @@ namespace Singular.Helpers
             if (range == float.MaxValue)
             {
                 return new Decorator(
-                    ret => !MovementManager.IsMovementDisabled && Me.IsMoving,
+                    ret => Me.IsMoving,
                     new Sequence(
-                        new Throttle( 1, TimeSpan.FromSeconds(1), RunStatus.Success,
-                            new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStopped: stopping! {0}", reason ?? ""))
+                        new Throttle(1, TimeSpan.FromSeconds(1), RunStatus.Success,
+                            new Action(ret =>
+                            {
+                                if (MovementManager.IsMovementDisabled)
+                                    Logger.WriteDebug(Color.White, "EnsureMovementStopped: movement disabled, suppress stop!{0}", reason ?? "");
+                                else
+                                    Logger.WriteDebug(Color.White, "EnsureMovementStopped: stopping! {0}", reason ?? "");
+                            })
                             ),
-                        new Action(ret => StopMoving.Now())
+                        new DecoratorContinue(
+                            req => !MovementManager.IsMovementDisabled,
+                            new Action(ret => StopMoving.Now())
+                            )
                         )
                     );
             }
@@ -182,10 +191,19 @@ namespace Singular.Helpers
                     && Me.IsMoving
                     && (onUnit(ret) == null || (onUnit(ret).Distance < range && onUnit(ret).InLineOfSpellSight)),
                 new Sequence(
-                    new Throttle( 1, TimeSpan.FromSeconds(1), RunStatus.Success,
-                        new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStopped: stopping because {0}", onUnit(ret) == null ? "No CurrentTarget" : string.Format("target @ {0:F1} yds, stop range: {1:F1}", onUnit(ret).Distance, range)))
+                    new Throttle(1, TimeSpan.FromSeconds(1), RunStatus.Success,
+                        new Action(ret =>
+                        {
+                            if (MovementManager.IsMovementDisabled)
+                                Logger.WriteDebug(Color.White, "EnsureMovementStopped: movement disabled, suppress stop for {0}", onUnit(ret) == null ? "No CurrentTarget" : string.Format("target @ {0:F1} yds, stop range: {1:F1}", onUnit(ret).Distance, range));
+                            else
+                                Logger.WriteDebug(Color.White, "EnsureMovementStopped: stopping because {0}", onUnit(ret) == null ? "No CurrentTarget" : string.Format("target @ {0:F1} yds, stop range: {1:F1}", onUnit(ret).Distance, range));
+                        })
                         ),
-                    new Action(ret => StopMoving.Now())
+                    new DecoratorContinue(
+                        req => !MovementManager.IsMovementDisabled,
+                        new Action(ret => StopMoving.Now())
+                        )
                     )
                 );
         }
@@ -219,6 +237,9 @@ namespace Singular.Helpers
             return CreateFaceTargetBehavior(ret => Me.CurrentTarget, viewDegrees, waitForFacing );
         }
 
+        private static WoWMovement.MovementDirection _strafeDirection { get; set; }
+        private static DateTime _strafeStopTime { get; set; }
+        private static TimeSpan _strafeDuration { get; set; }
         public static Composite CreateFaceTargetBehavior(UnitSelectionDelegate toUnit, float viewDegrees = 100f, bool waitForFacing = true)
         {
             System.Diagnostics.Debug.Assert( toUnit != null);
@@ -231,71 +252,79 @@ namespace Singular.Helpers
                     new ActionAlwaysFail()
                     ),
 
-                new Action(ret => 
-                {
-                    WoWUnit unit = (WoWUnit) ret;
-                    WoWMovement.MovementDirection strafe = WoWMovement.MovementDirection.None;
-                    const int StrafeTime = 150;
-
-                    if (unit.Distance < 0.1)
-                    {
-                        strafe = (((int)DateTime.Now.Second) & 1) == 0 ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
-                        Logger.Write( LogColor.Hilite, "FaceTarget: {0} for {1} ms since too close to target @ {2:F2} yds", strafe, StrafeTime, unit.Distance);
-                        WoWMovement.Move(strafe, TimeSpan.FromMilliseconds(StrafeTime));
-                    }
-                }),
-
-                new PrioritySelector(
-                    new Throttle( 
-                        TimeSpan.FromSeconds(0.5),
-                        new Action( ret => 
-                            {
-                                if (SingularSettings.Debug)
-                                    Logger.WriteDebug("FaceTarget: facing since more than {0} degrees", (long) viewDegrees);
-                                return RunStatus.Success;
-                            })
-                        ),
-                    new ActionAlwaysSucceed()
+                // Failure: wait to face until not moving
+                new DecoratorContinue(
+                    req => Me.IsMoving,
+                    new Sequence(
+                        new SeqDiag( 0.5, s => string.Format("FaceTarget: more than {0} degrees, but suppress since moving=true", (long)viewDegrees)),
+                        new ActionAlwaysFail()
+                        )
                     ),
 
-                new Action( ret => 
-                {
-                    RunStatus rslt;
-                    WoWUnit unit = (WoWUnit)ret;
+                // Success: when too close (< 0.1) strafe before facing to avoid Facing = Y that is incorrect
+                new DecoratorContinue(
+                    req => (req as WoWUnit).Distance < 0.1,
+                    new Sequence(
+                        new Action(ret =>
+                        {
+                            WoWUnit unit = (WoWUnit)ret;
+                            _strafeDuration = TimeSpan.FromMilliseconds(150f);
+                            _strafeStopTime = DateTime.UtcNow + _strafeDuration;
+                            _strafeDirection = (((int)DateTime.Now.Second) & 1) == 0 ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
+                            Logger.WriteDiagnostic(LogColor.Hilite, "FaceTarget: {0} for {1:F0} ms since too close to target @ {2:F2} yds", _strafeDirection, _strafeDuration.TotalMilliseconds, unit.Distance);
+                            WoWMovement.Move(_strafeDirection, _strafeDuration);
+                        }),
+                        new WaitContinue(
+                            _strafeDuration,
+                            until => DateTime.UtcNow >= _strafeStopTime || (until as WoWUnit).Distance > 1.5,
+                            new ActionAlwaysSucceed()
+                            ),
+                        new Action(r =>
+                        {
+                            Logger.WriteDiagnostic(LogColor.Hilite, "FaceTarget: stop {0} @ {1:F2} secs distance {1:F2} yds", 
+                                _strafeDirection, 
+                                (DateTime.UtcNow - (_strafeStopTime - _strafeDuration)).TotalSeconds,
+                                (r as WoWUnit).Distance
+                                );
+                            WoWMovement.MoveStop(_strafeDirection);
+                        })
+                        )
+                    ),
 
-                    unit.Face();
+                // Success: we are okay to face at this point
+                new SeqDiag( 0.5, s => string.Format("FaceTarget: facing since more than {0} degrees (moving={1})", (long)viewDegrees, Me.IsMoving.ToYN())),
 
-                    if (!waitForFacing)
-                        rslt = RunStatus.Failure;
+                // Success: face now
+                new Action(r => ((WoWUnit)r).Face()),
 
-                    // even though we may want a tighter conical facing check, allow
-                    // .. behavior to continue if 180 or better so we can cast while turning
-                    else if (Me.IsSafelyFacing(unit, 180f))
-                        rslt = RunStatus.Failure;
+                // Conditional: Success if waiting for facing, Failure otherwise
+                new DecoratorContinue(
+                    req => !waitForFacing,
+                    new ActionAlwaysFail()
+                    ),
 
-                    // special handling for when consumed by Direglob and other mobs we are inside/on top of 
-                    // .. as facing sometimes won't matter
-                    else if (Me.InVehicle)
-                    {
-                        Logger.WriteDebug("FaceTarget: don't wait to face {0} since in vehicle", unit.SafeName());
-                        rslt = RunStatus.Failure;
-                    }
-                    else
-                    {
-                        // Logger.WriteDebug("FaceTarget: not yet facing {0}", unit.SafeName());
-                        rslt = RunStatus.Success;
-                    }
-/*
-                    if (strafe != WoWMovement.MovementDirection.None)
-                    {
-                        Logger.WriteDebug("FaceTarget: cancelling strafe for target @ {0:F2} yds", unit.Distance);
-                        WoWMovement.MoveStop(strafe);
-                    }
-*/
-                    // otherwise, indicate behavior complete so begins again while
-                    // .. waiting for facing to occur
-                    return rslt;
-                })
+                new SeqDiag( 0.5, s => string.Format("FaceTarget: waiting (waitForFacing={0})", waitForFacing)),
+
+                // even though we may want a tighter conical facing check, allow
+                // .. behavior to continue if 180 or better so we can cast while turning
+                new DecoratorContinue(
+                    req => Me.IsSafelyFacing((WoWUnit)req, 180f),
+                    new ActionAlwaysFail()
+                    ),
+
+                new DecoratorContinue(
+                    req => Me.InVehicle,
+                    new ThrottlePasses(
+                        1, 
+                        TimeSpan.FromSeconds(5), 
+                        RunStatus.Failure, 
+                        new Action(r =>
+                        {
+                            Logger.WriteDebug("FaceTarget: don't wait to face {0} since we are in vehicle", ((WoWUnit) r).SafeName());
+                            return RunStatus.Failure;
+                        })
+                        )
+                    )
                 );
         }
 
@@ -1022,7 +1051,7 @@ namespace Singular.Helpers
                 if (!Me.IsMoving)
                 {
                     if (SingularSettings.DebugStopMoving)
-                        Logger.WriteDebug(Color.White, "StopMoving STOP: character already stopped, clearing {0} stop request", Type);
+                        Logger.WriteDebug(Color.LightPink, "StopMoving STOP: character already stopped, clearing {0} stop request", Type);
                 }
                 else
                 {
@@ -1050,7 +1079,7 @@ namespace Singular.Helpers
                         else if (callerLine == 0)
                             line += ", method: " + callerName;
 
-                        Logger.WriteDebug(Color.White, line);
+                        Logger.WriteDebug(Color.LightPink, line);
                     }
                 }
 

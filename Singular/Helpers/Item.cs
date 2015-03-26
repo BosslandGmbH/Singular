@@ -159,24 +159,23 @@ namespace Singular.Helpers
 
             return (from i in carried
                     let spells = i.Effects
-                    where i.ItemInfo != null && spells != null && spells.Count != 0 &&
-                          i.Usable &&
-                          i.Cooldown == 0 &&
-                          i.ItemInfo.RequiredLevel <= StyxWoW.Me.Level &&
-                          spells.Any(s => s.Spell != null && spellNameHashes.Contains(s.Spell.Name))
+                    where IsUsableItemBySpell( i, spellNameHashes)
                     orderby i.ItemInfo.Level descending
-                    select i).FirstOrDefault();
+                    select i)
+                    .FirstOrDefault();
         }
 
-        public static bool IsUsableItemBySpell(WoWItem i, params string[] spellNames)
+        public static bool IsUsableItemBySpell(WoWItem i, HashSet<string> spellNameHashes)
         {
             return i.Usable
                 && i.Cooldown == 0
                 && i.ItemInfo != null
                 && i.ItemInfo.RequiredLevel <= StyxWoW.Me.Level
-                && i.Effects != null
-                && i.Effects.Count != 0
-                && i.Effects.Any(s => s.Spell != null && spellNames.Contains(s.Spell.Name));
+                && (i.ItemInfo.RequiredSkillId == 0 || i.ItemInfo.RequiredSkillLevel <= Me.GetSkill(i.ItemInfo.RequiredSkillId).CurrentValue)
+                && (i.ItemInfo.RequiredSpellId == 0 || (SpellManager.HasSpell(i.ItemInfo.RequiredSpellId) || Me.HasAura(i.ItemInfo.RequiredSpellId)))
+                && i.Effects.Any(s => s.Spell != null && spellNameHashes.Contains(s.Spell.Name) && s.Spell.CanCast)
+                && i.Entry != 32905 // ignore Bottled Nethergon Vapor
+                ;
         }
 
         /// <summary>
@@ -213,7 +212,7 @@ namespace Singular.Helpers
                                 )
                             ),
                         new Decorator(
-                            req => Me.Inventory.Equipped.Neck != null && Item.IsUsableItemBySpell(Me.Inventory.Equipped.Neck, "Heal"),
+                            req => Me.Inventory.Equipped.Neck != null && Item.IsUsableItemBySpell(Me.Inventory.Equipped.Neck, new HashSet<string>() {"Heal"}),
                             Item.UseEquippedItem((uint) WoWInventorySlot.Neck)
                             )
                         )
@@ -242,6 +241,9 @@ namespace Singular.Helpers
 
         public static Composite CreateUseFlasksBehavior()
         {
+            const int ACCELERATED_LEARNING = 178119;                    // (aura)
+            const int EXCESS_POTION_OF_ACCELERATED_LEARNING = 120182;   // (item)
+
             if (!SingularSettings.Instance.UseAlchemyFlasks || Me.Level < 85)
                 return new ActionAlwaysFail();
 
@@ -249,46 +251,53 @@ namespace Singular.Helpers
                 1,
                 TimeSpan.FromSeconds(5),
                 RunStatus.Failure,
-                new Decorator(
-                    req => !StyxWoW.Me.Auras
-                        .Any(aura => 
-                            !aura.Key.Contains("Flask")
-                            && !aura.Key.StartsWith("Enhanced ")
-                            && !flaskAura.Contains( aura.Value.SpellId )
-                            ), 
-                    new PrioritySelector(
-                        // save highest priority WoWItem to use
-                        ctx => flaskItem
-                            .Select( f => StyxWoW.Me.CarriedItems
-                                .FirstOrDefault( 
-                                    i => f == i.Entry
-                                        && (i.ItemInfo.RequiredSkillId == 0 || Me.GetSkill(i.ItemInfo.RequiredSkillId).CurrentValue >= i.ItemInfo.RequiredSkillLevel)
+                new PrioritySelector(                   
+                    new Decorator(
+                        req => !StyxWoW.Me.Auras
+                            .Any(aura => 
+                                aura.Key.Contains("Flask")
+                                || aura.Key.StartsWith("Enhanced ")
+                                || flaskAura.Contains( aura.Value.SpellId )
+                                ), 
+                        new PrioritySelector(
+                            // save highest priority WoWItem to use
+                            ctx => flaskItem
+                                .Select( f => StyxWoW.Me.CarriedItems
+                                    .FirstOrDefault( 
+                                        i => f == i.Entry
+                                            && (i.ItemInfo.RequiredSkillId == 0 || Me.GetSkill(i.ItemInfo.RequiredSkillId).CurrentValue >= i.ItemInfo.RequiredSkillLevel)
+                                        )
                                     )
-                                )
-                            .FirstOrDefault(),
-                        new Decorator(
-                            req => req != null && CanUseItem((WoWItem)req),
-                            new Sequence(
-                                new Action(r => Logger.Write(LogColor.Hilite, "/use flask: {0}", ((WoWItem)r).Name)),
-                                new Action(r => ((WoWItem)r).UseContainerItem()),
-                                new PrioritySelector(
-                                    new DynaWait( 
-                                        ts => TimeSpan.FromMilliseconds(Math.Max(500, SingularRoutine.Latency * 2)),
-                                        until => StyxWoW.Me.Auras
-                                            .Any(aura => 
-                                                aura.Key.Contains("Flask")
-                                                || aura.Key.StartsWith("Enhanced ")
-                                                || flaskAura.Contains( aura.Value.SpellId )
-                                                ),
-                                        new ActionAlwaysSucceed()
-                                        ),
-                                    new Action( r => {
-                                        Logger.WriteDiagnostic("UseFlasks: do not see an aura from item [{0}]");
-                                        return RunStatus.Failure;
-                                        })
+                                .FirstOrDefault(),
+                            new Decorator(
+                                req => req != null && CanUseItem((WoWItem)req),
+                                new Sequence(
+                                    new Action(r => Logger.Write(LogColor.Hilite, "/use flask: {0}", ((WoWItem)r).Name)),
+                                    new Action(r => ((WoWItem)r).UseContainerItem()),
+                                    new PrioritySelector(
+                                        new DynaWait( 
+                                            ts => TimeSpan.FromMilliseconds(Math.Max(500, SingularRoutine.Latency * 2)),
+                                            until => StyxWoW.Me.Auras
+                                                .Any(aura => 
+                                                    aura.Key.Contains("Flask")
+                                                    || aura.Key.StartsWith("Enhanced ")
+                                                    || flaskAura.Contains( aura.Value.SpellId )
+                                                    ),
+                                            new ActionAlwaysSucceed()
+                                            ),
+                                        new Action( r => {
+                                            Logger.WriteDiagnostic("UseFlasks: do not see an aura from item [{0}]");
+                                            return RunStatus.Failure;
+                                            })
+                                        )
                                     )
                                 )
                             )
+                        ),
+
+                    new Decorator(
+                        req => Me.Level.Between(90,99) && !Me.HasAura(ACCELERATED_LEARNING),
+                        UseItem( EXCESS_POTION_OF_ACCELERATED_LEARNING)
                         )
                     )
                 );
@@ -302,7 +311,7 @@ namespace Singular.Helpers
         {
             118922,     // Oralius' Whispering Crystal (item)
             86569,      // Crystal of Insanity (item)
-            75525,      // Alchemist's Flask (item)
+            75525,      // Alchemist's Flask (item),
         };
 
         /// <summary>
@@ -315,6 +324,7 @@ namespace Singular.Helpers
             127230,     // Visions of Insanity (aura)
             105617,     // Alchemist's Flask (aura)
         };
+
 
         private static DateTime suppressScrollsUntil = DateTime.MinValue;
 

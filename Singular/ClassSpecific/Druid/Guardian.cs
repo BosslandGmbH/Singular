@@ -40,7 +40,7 @@ namespace Singular.ClassSpecific.Druid
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 // Auto Attack
 
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCast(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -112,7 +112,7 @@ namespace Singular.ClassSpecific.Druid
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 CreateGuardianWildChargeBehavior(),
 
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCast(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(

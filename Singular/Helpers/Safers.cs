@@ -24,7 +24,7 @@ namespace Singular.Helpers
 {
     internal static class Safers
     {
-        private static Color targetColor = Color.LightCoral;
+        private static Color targetColor = LogColor.Targeting;
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
@@ -110,7 +110,7 @@ namespace Singular.Helpers
                                         return Me.CurrentTarget;
 
                                     // if attacked in last 15 seconds, go after them
-                                    if ((DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 15)
+                                    if (EventHandlers.TimeSinceAttackedByEnemyPlayer.TotalSeconds < 15)
                                     {
                                         WoWUnit ganker = EventHandlers.AttackingEnemyPlayer;
                                         if (Unit.ValidUnit(ganker))

@@ -123,16 +123,12 @@ namespace Singular.Helpers
         {
             get
             {
-                WoWGuid[] guids = StyxWoW.Me.GroupInfo.RaidMemberGuids
-                    .Union(StyxWoW.Me.GroupInfo.PartyMemberGuids)
-                    .Union(new[] { StyxWoW.Me.Guid })
-                    .Distinct()
-                    .ToArray();
-
-                return (  // must check inheritance in getobj because of LocalPlayer
-                    from p in ObjectManager.GetObjectsOfType<WoWPlayer>(true, true)
-                    where p.IsFriendly && guids.Any(g => g == p.Guid)
-                    select p).ToList();
+                HashSet<WoWGuid> guids = new HashSet<WoWGuid>(StyxWoW.Me.GroupInfo.RaidMemberGuids);
+                List<WoWUnit> list = ObjectManager.ObjectList
+                    .Where(o => IsUnit(o) && guids.Contains(o.Guid))
+                    .Select(o => o.ToUnit())
+                    .ToList();
+                return list;
             }
         }
 
@@ -140,25 +136,31 @@ namespace Singular.Helpers
         {
             get
             {
-                WoWGuid[] guids = StyxWoW.Me.GroupInfo.RaidMemberGuids
-                    .Union(StyxWoW.Me.GroupInfo.PartyMemberGuids)
-                    .Union(new[] { StyxWoW.Me.Guid })
-                    .Distinct()
-                    .ToArray();
-
-                guids = guids
-                    .Union(ObjectManager.GetObjectsOfType<WoWPlayer>(true, true)
-                        .Where(p => p.GotAlivePet && p.IsInMyPartyOrRaid )
-                        .Select(p => p.Pet.Guid))
-                    .ToArray();
-
-                return (  // must check inheritance in getobj because of LocalPlayer
-                    from p in ObjectManager.GetObjectsOfType<WoWUnit>(true, true)
-                    where p.IsFriendly && guids.Any(g => g == p.Guid)
-                    select p).ToList();
+                HashSet<WoWGuid> guids = new HashSet<WoWGuid>( StyxWoW.Me.GroupInfo.RaidMemberGuids );
+                List<WoWUnit> list = ObjectManager.ObjectList
+                    .Where(o => IsUnit(o) && (guids.Contains(o.Guid) || (o.ToUnit().IsPet && guids.Contains(o.ToUnit().SummonedByUnitGuid))))
+                    .Select( o => o.ToUnit())
+                    .ToList();
+                return list;
             }
         }
 
+        public static bool IsUnit(WoWObject o)
+        {
+            if (o != null)
+            {
+                try
+                {
+                    if (o.ToUnit() != null)
+                        return true;
+                }
+                catch
+                {
+                }
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// List of WoWPartyMember in your Group. Deals with Party / Raid in a list independent manner and does not restrict distance
@@ -285,7 +287,7 @@ namespace Singular.Helpers
                         || (p.Combat
                             && (p.TaggedByMe
                                 || (p.GotTarget() && p.IsTargetingMyStuff())
-                                || (p == EventHandlers.AttackingEnemyPlayer && (DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 15)
+                                || (p == EventHandlers.AttackingEnemyPlayer && EventHandlers.TimeSinceAttackedByEnemyPlayer.TotalSeconds < 15)
                                 )
                             )
                     );
@@ -296,15 +298,15 @@ namespace Singular.Helpers
             get { return NearbyUnfriendlyUnits.Where(p => p.Aggro || (p.Combat && (p.TaggedByMe || (p.GotTarget() && p.IsTargetingMyStuff())))); }
         }
 
-        public static IEnumerable<WoWUnit> UnitsInCombatWithUsOrOurStuff(int maxSpellDist)
+        public static IEnumerable<WoWUnit> UnitsInCombatWithUsOrOurStuff(int maxSpellDist = -1)
         {
             return UnfriendlyUnits(maxSpellDist)
                 .Where(
                     p => p.Aggro 
                         || (p.Combat 
                             && (p.TaggedByMe 
-                                || (p.GotTarget() && p.IsTargetingUs()) 
-                                || (p == EventHandlers.AttackingEnemyPlayer && (DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 15)
+                                || (p.GotTarget() && p.IsTargetingUs())
+                                || (p == EventHandlers.AttackingEnemyPlayer && EventHandlers.TimeSinceAttackedByEnemyPlayer.TotalSeconds < 15)
                                 )
                             )
                     ); 
@@ -992,8 +994,8 @@ namespace Singular.Helpers
             get
             {
                 return ObjectManager.GetObjectsOfType<WoWPlayer>(false,false).Where(
-                    p => !p.IsMe && p.IsDead && p.IsFriendly && p.IsInMyPartyOrRaid &&
-                         p.DistanceSqr < 40 * 40 && !Blacklist.Contains(p.Guid, BlacklistFlags.Combat)).ToList();
+                    p => !p.IsMe && p.IsDead && p.IsFriendly && p.IsInMyPartyOrRaid() && p.IsPlayer
+                         && p.DistanceSqr < 40 * 40 && !Blacklist.Contains(p.Guid, BlacklistFlags.Combat)).ToList();
             }
         }
 
@@ -1069,6 +1071,8 @@ namespace Singular.Helpers
             WoWGuid guid = unit == null ? WoWGuid.Empty : unit.Guid;
             if ( guid == _lastIsBossGuid )
                 return _lastIsBossResult;
+
+            _lastIsBossGuid = guid;
 #if SINGULAR_BOSS_DETECT
             _lastIsBossGuid = guid;
             _lastIsBossResult = unit != null && (Lists.BossList.CurrentMapBosses.Contains(unit.Name) || Lists.BossList.BossIds.Contains(unit.Entry));
@@ -1117,6 +1121,12 @@ namespace Singular.Helpers
         public static bool IsTargetingUs(this WoWUnit u)
         {
             return u.IsTargetingMyStuff() || Unit.GroupMemberInfos.Any(m => m.Guid == u.CurrentTargetGuid);
+        }
+
+
+        public static bool IsInMyPartyOrRaid(this WoWUnit u)
+        {
+            return StyxWoW.Me.GroupInfo.RaidMemberGuids.Any(m => m == u.Guid);
         }
 
         public static bool IsSensitiveDamage(this WoWUnit u,  int range = 0)
@@ -1218,7 +1228,7 @@ namespace Singular.Helpers
             return me.GroupInfo.IsInParty || me.GroupInfo.IsInRaid;
         }
 
-        private static string _lastGetPredictedError;
+        //private static string _lastGetPredictedError;
         public static float GetVerifiedGetPredictedHealthPercent(this WoWUnit unit, bool includeMyHeals = false)
         {
             float hbhp = unit.GetPredictedHealthPercent(includeMyHeals);
@@ -1607,7 +1617,7 @@ namespace Singular.Helpers
             if (StyxWoW.Me.GotTarget())
                 StyxWoW.Me.TimeToDeath();
 
-            bool worldPvp = (DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 15;
+            bool worldPvp = EventHandlers.TimeSinceAttackedByEnemyPlayer.TotalSeconds < 15;
             if (worldPvp )
             {
                 WorldPvpRecently = worldPvp;

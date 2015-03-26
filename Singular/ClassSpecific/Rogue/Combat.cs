@@ -15,6 +15,8 @@ using Styx.WoWInternals.WoWObjects;
 using System.Drawing;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
+using Styx.CommonBot.POI;
+using Styx.WoWInternals;
 
 
 namespace Singular.ClassSpecific.Rogue
@@ -52,7 +54,7 @@ namespace Singular.ClassSpecific.Rogue
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
                         // ok, everything else failed so just hit him!!!!
-                        Spell.Buff("Revealing Strike", true, ret => true),
+                        Spell.Buff("Revealing Strike", req => true),
                         Spell.Cast("Sinister Strike")
                         )
                     )
@@ -63,7 +65,9 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueCombatNormalCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
+
+                Common.RogueEnsureWeKillSappedMobs(),
+
                 Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
@@ -79,6 +83,8 @@ namespace Singular.ClassSpecific.Rogue
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
 
+                        CreateBladeFlurryBehavior(),
+
                         Helpers.Common.CreateInterruptBehavior(),
                         Common.CreateDismantleBehavior(),
 
@@ -90,30 +96,28 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Cast("Killing Spree",
                             ret => Me.CurrentEnergy < 30 && Me.HasAura("Deep Insight") && !Me.HasAura("Adrenaline Rush")),
 
-                        CreateBladeFlurryBehavior(),
+                        Spell.Buff("Slice and Dice", on => Me, ret => Me.ComboPoints > 0),
 
                         new Decorator(
                             ret => Common.AoeCount >= RogueSettings.AoeSpellPriorityCount && Spell.UseAOE,
                             new PrioritySelector(
-                                Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
-                                Spell.BuffSelf("Fan of Knives"),
-                                Spell.Cast("Sinister Strike"),
+                                Spell.Cast("Eviscerate", ret => Me.ComboPoints >= 5 && !SpellManager.HasSpell("Crimson Tempest")),
+                                Spell.BuffSelf("Fan of Knives", req => Me.ComboPoints < 5),
+                                Spell.Cast("Sinister Strike", req => Me.ComboPoints < 5),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
                             ),
 
                         Spell.Buff("Revealing Strike", true, ret => Me.CurrentTarget.IsWithinMeleeRange ),
-                        Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
-
-                        Spell.Cast("Eviscerate",
-                            ret => Me.ComboPoints >= 5
-                                && ( Me.HasAura("Blade Flurry") || Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds > 6 || Me.CurrentTarget.TimeToDeath() < 6)),
-
-                        Spell.Cast("Eviscerate", ret => !SpellManager.HasSpell("Recuperate") && Me.CurrentTarget.TimeToDeath(999) <= Me.ComboPoints ),
-
-                        Spell.Cast("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount),
-                        Spell.Cast("Sinister Strike")
+                        Spell.Cast("Eviscerate", ret => Me.ComboPoints >= 5 || Me.CurrentTarget.TimeToDeath(99) <= Me.ComboPoints ),
+                        new Decorator(
+                            req => Me.ComboPoints < 5,
+                            new PrioritySelector(
+                                Spell.Cast("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount),
+                                Spell.Cast("Sinister Strike")
+                                )
+                            )
                         )
                     )
                 );
@@ -172,7 +176,7 @@ namespace Singular.ClassSpecific.Rogue
                                 )
                             ),
 
-                        Spell.Cast("Revealing Strike", ret => !Me.CurrentTarget.HasMyAura("Revealing Strike")),
+                        Spell.Buff("Revealing Strike"),
 
                         Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                         Spell.Cast("Eviscerate", ret => Me.ComboPoints == 5),
@@ -188,16 +192,19 @@ namespace Singular.ClassSpecific.Rogue
 
         internal static Composite CreateBladeFlurryBehavior()
         {
-            return new PrioritySelector(
-                Spell.BuffSelf("Blade Flurry", ret => Spell.UseAOE && Common.AoeCount > 1),
-                new Decorator(
-                    ret => Me.HasAura("Blade Flurry") && (!Spell.UseAOE || Common.AoeCount <= 1),
-                    new Sequence(
-                        new Action(ret => Logger.Write( LogColor.Cancel, "/cancel Blade Flurry")),
-                        new Action(ret => Me.CancelAura("Blade Flurry")),
-                        new Wait(TimeSpan.FromMilliseconds(500), ret => !Me.HasAura("Blade Flurry"), new ActionAlwaysSucceed())
+            return new Sequence(
+                new PrioritySelector(
+                    Spell.BuffSelf("Blade Flurry", ret => Spell.UseAOE && Common.AoeCount > 1, gcd: HasGcd.No),
+                    new Decorator(
+                        ret => Me.HasAura("Blade Flurry") && (!Spell.UseAOE || Common.AoeCount <= 1),
+                        new Sequence(
+                            //new Action(ret => Logger.Write( LogColor.Cancel, "/cancel Blade Flurry")),
+                            new Action(ret => Me.CancelAura("Blade Flurry")),
+                            new Wait(TimeSpan.FromMilliseconds(500), ret => !Me.HasAura("Blade Flurry"), new ActionAlwaysSucceed())
+                            )
                         )
-                    )
+                    ),
+                new ActionAlwaysFail()  // since no GCD
                 );
         }
 
@@ -214,34 +221,39 @@ namespace Singular.ClassSpecific.Rogue
 
             return new ThrottlePasses(1,
                 new Action(ret =>
-                {
+                {           
                     string sMsg;
-                    sMsg = string.Format(".... [{0}] h={1:F1}%, e={2:F1}%, moving={3}, stealth={4}, aoe={5}, recup={6}, slic={7}, rawc={8}, combo={9}, aoe={10}",
+                    sMsg = string.Format(".... [{0}] h={1:F1}%, e={2:F1}%, mov={3}, stlth={4}, aoe={5}, recup={6}, slic={7}, rawc={8}, combo={9}, aoe={10}",
                         sState,
                         Me.HealthPercent,
                         Me.CurrentEnergy,
-                        Me.IsMoving,
-                        Common.AreStealthAbilitiesAvailable,
+                        Me.IsMoving.ToYN(),
+                        Common.AreStealthAbilitiesAvailable.ToYN(),
                         Common.AoeCount,
                         (int) Me.GetAuraTimeLeft("Recuperate", true).TotalSeconds,
                         (int) Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds,
                         Me.ComboPoints,
                         Me.ComboPoints,
-                        Common.AoeCount 
+                        Common.AoeCount
                         );
+
+                    WoWAura aura = Me.GetAllAuras().FirstOrDefault(a => a.Name == "Shallow Insight" || a.Name == "Moderate Insight" || a.Name == "Deep Insight");
+                    if (aura != null)
+                        sMsg += string.Format(", {0}={1}", aura.Name, (int)aura.TimeLeft.TotalSeconds);
 
                     WoWUnit target = Me.CurrentTarget;
                     if (target != null)
                     {
                         sMsg += string.Format(
-                            ", {0}, {1:F1}%, dies {2}, {3:F1} yds, behind={4}, loss={5}, rvlstrk={6}, rupture={7}",
+                            ", {0}, {1:F1}%, dies {2}, {3:F1} yds, inmelee={4}, behind={5}, loss={6}, rvlstrk={7}, rupture={8}",
                             target.SafeName(),
                             target.HealthPercent,
                             target.TimeToDeath(),
                             target.Distance,
-                            Me.IsSafelyBehind(target),
-                            target.InLineOfSpellSight,
-                            (int)target.GetAuraTimeLeft("Revealing Strike", true).TotalSeconds,
+                            target.IsWithinMeleeRange.ToYN(),
+                            Me.IsSafelyBehind(target).ToYN(),
+                            target.InLineOfSpellSight.ToYN(),
+                            (int) target.GetAuraTimeLeft("Revealing Strike", true).TotalSeconds,
                             (int) target.GetAuraTimeLeft("Rupture", true).TotalSeconds
                             );
                     }

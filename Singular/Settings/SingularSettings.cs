@@ -422,7 +422,7 @@ namespace Singular.Settings
         {
             get
             {
-                return Debug && Instance.EnableDebugSpellCasting;
+                return Instance.EnableDebugSpellCasting && Debug;
             }
         }
 
@@ -431,7 +431,7 @@ namespace Singular.Settings
         {
             get
             {
-                return false;
+                return false && Debug;
             }
         }
 
@@ -440,7 +440,16 @@ namespace Singular.Settings
         {
             get
             {
-                return Debug && SingularSettings.Instance.EnableDebugTrace;
+                return SingularSettings.Instance.EnableDebugTrace && Debug;
+            }
+        }
+
+        [Browsable(false)]
+        public static bool TraceHeals
+        {
+            get
+            {
+                return SingularSettings.Instance.EnableDebugHealTrace && Debug;
             }
         }
 
@@ -487,12 +496,22 @@ namespace Singular.Settings
         // code should reference SingularSettings.Trace
         //
         [Browsable(false)]
-        [Setting,ReadOnly(false)]
+        [Setting, ReadOnly(false)]
         [DefaultValue(false)]
         [Category("Debug")]
         [DisplayName("Debug Trace")]
         [Description("EXTREMELY VERBOSE!! Enables logging of entry/exit into each behavior. Only use if instructed or you prefer slower response times!")]
         public bool EnableDebugTrace { get; set; }
+
+        // code should reference SingularSettings.TraceHeals
+        //
+        [Browsable(false)]
+        [Setting, ReadOnly(false)]
+        [DefaultValue(false)]
+        [Category("Debug")]
+        [DisplayName("Debug Heals")]
+        [Description("EXTREMELY VERBOSE!! Enables logging of entry/exit into each Healing Specializations Heal behavior. Only use if instructed or you prefer slower response times!")]
+        public bool EnableDebugHealTrace { get; set; }
 
         // code should reference SingularSettings.Debug
         //
@@ -964,7 +983,7 @@ namespace Singular.Settings
 
         #region Category: Items
 
-        [Setting,ReadOnly(true)]
+        [Setting,ReadOnly(false)]
         [DefaultValue(true)]
         [Category("Items")]
         [DisplayName("Use Flasks/Crystals/etc")]

@@ -113,6 +113,13 @@ namespace Singular.Settings
             set { _TwistDamageShield = value; }
         }
 
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Common")]
+        [DisplayName("Shamanistic Rage %")]
+        [Description("Shamanistic Rage if below this Health %")]
+        public int ShamanisticRagePercent { get; set; }
+
         #endregion
 
         #region Category: Enhancement
@@ -201,13 +208,6 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(47)]
         [Category("Talents")]
-        [DisplayName("Healing Tide Totem %")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int HealingTideTotemPercent { get; set; }
-
-        [Setting]
-        [DefaultValue(47)]
-        [Category("Talents")]
         [DisplayName("Stone Bulwark Totem %")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int StoneBulwarkTotemPercent { get; set; }
@@ -240,7 +240,8 @@ namespace Singular.Settings
                     SpiritLinkTotem = 50;
                     HealingSurge = 85;
                     AncestralSwiftness = 35;
-                    HealingStreamTotem = 90;
+                    HealingStreamTotem = 100;
+                    CloudburstTotem = 100;
                     HealingTideTotem = 55;
 
                     RollRiptideCount = 0;
@@ -257,7 +258,8 @@ namespace Singular.Settings
                     SpiritLinkTotem = 49;
                     HealingSurge = 70;
                     AncestralSwiftness = 30;
-                    HealingStreamTotem = 90;
+                    HealingStreamTotem = 100;
+                    CloudburstTotem = 100;
                     HealingTideTotem = 65;
 
                     RollRiptideCount = 1;
@@ -274,7 +276,8 @@ namespace Singular.Settings
                     SpiritLinkTotem = 48;
                     HealingSurge = 21;
                     AncestralSwiftness = 20;
-                    HealingStreamTotem = 85;
+                    HealingStreamTotem = 100;
+                    CloudburstTotem = 100;
                     HealingTideTotem = 70;
 
                     RollRiptideCount = 5;
@@ -358,7 +361,7 @@ namespace Singular.Settings
         public int SpiritLinkTotem { get; set; }
 
         [Setting]
-        [DefaultValue(95)]
+        [DefaultValue(100)]
         [Category("Restoration")]
         [DisplayName("% Healing Stream Totem")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
@@ -370,6 +373,13 @@ namespace Singular.Settings
         [DisplayName("Healing Tide Totem %")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int HealingTideTotem { get; set; }
+
+        [Setting]
+        [DefaultValue(100)]
+        [Category("Talents")]
+        [DisplayName("Cloudburst Totem %")]
+        [Description("Health % to cast this ability at. Set to 100 to cast on cooldown, Set to 0 to disable.")]
+        public int CloudburstTotem { get; set; }
 
         [Setting]
         [DefaultValue(4)]

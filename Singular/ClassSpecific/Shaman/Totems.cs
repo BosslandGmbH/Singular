@@ -131,8 +131,8 @@ namespace Singular.ClassSpecific.Shaman
             // create Fire Totems behavior first, then wrap if needed
             PrioritySelector fireTotemBehavior = new PrioritySelector();
             fireTotemBehavior.AddChild(
-                Spell.BuffSelf("Fire Elemental",
-                    ret => Common.StressfulSituation && !Exist(WoWTotem.EarthElemental) && !Spell.CanCastHack("Earth Elemental"))
+                Spell.BuffSelf("Fire Elemental Totem",
+                    ret => Common.StressfulSituation && !Exist(WoWTotem.EarthElemental) && !Spell.CanCastHack("Earth Elemental Totem"))
                 );
 
             if (TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement)
@@ -150,7 +150,7 @@ namespace Singular.ClassSpecific.Shaman
             {
                 fireTotemBehavior = new PrioritySelector(
                     new Decorator(
-                        ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget() && !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid), 
+                        ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget() && !Unit.NearbyGroupMembers.Any(), 
                         fireTotemBehavior
                         )
                     );
@@ -175,6 +175,28 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
                     ret => Unit.GroupMembers.Any(f => f.Fleeing && f.Distance < Totems.GetTotemRange(WoWTotem.Tremor))
                         && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)),
+
+                new Decorator(
+                    req => PetManager.NeedsPetSupport
+                        && Totems.ExistInRange(Me.Location, WoWTotem.EarthElemental)
+                        && !Me.HasAura("Reinforce")
+                        && !Spell.DoubleCastContains(Me, "Reinforce"),
+                    new Sequence(
+                        PetManager.CastAction("Reinforce", on => Me),
+                        new Action(r => Spell.UpdateDoubleCast("Reinforce", Me))
+                        )
+                    ),
+
+                new Decorator(
+                    req => PetManager.NeedsPetSupport
+                        && Totems.ExistInRange(Me.Location, WoWTotem.FireElemental)
+                        && !Me.HasAura("Empower")
+                        && !Spell.DoubleCastContains(Me, "Empower"),
+                    new Sequence(
+                        PetManager.CastAction("Empower", on => Me),
+                        new Action(r => Spell.UpdateDoubleCast("Empower", Me))
+                        )
+                    ),
 
                 new Decorator(
                     ret => ShouldWeDropTotemsYet,
@@ -262,7 +284,7 @@ namespace Singular.ClassSpecific.Shaman
             PrioritySelector fireTotemBehavior = new PrioritySelector();
 
             fireTotemBehavior.AddChild(
-                    Spell.Cast("Fire Elemental", ret => Me.CurrentTarget.IsBoss())
+                    Spell.Cast("Fire Elemental Totem", ret => Me.CurrentTarget.IsBoss())
                     );
 
             if (TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement)
@@ -293,6 +315,26 @@ namespace Singular.ClassSpecific.Shaman
                         && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)),
 
                 new Decorator(
+                    req => Totems.ExistInRange(Me.Location, WoWTotem.EarthElemental)
+                        && !Me.HasAura("Reinforce")
+                        && !Spell.DoubleCastContains(Me, "Reinforce"),
+                    new Sequence(
+                        PetManager.CastAction("Reinforce", on => Me),
+                        new Action(r => Spell.UpdateDoubleCast("Reinforce", Me))
+                        )
+                    ),
+
+                new Decorator(
+                    req => Totems.ExistInRange(Me.Location, WoWTotem.FireElemental)
+                        && !Me.HasAura("Empower")
+                        && !Spell.DoubleCastContains(Me, "Empower"),
+                    new Sequence(
+                        PetManager.CastAction("Empower", on => Me),
+                        new Action(r => Spell.UpdateDoubleCast("Empower", Me))
+                        )
+                    ),
+
+                new Decorator(
                     ret => ShouldWeDropTotemsYet,
 
                     new PrioritySelector(
@@ -304,7 +346,7 @@ namespace Singular.ClassSpecific.Shaman
                                 if (Exist(WoWTotem.StoneBulwark))
                                     return false;
 
-                                if (Spell.IsSpellOnCooldown("Earth Elemental"))
+                                if (Spell.IsSpellOnCooldown("Earth Elemental Totem"))
                                     return false;
 
                                 // no living tanks in range
@@ -321,7 +363,7 @@ namespace Singular.ClassSpecific.Shaman
                                 }
 
                                 // check we can cast it before messaging
-                                if (!Spell.CanCastHack("Earth Elemental"))
+                                if (!Spell.CanCastHack("Earth Elemental Totem"))
                                     return false;
 
                                 Logger.Write(LogColor.Hilite, "^Earth Elemental Totem: tank is dead or not nearby");
@@ -748,6 +790,9 @@ namespace Singular.ClassSpecific.Shaman
                     return 40f;
 
                 case WoWTotem.HealingTide:
+                    return 40f;
+
+                case WoWTotem.Cloudburst:
                     return 40f;
 
                 case WoWTotem.Capacitor:

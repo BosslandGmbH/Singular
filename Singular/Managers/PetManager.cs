@@ -17,6 +17,7 @@ using Rest = Singular.Helpers.Rest;
 using System.Drawing;
 using Singular.Settings;
 using Styx.CommonBot.Routines;
+using Singular.Dynamics;
 
 namespace Singular.Managers
 {
@@ -29,7 +30,21 @@ namespace Singular.Managers
         private static readonly List<WoWPetSpell> PetSpells = new List<WoWPetSpell>();
         public static readonly WaitTimer PetSummonAfterDismountTimer = new WaitTimer(TimeSpan.FromSeconds(2));
 
+        public static bool NeedsPetSupport { get; set; }
+
         private static bool _wasMounted;
+
+        #region INIT
+
+        [Behavior(BehaviorType.Initialize, WoWClass.None, priority: 9999)]
+        public static Composite CreatePetManagerInitializeBehaviour()
+        {
+            NeedsPetSupport = false;
+            NeedToCheckPetTauntAutoCast = true;
+            return null;
+        }
+
+        #endregion
 
         static PetManager()
         {
@@ -72,6 +87,9 @@ namespace Singular.Managers
 
         internal static void Pulse()
         {
+            if (!NeedsPetSupport)
+                return;
+
             if (StyxWoW.Me.Mounted)
             {
                 _wasMounted = true;
@@ -83,7 +101,7 @@ namespace Singular.Managers
                 PetSummonAfterDismountTimer.Reset();
             }
 
-            if (StyxWoW.Me.Pet != null)
+            if (StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet != null)
             {
                 if (_petGuid != StyxWoW.Me.Pet.Guid)
                 {
@@ -94,14 +112,15 @@ namespace Singular.Managers
                     // .. as initial load happens before Me.PetSpells is initialized and we were saving 'null' spells
                     if (StyxWoW.Me.PetSpells.Any(s => s.Spell != null || s.Action != WoWPetSpell.PetAction.None))
                     {
+                        // save Pet's Guid so we don't have to repeat
+                        _petGuid = StyxWoW.Me.Pet.Guid;
+
                         NeedToCheckPetTauntAutoCast = true;
 
                         // Cache the list. yea yea, we should just copy it, but I'd rather have shallow copies of each object, rather than a copy of the list.
                         PetSpells.AddRange(StyxWoW.Me.PetSpells);
                         PetSummonAfterDismountTimer.Reset();
-                        _petGuid = StyxWoW.Me.Pet.Guid;
-
-                        Logger.WriteDebug("---PetSpells Loaded for: {0} Pet ---", PetManager.GetPetTalentTree());
+                        Logger.WriteDiagnostic("---PetSpells Loaded for: {0} Pet ---", PetManager.GetPetTalentTree());
                         foreach (var sp in PetSpells)
                         {
                             if (sp.Spell == null)
@@ -115,10 +134,10 @@ namespace Singular.Managers
 
                 HandleAutoCast();
             }
-
-            if (!StyxWoW.Me.GotAlivePet)
+            else if (_petGuid != WoWGuid.Empty)
             {
                 PetSpells.Clear();
+                _petGuid = WoWGuid.Empty;
             }
         }
 

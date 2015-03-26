@@ -1527,7 +1527,7 @@ namespace Singular.ClassSpecific.Monk
             return unit.HasMyAura("Life Cocoon") || !unit.HasAnyAura("Life Cocoon", "Water Shield", "Lightning Shield");
         }
 
-        private static WoWUnit _targetHeal;
+        //private static WoWUnit _targetHeal;
 
         public static Composite CreateMistweaverMonkHealingOriginal(bool selfOnly)
         {

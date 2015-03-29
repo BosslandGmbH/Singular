@@ -286,7 +286,7 @@ namespace Singular.Helpers
                                             new ActionAlwaysSucceed()
                                             ),
                                         new Action( r => {
-                                            Logger.WriteDiagnostic("UseFlasks: do not see an aura from item [{0}]");
+											Logger.WriteDiagnostic("UseFlasks: do not see an aura from item [{0}]", ((WoWItem)r).SafeName);
                                             return RunStatus.Failure;
                                             })
                                         )

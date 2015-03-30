@@ -1,4 +1,45 @@
 
+--- Release 4.0.0.4544 ---
+
+General
+
+change- Hot Keys: if enabled, toggle messages will now be written to game overlay rather than game chat window.  
+
+*new* - Hot Keys: setting added to control how long message is displayed in game overlay.
+
+
+Death Knight
+
+fixed - All Specs - Blood Boil: now checks if Current Target in range before casting to spread diseases
+
+fixed - Blood - Blood Boil: now checks if Current Target in range before casting to renew diseases
+
+fixed - All Specs - Blood Boil: now checks multiple targets in range if casting for AOE damage
+
+fixed - All Specs - Blood Boil: now correctly disabled if AOE spells disabled
+
+fixed - Unholy - Raise Dead: will summon ghoul during Rest if not alive
+
+fixed - All Specs - Blood Boil: fixed several cases where Glyph of Blood Boil was not accounted for in range to targets
+
+
+Hunter
+
+fixed - All Specs - Barrage: bug where not correctly determining area covered by cast (for avoiding unwanted aggro)
+
+
+Mage
+
+fixed - All Specs - Cone of Cold: were incorrectly identifying mobs in AOE (so some casts were hitting no enemies)
+
+
+Rogue
+
+fixed - All Specs - Pick Pocket: auto attack was being initiated before Rogue could successfully cast Pick Pocket.  Worked infrequently if glyphed, always failed without
+
+*new* - All Specs - Pick Pocket Only Sap setting: will Sap the Pick Pocket target when Pick Pocket Only - Disable Pull is true.  This will prevent some unwanted combat.
+
+
 --- Release 4.0.0.4524 ---
 
 General

@@ -57,7 +57,6 @@ namespace Singular.ClassSpecific.DeathKnight
                 Logger.Write(LogColor.Init, "Glyph of Empowerment: Empower Rune Weapon heals for 30%");
             }
 
-            BloodBoilRangeSqr = BloodBoilRange * BloodBoilRange;
             return null;
         }
 
@@ -150,8 +149,7 @@ namespace Singular.ClassSpecific.DeathKnight
             }
         }
 
-        public static int BloodBoilRange;
-        public static int BloodBoilRangeSqr;
+        public static int BloodBoilRange { get; set; }
 
         #region Pull
 
@@ -431,10 +429,9 @@ namespace Singular.ClassSpecific.DeathKnight
                             }),
 
                         // I'm unholy and I don't have a pet or I am blood/frost and I am using pet as dps bonus
-                        Spell.BuffSelf("Raise Dead",
-                            req => TalentManager.CurrentSpec == WoWSpec.DeathKnightUnholy
-                                && SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.PetSummoning)
-                                && !Me.GotAlivePet
+                        new Decorator(
+                            req => Me.Specialization == WoWSpec.DeathKnightUnholy ,
+                            ClassSpecific.DeathKnight.Unholy.UnholyCastRaiseDead()
                             ),
 
                         // never use army of the dead in instances if not blood specced unless you have the army of the dead glyph to take away the taunting

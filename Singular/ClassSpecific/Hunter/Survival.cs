@@ -165,8 +165,7 @@ namespace Singular.ClassSpecific.Hunter
                             return null;
 
                         // Does not require CurrentTarget to be non=null
-                        WoWPoint loc = WoWPoint.RayCast(Me.Location, Me.RenderFacing, 30f);
-                        IEnumerable<WoWUnit> ienum = Clusters.GetConeCluster(loc, 60f, 42f, Unit.UnfriendlyUnits(50));
+                        IEnumerable<WoWUnit> ienum = Clusters.GetConeCluster(60f, 42f, Unit.UnfriendlyUnits(50));
                         int cntCC = 0;
                         int cntTarget = 0;
                         int cntNeutral = 0;

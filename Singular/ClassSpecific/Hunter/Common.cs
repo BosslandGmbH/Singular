@@ -461,7 +461,7 @@ namespace Singular.ClassSpecific.Hunter
                                 {
                                     // Does not require CurrentTarget to be non=null
                                     WoWPoint loc = WoWPoint.RayCast(Me.Location, Me.RenderFacing, 30f);
-                                    IEnumerable<WoWUnit> ienum = Clusters.GetConeCluster(loc, 100f, 46f, Unit.UnfriendlyUnits(50));
+                                    IEnumerable<WoWUnit> ienum = Clusters.GetConeCluster(100f, 46f, Unit.UnfriendlyUnits(50));
                                     int cntCC = 0;
                                     int cntTarget = 0;
                                     int cntNeutral = 0;
@@ -825,8 +825,7 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret =>  !SingularSettings.Instance.DisablePetUsage
-                        && SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.PetSummoning) 
+                    ret =>  PetManager.IsPetUseAllowed
                         && (!Me.GotAlivePet || (ActivePetNumber != PetWeWant && ActivePetNumber != 0))
                         && PetManager.PetSummonAfterDismountTimer.IsFinished 
                         && !Me.Mounted 

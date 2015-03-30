@@ -682,7 +682,13 @@ namespace Singular.ClassSpecific.Mage
                                     req => ((WoWUnit)req).IsSlowed(50),
                                     new Action(r => Logger.WriteDebug("SlowMelee: target already slowed at least 50%"))
                                     ),
-                                Spell.Cast("Cone of Cold", mov => true, onUnit => (WoWUnit)onUnit, req => true, cancel => false)
+                                Spell.Cast(
+                                    "Cone of Cold", 
+                                    mov => true, 
+                                    on => (WoWUnit)on, 
+                                    req => ((WoWUnit)req).SpellDistance() < 12 && Me.IsSafelyFacing((WoWUnit)req,90), 
+                                    cancel => false
+                                    )
                                 )
                             )
                         )

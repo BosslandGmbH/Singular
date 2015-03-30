@@ -452,7 +452,7 @@ namespace Singular.ClassSpecific.Rogue
                     new Sequence(
                         new Action(r => Logger.WriteDebug("MovingAwayFromMe: Target ({0:F2}) faster than Me ({1:F2}) -- trying Sprint or Ranged Attack", Me.CurrentTarget.MovementInfo.CurrentSpeed, Me.MovementInfo.CurrentSpeed)),
                         new PrioritySelector(
-                            Spell.Cast("Sap", req => AreStealthAbilitiesAvailable && IsUnitViableForSap(Me.CurrentTarget)),
+                            Spell.Buff("Sap", req => AreStealthAbilitiesAvailable && IsUnitViableForSap(Me.CurrentTarget)),
                             new Decorator(
                                 req => !Me.HasAnyAura("Sprint","Burst of Speed","Shadowstep"),
                                 new PrioritySelector(
@@ -494,7 +494,7 @@ namespace Singular.ClassSpecific.Rogue
                             Movement.CreateMoveToUnitBehavior( on => (WoWUnit) on, 10, 7, statusWhenMoving: RunStatus.Success ),
                             new Sequence(
                                 new Action( on => Me.SetFocus( (WoWUnit)on)),
-                                Spell.Cast("Sap", on => (WoWUnit) on),
+                                Spell.Buff("Sap", on => (WoWUnit) on),
                                 new DecoratorContinue( req => ((WoWUnit)req).Guid != Me.CurrentTargetGuid, Movement.CreateEnsureMovementStoppedBehavior(reason: "to change direction to CurrentTarget")),
                                 new Wait( TimeSpan.FromMilliseconds(500), until => ((WoWUnit) until).HasAura("Sap"), new ActionAlwaysFail()),
                                 new ActionAlwaysFail()
@@ -509,6 +509,9 @@ namespace Singular.ClassSpecific.Rogue
 
         private static WoWUnit GetBestSapTarget()
         {
+            if (RogueSettings.PickPocketOnlyPull && RogueSettings.UsePickPocket)
+                return Me.CurrentTarget;
+
             if (RogueSettings.SapAddDistance <= 0 && !RogueSettings.SapMovingTargetsOnPull)
                 return null;
 
@@ -950,19 +953,17 @@ namespace Singular.ClassSpecific.Rogue
                 {
                     if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
                     {
-                        Logger.Write( LogColor.Hilite, "warning:  Cloak and Dagger will be skipped on Pick Pocketable mobs.  Turn off 'Use Pick Pocket' to always use ranged Ambush, Cheap Shot, and Garrote.");
-                        return new ActionAlwaysFail();
+                        Logger.Write( LogColor.Init, "warning:  Cloak and Dagger will be skipped on Pick Pocketable mobs.  Turn off 'Use Pick Pocket' to always use ranged Ambush, Cheap Shot, and Garrote.");
                     }
                     else
                     {
-                        Logger.Write( LogColor.Hilite, "warning:  Cloak and Dagger will greatly reduce Pick Pocket usage.");
-                        return new ActionAlwaysFail();
+                        Logger.Write( LogColor.Init, "warning:  Cloak and Dagger will greatly reduce Pick Pocket usage.");
                     }
                 }
 
                 if (!AutoLootIsEnabled())
                 {
-                    Logger.Write( LogColor.Hilite, "warning:  Auto Loot is off, so Pick Pocket disabled - to allow Pick Pocket by Singular, enable your Auto Loot setting");
+                    Logger.Write( LogColor.Init, "warning:  Auto Loot is off, so Pick Pocket disabled - to allow Pick Pocket by Singular, enable your Auto Loot setting");
                     return new ActionAlwaysFail();
                 }
             }
@@ -1231,6 +1232,55 @@ namespace Singular.ClassSpecific.Rogue
 
                 return RunStatus.Failure;
             });
+        }
+
+        internal static Composite RogueEnsureReadyToAttackFromMelee()
+        {
+            PrioritySelector prio = new PrioritySelector(
+                Movement.CreatePositionMobsInFront(),
+                Safers.EnsureTarget(),
+                Helpers.Common.CreatePetAttack(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior( 180, false),
+                new Decorator(
+                    req => Me.GotTarget() && Me.CurrentTarget.Distance < SingularSettings.Instance.MeleeDismountRange,
+                    Helpers.Common.CreateDismount( Dynamics.CompositeBuilder.CurrentBehaviorType.ToString())   // should be Pull or Combat 99% of the time
+                    ),
+                new Decorator(
+                    req => !AreStealthAbilitiesAvailable,
+                    Helpers.Common.CreateAutoAttack()
+                    )
+                );
+
+            if (Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull)
+            {
+                prio.AddChild(
+                    new PrioritySelector(
+                        ctx => Me.GotTarget() && Me.CurrentTarget.IsAboveTheGround(),
+                        new Decorator(
+                            req => (bool)req,
+                            new PrioritySelector(
+                                Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 27, 22),
+                                Movement.CreateEnsureMovementStoppedBehavior(22)
+                                )
+                            ),
+                        new Decorator(
+                            req => !(bool)req,
+                            new PrioritySelector(
+                                Movement.CreateMoveToMeleeBehavior(true),
+                                Movement.CreateEnsureMovementStoppedWithinMelee()
+                                )
+                            )
+                        )
+                    );
+            }
+            else
+            {
+                prio.AddChild( Movement.CreateMoveToMeleeBehavior(true));
+                prio.AddChild(Movement.CreateEnsureMovementStoppedWithinMelee());
+            }
+
+            return prio;
         }
 
         internal static Composite CreateRoguePullPickPocketButDontAttack()

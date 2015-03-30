@@ -111,12 +111,17 @@ namespace Singular.ClassSpecific.Mage
                                 return careful == null;
                             },
                             new PrioritySelector(
-                                Spell.Cast("Cone of Cold", mov => false, on => Me.CurrentTarget, req => {
-                                    int count = Clusters.GetClusterCount(Me.CurrentTarget, Unit.UnfriendlyUnits(12), ClusterType.Cone, 12);
-                                    if (count > 1 && Spell.CanCastHack("Cone of Cold", Me.CurrentTarget))
+                                Spell.Cast("Cone of Cold", mov => false, on => Me.CurrentTarget, req => 
+                                {
+                                    IEnumerable<WoWUnit> coneUnits = Clusters.GetConeCluster(Unit.UnfriendlyUnits(12), 12);
+                                    int count = coneUnits.Count();
+                                    if (count > 1 && Spell.CanCastHack("Cone of Cold", Me.CurrentTarget) && coneUnits.Any(u => u.Guid == Me.CurrentTargetGuid))
                                     {
-                                        Logger.Write("^AOE Trivial Pull: casting Cone of Cold");
-                                        return true;
+                                        if (!coneUnits.Where(u => !u.IsTrivial() || u.IsCrowdControlled()).Any())
+                                        {
+                                            Logger.Write("^AOE Trivial Pull: casting Cone of Cold");
+                                            return true;
+                                        }
                                     }
                                     return false;
                                 }),
@@ -378,10 +383,8 @@ namespace Singular.ClassSpecific.Mage
                                         Spell.BuffSelf("Frost Nova", req => !Unit.UnfriendlyUnits(12).Any(u => u.IsCrowdControlled())),
                                         Spell.Cast( 
                                             "Cone of Cold", 
-                                            on => Unit.UnfriendlyUnits(12)
-                                                .Where( u => Me.IsSafelyFacing(u,60f))
-                                                .OrderBy( u => (long) u.Distance2DSqr )
-                                                .FirstOrDefault()
+                                            on => Clusters.GetConeCluster(Unit.UnfriendlyUnits(12), 12f).FirstOrDefault(),
+                                            req => Clusters.GetConeClusterCount(Unit.UnfriendlyUnits(12),12f) > (Me.IsMoving ? 0 : 1)
                                             )
                                         ),
                                     Helpers.Common.CreateWaitForLagDuration()
@@ -597,9 +600,10 @@ namespace Singular.ClassSpecific.Mage
                                 // Movement.CreateEnsureMovementStoppedBehavior(5f),
                                 Spell.Cast("Frozen Orb", req => !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage() && Me.IsSafelyFacing(u, 150))),
                                 Spell.Cast("Ice Lance", ret => Me.HasAura(FINGERS_OF_FROST)),
-                                Spell.Cast(
-                                    "Cone of Cold",
-                                    req => Clusters.GetClusterCount(Me.CurrentTarget, Unit.UnfriendlyUnitsNearTarget(12f), ClusterType.Cone, 12) >= 3
+                                Spell.Cast( 
+                                    "Cone of Cold", 
+                                    on => Clusters.GetConeCluster(Unit.UnfriendlyUnits(12), 12f).FirstOrDefault(),
+                                    req => Clusters.GetConeClusterCount(Unit.UnfriendlyUnits(12),12f) >= 3
                                     ),
 
                                 new Sequence(

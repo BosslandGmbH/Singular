@@ -25,7 +25,7 @@ namespace Singular.Helpers
                 case ClusterType.Chained:
                     return GetChainedCluster(target, otherUnits, clusterRange);
                 case ClusterType.Cone:
-                    return GetConeCluster(target, otherUnits, clusterRange);
+                    return GetConeCluster(otherUnits, clusterRange);
                 case ClusterType.PathToUnit:
                     return GetPathToUnitCluster(target, otherUnits, clusterRange);
                 default:
@@ -48,7 +48,7 @@ namespace Singular.Helpers
                 case ClusterType.Chained:
                     return GetChainedClusterCount(target, otherUnits, clusterRange);
                 case ClusterType.Cone:
-                    return GetConeClusterCount(target, otherUnits, clusterRange);
+                    return GetConeClusterCount(otherUnits, clusterRange);
                 case ClusterType.PathToUnit:
                     return GetPathClusterCount(target, otherUnits, clusterRange);
                 default:
@@ -81,20 +81,26 @@ namespace Singular.Helpers
             }
         }
 
-        public static IEnumerable<WoWUnit> GetConeCluster(WoWPoint targetLoc, float coneDegrees, float coneDist, IEnumerable<WoWUnit> otherUnits)
+        public static IEnumerable<WoWUnit> GetConeCluster(float coneDegrees, float coneDist, IEnumerable<WoWUnit> otherUnits)
         {
-            return otherUnits.Where(u => StyxWoW.Me.IsSafelyFacing(u, coneDegrees) && (u.Location.Distance(targetLoc) + u.CombatReach) <= coneDist);
+            return otherUnits
+                .Where(u => StyxWoW.Me.IsSafelyFacing(u, coneDegrees) && u.SpellDistance() <= coneDist);
         }
 
-        private static IEnumerable<WoWUnit> GetConeCluster(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float distance)
+        public static IEnumerable<WoWUnit> GetConeCluster(IEnumerable<WoWUnit> otherUnits, float distance)
         {
             // most (if not all) player cone spells are 90 degrees.
-            return GetConeCluster(target.Location, 90f, distance, otherUnits);
+            return GetConeCluster(90f, distance, otherUnits);
         }
 
-        private static int GetConeClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float distance)
+        public static int GetConeClusterCount(float coneDegrees, IEnumerable<WoWUnit> otherUnits, float distance)
         {
-            return GetConeCluster(target, otherUnits, distance).Count();
+            return GetConeCluster(otherUnits, distance).Count();
+        }
+
+        public static int GetConeClusterCount(IEnumerable<WoWUnit> otherUnits, float distance)
+        {
+            return GetConeClusterCount(90, otherUnits, distance);
         }
 
         private static IEnumerable<WoWUnit> GetRadiusCluster(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float radius)

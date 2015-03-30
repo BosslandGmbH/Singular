@@ -134,7 +134,8 @@ namespace Singular.ClassSpecific.Mage
                                 Spell.Cast("Arcane Barrage", ret => Me.HasAura("Arcane Charge", 4)),
                                 Spell.Cast(
                                     "Cone of Cold",
-                                    req => Clusters.GetClusterCount(Me.CurrentTarget, Unit.UnfriendlyUnitsNearTarget(12f), ClusterType.Cone, 12) >= 3
+                                    on => Clusters.GetConeCluster(Unit.UnfriendlyUnits(12), 12f).FirstOrDefault(),
+                                    req => Clusters.GetConeClusterCount(Unit.UnfriendlyUnits(12), 12f) >= 3
                                     ),
                                 Spell.Cast(
                                     "Arcane Explosion",
@@ -201,7 +202,8 @@ namespace Singular.ClassSpecific.Mage
                                 Spell.Cast("Arcane Barrage", ret => Me.HasAura("Arcane Charge", 4)),
                                 Spell.Cast(
                                     "Cone of Cold",
-                                    req => Clusters.GetClusterCount(Me.CurrentTarget, Unit.UnfriendlyUnitsNearTarget(12f), ClusterType.Cone, 12) >= 3
+                                    on => Clusters.GetConeCluster(Unit.UnfriendlyUnits(12), 12f).FirstOrDefault(),
+                                    req => Clusters.GetConeClusterCount(Unit.UnfriendlyUnits(12), 12f) >= 3
                                     ),
                                 Spell.Cast(
                                     "Arcane Explosion",
@@ -260,8 +262,9 @@ namespace Singular.ClassSpecific.Mage
                             new PrioritySelector(
                                 Spell.Cast("Arcane Barrage", ret => Me.HasAura( "Arcane Charge", 4)),
                                 Spell.Cast(
-                                    "Cone of Cold", 
-                                    req => Clusters.GetClusterCount( Me.CurrentTarget, Unit.UnfriendlyUnitsNearTarget(12f), ClusterType.Cone, 12) >= 3
+                                    "Cone of Cold",
+                                    on => Clusters.GetConeCluster(Unit.UnfriendlyUnits(12), 12f).FirstOrDefault(),
+                                    req => Clusters.GetConeClusterCount(Unit.UnfriendlyUnits(12), 12f) >= 3
                                     ),
                                 Spell.Cast(
                                     "Arcane Explosion", 

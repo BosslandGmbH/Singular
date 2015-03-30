@@ -402,9 +402,13 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 // spread disease
                 new Throttle( 2, 
-                    Spell.Cast("Blood Boil",
-                        ret => Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.NeedsBloodPlague())
-                            && Unit.UnfriendlyUnitsNearTarget(10).Any(u => !u.NeedsBloodPlague()))
+                    Spell.Cast( 
+                        "Blood Boil", 
+                        req => Spell.UseAOE 
+                            && Me.CurrentTarget.SpellDistance() < Common.BloodBoilRange 
+                            && !Me.CurrentTarget.NeedsBloodPlague()
+                            && Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.NeedsBloodPlague())
+                        )
                     ),
 
                 // damage
@@ -502,7 +506,11 @@ namespace Singular.ClassSpecific.DeathKnight
                         // actions.aoe+=/blood_boil,if=dot.blood_plague.ticking&&(!talent.unholy_blight_enabled|cooldown.unholy_blight_remains<49),line_cd=28
                         new Throttle(
                             28,
-                            Spell.Cast("Blood Boil", req => dot.blood_plague_ticking&&(!talent.unholy_blight_enabled||cooldown.unholy_blight_remains<49))
+                            Spell.Cast(
+                                "Blood Boil", 
+                                on => Me.CurrentTarget.SpellDistance() < Common.BloodBoilRange ? Me.CurrentTarget : null,
+                                req => Spell.UseAOE && dot.blood_plague_ticking&&(!talent.unholy_blight_enabled||cooldown.unholy_blight_remains<49)
+                                )
                             ),
                         // actions.aoe+=/defile
                         Spell.CastOnGround("Defile", on => Me.CurrentTarget, req => true),
@@ -674,7 +682,11 @@ namespace Singular.ClassSpecific.DeathKnight
                         // actions.aoe+=/blood_boil,if=dot.blood_plague_ticking&&(!talent.unholy_blight_enabled||cooldown.unholy_blight_remains<49),line_cd==28
                         new Throttle(
                             28,
-                            Spell.Cast("Blood Boil", req => dot.blood_plague_ticking&&(!talent.unholy_blight_enabled||cooldown.unholy_blight_remains<49))
+                            Spell.Cast(
+                                "Blood Boil",
+                                on => Me.CurrentTarget.SpellDistance() < Common.BloodBoilRange ? Me.CurrentTarget : null,
+                                req => Spell.UseAOE && dot.blood_plague_ticking && (!talent.unholy_blight_enabled || cooldown.unholy_blight_remains < 49)
+                                )
                             ),
                         // actions.aoe+=/defile
                         Spell.CastOnGround("Defile", on => Me.CurrentTarget, req => true),

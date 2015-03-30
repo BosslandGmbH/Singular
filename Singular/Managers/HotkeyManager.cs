@@ -23,6 +23,8 @@ namespace Singular.Managers
     {
         [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
         public static extern IntPtr GetActiveWindow();
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
+        public static extern IntPtr GetForegroundWindow();
         
 
         private static HotkeySettings HotkeySettings { get { return SingularSettings.Instance.Hotkeys(); } }
@@ -46,7 +48,6 @@ namespace Singular.Managers
         /// True: allow normal Bot movement, False: prevent any movement by Bot, Combat Routine, or Plugins
         /// </summary>
         public static bool IsMovementEnabled { get { return _MovementEnabled && !IsMovementTemporarilySuspended; } }
-
 
         private static bool IsMovementTemporarilySuspended
         {
@@ -202,8 +203,10 @@ namespace Singular.Managers
         /// </summary>
         internal static void Pulse()
         {
+            IntPtr activeWindow = GetActiveWindow();
+
             // since we are polling system keybd, make sure our game window is active
-            if (GetActiveWindow() != StyxWoW.Memory.Process.MainWindowHandle)
+            if (activeWindow != StyxWoW.Memory.Process.MainWindowHandle)
                 return;
 
             // handle release of key here if not using toggle behavior
@@ -315,8 +318,17 @@ namespace Singular.Managers
         {
             string msg = string.Format(template, args);
             Logger.Write( Color.Yellow, string.Format("Hotkey: " + msg));
-            if ( HotkeySettings.ChatFrameMessage )
-                Lua.DoString(string.Format("print('{0}!')", msg));
+            if (HotkeySettings.ChatFrameMessage)
+            {
+                msg = "singular: " + msg;
+                StyxWoW.Overlay.AddToast(
+                    () => { return msg; },
+                    TimeSpan.FromMilliseconds(HotkeySettings.ChatFrameMessageDuration),
+                    System.Windows.Media.Colors.White,
+                    System.Windows.Media.Colors.Blue,
+                    new System.Windows.Media.FontFamily("Consolas")
+                    );
+            }
         }
 
         #endregion

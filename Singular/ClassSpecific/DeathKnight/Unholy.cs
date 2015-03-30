@@ -41,6 +41,32 @@ namespace Singular.ClassSpecific.DeathKnight
 
         #endregion
 
+        #region Rest
+
+        [Behavior(BehaviorType.Rest, WoWClass.DeathKnight, WoWSpec.DeathKnightUnholy)]
+        public static Composite CreateUnholylDeathKnightRest()
+        {
+            return new PrioritySelector(
+                Spell.WaitForCastOrChannel(),
+
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        new Decorator(
+                            ret => !Me.HasAnyAura("Food", "Refreshment"),
+                            new PrioritySelector(
+                                UnholyCastRaiseDead(),
+                                Spell.Cast("Death Coil", on => Me.Pet, req => Me.GotAlivePet && Me.Pet.HealthPercent < 85)
+                                )
+                            ),
+
+                        Singular.Helpers.Rest.CreateDefaultRestBehaviour()
+                        )
+                    )
+                );
+        }
+
+        #endregion
 
         #region Normal Rotation
 
@@ -176,8 +202,10 @@ namespace Singular.ClassSpecific.DeathKnight
             // spread the disease around.
                 new Throttle( TimeSpan.FromSeconds(1.5f),
                     Spell.Cast("Blood Boil",
-                        req => Me.CurrentTarget.DistanceSqr <= 10 * 10
-                            && !Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases
+                        req => Spell.UseAOE
+                            && Me.CurrentTarget.SpellDistance() < Common.BloodBoilRange
+                            && !Me.HasAura("Unholy Blight") 
+                            && Common.ShouldSpreadDiseases
                         )
                     ),
 
@@ -189,8 +217,9 @@ namespace Singular.ClassSpecific.DeathKnight
                     ),
 
                 Spell.Cast("Blood Boil",
-                    req => Me.CurrentTarget.DistanceSqr <= 10 * 10 && Me.DeathRuneCount > 0 
-                        || (Me.BloodRuneCount == 2 && Me.FrostRuneCount == 2)
+                    req => Spell.UseAOE
+                        && Me.CurrentTarget.SpellDistance() < Common.BloodBoilRange 
+                        && (Me.DeathRuneCount > 0 || (Me.BloodRuneCount == 2 && Me.FrostRuneCount == 2))
                         ),
 
                 Spell.Cast("Soul Reaper", req => Me.CurrentTarget.HealthPercent < 35),
@@ -382,7 +411,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     CreateBosAoeBehavior()
                     ),
                 // actions.aoe+=/blood_boil,if=blood=2|(frost=2&death=2)
-                Spell.Cast("Blood Boil", req => Spell.UseAOE && (blood == 2 || (frost == 2 && death == 2))),
+                Spell.Cast("Blood Boil", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < Common.BloodBoilRange && (blood == 2 || (frost == 2 && death == 2))),
                 // actions.aoe+=/summon_gargoyle
                 Spell.Cast("Summon Gargoyle"),
                 // actions.aoe+=/dark_transformation
@@ -402,7 +431,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 // actions.aoe+=/death_coil,if=runic_power>90||buff.sudden_doom_react||(buff.dark_transformation_down&&unholy<=1)
                 Spell.Cast("Death Coil", req => runic_power>90||buff.sudden_doom_react||(buff.dark_transformation_down&&unholy<=1)),
                 // actions.aoe+=/blood_boil
-                Spell.Cast("Blood Boil", req => Spell.UseAOE ),
+                Spell.Cast("Blood Boil", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < Common.BloodBoilRange ),
                 // actions.aoe+=/icy_touch
                 Spell.Buff("Icy Touch"),
                 // actions.aoe+=/scourge_strike,if=unholy==1
@@ -481,7 +510,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 // actions.single_target+=/festering_strike,if=((Blood-death)>1)
                 Spell.Cast( "Festering Strike", req => ((blood-death)>1)),
                 // actions.single_target+=/blood_boil,if=((Blood-death)>1)
-                Spell.Cast("Blood Boil", req => Spell.UseAOE && ((blood - death) > 1)),
+                Spell.Cast("Blood Boil", req => Spell.UseAOE && ((blood - death) > 1) && Me.CurrentTarget.SpellDistance() < Common.BloodBoilRange),
                 // actions.single_target+=/festering_strike,if=((Frost-death)>1)
                 Spell.Cast( "Festering Strike", req => ((frost-death)>1)),
                 // actions.single_target+=/blood_tap,if=((target.health_pct-3*(target.health_pct%target.time_to_die))<=45)&&cooldown.soul_reaper_remains==0
@@ -517,7 +546,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 // actions.single_target+=/festering_strike,if=cooldown.empower_rune_weapon_remains==0
                 Spell.Cast( "Festering Strike", req => cooldown.empower_rune_weapon_remains==0),
                 // actions.single_target+=/blood_boil,if=cooldown.empower_rune_weapon_remains==0
-                Spell.Cast("Blood Boil", req => Spell.UseAOE && cooldown.empower_rune_weapon_remains == 0),
+                Spell.Cast("Blood Boil", req => Spell.UseAOE && cooldown.empower_rune_weapon_remains == 0 && Me.CurrentTarget.SpellDistance() < Common.BloodBoilRange),
                 // actions.single_target+=/icy_touch,if=cooldown.empower_rune_weapon_remains==0
                 Spell.Buff( "Icy Touch", req => cooldown.empower_rune_weapon_remains==0),
                 // actions.single_target+=/empower_rune_weapon,if=blood<1&&unholy<1&&frost<1
@@ -556,7 +585,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 // actions.bos_aoe=death_and_decay,if=runic_power<88
                 Spell.CastOnGround("Death and Decay", on => Me.CurrentTarget, req => Spell.UseAOE && runic_power < 88),
                 // actions.bos_aoe+=/blood_boil,if=runic_power<88
-                Spell.Cast("Blood Boil", req => Spell.UseAOE && runic_power < 88),
+                Spell.Cast("Blood Boil", req => Spell.UseAOE && runic_power < 88 && Me.CurrentTarget.SpellDistance() < Common.BloodBoilRange),
                 // actions.bos_aoe+=/scourge_strike,if=runic_power<88&&unholy==1
                 Spell.Cast("Scourge Strike", req => runic_power<88&&unholy==1),
                 // actions.bos_aoe+=/icy_touch,if=runic_power<88
@@ -574,13 +603,24 @@ namespace Singular.ClassSpecific.DeathKnight
                 );
         }
 
+        public static Composite UnholyCastRaiseDead()
+        {
+            return Spell.BuffSelf(
+                "Raise Dead",
+                req => PetManager.IsPetUseAllowed && !Me.GotAlivePet
+                    && PetManager.PetSummonAfterDismountTimer.IsFinished
+                    && !Me.Mounted
+                    && !Me.OnTaxi
+                    );
+        }
+
         private static Composite CreateSpreadDiseaseBehavior()
         {
             return new PrioritySelector(
                 // actions.spread=blood_boil,cycle_targets=1,if=!disease.ticking&&!talent.necrotic_plague_enabled
                 Spell.Cast(
                     "Blood Boil", 
-                    on => Common.scenario.Mobs.FirstOrDefault(u => !disease.ticking_on(u) && u.SpellDistance() < 10),
+                    on => Common.scenario.Mobs.FirstOrDefault(u => !disease.ticking_on(u) && u.SpellDistance() < Common.BloodBoilRange),
                     req => Spell.UseAOE && !talent.necrotic_plague_enabled
                     ),
                 // actions.spread+=/outbreak,if=!talent.necrotic_plague_enabled&&!disease.ticking
@@ -648,8 +688,9 @@ namespace Singular.ClassSpecific.DeathKnight
                                 new Throttle(2,
                                     Spell.Cast("Blood Boil",
                                         ret => !Me.HasAura("Unholy Blight")
-                                            && Me.CurrentTarget.DistanceSqr <= 10 * 10
-                                            && Common.ShouldSpreadDiseases)
+                                            && Me.CurrentTarget.SpellDistance() < Common.BloodBoilRange
+                                            && Common.ShouldSpreadDiseases
+                                        )
                                     ),
 
                                 Spell.Cast("Dark Transformation",
@@ -663,7 +704,8 @@ namespace Singular.ClassSpecific.DeathKnight
                                     false),
 
                                 Spell.Cast("Blood Boil",
-                                    ret => Me.CurrentTarget.DistanceSqr <= 10 * 10
+                                    ret => Spell.UseAOE
+                                        && Me.CurrentTarget.SpellDistance() < Common.BloodBoilRange
                                         && (Me.DeathRuneCount > 0 || (Me.BloodRuneCount == 2 && Me.FrostRuneCount == 2))),
 
                                 // Execute

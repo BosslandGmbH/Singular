@@ -153,6 +153,13 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Pick Pocket")]
+        [DisplayName("Pick Pocket Only - Sap")]
+        [Description("Sap the Pick Pocket target when Pick Pocket Only is enabled.  Reduces chance to enter combat")]
+        public bool PickPocketOnlySap { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Pick Pocket")]
         [DisplayName("Use Pick Pocket")]
         [Description("Requires AutoLoot ON; pick pocket mob before opener")]
         public bool UsePickPocket { get; set; }

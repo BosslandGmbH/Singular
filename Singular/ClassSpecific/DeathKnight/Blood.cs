@@ -107,7 +107,6 @@ namespace Singular.ClassSpecific.DeathKnight
         #region Normal Rotation
 
         private readonly static WaitTimer DeathStrikeTimer = new WaitTimer(TimeSpan.FromSeconds(5));
-        private static List<WoWUnit> _nearbyUnfriendlyUnits;
 
         [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood, WoWContext.Normal)]
         public static Composite CreateDeathKnightBloodNormalCombat()
@@ -143,39 +142,32 @@ namespace Singular.ClassSpecific.DeathKnight
                         // Apply Diseases
                         Common.CreateApplyDiseases(),
 
+                        // refresh diseases if possible
+                        new Throttle( 2, Spell.Cast("Blood Boil", req => Spell.UseAOE && UseBloodBoilForDiseases()) ),
+
                         // Start AoE section
-                        new PrioritySelector(
-                            ctx => _nearbyUnfriendlyUnits = Unit.UnfriendlyUnitsNearTarget(15f).ToList(),
-                            new Decorator(
-                                ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= DeathKnightSettings.DeathAndDecayCount,
-                                new PrioritySelector(
-                                    Spell.CastOnGround("Death and Decay", on => StyxWoW.Me.CurrentTarget, ret => Spell.UseAOE, false),
+                        new Decorator(
+                            ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count() > 1,
+                            new PrioritySelector(
+                                Spell.CastOnGround("Death and Decay", on => StyxWoW.Me.CurrentTarget, ret => Unit.UnfriendlyUnitsNearTarget(15).Count() >= DeathKnightSettings.DeathAndDecayCount, false),
 
-                                    // Spell.Cast("Gorefiend's Grasp", ret => Common.HasTalent( DeathKnightTalents.GorefiendsGrasp)),
-                                    Spell.BuffSelf("Remorseless Winter", ret => Me.CurrentTarget.IsWithinMeleeRange && Common.HasTalent( DeathKnightTalents.RemorselessWinter)),
+                                // Spell.Cast("Gorefiend's Grasp", ret => Common.HasTalent( DeathKnightTalents.GorefiendsGrasp)),
+                                Spell.BuffSelf("Remorseless Winter", ret => Me.CurrentTarget.IsWithinMeleeRange && Common.HasTalent( DeathKnightTalents.RemorselessWinter)),
 
-                                    // refresh diseases if possible
-                                    new Throttle(2, Spell.Cast("Blood Boil", ret => UseBloodBoilForDiseases()) ),
+                                Spell.Cast("Death Coil", ret => StyxWoW.Me.CurrentRunicPower >= 80),
 
-                                    Spell.Cast("Death Coil", ret => StyxWoW.Me.CurrentRunicPower >= 80),
+                                // Active Mitigation (5 second rule does not apply)
+                                Spell.Cast("Death Strike"),
 
-                                    // Active Mitigation (5 second rule does not apply)
-                                    Spell.Cast("Death Strike"),
+                                // AoE Damage
+                                Spell.Cast("Blood Boil", ret => Spell.UseAOE && Unit.UnfriendlyUnits(Common.BloodBoilRange).Count() >= DeathKnightSettings.BloodBoilCount),
 
-                                    // AoE Damage
-                                    Spell.Cast("Blood Boil", ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count >= DeathKnightSettings.BloodBoilCount),
-
-                                    Spell.Cast("Death Coil", ret => StyxWoW.Me.CurrentRunicPower >= 60),
-                                    Spell.Cast("Death Coil", ret => !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange),
-
-                                    new ActionAlwaysSucceed()
-                                    )
+                                // Runic Dump
+                                Spell.Cast("Death Coil", ret => StyxWoW.Me.CurrentRunicPower >= 60)
                                 )
                             ),
 
-                        // refresh diseases if possible
-                        new Throttle( 2, Spell.Cast("Blood Boil", ret => Spell.UseAOE && UseBloodBoilForDiseases()) ),
-
+                        // Runic Dump
                         Spell.Cast("Death Coil", ret => StyxWoW.Me.CurrentRunicPower >= 80),
                         Spell.Cast("Death Coil", ret => !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange),
 
@@ -185,8 +177,6 @@ namespace Singular.ClassSpecific.DeathKnight
                             new Action(ret => DeathStrikeTimer.Reset())
                             ),
 
-
-                        Spell.Cast("Blood Boil", ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count >= DeathKnightSettings.BloodBoilCount),
                         Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
 
                         // *** 3 Lowbie Cast what we have Priority
@@ -357,9 +347,8 @@ namespace Singular.ClassSpecific.DeathKnight
                         // Start AoE section
                         //------------------------------------------------------------------------
                         new PrioritySelector(
-                            ctx => _nearbyUnfriendlyUnits = Unit.UnfriendlyUnitsNearTarget(15f).ToList(),
                             new Decorator(
-                                retq=> Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= DeathKnightSettings.DeathAndDecayCount,
+                                retq=> Spell.UseAOE,
                                 new PrioritySelector(
 
                                     Spell.Cast(
@@ -367,7 +356,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                         req => Me.HealthPercent <= DeathKnightSettings.DeathStrikeEmergencyPercent
                                         ),
 
-                                    Spell.CastOnGround("Death and Decay", on => StyxWoW.Me.CurrentTarget, ret => Spell.UseAOE, false),
+                                    Spell.CastOnGround("Death and Decay", on => StyxWoW.Me.CurrentTarget, ret => Unit.UnfriendlyUnitsNearTarget(15).Count() >= DeathKnightSettings.DeathAndDecayCount, false),
 
                                     // Spell.Cast("Gorefiend's Grasp", ret => Common.HasTalent( DeathKnightTalents.GorefiendsGrasp)),
                                     Spell.Cast("Remorseless Winter", ret => Common.HasTalent(DeathKnightTalents.RemorselessWinter)),
@@ -378,13 +367,18 @@ namespace Singular.ClassSpecific.DeathKnight
                                         Spell.Cast("Blood Boil",
                                             req => 
                                             {
+                                                if (Me.CurrentTarget == null)
+                                                    return false;
+
+                                                if (Me.CurrentTarget.SpellDistance() >= Common.BloodBoilRange)
+                                                    return false;
+
                                                 if (!Spell.CanCastHack("Blood Boil", Me.CurrentTarget))
                                                     return false;
 
                                                 if (StyxWoW.Me.HasAura("Unholy Blight"))
                                                     return false;
-                                                if (StyxWoW.Me.CurrentTarget.DistanceSqr >= Common.BloodBoilRangeSqr)
-                                                    return false;
+
                                                 if (!disease.ticking_on(Me.CurrentTarget))
                                                     return false;
 
@@ -423,6 +417,9 @@ namespace Singular.ClassSpecific.DeathKnight
                                     // AoE Damage
                                     Spell.Cast(
                                         "Blood Boil", 
+                                        on => Me.CurrentTarget != null && Me.CurrentTarget.SpellDistance() < Common.BloodBoilRange 
+                                            ? Me.CurrentTarget
+                                            : Unit.UnfriendlyUnits(Common.BloodBoilRange).FirstOrDefault(),
                                         req => 
                                         {
                                             if (!Spell.UseAOE)
@@ -459,7 +456,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.Cast(
                             "Blood Boil",
                             req => Spell.UseAOE
-                                && StyxWoW.Me.CurrentTarget.DistanceSqr <= Common.BloodBoilRangeSqr
+                                && StyxWoW.Me.CurrentTarget.SpellDistance() <= Common.BloodBoilRange
                                 && StyxWoW.Me.NeedsRefresh()                                
                             ),
 
@@ -493,7 +490,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     req => Me.HasAura(CrimsonScourgeProc),
                     new PrioritySelector(
                         Spell.CastOnGround("Death and Decay", on => Me.CurrentTarget, req => Spell.UseAOE && !Me.CurrentTarget.IsMoving),
-                        Spell.Cast( "Blood Boil" )
+                        Spell.Cast( "Blood Boil", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < Common.BloodBoilRange )
                         )
                     ),
 
@@ -515,7 +512,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     req => Common.BloodRuneSlotsActive > (Common.HasTalent(DeathKnightTalents.RunicEmpowerment) ? 1 : 0),
                     new PrioritySelector(
                         Spell.Cast("Soul Reaper", req => Me.CurrentTarget.HealthPercent <= 35),
-                        Spell.Cast("Blood Boil")
+                        Spell.Cast("Blood Boil", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < Common.BloodBoilRange)
                         )
                     ),
 
@@ -525,7 +522,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     req => Spell.UseAOE && Me.HasAura("Crimson Scourge"),
                     new PrioritySelector(
                         Spell.CastOnGround("Death and Decay", on => Me.CurrentTarget, req => Spell.UseAOE && !Me.CurrentTarget.IsMoving, waitForSpell: false),
-                        Spell.Cast("Blood Boil", on => Me.CurrentTarget)
+                        Spell.Cast("Blood Boil", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < Common.BloodBoilRange)
                         )
                     )
                 );
@@ -537,12 +534,18 @@ namespace Singular.ClassSpecific.DeathKnight
             if ( !Spell.UseAOE)
                 return false;
 
+            WoWUnit target = Me.CurrentTarget;
+            if (target == null)
+                return false;
+
+            if (target.SpellDistance() < Common.BloodBoilRange)
+
             // check if refresh needed
-            if ( NeedsRefresh( Me.CurrentTarget))
+            if ( NeedsRefresh(target))
                 return true;
 
             // check if spread needed
-            if ( disease.ticking_on(Me.CurrentTarget))
+            if ( disease.ticking_on(target))
             {
                 return Unit.UnfriendlyUnits(Common.BloodBoilRange).Any( u => !disease.ticking_on(u) );
             }

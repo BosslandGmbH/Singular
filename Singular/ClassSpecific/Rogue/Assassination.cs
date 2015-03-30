@@ -46,7 +46,7 @@ namespace Singular.ClassSpecific.Rogue
                 Common.CreateRoguePullSkipNonPickPocketableMob(),
                 Common.CreateRogueControlNearbyEnemyBehavior(),
                 Common.CreateRogueMoveBehindTarget(),
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
+                Common.RogueEnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator(

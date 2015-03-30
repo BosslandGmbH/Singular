@@ -52,9 +52,16 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Control")]
-        [DisplayName("Chat Frame Message")]
-        [Description("Outputs message to Chat frame when toggle pressed")]
+        [DisplayName("Game Message")]
+        [Description("Outputs message to Game Client Overlay (does not use LUA or WOW Client)")]
         public bool ChatFrameMessage { get; set; }
+
+        [Setting]
+        [DefaultValue(2000)]
+        [Category("Control")]
+        [DisplayName("Game Message Duration (ms)")]
+        [Description("Duration in milliseconds to display message regarding HotKeys")]
+        public int ChatFrameMessageDuration { get; set; }
 
         [Setting]
         [DefaultValue(true)]

@@ -648,8 +648,16 @@ namespace Singular.Helpers
 
         public static bool IsCasting(LagTolerance allow = LagTolerance.Yes)
         {
-            if (!StyxWoW.Me.IsCasting)
-                return false;
+            try
+            {
+                if (!StyxWoW.Me.IsCasting)
+                    return false;
+            }
+            catch(Styx.InvalidObjectPointerException ie)
+            {
+                Logger.WriteDiagnostic("IsCasting: InvalidObjectPointerException exception encountered - returning true");
+                return true;
+            }
 
             //if (StyxWoW.Me.IsWanding())
             //    return RunStatus.Failure;
@@ -696,8 +704,16 @@ namespace Singular.Helpers
 
         public static bool IsChannelling(LagTolerance allow = LagTolerance.Yes)
         {
-            if (!StyxWoW.Me.IsChanneling)
-                return false;
+            try
+            {
+                if (!StyxWoW.Me.IsChanneling)
+                    return false;
+            }
+            catch (Styx.InvalidObjectPointerException ie)
+            {
+                Logger.WriteDiagnostic("IsChannelling: InvalidObjectPointerException exception encountered - returning true");
+                return true;
+            }
 
             uint latency = SingularRoutine.Latency * 2;
             TimeSpan timeLeft = StyxWoW.Me.CurrentChannelTimeLeft;

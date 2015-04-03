@@ -279,7 +279,7 @@ namespace Singular.Helpers
             get { return NearbyUnfriendlyUnits.Where(p => p.Aggro || (p.Combat && p.CurrentTargetGuid == StyxWoW.Me.Guid)); }
         }
 
-        public static IEnumerable<WoWUnit> UnitsInCombatWithMeOrMyStuff(int maxSpellDist)
+        public static IEnumerable<WoWUnit> UnitsInCombatWithMeOrMyStuff(int maxSpellDist = -1)
         {
             return UnfriendlyUnits(maxSpellDist)
                 .Where(

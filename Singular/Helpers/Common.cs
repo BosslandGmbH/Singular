@@ -202,12 +202,12 @@ namespace Singular.Helpers
                         {
                             if (Me.GotAlivePet)
                             {
-                                bool petUse = SingularRoutine.IsAllowed(CapabilityFlags.PetUse);
+                                bool petUse = PetManager.IsPetUseAllowed;
                                 if (!petUse)
                                 {
                                     if (Me.Pet.GotTarget() && Me.Pet.Combat)
                                     {
-                                        PetManager.CastAction("Passive");   // set to passive
+                                        PetManager.Passive();   // set to passive
                                     }
                                 }
                                 else if (petUse)
@@ -234,7 +234,7 @@ namespace Singular.Helpers
                                                 else
                                                     reason = "PickupAggro";
 
-                                                Logger.WriteDebug("PetManager: [reason={0}] sending Pet at {1} @ {2:F1} yds from Pet", reason, aggroedOnMe.SafeName(), Me.Pet.SpellDistance(r as WoWUnit));
+                                                Logger.WriteDebug("PetManager: [reason={0}] sending Pet at {1} @ {2:F1} yds from Pet", reason, aggroedOnMe.SafeName(), Me.Pet.SpellDistance(aggroedOnMe));
                                             }
 
                                             PetManager.Attack(aggroedOnMe);

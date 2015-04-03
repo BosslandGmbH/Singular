@@ -36,7 +36,7 @@ namespace Singular.Managers
 
         #region INIT
 
-        [Behavior(BehaviorType.Initialize, WoWClass.None, priority: 9999)]
+        [Behavior(BehaviorType.Initialize, WoWClass.None, priority: int.MaxValue)]
         public static Composite CreatePetManagerInitializeBehaviour()
         {
             NeedsPetSupport = false;

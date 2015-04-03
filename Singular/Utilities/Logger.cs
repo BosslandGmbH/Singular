@@ -281,7 +281,7 @@ namespace Singular
             : base(1, TimeSpan.FromSeconds(secs), RunStatus.Success, new Action(r => { Logger.Write(msg(r)); return RunStatus.Success; }))
         {
         }
-        public SeqLog(int secs, Color clr, SimpleStringDelegate msg)
+        public SeqLog(double secs, Color clr, SimpleStringDelegate msg)
             : base(1, TimeSpan.FromSeconds(secs), RunStatus.Success, new Action(r => { Logger.Write(clr, msg(r)); return RunStatus.Success; }))
         {
         }
@@ -315,7 +315,7 @@ namespace Singular
             : base(1, TimeSpan.FromSeconds(secs), RunStatus.Failure, new Action(r => { Logger.Write(msg(r)); return RunStatus.Failure; }))
         {
         }
-        public PriLog(int secs, Color clr, SimpleStringDelegate msg)
+        public PriLog(double secs, Color clr, SimpleStringDelegate msg)
             : base(1, TimeSpan.FromSeconds(secs), RunStatus.Failure, new Action(r => { Logger.Write(clr, msg(r)); return RunStatus.Failure; }))
         {
         }

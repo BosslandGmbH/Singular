@@ -237,7 +237,7 @@ namespace Singular.ClassSpecific.Warlock
             return new Throttle(
                 TimeSpan.FromMilliseconds(2000),
                 new Decorator( 
-                    ret => Me.CurrentTarget.HasAuraExpired("Hand of Gul'dan", "Shadowflame", 1),
+                    ret => Me.GotTarget() && Me.CurrentTarget.HasAuraExpired("Hand of Gul'dan", "Shadowflame", 1),
                     new PrioritySelector(
                         ctx => TalentManager.HasGlyph("Hand of Gul'dan"),
                         Spell.CastOnGround("Hand of Gul'dan", on => Me.CurrentTarget, req => Me.GotTarget() && (bool)req),

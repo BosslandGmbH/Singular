@@ -1088,6 +1088,7 @@ namespace Singular.Settings
 
         private PullMoreUsageType _PullMoreAllowed = PullMoreUsageType.Auto;
 
+        [Setting, ReadOnly(false)]
         [DefaultValue(8)]
         [Category("Enemy Control")]
         [DisplayName("Evade Attacks Allowed")]
@@ -1119,24 +1120,21 @@ namespace Singular.Settings
             }
         }
 
-        [Setting,ReadOnly(false)]
-        
+        [Setting,ReadOnly(false)]        
         [DefaultValue(PullMoreTargetType.LikeCurrent)]
         [Category("Enemy Control")]
         [DisplayName("Pull More Target Type")]
         [Description("None: disabled, Current: like CurrentTarget; Hostile: any hostile target; Any: any nearby valid target")]
         public PullMoreTargetType PullMoreTargetType { get; set; }
 
-        [Setting,ReadOnly(false)]
-        
+        [Setting,ReadOnly(false)]     
         [DefaultValue(3)]
         [Category("Enemy Control")]
         [DisplayName("Pull More Count")]
         [Description("Pull more until in combat with this many, then finish them off before acquiring more")]
         public int PullMoreMobCount { get; set; }
 
-        [Setting,ReadOnly(false)]
-        
+        [Setting,ReadOnly(false)]        
         [DefaultValue(35)]
         [Category("Enemy Control")]
         [DisplayName("Pull More Dist Melee")]
@@ -1151,16 +1149,14 @@ namespace Singular.Settings
         [Description("For Ranged Characters: Maximum distance of adds which will be pulled")]
         public int PullMoreDistRanged { get; set; }
 
-        [Setting,ReadOnly(false)]
-        
+        [Setting,ReadOnly(false)]        
         [DefaultValue(60)]
         [Category("Enemy Control")]
         [DisplayName("Pull More Health %")]
         [Description("Pull more unless Health % below this")]
         public int PullMoreMinHealth { get; set; }
 
-        [Setting,ReadOnly(false)]
-        
+        [Setting,ReadOnly(false)]       
         [DefaultValue(12)]
         [Category("Enemy Control")]
         [DisplayName("Pull More Tagged Timeout (secs)")]
@@ -1168,7 +1164,6 @@ namespace Singular.Settings
         public int PullMoreTimeOut { get; set; }
 
         [Setting, ReadOnly(false)]
-
         [DefaultValue(45)]
         [Category("Enemy Control")]
         [DisplayName("Pull More Max Time (secs)")]

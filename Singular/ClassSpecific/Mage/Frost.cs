@@ -234,7 +234,7 @@ namespace Singular.ClassSpecific.Mage
                 // req => Spell.CanCastHack("Ice Lance", (req as ILInfo).Unit) && ((req as ILInfo).Unit != null && ((req as ILInfo).StacksOfFOF > 0 || (req as ILInfo).Unit.IsTrivial())),
                     req => ILInfo.Ref(req).Unit != null && ILInfo.Ref(req).StacksOfFOF > 0 && Spell.CanCastHack("Ice Lance", ILInfo.Ref(req).Unit),
                     new Sequence(
-                        new Action(r => Logger.Write(LogColor.Hilite, "^Fingers of Frost: casting buffed Ice Lance[{0}]", ILInfo.Ref(r).StacksOfFOF)),
+                        new Action(r => Logger.Write(LogColor.Hilite, "^Fingers of Frost[{0}]: casting buffed Ice Lance", ILInfo.Ref(r).StacksOfFOF)),
                         Spell.Cast("Ice Lance", mov => false, o => ILInfo.Ref(o).Unit, r => reqdel(ILInfo.Ref(r).SaveContext)),    // ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) < 4),
                         Helpers.Common.CreateWaitForLagDuration(
                             until => ILInfo.Ref(until).StacksOfFOF != Me.GetAuraStacks(FINGERS_OF_FROST)

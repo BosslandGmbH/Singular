@@ -300,12 +300,23 @@ namespace Singular.ClassSpecific.Warlock
                             ),
 */
 
-                        new Decorator(
-                            ret => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.IsWithinMeleeRange),
-                            new PrioritySelector(
-                                Spell.BuffSelf("Blood Horror", ret => Me.HealthPercent > 20),
-                                Spell.BuffSelf("Whiplash"),
-                                CreateVoidwalkerDisarm()
+                        new PrioritySelector(
+                            ctx => Unit.UnfriendlyUnits()
+                                .FirstOrDefault(u => u.CurrentTargetGuid == Me.Guid && u.IsWithinMeleeRange),
+                            new Decorator(
+                                req => req != null,
+                                new PrioritySelector(
+                                    new Decorator(
+                                        req => Me.HealthPercent > 20 && Spell.CanCastHack("Blood Horror", Me),
+                                        new Sequence(
+                                            new SeqLog(1, LogColor.Hilite, s => string.Format("^Blood Horror: due {0} melee attacks", ((WoWUnit)s).SafeName())),
+                                            Spell.BuffSelf("Blood Horror")
+                                            )
+                                        ),
+
+                                    // felllash or whiplash them
+                                    Spell.Buff("Command Demon", req => GetCurrentPet() == WarlockPet.Succubus)
+                                    )
                                 )
                             ),
 
@@ -361,7 +372,7 @@ namespace Singular.ClassSpecific.Warlock
 
                         new Decorator(
                             ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3
-                                || Me.CurrentTarget.IsBoss()
+                                || (Me.GotTarget() && Me.CurrentTarget.IsBoss())
                                 || Unit.NearbyUnfriendlyUnits.Any(u => u.IsPlayer && u.IsTargetingMeOrPet),
                             new PrioritySelector(
                                 Spell.BuffSelf("Dark Soul: Misery"),
@@ -641,17 +652,6 @@ namespace Singular.ClassSpecific.Warlock
                             )
                         )
                     )
-                );
-        }
-
-        public static Composite CreateVoidwalkerDisarm()
-        {
-            if (!WarlockSettings.UseDisarm || GetBestPet() != WarlockPet.Voidwalker)
-                return new ActionAlwaysFail();
-
-            return new Decorator(
-                req => GetCurrentPet() == WarlockPet.Voidwalker,
-                PetManager.CastAction( "Disarm", on => Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(u => u.IsWithinMeleeRange && !Me.CurrentTarget.Disarmed && !Me.CurrentTarget.IsCrowdControlled() && Me.IsSafelyFacing(u, 150)))
                 );
         }
 

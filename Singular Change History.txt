@@ -1,4 +1,21 @@
 
+--- Release 4.0.0.4557 ---
+
+General
+
+fixed - Evade Attacks Allowed: setting now correctly saves and loads from settings file
+
+
+Warlock
+
+fixed - All Specs - Pet Attack: was not being initiated before Warlock cast
+
+fixed - All Specs - use of Whiplash and Fellash when attackers targeting warlock and in melee range
+
+fixed - All Specs - Blood Horror: message displayed identifying attacker which resulted in cast
+
+
+
 --- Release 4.0.0.4544 ---
 
 General

@@ -655,7 +655,7 @@ namespace Singular.Helpers
             }
             catch(Styx.InvalidObjectPointerException ie)
             {
-                Logger.WriteDiagnostic("IsCasting: InvalidObjectPointerException exception encountered - returning true");
+                Logger.WriteDiagnostic("IsCasting: InvalidObjectPointerException exception encountered - returning true", ie);
                 return true;
             }
 
@@ -711,7 +711,7 @@ namespace Singular.Helpers
             }
             catch (Styx.InvalidObjectPointerException ie)
             {
-                Logger.WriteDiagnostic("IsChannelling: InvalidObjectPointerException exception encountered - returning true");
+                Logger.WriteDiagnostic("IsChannelling: InvalidObjectPointerException exception encountered - returning true", ie);
                 return true;
             }
 

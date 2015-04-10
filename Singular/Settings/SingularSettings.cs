@@ -1207,11 +1207,18 @@ namespace Singular.Settings
         public CheckTargets InterruptTarget { get; set; }
 
         [Setting, ReadOnly(false)]
-        [DefaultValue(50)]
+        [DefaultValue(8)]
         [Category("Enemy Control")]
-        [DisplayName("Trivial: Mob Max Health %")]
-        [Description("Mob with Max Health less than % of your Max Health considered trivial")]
-        public int TrivialMaxHealthPcnt { get; set; }
+        [DisplayName("Trivial: Mob Level Delta")]
+        [Description("Mob Level that is Delta levels or more below Player Level considered trivial")]
+        public int TrivialLevelsBelow { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(15)]
+        [Category("Enemy Control")]
+        [DisplayName("Trivial: Mob Elite Delta")]
+        [Description("Elite Mob Level that is Delta levels or more below Player Level considered trivial")]
+        public int TrivialEliteBelow { get; set; }
 
 #if SERIOUS_SUPPORT_IMPLEMENTED
         [Setting, ReadOnly(false)]

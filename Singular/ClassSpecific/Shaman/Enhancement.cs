@@ -72,7 +72,10 @@ namespace Singular.ClassSpecific.Shaman
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        Common.CreateShamanDpsHealBehavior(),
+                        new Decorator(
+                            ret => !Me.HasAnyAura("Drink", "Food", "Refreshment"),
+                            Common.CreateShamanDpsHealBehavior()
+                            ),
 
                         Rest.CreateDefaultRestBehaviour("Healing Surge", "Ancestral Spirit"),
 

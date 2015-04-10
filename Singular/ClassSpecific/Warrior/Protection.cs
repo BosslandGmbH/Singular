@@ -294,6 +294,27 @@ namespace Singular.ClassSpecific.Warrior
                     CreateProtectionTauntBehavior()
                     ),
 
+                // Dump Rage
+                new Throttle(
+                    Spell.Cast(
+                        "Heroic Strike",
+                        on => Me.CurrentTarget,
+                        req =>
+                        {
+                            if (scenario.AvoidAOE && glyphCleave)
+                                return false;
+                            if (!Spell.CanCastHack("Heroic Strike", Me.CurrentTarget))
+                                return false;
+                            if (!HasUltimatum)
+                                return false;
+
+                            Logger.Write(LogColor.Hilite, "^Ultimatum: free Heroic Strike");
+                            return true;
+                        },
+                        gcd: HasGcd.No
+                        )
+                    ),
+
                 new Sequence(
                     new Decorator(
                         ret => Common.IsSlowNeeded(Me.CurrentTarget),
@@ -327,22 +348,30 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Revenge"),
                 Spell.Cast("Execute", req => Me.CurrentRage >= RageDump && Me.CurrentTarget.HealthPercent <= 20),
 
-                // Filler
-                Spell.Cast("Devastate"),
-
                 // Dump Rage
                 new Throttle(
                     Spell.Cast(
                         "Heroic Strike", 
                         on => Me.CurrentTarget,
-                        req => (!scenario.AvoidAOE || !glyphCleave) 
-                            && (HasUltimatum || Me.CurrentRage > RageDump || !SpellManager.HasSpell("Devastate") || !HasShieldInOffHand),
+                        req => 
+                        {
+                            if (scenario.AvoidAOE && glyphCleave) 
+                                return false;
+                            if (Me.CurrentRage > RageDump || !SpellManager.HasSpell("Devastate") || !HasShieldInOffHand)
+                                return true;
+                            return false;
+                        },
                         gcd: HasGcd.No
                         )
                     ),
 
+                // Filler
+                Spell.Cast("Devastate"),
+
                 //Charge
                 Common.CreateChargeBehavior(),
+
+                Common.CreateAttackFlyingOrUnreachableMobs(),
 
                 new Action(ret =>
                 {
@@ -350,6 +379,8 @@ namespace Singular.ClassSpecific.Warrior
                         Logger.WriteDebug("--- we did nothing!");
                     return RunStatus.Failure;
                 })
+
+
             );
 
         }
@@ -417,6 +448,8 @@ namespace Singular.ClassSpecific.Warrior
 
                 //Charge
                 Common.CreateChargeBehavior(),
+
+                Common.CreateAttackFlyingOrUnreachableMobs(),
 
                 new Action(ret =>
                 {
@@ -664,7 +697,8 @@ namespace Singular.ClassSpecific.Warrior
         {
             get
             {
-                return Me.ActiveAuras.ContainsKey("Ultimatum");
+                const int ULTIMATUM_PROC = 122510;
+                return Me.HasAura(ULTIMATUM_PROC);
             }
         }
 

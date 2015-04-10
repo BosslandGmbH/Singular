@@ -614,7 +614,7 @@ namespace Singular.Helpers
                 });
         }
 
-        public static bool IsGlobalCooldown(LagTolerance allow = LagTolerance.Yes)
+        public static bool IsGlobalCooldown(LagTolerance allow = LagTolerance.No)
         {
 #if NO_LATENCY_ISSUES_WITH_GLOBAL_COOLDOWN
             uint latency = allow == LagTolerance.Yes ? SingularRoutine.Latency : 0;

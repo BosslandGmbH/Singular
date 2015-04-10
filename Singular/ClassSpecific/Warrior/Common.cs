@@ -213,7 +213,7 @@ namespace Singular.ClassSpecific.Warrior
                                 stance = WarriorStance.GladiatorStance;
                             else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
                                 stance = WarriorStance.GladiatorStance;
-                            else if (Me.Role != WoWPartyMember.GroupRole.Tank)
+                            else if (!Group.MeIsTank)
                                 stance = WarriorStance.GladiatorStance;
                             else 
                                 stance = WarriorStance.DefensiveStance;
@@ -491,18 +491,29 @@ namespace Singular.ClassSpecific.Warrior
                     if (!Me.GotTarget())
                         return false;
 
+                    // return immediately if already in melee range
+                    if (Me.CurrentTarget.IsWithinMeleeRange)
+                        return false;
+
+                    // ignore players above ground
                     if (Me.CurrentTarget.IsPlayer)
                         return false;
 
-                    if (Me.CurrentTarget.IsFlying)
+                    // check if target appears to be higher than melee range off ground
+                    float heightOffGround = Me.CurrentTarget.HeightOffTheGround();
+                    float meleeDist = Me.CurrentTarget.MeleeDistance();
+                    if (heightOffGround > meleeDist)
                     {
-                        float heightOffGround = Me.CurrentTarget.HeightOffTheGround();
-                        float meleeDist = Me.CurrentTarget.MeleeDistance();
-                        if (heightOffGround > meleeDist)
-                        {
-                            Logger.Write(LogColor.Hilite, "Ranged Attack: {0} is Flying {1:F3} yds off ground! using Ranged attack since can only reach {2:F3} yds....", Me.CurrentTarget.SafeName(), heightOffGround, meleeDist);
-                            return true;
-                        }
+                        Logger.Write(LogColor.Hilite, "Ranged Attack: {0} {1:F3} yds above ground using Ranged attack since reach is {2:F3} yds....", Me.CurrentTarget.SafeName(), heightOffGround, meleeDist);
+                        return true;
+                    }
+
+                    // additional check for off ground
+                    double heightCheck = Me.CurrentTarget.MeleeDistance();
+                    if (Me.CurrentTarget.Distance2DSqr < heightCheck * heightCheck && Math.Abs(Me.Z - Me.CurrentTarget.Z) >= heightCheck)
+                    {
+                        Logger.Write(LogColor.Hilite, "Ranged Attack: {0} appears to be off the ground! using Ranged attack....", Me.CurrentTarget.SafeName());
+                        return true;
                     }
 
                     if ((DateTime.Now - Singular.Utilities.EventHandlers.LastNoPathFailure).TotalSeconds < 1f)
@@ -517,13 +528,6 @@ namespace Singular.ClassSpecific.Warrior
                     return true;
                     }
 */
-                    double heightCheck = Me.CurrentTarget.MeleeDistance();
-                    if (Me.CurrentTarget.Distance2DSqr < heightCheck * heightCheck && Math.Abs(Me.Z - Me.CurrentTarget.Z) >= heightCheck )
-                    {
-                        Logger.Write( LogColor.Hilite, "Ranged Attack: {0} appears to be off the ground! using Ranged attack....", Me.CurrentTarget.SafeName());
-                        return true;
-                    }
-                    
                     WoWPoint dest = Me.CurrentTarget.Location;
                     if (!Me.CurrentTarget.IsWithinMeleeRange && !Styx.Pathing.Navigator.CanNavigateFully(Me.Location, dest))
                     {
@@ -537,6 +541,11 @@ namespace Singular.ClassSpecific.Warrior
                     req => !Me.CurrentTarget.IsWithinMeleeRange ,
                     new PrioritySelector(
                         Spell.Cast("Heroic Throw"),
+                        Spell.Cast("Whirlwind", req => !Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8 + _DistanceWindAndThunder),
+                        Spell.Cast("Shockwave", req => !Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 10 && Me.IsSafelyFacing(Me.CurrentTarget, 60)),
+                        Spell.Cast("Dragon Roar", req => !Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8),
+                        Spell.Cast("Thunder Clap", req => !Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8 + _DistanceWindAndThunder),
+                        Spell.Cast("Storm Bolt"),
                         new Sequence(
                             new PrioritySelector(
                                 Movement.CreateEnsureMovementStoppedBehavior( 27f, on => Me.CurrentTarget, reason: "To cast Throw"),

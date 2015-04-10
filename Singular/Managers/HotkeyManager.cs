@@ -276,7 +276,7 @@ namespace Singular.Managers
                 if (last_IsMovementEnabled)
                     TellUser("Movement now enabled!");
                 else
-                    TellUser("Movement disabled... press {0} to enable", HotkeySettings.MovementToggle.ToFormattedString() );
+                    TellUser("Movement disabled... press {0} to enable", HotkeySettings.MovementToggle.ToFormattedString());
 
                 MovementManager.Update();
             }
@@ -311,27 +311,6 @@ namespace Singular.Managers
                 MovementManager.Update();
             }
         }
-
-        #region Helpers
-
-        private static void TellUser(string template, params object[] args)
-        {
-            string msg = string.Format(template, args);
-            Logger.Write( Color.Yellow, string.Format("Hotkey: " + msg));
-            if (HotkeySettings.ChatFrameMessage)
-            {
-                msg = "singular: " + msg;
-                StyxWoW.Overlay.AddToast(
-                    () => { return msg; },
-                    TimeSpan.FromMilliseconds(HotkeySettings.ChatFrameMessageDuration),
-                    System.Windows.Media.Colors.White,
-                    System.Windows.Media.Colors.Blue,
-                    new System.Windows.Media.FontFamily("Consolas")
-                    );
-            }
-        }
-
-        #endregion
 
         // track whether keys registered yet
         private static bool _HotkeysRegistered = false;
@@ -444,6 +423,11 @@ namespace Singular.Managers
         static bool IsKeyDown(Keys key)
         {
             return (GetAsyncKeyState((int) key) & 0x8000) != 0;
+        }
+
+        private static void TellUser(string template, params object[] args)
+        {
+            Logger.TellUser("singular - Hotkey: " + template, args);
         }
     }
 

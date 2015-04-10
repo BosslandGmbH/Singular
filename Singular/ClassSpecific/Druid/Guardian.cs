@@ -76,29 +76,33 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 CreateGuardianDiagnosticOutputBehavior( "Combat"),
 
-                Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < Settings.TankFrenziedRegenerationHealth && Me.CurrentRage >= 60),
-                Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < 30 && Me.CurrentRage >= 15),
-
-                new Sequence(
-                    Spell.Cast("Healing Touch", on => Me, req => Me.HasAura(DREAM_OF_CENARIUS_PROC) && Me.HealthPercent < Settings.DreamOfCenariusHealingTouchHealth),
-                    new Wait( TimeSpan.FromMilliseconds(750), until => !Me.HasAura(DREAM_OF_CENARIUS_PROC), new ActionAlwaysSucceed())
-                    ),
-
-                Spell.Cast("Renewal", on => Me, ret => Me.HealthPercent < Settings.SelfRenewalHealth),
-                Spell.BuffSelf("Cenarion Ward", req => Me.HealthPercent < Settings.SelfCenarionWardHealth)
-                );
-        }
-
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidGuardian, WoWContext.All, 1)]
-        public static Composite CreateGuardianNormalCombatBuffs()
-        {
-            return new PrioritySelector(
-                Common.CastForm( ShapeshiftForm.Bear, req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
-
+                // defensive
                 Spell.BuffSelf("Savage Defense", ret => Me.HealthPercent <= Settings.TankSavageDefense),
                 Spell.BuffSelf("Survival Instincts", ret => Me.HealthPercent <= Settings.TankSurvivalInstinctsHealth),
                 Spell.BuffSelf("Barkskin", ret => Me.HealthPercent <= Settings.TankFeralBarkskin),
-                Spell.BuffSelf("Bristling Fur", req => Spell.IsSpellOnCooldown("Barkskin") && Spell.IsSpellOnCooldown("Savage Defense"))
+                Spell.BuffSelf("Bristling Fur", req => Spell.IsSpellOnCooldown("Barkskin") && Spell.IsSpellOnCooldown("Savage Defense")),
+
+                // self-heal
+                Spell.BuffSelf(
+                    "Frenzied Regeneration", 
+                    req => (Me.HealthPercent < Settings.TankFrenziedRegenerationHealth && Me.CurrentRage >= 60)
+                        || (Me.HealthPercent < 30 && Me.CurrentRage >= 15)
+                    ),
+
+                new Sequence(
+                    Spell.Cast("Healing Touch", on => Me, req => Me.HasAura(DREAM_OF_CENARIUS_PROC) && Me.HealthPercent < Settings.DreamOfCenariusHealingTouchHealth),
+                    new Wait(TimeSpan.FromMilliseconds(750), until => !Me.HasAura(DREAM_OF_CENARIUS_PROC), new ActionAlwaysSucceed())
+                    )
+                );
+        }
+
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidGuardian, WoWContext.All, 999)]
+        public static Composite CreateGuardianNormalCombatBuffs()
+        {
+            return new PrioritySelector(
+
+                Common.CastForm( ShapeshiftForm.Bear, req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
+
                 );
         }
 

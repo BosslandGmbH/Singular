@@ -471,7 +471,7 @@ namespace Singular.ClassSpecific.Shaman
 */
             #region Save the Group
 
-            behavs.AddBehavior(Restoration.HealthToPriority(ShamanSettings.OffHealSettings.AncestralSwiftness) + 500,
+            behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.OffHealSettings.AncestralSwiftness) + 500,
                 String.Format("Oh Shoot Heal @ {0}%", ShamanSettings.OffHealSettings.AncestralSwiftness),
                 null,
                 new Decorator(
@@ -487,7 +487,7 @@ namespace Singular.ClassSpecific.Shaman
 
             #region AoE Heals
 
-            behavs.AddBehavior(Restoration.HealthToPriority(ShamanSettings.OffHealSettings.HealingStreamTotem) + 300,
+            behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.OffHealSettings.HealingStreamTotem) + 300,
                 string.Format("Healing Stream Totem @ {0}%", ShamanSettings.OffHealSettings.HealingStreamTotem),
                 "Healing Stream Totem",
                 new Decorator(
@@ -499,7 +499,7 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior(Restoration.HealthToPriority(ShamanSettings.OffHealSettings.HealingRain) + 200,
+            behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.OffHealSettings.HealingRain) + 200,
                 string.Format("Healing Rain @ {0}% Count={1}", ShamanSettings.OffHealSettings.HealingRain, ShamanSettings.OffHealSettings.MinHealingRainCount),
                 "Healing Rain",
                 Spell.CastOnGround("Healing Rain", on => Restoration.GetBestHealingRainTarget(), req => HealerManager.Instance.TargetList.Count() > 1, false)
@@ -509,7 +509,7 @@ namespace Singular.ClassSpecific.Shaman
 
             #region Single Target Heals
 
-            behavs.AddBehavior(Restoration.HealthToPriority(ShamanSettings.OffHealSettings.HealingSurge),
+            behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.OffHealSettings.HealingSurge),
                 string.Format("Healing Surge @ {0}%", ShamanSettings.OffHealSettings.HealingSurge),
                 "Healing Surge",
                 Spell.Cast("Healing Surge",

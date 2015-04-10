@@ -814,6 +814,8 @@ namespace Singular
             if (!SingularSettings.Debug)
                 return;
 
+            // Logger.TellUser( "{0}", sType);
+
             string info = "";
             WoWUnit target = Me.CurrentTarget;
 
@@ -924,7 +926,7 @@ namespace Singular
             else
             {
                 _rangePullMore = Me.IsMelee() ? SingularSettings.Instance.PullMoreDistMelee : SingularSettings.Instance.PullMoreDistRanged;
-                Logger.Write(LogColor.Init, "Pull More: will up to {0} mobs of type=[{1}]",
+                Logger.Write(LogColor.Init, "Pull More: enabled up to {0} mobs of type=[{1}]",
                     SingularSettings.Instance.PullMoreMobCount,
                     SingularSettings.Instance.UsePullMore != PullMoreUsageType.Auto
                         ? SingularSettings.Instance.PullMoreTargetType.ToString()
@@ -1094,7 +1096,7 @@ namespace Singular
                     SingularSettings.Instance.PullMoreMobCount
                     );                  
             }
-            else if (SingularRoutine.CurrentWoWContext != WoWContext.Normal)
+            else if (SingularRoutine.CurrentWoWContext != WoWContext.Normal && SingularRoutine.CurrentWoWContext != WoWContext.Instances)
             {
                 allow = false;
                 Logger.WriteDiagnostic("Pull More: disabled automatically for Context = '{0}'", SingularRoutine.CurrentWoWContext);

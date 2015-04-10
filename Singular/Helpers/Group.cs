@@ -11,18 +11,29 @@ namespace Singular.Helpers
     {
         const int ZONE_PROVING_GROUNDS = 6852;
         const int OTO_THE_PROTECTOR = 72218;
+        const int SIKARI_THE_MISTWEAVER = 71828;
+
         public static bool MeIsTank
         {
             get
             {
-                return (StyxWoW.Me.Role & WoWPartyMember.GroupRole.Tank) != 0 || 
-                        Tanks.All(t => !t.IsAlive) && StyxWoW.Me.HasAura("Bear Form");
+                if (StyxWoW.Me.ZoneId == ZONE_PROVING_GROUNDS)
+                    return Unit.GroupMembers.Any(u => u.Entry == SIKARI_THE_MISTWEAVER);
+
+                return (StyxWoW.Me.Role & WoWPartyMember.GroupRole.Tank) != 0 
+                    || StyxWoW.Me.Class == WoWClass.Druid && Tanks.All(t => !t.IsAlive) && StyxWoW.Me.HasAura("Bear Form");
             }
         }
 
         public static bool MeIsHealer
         {
-            get { return (StyxWoW.Me.Role & WoWPartyMember.GroupRole.Healer) != 0; }
+            get 
+            {
+                if (StyxWoW.Me.ZoneId == ZONE_PROVING_GROUNDS)
+                    return Unit.GroupMembers.Any(u => u.Entry == OTO_THE_PROTECTOR);
+
+                return (StyxWoW.Me.Role & WoWPartyMember.GroupRole.Healer) != 0; 
+            }
         }
 
         public static List<WoWUnit> Tanks
@@ -50,6 +61,16 @@ namespace Singular.Helpers
             {
                 if (!StyxWoW.Me.GroupInfo.IsInParty)
                     return new List<WoWUnit>(); ;
+
+                if (StyxWoW.Me.ZoneId == ZONE_PROVING_GROUNDS)
+                {
+                    WoWUnit healer = Unit.GroupMembers.FirstOrDefault(u => u.Entry == SIKARI_THE_MISTWEAVER);
+                    if (healer == null && Unit.GroupMembers.Any(u => !u.IsMe))
+                        healer = StyxWoW.Me;
+                    if (healer == null)
+                        return new List<WoWUnit>();
+                    return new List<WoWUnit>(new[] { healer });
+                }
 
                 return StyxWoW.Me.GroupInfo.RaidMembers.Where(p => p.HasRole(WoWPartyMember.GroupRole.Healer))
                     .Select(p => p.ToPlayer())

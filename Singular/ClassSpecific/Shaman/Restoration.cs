@@ -430,7 +430,7 @@ namespace Singular.ClassSpecific.Shaman
 
             #region Save the Group
 
-            behavs.AddBehavior(HealthToPriority(ShamanSettings.RestoHealSettings.SpiritLinkTotem) + 600, "Spirit Link Totem", "Spirit Link Totem",
+            behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.RestoHealSettings.SpiritLinkTotem) + 600, "Spirit Link Totem", "Spirit Link Totem",
                 new Decorator(
                     ret => Me.Combat && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid),
                     Spell.Cast(
@@ -441,7 +441,7 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority(ShamanSettings.RestoHealSettings.AncestralSwiftness) + 500,
+            behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.RestoHealSettings.AncestralSwiftness) + 500,
                 String.Format("Oh Shoot Heal @ {0}%", ShamanSettings.RestoHealSettings.AncestralSwiftness),
                 "Ancestral Swiftness",
                 new Decorator(
@@ -460,7 +460,7 @@ namespace Singular.ClassSpecific.Shaman
 
             #region AoE Heals
 
-            behavs.AddBehavior(HealthToPriority(ShamanSettings.RestoHealSettings.HealingTideTotem) + 400, "Healing Tide Totem", "Healing Tide Totem",
+            behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.RestoHealSettings.HealingTideTotem) + 400, "Healing Tide Totem", "Healing Tide Totem",
                 new Decorator(
                     ret => (Me.Combat || ((WoWUnit)ret).Combat) 
                         && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid)
@@ -473,7 +473,7 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority(ShamanSettings.RestoHealSettings.HealingStreamTotem) + 300, "Healing Stream Totem", "Healing Stream Totem",
+            behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.RestoHealSettings.HealingStreamTotem) + 300, "Healing Stream Totem", "Healing Stream Totem",
                 new Decorator(
                     ret => Me.Combat && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid),
                     Spell.Cast(
@@ -508,7 +508,7 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority(ShamanSettings.RestoHealSettings.CloudburstTotem) + 300, "Cloudburst Totem", "Cloudburst Totem",
+            behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.RestoHealSettings.CloudburstTotem) + 300, "Cloudburst Totem", "Cloudburst Totem",
                 new Decorator(
                     ret => Me.Combat && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid),
                     Spell.Cast(
@@ -548,7 +548,7 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority(ShamanSettings.RestoHealSettings.HealingRain) + 200, "Healing Rain", "Healing Rain",
+            behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.RestoHealSettings.HealingRain) + 200, "Healing Rain", "Healing Rain",
                 new Decorator(
                     ret => Me.Combat && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid),
                     new PrioritySelector(
@@ -561,7 +561,7 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority(ShamanSettings.RestoHealSettings.ChainHeal) + 100, "Chain Heal", "Chain Heal",
+            behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.RestoHealSettings.ChainHeal) + 100, "Chain Heal", "Chain Heal",
                 new Decorator(
                     ret => Me.Combat  && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid),
                     new PrioritySelector(
@@ -594,7 +594,7 @@ namespace Singular.ClassSpecific.Shaman
 
             #region Single Target Heals
 
-            behavs.AddBehavior(HealthToPriority(ShamanSettings.RestoHealSettings.HealingWave), "Healing Wave", "Healing Wave",
+            behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.RestoHealSettings.HealingWave), "Healing Wave", "Healing Wave",
                 new Decorator( ret => ((WoWUnit)ret).PredictedHealthPercent() < ShamanSettings.RestoHealSettings.HealingWave,
                     new Sequence(
                         new WaitContinue(TimeSpan.FromMilliseconds(1500), until => !Spell.IsGlobalCooldown(), new ActionAlwaysSucceed()),
@@ -613,7 +613,7 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority(ShamanSettings.RestoHealSettings.HealingSurge), "Healing Surge", "Healing Surge", 
+            behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.RestoHealSettings.HealingSurge), "Healing Surge", "Healing Surge", 
                 new Decorator( ret => ((WoWUnit)ret).PredictedHealthPercent() < ShamanSettings.RestoHealSettings.HealingSurge,
                     new Sequence(
                         new WaitContinue(TimeSpan.FromMilliseconds(1500), until => !Spell.IsGlobalCooldown(), new ActionAlwaysSucceed()),
@@ -637,7 +637,7 @@ namespace Singular.ClassSpecific.Shaman
 
             #region Healing Cooldowns
 
-            behavs.AddBehavior(HealthToPriority( ShamanSettings.RestoHealSettings.Ascendance) + 100, "Ascendance", "Ascendance",
+            behavs.AddBehavior(HealerManager.HealthToPriority( ShamanSettings.RestoHealSettings.Ascendance) + 100, "Ascendance", "Ascendance",
                 new Decorator(
                     ret => ShamanSettings.UseAscendance && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid),
                     Spell.BuffSelf(
@@ -982,11 +982,6 @@ namespace Singular.ClassSpecific.Shaman
                 count += StyxWoW.Me.Inventory.Equipped.Head.ItemInfo.ItemSetId == RESTO_T12_ITEM_SET_ID ? 1 : 0;
                 return count;
             }
-        }
-
-        public static int HealthToPriority(int nHealth)
-        {
-            return nHealth == 0 ? 0 : 200 - nHealth;
         }
 
         #region Diagnostics

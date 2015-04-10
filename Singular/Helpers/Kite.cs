@@ -58,6 +58,9 @@ namespace Singular.Helpers
             {
                 needDisengage = req =>
                 {
+                    if (disengageSpell == null || disengageDir == Disengage.Direction.None)
+                        return false;
+
                     if (!Kite.IsDisengageWantedByUserSettings() || !MovementManager.IsClassMovementAllowed || !SingularRoutine.IsAllowed(CapabilityFlags.Kiting))
                         return false;
 
@@ -395,22 +398,37 @@ namespace Singular.Helpers
                 return false;
 
             if (Me.Stunned || Me.IsStunned())
+            {
+                Logger.WriteDebug("IsKitingPossible: suppressed while Stunned");
                 return false;
+            }
 
             if (Me.Rooted || Me.IsRooted())
+            {
+                Logger.WriteDebug("IsKitingPossible: suppressed while Rooted");
                 return false;
+            }
 
             if (Me.IsFalling)
+            {
+                Logger.WriteDebug("IsKitingPossible: suppressed while Falling");
                 return false;
+            }
 
             WoWUnit mob = SafeArea.NearestEnemyMobAttackingMe;
             //mob = Me.CurrentTarget;  // FOR TESTING ONLY 
             if (mob == null)
+            {
+                Logger.WriteDebug("IsKitingPossible: error - cannot find a Mob Near us to Kite away from");
                 return false;
+            }
 
             // check if 5yds beyond melee
-            if (mob.Distance > 10f)
+            if (mob.SpellDistance() > 10f)
+            {
+                Logger.WriteDebug("IsKitingPossible: {0} @ {1:F1} yds is already > 10 yds away", mob.SafeName(), mob.SpellDistance());
                 return false;
+            }
 
             SafeArea sa = new SafeArea();
             if (Battlegrounds.IsInsideBattleground)
@@ -442,7 +460,9 @@ namespace Singular.Helpers
 
             safeSpot = sa.FindLocation();
             if (safeSpot == WoWPoint.Empty)
+            {
                 return false;
+            }
 
             return BeginKiting(String.Format("BP: back peddle initiated due to {0} @ {1:F1} yds", mob.Name, mob.Distance));
         }

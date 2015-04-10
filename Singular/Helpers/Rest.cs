@@ -40,6 +40,14 @@ namespace Singular.Helpers
             get { return Me.GotAlivePet && Me.PetInCombat; }
         }
 
+        public static bool IsEatingOrDrinking
+        {
+            get
+            {
+                return Me.HasAnyAura("Drink", "Food", "Refreshment");
+            }
+        }
+
         /// <summary>
         /// implements standard Rest behavior.  self-heal optional and typically used by DPS that have healing spell, 
         /// as healing specs are better served using a spell appropriate to amount of healing needed.  ressurrect
@@ -60,7 +68,7 @@ namespace Singular.Helpers
                         new Decorator(
                             ret =>
                             {
-                                if (Me.HasAnyAura("Drink", "Food", "Refreshment"))
+                                if (IsEatingOrDrinking)
                                     return false;
                                 if (spellHeal == null || Me.HealthPercent > 85)
                                     return false;

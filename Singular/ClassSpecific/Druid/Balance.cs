@@ -87,89 +87,20 @@ namespace Singular.ClassSpecific.Druid
         #region Heal
 
 
-        private static WoWUnit _CrowdControlTarget;
-
-        [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidBalance)]
+        [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Normal, priority: 999)]
+        [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Battlegrounds, priority: 999)]
         public static Composite CreateDruidBalanceHeal()
         {
-            return new Decorator(
-                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                new PrioritySelector(
+            return new PrioritySelector(
 
-                    CreateBalanceDiagnosticOutputBehavior(),
+                CreateBalanceDiagnosticOutputBehavior(),
 
-            #region Avoidance 
-
-                    Spell.Cast("Typhoon",
-                        ret => Me.CurrentTarget.SpellDistance() < 8 
-                            && (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || (SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.HealthPercent < 50))
-                            && Me.CurrentTarget.Class != WoWClass.Priest
-                            && (Me.CurrentTarget.Class != WoWClass.Warlock || Me.CurrentTarget.CastingSpellId == 1949 /*Hellfire*/ || Me.CurrentTarget.HasAura("Immolation Aura"))
-                            && Me.CurrentTarget.Class != WoWClass.Hunter
-                            && Me.IsSafelyFacing(Me.CurrentTarget, 90f)),
-
-                    new Decorator(
-                        ret => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.SpellDistance() < 8)
-                            && (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || SingularRoutine.CurrentWoWContext == WoWContext.Normal),
-                        CreateDruidBalanceAvoidanceBehavior(CreateSlowMeleeBehavior(), null, null)
-                        ),
-
-            #endregion 
-
-                    Spell.Cast("Rejuvenation", on => Me, req => Me.HealthPercent <= DruidSettings.MoonBeastRejuvenationHealth && Me.HasAuraExpired("Rejuvenation", 1)),
-
-                    Spell.BuffSelf("Renewal", ret => Me.HealthPercent < DruidSettings.SelfRenewalHealth),
-                    Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < DruidSettings.SelfCenarionWardHealth),
-
-                    new Decorator(
-                        ret => Me.HealthPercent < DruidSettings.SelfHealingTouchHealth || (_CrowdControlTarget != null && _CrowdControlTarget.IsValid && (_CrowdControlTarget.IsCrowdControlled() || Spell.DoubleCastContainsAny( _CrowdControlTarget, "Disorienting Roar", "Mighty Bash", "Cyclone", "Hibernate"))),
-                        new PrioritySelector(
-
-                            Spell.Buff("Disorienting Roar", req => !Me.CurrentTarget.Stunned && !Me.CurrentTarget.IsCrowdControlled()),
-                            Spell.Buff("Mighty Bash", req => !Me.CurrentTarget.Stunned && !Me.CurrentTarget.IsCrowdControlled()),
-
-                            new Decorator(
-                                ret => 1 == Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count(),
-                                new PrioritySelector(
-                                    new Action(r =>
-                                    {
-                                        if (_CrowdControlTarget == null || !_CrowdControlTarget.IsValid || _CrowdControlTarget.Distance > 40)
-                                        {
-                                            _CrowdControlTarget = Unit.NearbyUnfriendlyUnits
-                                                .Where(u => u.CurrentTargetGuid == Me.Guid && u.Combat && !u.IsCrowdControlled())
-                                                .OrderByDescending(k => k.IsPlayer)
-                                                .ThenBy(k => k.Guid == Me.CurrentTargetGuid)
-                                                .ThenBy(k => k.Distance2DSqr)
-                                                .FirstOrDefault();
-                                        }
-                                        return RunStatus.Failure;
-                                    }),
-
-                                    Spell.Buff("Hibernate", true, ctx => _CrowdControlTarget, req => _CrowdControlTarget.IsBeast || _CrowdControlTarget.IsDragon, "Hibernate", "Cyclone"),
-                                    Spell.Buff("Cyclone", true, ctx => _CrowdControlTarget, req => true, "Hibernate", "Cyclone")
-                                    )
-                                ),
-
-                            // heal out of form at this point (try to Barkskin at least to prevent spell pushback)
-                            new Throttle(Spell.BuffSelf("Barkskin")),
-
-                            new Decorator(
-                                req => !Group.AnyHealerNearby && (Me.CurrentTarget.TimeToDeath() > 15 || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1),
-                                new PrioritySelector(
-                                    Spell.BuffSelf("Nature's Vigil"),
-                                    Spell.BuffSelf("Heart of the Wild")
-                                    )
-                                ),
-
-                            new PrioritySelector(
-                                Spell.Cast("Rejuvenation", on => Me, ret => Me.HasAuraExpired("Rejuvenation")),
-                                Spell.Cast("Healing Touch", mov => true, on => Me, req => Me.PredictedHealthPercent(includeMyHeals: true) < 90, req => Me.HealthPercent > 95)
-                                )
-                            )
-                        ),
-
-                    Spell.Cast("Healing Touch", on => Me, req => Me.HealthPercent <= DruidSettings.MoonBeastHealingTouch && Me.HasAuraExpired("Rejuvenation", 1))
+                new Decorator(
+                    req => Me.Combat 
+                        && Me.HealthPercent < DruidSettings.SelfHealingTouchHealth && Me.GetPredictedHealthPercent(true) < DruidSettings.SelfHealingTouchHealth,
+                    Common.CreateDruidCrowdControl()
                     )
+
                 );
         }
 
@@ -220,10 +151,7 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Buff("Sunfire", ret => Me.CurrentEclipse > 0),
                         Spell.Buff("Moonfire", req => Me.CurrentEclipse <= 0)
                         )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
-                // Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
+                    )
                 );
         }
 
@@ -241,7 +169,8 @@ namespace Singular.ClassSpecific.Druid
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        // SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.Instance.HealBehavior,
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         new Action(r =>
@@ -667,66 +596,6 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 
-
-        #region Avoidance and Disengage
-
-        /// <summary>
-        /// creates a Druid specific avoidance behavior based upon settings.  will check for safe landing
-        /// zones before using WildCharge or rocket jump.  will additionally do a running away or jump turn
-        /// attack while moving away from attacking mob if behaviors provided
-        /// </summary>
-        /// <param name="nonfacingAttack">behavior while running away (back to target - instants only)</param>
-        /// <param name="jumpturnAttack">behavior while facing target during jump turn (instants only)</param>
-        /// <returns></returns>
-        public static Composite CreateDruidBalanceAvoidanceBehavior(Composite slowAttack, Composite nonfacingAttack, Composite jumpturnAttack)
-        {
-            return Avoidance.CreateAvoidanceBehavior( "Wild Charge", 20, Disengage.Direction.Backwards, slowAttack ?? new ActionAlwaysSucceed() );
-        }
-
-        private static Composite CreateSlowMeleeBehavior()
-        {
-            return new PrioritySelector(
-                ctx => SafeArea.NearestEnemyMobAttackingMe,
-                new Decorator(
-                    ret => ret != null,
-                    new PrioritySelector(
-                        new Throttle( 2,
-                            new PrioritySelector(
-                                new Decorator( 
-                                    req => (req as WoWUnit).IsCrowdControlled(),
-                                    new Action(r => Logger.WriteDebug("SlowMelee: closest mob already crowd controlled"))
-                                    ),
-                                Spell.CastOnGround("Ursol's Vortex", on => (WoWUnit)on, req => Me.GotTarget(), false),
-                                Spell.Buff("Disorienting Roar", onUnit => (WoWUnit)onUnit, req => true),
-                                Spell.Buff("Mass Entanglement", onUnit => (WoWUnit)onUnit, req => true),
-                                Spell.Buff("Mighty Bash", onUnit => (WoWUnit)onUnit, req => true),
-                                new Throttle( 1, Spell.Buff("Faerie Swarm", onUnit => (WoWUnit)onUnit, req => true)),
-                                new Throttle( 2, Spell.Buff("Entangling Roots", false, on => (WoWUnit) on, req => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Any(u => u.Guid != (req as WoWUnit).Guid ))),
-                                new Sequence(
-                                    Spell.Cast("Typhoon", mov => false, on => (WoWUnit) on, req => (req as WoWUnit).SpellDistance() < 28 && Me.IsSafelyFacing((WoWUnit)req, 60)),
-                                    new WaitContinue(TimeSpan.FromMilliseconds(500), until => (until as WoWUnit).SpellDistance() > 30, new ActionAlwaysSucceed()),
-                                    new ActionAlwaysFail()
-                                    )
-/*
-                                new Sequence(                                   
-                                    Spell.CastOnGround("Wild Mushroom",
-                                        on => (WoWUnit) on,
-                                        req => req != null && !Spell.IsSpellOnCooldown("Wild Mushroom: Detonate")
-                                        ),
-                                    new Action( r => Logger.WriteDebug( "SlowMelee: waiting for Mushroom to appear")),
-                                    new WaitContinue( TimeSpan.FromMilliseconds(1500), until => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling() && MushroomCount > 0, new ActionAlwaysSucceed()),
-                                    new Action(r => Logger.WriteDebug("SlowMelee: found {0} mushrooms", MushroomCount)),
-                                    Spell.Cast("Wild Mushroom: Detonate")
-                                    )
-*/ 
-                                )
-                            )
-                        )
-                    )
-                );
-        }
-
-        #endregion
 
         private static bool IsStarfallNeeded
         {

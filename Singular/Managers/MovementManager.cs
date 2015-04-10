@@ -10,6 +10,8 @@ using Styx.Common.Helpers;
 using System.Collections.Generic;
 using Singular.Helpers;
 using Styx.Pathing;
+using System.Diagnostics;
+using System.IO;
 
 namespace Singular.Managers
 {
@@ -279,7 +281,53 @@ namespace Singular.Managers
         private static NoNavigation pNoNavigation = new NoNavigation();
         private static NoPlayerMovement pNoPlayerMovement = new NoPlayerMovement();
         private static NoStuckHandling pNoStuckHandling = new NoStuckHandling();
- 
+
+
+        public class PlayerMovementDebug : IPlayerMover
+        {
+            private IPlayerMover Prev { get; set; }
+            public static PlayerMovementDebug Instance { get; set; }
+
+            public static void Install()
+            {
+                Instance = new PlayerMovementDebug();
+                Instance.Prev = Navigator.PlayerMover;
+                Navigator.PlayerMover = Instance;
+            }
+
+            public static void Remove()
+            {
+                Navigator.PlayerMover = Instance.Prev;
+            }
+
+            public void Move(WoWMovement.MovementDirection direction) 
+            {
+                Logger.WriteDebug("~Move({0}): {1}", direction, StackCaller(2));
+                Instance.Prev.Move(direction);
+            }
+
+            public void MoveStop() 
+            {
+                Logger.WriteDebug("~Move(Stop): {0}", StackCaller(2));
+                Instance.Prev.MoveStop();
+            }
+
+            public void MoveTowards(WoWPoint location) 
+            {
+                Logger.WriteDebug("~Move({0}): to {1} {2}", StyxWoW.Me.Location.Distance(location), location, StackCaller(2));
+                Instance.Prev.MoveTowards(location);
+            }
+
+            public static string StackCaller(int levelsUp)
+            {
+                var stackTrace = new StackTrace(true);
+                StackFrame[] stackFrames = stackTrace.GetFrames();
+                StackFrame frame = stackFrames[1 + levelsUp];
+                return string.Format("{0}, {1} line {2}", frame.GetMethod().Name, Path.GetFileName(frame.GetFileName()), frame.GetFileLineNumber());
+            }
+
+        }
+
         #endregion
     }
 }

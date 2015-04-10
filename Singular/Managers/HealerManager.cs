@@ -42,6 +42,8 @@ namespace Singular.Managers
 
         private static readonly WaitTimer _tankReset = WaitTimer.ThirtySeconds;
 
+        private int HealTargetCount { get; set; }
+
         // private static ulong _tankGuid;
 
         static HealerManager()
@@ -55,6 +57,11 @@ namespace Singular.Managers
         // following property is set by BT implementations for spec + context
         // .. and controls whether we should include Healing support
         public static bool NeedHealTargeting { get; set; }
+
+        public static int HealthToPriority(int nHealth)
+        {
+            return nHealth == 0 ? 0 : 200 - nHealth;
+        }
 
         protected override List<WoWObject> GetInitialObjectList()
         {
@@ -176,15 +183,17 @@ namespace Singular.Managers
         protected override void DefaultRemoveTargetsFilter(List<WoWObject> units)
         {
             bool isHorde = StyxWoW.Me.IsHorde;
-            int maxHealRangeSqr;
+            float maxHealRange, maxHealRangeSqr;
 
             if (MovementManager.IsMovementDisabled)
-                maxHealRangeSqr = 40 * 40;
+                maxHealRange = 40 + Me.CombatReach;
             else
-                maxHealRangeSqr = SingularSettings.Instance.MaxHealTargetRange * SingularSettings.Instance.MaxHealTargetRange;
+                maxHealRange = SingularSettings.Instance.MaxHealTargetRange + Me.CombatReach;
 
+            maxHealRangeSqr = maxHealRange * maxHealRange;
             WoWPoint myLoc = Me.Location;
 
+            int unitsLeft = 0;
             for (int i = units.Count - 1; i >= 0; i--)
             {
                 WoWUnit unit = units[i].ToUnit();
@@ -249,6 +258,17 @@ namespace Singular.Managers
                 {
                     units.RemoveAt(i);
                     continue;
+                }
+
+                unitsLeft++;
+            }
+
+            if (unitsLeft != HealTargetCount)
+            {
+                HealTargetCount = unitsLeft;
+                if (SingularSettings.TraceHeals)
+                {
+                    Logger.WriteDiagnostic(LogColor.Hilite, "HealTargetCount: {0} units", HealTargetCount);
                 }
             }
         }
@@ -479,10 +499,18 @@ namespace Singular.Managers
                 return false;
 
             // allow casts that are close to finishing to finish regardless
-            bool castInProgress = Spell.IsCastingOrChannelling();
-            if (castInProgress && Me.CurrentCastTimeLeft.TotalMilliseconds < 333 && Me.CurrentChannelTimeLeft.TotalMilliseconds < 333)
+            bool castInProgress = Spell.IsCasting();
+            if (castInProgress && Me.CurrentCastTimeLeft.TotalMilliseconds < 333)
             {
-                Logger.WriteDebug("CancelHealerDPS: suppressing /cancel since less than 333 ms remaining");
+                Logger.WriteDebug("CancelHealerDPS: suppressing /cancel since less than 333 ms cast remaining");
+                return false;
+            }
+
+            // allow casts that are close to finishing to finish regardless
+            castInProgress = Spell.IsChannelling();
+            if (castInProgress && Me.CurrentChannelTimeLeft.TotalMilliseconds < 333)
+            {
+                Logger.WriteDebug("CancelHealerDPS: suppressing /cancel since less than 333 ms channel remaining");
                 return false;
             }
 
@@ -908,7 +936,7 @@ namespace Singular.Managers
                 if (!SingularSettings.Instance.DpsOffHealAllowed)
                     return false;
 
-                if (Me.GroupInfo.IsInRaid)
+                if (Me.GroupInfo.IsInRaid || Group.MeIsTank)
                     return false;
 
                 WoWUnit first = HealerManager.Instance.FirstUnit;
@@ -917,7 +945,7 @@ namespace Singular.Managers
                     double health = first.PredictedHealthPercent(includeMyHeals: true);
                     if (health < SingularSettings.Instance.DpsOffHealBeginPct)
                     {
-                        Logger.WriteDiagnostic("EnableOffHeal: entering off-heal mode since {0} @ {1:F1}%", first.SafeName(), health);
+                        Logger.Write(LogColor.Hilite, "^OffHeal-Start: low-health {0} @ {1:F1}%", first.SafeName(), health);
                         return true;
                     }
                 }
@@ -933,7 +961,7 @@ namespace Singular.Managers
                 if (!SingularSettings.Instance.DpsOffHealAllowed)
                     return true;
 
-                if (Me.GroupInfo.IsInRaid)
+                if (Me.GroupInfo.IsInRaid || Group.MeIsTank)
                     return true;
 
                 WoWUnit healer = null;
@@ -949,9 +977,9 @@ namespace Singular.Managers
                     return false;
 
                 if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
-                    Logger.WriteDiagnostic("DisableOffHeal: leaving off-heal mode since lowest target is {0} @ {1:F1}% and solo", lowest.SafeName(), lowest.HealthPercent);
-                else 
-                    Logger.WriteDiagnostic("DisableOffHeal: leaving off-heal mode since lowest target is {0} @ {1:F1}% and {2} is {3:F1} yds away", lowest.SafeName(), lowest.HealthPercent, healer.SafeName(), healer.Distance);
+                    Logger.Write(LogColor.Hilite, "^OffHeal-Ended: lowest is {0} @ {1:F1}% and solo", lowest.SafeName(), lowest.HealthPercent);
+                else
+                    Logger.Write(LogColor.Hilite, "^OffHeal-Ended: lowest is {0} @ {1:F1}% and {2} now {3:F1} yds away", lowest.SafeName(), lowest.HealthPercent, healer.SafeName(), healer.Distance);
                 return true;
             }
         }
@@ -965,12 +993,12 @@ namespace Singular.Managers
                 if (!_actingHealer && EnableOffHeal)
                 {
                     _actingHealer = true;
-                    Logger.WriteDiagnostic("ActingAsOffHealer: offheal enabled");
+                    Logger.Write( LogColor.Hilite, "ActingAsOffHealer: offheal enabled");
                 }
                 else if (_actingHealer && DisableOffHeal)
                 {
                     _actingHealer = false;
-                    Logger.WriteDiagnostic("ActingAsOffHealer: offheal disabled");
+                    Logger.Write( LogColor.Hilite, "ActingAsOffHealer: offheal disabled");
                 }
                 return _actingHealer;
             }

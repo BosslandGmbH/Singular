@@ -11,6 +11,7 @@ using Styx.Helpers;
 
 using LogLevel = Styx.Common.LogLevel;
 using Singular.Helpers;
+using Styx;
 
 namespace Singular
 {
@@ -251,6 +252,26 @@ namespace Singular
                 WriteDebug(clr, message, args);
         }
 
+
+        #region Helpers
+
+        public static void TellUser(string template, params object[] args)
+        {
+            string msg = string.Format(template, args);
+            Logger.Write(Color.Yellow, msg);
+            if (SingularSettings.Instance.Hotkeys().ChatFrameMessage)
+            {
+                StyxWoW.Overlay.AddToast(
+                    () => { return msg; },
+                    TimeSpan.FromMilliseconds(SingularSettings.Instance.Hotkeys().ChatFrameMessageDuration),
+                    System.Windows.Media.Colors.LightYellow,
+                    System.Windows.Media.Colors.Blue,
+                    new System.Windows.Media.FontFamily("Consolas")
+                    );
+            }
+        }
+
+        #endregion
 
     }
 

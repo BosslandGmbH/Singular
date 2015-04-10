@@ -58,7 +58,7 @@ namespace Singular.ClassSpecific.Rogue
                 if (RogueSettings.PickPocketOnlyPull)
                     Logger.Write(LogColor.Init, "Stealth: 'Auto' cast when approaching aggro range");
                 else
-                    Logger.Write(LogColor.Init, "Stealth: 'Auto' cast for Pull of Non-Trivial Targets (MaxHealth > {0})", Unit.TrivialHealth);
+                    Logger.Write(LogColor.Init, "Stealth: 'Auto' cast for targets Level {0}+)", Unit.TrivialLevel + 1);
             }
 
             return null;

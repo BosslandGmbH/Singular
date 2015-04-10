@@ -155,6 +155,7 @@ namespace Singular
             ClassSpecific.Shaman.Totems.ToSpellId(WoWTotem.SpiritLink),
             124682, // Enveloping Mist
             116694, // Surging Mist
+            145205, // Wild Mushroom (Restoration Druid)
         };
 
         public static bool IsHeal(this WoWSpell spell)

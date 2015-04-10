@@ -723,7 +723,7 @@ namespace Singular.Helpers
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),   // should be Pull or Combat 99% of the time
-                Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 30, 25),
+                Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 29, 25),
                 Helpers.Common.CreateAutoAttack(),
                 Movement.CreateEnsureMovementStoppedBehavior(25f)
                 );
@@ -739,7 +739,7 @@ namespace Singular.Helpers
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),   // should be Pull or Combat 99% of the time
-                Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 40, 36),
+                Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 39, 35),
                 Helpers.Common.CreateAutoAttack(),
                 Movement.CreateEnsureMovementStoppedBehavior(36f)
                 );

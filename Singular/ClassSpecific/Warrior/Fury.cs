@@ -244,12 +244,12 @@ namespace Singular.ClassSpecific.Warrior
                         SingleTarget(),
 
                             // Charge if we can
-                        Common.CreateChargeBehavior()
-                        )
-                    ),
+                        Common.CreateChargeBehavior(),
 
-                //Move to Melee
-                Movement.CreateMoveToMeleeBehavior(true)
+                        Common.CreateAttackFlyingOrUnreachableMobs()
+
+                        )
+                    )
                 );
         }
 

@@ -29,6 +29,8 @@ namespace Singular.Settings
         private DruidHealSettings _instance;
         private DruidHealSettings _raid;
         private DruidHealSettings _normal;
+        private DruidOffHealSettings _offhealbattleground;
+        private DruidOffHealSettings _offhealpve;
 
         [Browsable(false)]
         public DruidHealSettings Battleground { get { return _battleground ?? (_battleground = new DruidHealSettings(HealingContext.Battlegrounds)); } }
@@ -54,6 +56,22 @@ namespace Singular.Settings
             return Normal;
         }
 
+        [Browsable(false)]
+        public DruidOffHealSettings OffhealBattleground { get { return _offhealbattleground ?? (_offhealbattleground = new DruidOffHealSettings(HealingContext.Battlegrounds)); } }
+
+        [Browsable(false)]
+        public DruidOffHealSettings OffhealPVE { get { return _offhealpve ?? (_offhealpve = new DruidOffHealSettings(HealingContext.Instances)); } }
+
+        [Browsable(false)]
+        public DruidOffHealSettings OffHealSettings { get { return OffHealSettingsLookup(Singular.SingularRoutine.CurrentWoWContext); } }
+
+        public DruidOffHealSettings OffHealSettingsLookup(WoWContext ctx)
+        {
+            if (ctx == WoWContext.Battlegrounds)
+                return OffhealBattleground;
+
+            return OffhealPVE;
+        }
         #endregion
 
 
@@ -214,6 +232,13 @@ namespace Singular.Settings
                         public int NonRestoHealingTouch { get; set; }
 
                 */
+
+        [Setting]
+        [DefaultValue(95)]
+        [Category("Self Healing")]
+        [DisplayName("Rejuvenation (in form)")]
+        [Description("Health Percent to cast for self-heal when Solo (if it won't break shapeshifted form)")]
+        public int SelfRejuvInFormHealth { get; set; }
 
         [Setting]
         [DefaultValue(60)]
@@ -690,6 +715,13 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(70)]
         [Category("Restoration")]
+        [DisplayName("% Swiftmend")]
+        [Description("Health % to cast this ability at based upon single player health. Set to 0 to disable.")]
+        public int Swiftmend { get; set; }
+
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Restoration")]
         [DisplayName("% Regrowth")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int Regrowth { get; set; }
@@ -702,11 +734,11 @@ namespace Singular.Settings
         public int WildGrowth { get; set; }
 
         [Setting]
-        [DefaultValue(70)]
+        [DefaultValue(91)]
         [Category("Restoration")]
-        [DisplayName("% Swiftmend")]
-        [Description("Health % to cast this ability at based upon single player health. Set to 0 to disable.")]
-        public int Swiftmend { get; set; }
+        [DisplayName("% Wild Mushroom")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int WildMushroom { get; set; }
 
         [Setting]
         [DefaultValue(91)]
@@ -768,14 +800,21 @@ namespace Singular.Settings
         [DefaultValue(4)]
         [Category("Restoration")]
         [DisplayName("Wild Growth Min Count")]
-        [Description("Min number of players below Healing Rain % in area")]
+        [Description("Min number of players below Wild Growth % in area")]
         public int CountWildGrowth { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Restoration")]
+        [DisplayName("Wild Mushroom Min Count")]
+        [Description("Min number of players below Wild Mushroom % in area")]
+        public int CountWildMushroom { get; set; }
 
         [Setting]
         [DefaultValue(4)]
         [Category("Restoration")]
         [DisplayName("Tranquility Min Count")]
-        [Description("Min number of players below Healing Rain % in area")]
+        [Description("Min number of players below Tranquility % in area")]
         public int CountTranquility { get; set; }
 
         [Setting]
@@ -821,11 +860,125 @@ namespace Singular.Settings
         public int DreamOfCenariusAboveCount { get; set; }
 
         [Setting]
-        [DefaultValue(true)]
+        [DefaultValue(80)]
         [Category("Restoration")]
-        [DisplayName("Dream of Cenarius When Idle")]
-        [Description("True: DPS with Dream of Cenarius spells if no healing needed")]
-        public bool DreamOfCenariusWhenIdle { get; set; }
+        [DisplayName("DreamOfCenarius Cancel Health %")]
+        [Description("Cancel DreamOfCenarius Healing if any below this Health %")]
+        public int DreamOfCenariusCancelBelowHealthPercent { get; set; }
+
+    }
+
+
+    internal class DruidOffHealSettings : Singular.Settings.HealerSettings
+    {
+        private DruidOffHealSettings()
+            : base("", HealingContext.None)
+        {
+        }
+
+        public DruidOffHealSettings(HealingContext ctx)
+            : base("DruidOffheal", ctx)
+        {
+
+            // we haven't created a settings file yet,
+            //  ..  so initialize values for various heal contexts
+
+            if (!SavedToFile)
+            {
+                if (ctx == Singular.HealingContext.Battlegrounds)
+                {
+                    Rejuvenation = 95;
+                    HealingTouch = 0;
+                    CenarionWard = 80;
+                    NaturesVigil = 60;
+                }
+                else if (ctx == Singular.HealingContext.Instances)
+                {
+                    Rejuvenation = 95;
+                    HealingTouch = 70;
+                    CenarionWard = 80;
+                    NaturesVigil = 70;
+                }
+                else if (ctx == Singular.HealingContext.Raids)
+                {
+                    Rejuvenation = 94;
+                    HealingTouch = 60;
+                    CenarionWard = 85;
+                    NaturesVigil = 80;
+                }
+                // omit case for WoWContext.Normal and let it use DefaultValue() values
+            }
+
+            SavedToFile = true;
+        }
+
+        [Setting]
+        [Browsable(false)]
+        [DefaultValue(false)]
+        public bool SavedToFile { get; set; }
+
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Restoration")]
+        [DisplayName("% Rejuvenation")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int Rejuvenation { get; set; }
+
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Restoration")]
+        [DisplayName("% Healing Touch")]
+        [Description("Health % to cast this ability at. Set to 0 to disable. Overridden by Regrowth if Glyphed")]
+        public int HealingTouch { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Restoration")]
+        [DisplayName("% Cenarion Ward")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int CenarionWard { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Restoration")]
+        [DisplayName("% Nature's Vigil")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int NaturesVigil { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Restoration")]
+        [DisplayName("% Heart of the Wild")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int HeartOfTheWild { get; set; }
+
+        [Setting]
+        [DefaultValue(5)]
+        [Category("Restoration")]
+        [DisplayName("Heart of the Wild Min Count")]
+        [Description("Minimum number of players below Heart of the Wild % to cast this ability.")]
+        public int CountHeartOfTheWild { get; set; }
+
+        [Setting]
+        [DefaultValue(0)]
+        [Category("Restoration")]
+        [DisplayName("Dream of Cenarius Above %")]
+        [Description("Only Dream of Cenarius Healing done above this Health %")]
+        public int DreamOfCenariusAbovePercent { get; set; }
+
+        [Setting]
+        [DefaultValue(1)]
+        [Category("Restoration")]
+        [DisplayName("Dream of Cenarius Count")]
+        [Description("Count of Heal Targets below Dream of Cenarius Only % which allows other heal spells")]
+        public int DreamOfCenariusAboveCount { get; set; }
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Restoration")]
+        [DisplayName("DreamOfCenarius Cancel %")]
+        [Description("Cancel DreamOfCenarius Healing if any below this Health %")]
+        public int DreamOfCenariusCancelBelowHealthPercent { get; set; }
 
     }
 

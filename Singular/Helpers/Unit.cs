@@ -26,16 +26,19 @@ namespace Singular.Helpers
 {
     internal static class Unit
     {
-        public static uint TrivialHealth    { get; set; }
+        public static int TrivialLevel { get; set; }
+        public static int TrivialElite { get; set; }
         public static uint SeriousHealth { get; set; }
 
 
-        [Behavior(BehaviorType.Initialize)]
+        [Behavior(BehaviorType.Initialize, priority: int.MaxValue)]
         public static Composite InitializeUnit()
         {
-            TrivialHealth = (uint) (0.01f * SingularSettings.Instance.TrivialMaxHealthPcnt * StyxWoW.Me.MaxHealth);
+            TrivialLevel = StyxWoW.Me.Level - SingularSettings.Instance.TrivialLevelsBelow;
+            TrivialElite = StyxWoW.Me.Level - SingularSettings.Instance.TrivialEliteBelow;
 
-            Logger.WriteFile("  {0}: {1}", "TrivialHealth", Unit.TrivialHealth);
+            Logger.WriteFile("  {0}: {1}", "TrivialLevel", Unit.TrivialLevel);
+            Logger.WriteFile("  {0}: {1}", "TrivialElite", Unit.TrivialElite);
             Logger.WriteFile("  {0}: {1}", "NeedTankTargeting", TankManager.NeedTankTargeting);
             Logger.WriteFile("  {0}: {1}", "NeedHealTargeting", HealerManager.NeedHealTargeting);
             return null;
@@ -482,8 +485,10 @@ namespace Singular.Helpers
             if (unit == null)
                 return false;
 
-            uint maxh = unit.MaxHealth;
-            return maxh <= TrivialHealth;
+            if (unit.Elite)
+                return unit.Level <= TrivialElite;                
+            
+            return unit.Level <= TrivialLevel;
         }
 
         public static bool IsStressful(this WoWUnit unit)

@@ -765,7 +765,7 @@ namespace Singular
                         if (low != null)
                         {
                             float lh = low.PredictedHealthPercent();
-                            if ((SingularSettings.Instance.HealerCombatAllow && HealerManager.CancelHealerDPS()) || (!SingularSettings.Instance.HealerCombatAllow && lh < 70))
+                            if (!SingularSettings.Instance.HealerCombatAllow && lh < 70)
                             {
                                 Logger.WriteDebug("Healer ABC Warning: no cast in progress detected, low health {0} {1:F1}% @ {2:F1} yds", low.SafeName(), lh, low.SpellDistance());
                                 _nextAbcWarning = DateTime.Now + TimeSpan.FromSeconds(1);

@@ -170,6 +170,8 @@ namespace Singular.GUI
                 cboHealContext.Items.Add(new HealContextItem(HealingContext.Battlegrounds, WoWSpec.DruidRestoration, SingularSettings.Instance.Druid().Battleground));
                 cboHealContext.Items.Add(new HealContextItem(HealingContext.Instances, WoWSpec.DruidRestoration, SingularSettings.Instance.Druid().Instance));
                 cboHealContext.Items.Add(new HealContextItem(HealingContext.Raids, WoWSpec.DruidRestoration, SingularSettings.Instance.Druid().Raid));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Battlegrounds, WoWSpec.None, SingularSettings.Instance.Druid().OffhealBattleground));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Instances, WoWSpec.None, SingularSettings.Instance.Druid().OffhealPVE));
             }
 
             if (cls == WoWClass.Monk)

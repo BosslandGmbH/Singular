@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -320,15 +320,6 @@ if $(ConfigurationName) == Bobby53 (
 rd /s /q "c:\HB\Routines\Singular"
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "c:\HB\Routines\Singular\" /i /f /s /v /y
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "c:\HB\Routines\Singular\" /i /f /v /y
-rd /s /q "c:\HBB\Routines\Singular"
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "c:\HBB\Routines\Singular\" /i /f /s /v /y
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "c:\HBB\Routines\Singular\" /i /f /v /y
-rd /s /q "c:\HB-BRODIE\Routines\Singular"
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "c:\HB-BRODIE\Routines\Singular\" /i /f /s /v /y
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "c:\HB-BRODIE\Routines\Singular\" /i /f /v /y
-rd /s /q "c:\HB-BRODIE2\Routines\Singular"
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "c:\HB-BRODIE2\Routines\Singular\" /i /f /s /v /y
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "c:\HB-BRODIE2\Routines\Singular\" /i /f /v /y
 )
 
 if $(ConfigurationName) == HighVoltz (

@@ -297,11 +297,12 @@ namespace Singular.ClassSpecific.Warrior
                                 )
                             ),
 
-                        Common.CreateChargeBehavior()
-                        )
-                    ),
+                        Common.CreateChargeBehavior(),
 
-                Movement.CreateMoveToMeleeBehavior(true)
+                        Common.CreateAttackFlyingOrUnreachableMobs()
+
+                        )
+                    )
                 );
         }
 

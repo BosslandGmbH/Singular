@@ -763,7 +763,7 @@ namespace Singular.ClassSpecific.Monk
             if (TalentManager.CurrentSpec == WoWSpec.MonkMistweaver && SingularRoutine.CurrentWoWContext != WoWContext.Normal)
             {
                 return new Decorator(
-                    req => !Spell.IsSpellOnCooldown("Chi Burst") && !Me.CurrentTarget.IsBoss()
+                    req => Me.GotTarget() && !Spell.IsSpellOnCooldown("Chi Burst") && !Me.CurrentTarget.IsBoss()
                         && 3 <= Clusters.GetPathToPointCluster(Me.Location.RayCast(Me.RenderFacing, 40f), HealerManager.Instance.TargetList.Where(m => Me.IsSafelyFacing(m, 25)), 5f).Count(),
                     Spell.Cast("Chi Burst",
                         mov => true,
@@ -775,7 +775,7 @@ namespace Singular.ClassSpecific.Monk
             }
 
             return new Decorator(
-                req => !Spell.IsSpellOnCooldown("Chi Burst") && !Me.CurrentTarget.IsBoss() 
+                req => Me.GotTarget() && !Spell.IsSpellOnCooldown("Chi Burst") && !Me.CurrentTarget.IsBoss() 
                     && 3 <= Clusters.GetPathToPointCluster( Me.Location.RayCast(Me.RenderFacing, 40f), Unit.NearbyUnfriendlyUnits.Where( m => Me.IsSafelyFacing(m,25)), 5f).Count(),
                 Spell.Cast("Chi Burst",
                     mov => true,

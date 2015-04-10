@@ -32,10 +32,29 @@ namespace Singular.ClassSpecific.Druid
 
         #region Common
 
+        public static bool talentBloodtalons { get; set; }
+
+        [Behavior(BehaviorType.Initialize, WoWClass.Druid, WoWSpec.DruidFeral)]
+        public static Composite CreateFeralDruidInitialize()
+        {
+            talentBloodtalons = Common.HasTalent(DruidTalents.Bloodtalons);
+            if (talentBloodtalons)
+            {
+                if (SingularRoutine.CurrentHealContext == HealingContext.Raids)
+                    Logger.Write(LogColor.Init, "Bloodtalons: Predatory Swiftness Healing Touch saved until 4+ combat points");
+                else
+                    Logger.Write(LogColor.Init, "Bloodtalons: save Predatory Swiftness Healing Touch until 4+ combat points or {0}%", DruidSettings.PredSwiftnessHealingTouchHealth);
+            }
+
+            return null;
+        }
+
         [Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All, 1)]
         public static Composite CreateFeralDruidRest()
         {
             return new PrioritySelector(
+
+/* cp's are retained now, so don't consume just because they exist
                 new Throttle(10,
                     new Decorator(
                         ret => SpellManager.HasSpell("Savage Roar")
@@ -50,11 +69,9 @@ namespace Singular.ClassSpecific.Druid
                             )
                         )
                     ),
-
-                Common.CreateProwlBehavior(ret => Me.HasAnyAura("Drink", "Food", "Refreshment")),
-
+*/
                 new Decorator(
-                    ret => !Me.HasAnyAura("Drink", "Food", "Refreshment")
+                    ret => !Rest.IsEatingOrDrinking
                         && Me.HasAura("Predatory Swiftness")
                         && (Me.PredictedHealthPercent(includeMyHeals: true) < 95),
                     new PrioritySelector(
@@ -65,7 +82,9 @@ namespace Singular.ClassSpecific.Druid
                             req => true,
                             cancel => Me.HealthPercent > 95 )
                         )
-                    )
+                    ),
+
+                Common.CreateProwlBehavior(ret => Rest.IsEatingOrDrinking)
 
                 // remainder of rest behavior in common.cs CreateNonRestoDruidRest()                     
                 );
@@ -102,10 +121,9 @@ namespace Singular.ClassSpecific.Druid
                                 }),
 
                                 Spell.Buff("Moonfire", req => Common.HasTalent(DruidTalents.LunarInspiration)),
-
                                 CreateFeralFaerieFireBehavior(),
+                                Spell.Buff("Moonfire"),
 
-                                Spell.Cast("Moonfire", ret => Me.CurrentTarget.Distance < 40),
                                 Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 27f, 22f)
                                 )
                             ),
@@ -215,11 +233,63 @@ namespace Singular.ClassSpecific.Druid
         }
 
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All, 999)]
-        public static Composite CreateFeralCombatHeal()
+        public static Composite CreateFeralHeal()
         {
             return new PrioritySelector(
                 new Action(ret => { _currTargetTimeToDeath = Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
-                CreateFeralDiagnosticOutputBehavior("Combat")
+                CreateFeralDiagnosticOutputBehavior("Combat"),
+
+                Spell.BuffSelf("Survival Instincts", req => Me.HealthPercent < DruidSettings.SurvivalInstinctsHealth),
+
+                Spell.Cast(
+                    "Healing Touch",
+                    on =>
+                    {
+                        int pstime = (int) Me.GetAuraTimeLeft("Predatory Swiftness").TotalMilliseconds;
+                        if (pstime < 150)
+                            return null;
+
+                        WoWUnit unit = null;
+                        if (talentBloodtalons && (Me.ComboPoints >= 4 || pstime < 1650))
+                        {
+                            unit = Unit.GroupMembers
+                                .Where( u => u.IsAlive && Spell.CanCastHack("Healing Touch", u))
+                                .OrderBy( u => (int) u.HealthPercent )
+                                .FirstOrDefault();
+
+                            if (unit == null && Spell.CanCastHack("Healing Touch", Me))
+                                unit = Me;
+
+                            if (unit != null)
+                                Logger.Write(LogColor.Hilite, "^Bloodtalons: buffing bleeds");
+
+                            return unit;
+                        }
+
+                        // raids: don't waste a GCD on healing without a buff
+                        if (SingularRoutine.CurrentHealContext == HealingContext.Raids)
+                            return null;
+
+                        // else: find lowest health unit
+                        unit = HealerManager.NeedHealTargeting 
+                            ? HealerManager.FindHighestPriorityTarget() 
+                            : Unit.GroupMembers
+                                .Where( u => u.IsAlive && Spell.CanCastHack("Healing Touch", u))
+                                .OrderBy( u => (int) u.HealthPercent )
+                                .FirstOrDefault();
+
+                        if (unit != null)
+                        {
+                            if (unit.HealthPercent < DruidSettings.PredSwiftnessHealingTouchHealth)
+                                return unit;
+                            if (unit.HealthPercent < 90 && pstime < 1650)
+                                return unit;
+                            unit = null;
+                        }
+
+                        return unit;
+                    }
+                    )
                 );
         }
 
@@ -228,7 +298,9 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateFeralCombatBuffs()
         {
             return new PrioritySelector(
+
                 Common.CastForm(ShapeshiftForm.Cat, req => Me.Shapeshift != ShapeshiftForm.Cat && !Utilities.EventHandlers.IsShapeshiftSuppressed)
+
                 );
         }
 

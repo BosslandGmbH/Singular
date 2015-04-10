@@ -1,4 +1,66 @@
 
+--- Release 4.0.0.#### ---
+
+General
+
+change- Trivial Mobs: mobs which are trivial are now identified by a difference in Level rather than difference in Max Health.  See the new settings Trivial Mob Level Delta (default 8) and Trivial Mob Elite Delta (default 15)
+
+change- Pull More: can now be active when in a Group using the Instances behaviors.  Note: if Pull More Allowed = 'Auto' (which is the default) this behavior is only allowed when using the Questing or Grind Bots, so will not interfere with use of DungeonBuddy or other BotBases.
+
+fixed - Ranged Pull Movement: in rage edge cases, was stopping at 40 yds but still unable to attack target.  Have reduced desired range to 39 yds to provide small buffer
+
+change- Offheal: will now output message indicating when Group Offhealing has been activated (due to low group member health) and when it has deactivated (due to group health recovery)
+
+
+Druid
+
+*new* - All Specs - Root Break: will now shapeshift when Solo or in Battlegrounds and rooted
+
+*new* - Balance/Feral - Offheal Support: will now use the settings on Class Config -> General and Class Config -> Group Healing to control the offhealing of group members and companions.
+
+*new* - Feral - Bloodtalons: support for casting Healing Touch with 4+ combo points if Predatory Swiftness has procced
+
+fixed - All Specs - Self-Heal Interruption; Healing Touch when non-instant and player is solo will now wait for cast completion to prevent other components from interrrupting cast in progress
+
+fixed - All Specs - Entangling Roots: cast only on melee attackers at range and only if it will not break current form
+
+fixed - All Specs - Solo Use of DPS Cooldowns: revised to avoid wasting if targets out of range.  will also cast if in combat with a number of adds
+
+fixed - Resto - Rest: would sometimes interrupt drinking if group member needed heal.  Will now complete mana replenishment first if in progress
+
+
+Monk
+
+fixed - All Specs - Chi Burst: was throwing an exception interfering with spell priority when no current target existed
+
+
+Rogue
+
+fixed - All Specs - Stealth; was previously not cast when Pull target is a trivial mob, and many mobs encountered while leveling were errantly being considered trivial.  Method used for trivial mob detection in Singular has changed.  While this does not represent a change directly to Stealth logic, you will notice Stealth being correctly cast i nmost cases now where it wasnt previously due to the trivial mob change
+
+
+Shaman
+
+fixed - Enhancement - Interupted Drinking/Eating: was in some cases interrupting eating/drinking to self-heal during Rest.  Will now allow replenishment to complete 
+
+
+Warlock
+
+fixed - All Specs - Pets: were not being sent to attack due to bug in warlock specific behavior priority
+
+
+Warrior
+
+fixed - Protection - Heroic Strike: was not being cast often enough as it was not correctly reflected in the spell priority.  
+
+fixed - Protection - Ultimatum Procs: should now be recognized at highest priority.  Will also emit log message indicating that was reason for the Heroic Strike
+
+fixed - All Specs - Ranged Attacks: will now use ranged attacks during Combat at the lowest priority (meaning Charge / Heroic Leap are on cooldown or not available.)
+
+change- All Specs - Ranged Attacks: previously only allowed Heroic Throw and Throw as attack on ranged mobs we cannot reach.  Now will use other abilities which have a range which extends beyond melee if target will be hit
+
+
+
 --- Release 4.0.0.4557 ---
 
 General

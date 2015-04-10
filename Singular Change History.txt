@@ -20,6 +20,8 @@ Druid
 
 *new* - Feral - Bloodtalons: support for casting Healing Touch with 4+ combo points if Predatory Swiftness has procced
 
+change- Feral - Comb Points: was consuming Combo Points remaining at Rest for Savage Roar.  Now saved for subsequent combat
+
 fixed - All Specs - Self-Heal Interruption; Healing Touch when non-instant and player is solo will now wait for cast completion to prevent other components from interrrupting cast in progress
 
 fixed - All Specs - Entangling Roots: cast only on melee attackers at range and only if it will not break current form

@@ -1,4 +1,39 @@
 
+--- Release 4.0.0.4631 ---
+
+General
+
+change- Frost Immune: Aquantion #16292 now explicitly added to Frost Immune list
+
+fixed - Pet Attack: was being unnecessarily repeated on Pets current target in some cases.
+
+*new* - Death Behavior: settings available to control length of time to wait and amount of safe distance (clear of mobs) prior to using Ankh or Soulstone ressurection
+
+*new* - Totem Targeting: will now target and destroy totems set by Current Target if NPC.  Setting added to Class Config to allow disabling this ability.  Will attempt to target totem a maximum of once per 15 seconds.
+
+
+Death Knight
+
+fixed - Frost / Unholy - Pull: was casting Outbreak followed by Howling Blast or Icy Touch due to buffs not being visible quickly enough in client. Will now throttle disease application in Pull
+
+fixed - All Specs - Dark Succor: the Death Strike performed was inadvertently using too restricted a range for testing if facing Mob.
+
+
+Mage
+
+fixed - Frost - Frost Immune Handling: a check for Frost Immunity was missing from a cast of Fire Blast (low priority and only used prior to learning Ice Lance or on Frost Immune mobs)
+
+fixed - Frost - Frost Immune Handling: a check for Frost Immunity was missing from a cast of Frostbolt and failing to suppress
+
+
+Warrior
+
+change - All Specs - Enemies Flying/Above Ground: added Taunt as highest priority ability used when these targets are at range
+
+
+
+
+
 --- Release 4.0.0.4603 ---
 
 General

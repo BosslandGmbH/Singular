@@ -154,13 +154,16 @@ namespace Singular.ClassSpecific.Mage
                                 Spell.Buff("Living Bomb", 0, on => Me.CurrentTarget, req => true),
                                 Spell.Cast("Ice Lance", ret =>
                                 {
+                                    if (Me.GotTarget && Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost))
+                                        return false;
+
                                     if (!Spell.CanCastHack("Ice Lance", Me.CurrentTarget))
                                         return false;
 
                                     Logger.Write("^Fast Pull: casting Ice Lance for instant cast pull");
                                     return true;
                                 }),
-                                Spell.Cast("Fire Blast", req => !SpellManager.HasSpell("Ice Lance"))
+                                Spell.Cast("Fire Blast", req => !SpellManager.HasSpell("Ice Lance") || Me.CurrentTarget.IsImmune( WoWSpellSchool.Frost))
                                 )
                             ),
             #endregion
@@ -178,10 +181,13 @@ namespace Singular.ClassSpecific.Mage
                                 )
                             ),
 
-                        Spell.Cast("Frostbolt", ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+                        Spell.Cast("Frostbolt", ret => Me.GotTarget() && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                         Spell.Cast("Frostfire Bolt"),
                         Spell.Cast("Ice Lance", ret =>
                         {
+                            if (Me.GotTarget && Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost))
+                                return false;
+
                             if (!Spell.CanCastHack("Ice Lance", Me.CurrentTarget))
                                 return false;
 
@@ -191,8 +197,8 @@ namespace Singular.ClassSpecific.Mage
                             Logger.WriteDiagnostic("Ice Lance: casting while moving");
                             return true;
                         }),
-                        Spell.Cast("Fire Blast", req => !SpellManager.HasSpell("Ice Lance"))
 
+                        Spell.Cast("Fire Blast", req => !SpellManager.HasSpell("Ice Lance") || Me.GotTarget() && Me.CurrentTarget.IsImmune( WoWSpellSchool.Frost))
                         )
                     ),
 
@@ -232,7 +238,7 @@ namespace Singular.ClassSpecific.Mage
                 ctx => new ILInfo(ondel(ctx), Me.GetAuraStacks(FINGERS_OF_FROST), ctx),
                 new Decorator(
                 // req => Spell.CanCastHack("Ice Lance", (req as ILInfo).Unit) && ((req as ILInfo).Unit != null && ((req as ILInfo).StacksOfFOF > 0 || (req as ILInfo).Unit.IsTrivial())),
-                    req => ILInfo.Ref(req).Unit != null && ILInfo.Ref(req).StacksOfFOF > 0 && Spell.CanCastHack("Ice Lance", ILInfo.Ref(req).Unit),
+                    req => ILInfo.Ref(req).Unit != null && ILInfo.Ref(req).StacksOfFOF > 0 && Spell.CanCastHack("Ice Lance", ILInfo.Ref(req).Unit) && !ILInfo.Ref(req).Unit.IsImmune(WoWSpellSchool.Frost),
                     new Sequence(
                         new Action(r => Logger.Write(LogColor.Hilite, "^Fingers of Frost[{0}]: casting buffed Ice Lance", ILInfo.Ref(r).StacksOfFOF)),
                         Spell.Cast("Ice Lance", mov => false, o => ILInfo.Ref(o).Unit, r => reqdel(ILInfo.Ref(r).SaveContext)),    // ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) < 4),
@@ -258,7 +264,7 @@ namespace Singular.ClassSpecific.Mage
             return new Sequence(
                 ctx => new ILInfo(ondel(ctx), Me.GetAuraStacks(FINGERS_OF_FROST), ctx),
                 new Decorator(
-                    req => ILInfo.Ref(req).Unit != null && (ILInfo.Ref(req).StacksOfFOF > 0 || ILInfo.Ref(req).Unit.IsTrivial()) && Spell.CanCastHack("Ice Lance", ILInfo.Ref(req).Unit),
+                    req => ILInfo.Ref(req).Unit != null && (ILInfo.Ref(req).StacksOfFOF > 0 || ILInfo.Ref(req).Unit.IsTrivial()) && Spell.CanCastHack("Ice Lance", ILInfo.Ref(req).Unit) && !ILInfo.Ref(req).Unit.IsImmune(WoWSpellSchool.Frost),
                     new Sequence(
                         Spell.Cast("Ice Lance", o => ((ILInfo)o).Unit, r => reqdel(ILInfo.Ref(r).SaveContext)),
                         Helpers.Common.CreateWaitForLagDuration(
@@ -403,10 +409,12 @@ namespace Singular.ClassSpecific.Mage
 
                         // on mobs that will live a long time, build up the debuff... otherwise react to procs more quickly
                         // this is the main element that departs from normal instance rotation
-                        Spell.Cast("Frostbolt", 
+                        Spell.Cast(
+                            "Frostbolt", 
                             ret => Me.CurrentTarget.TimeToDeath(20) >= 20
                                 && (!Me.CurrentTarget.HasAura("Frostbolt", 3) || Me.CurrentTarget.HasAuraExpired("Frostbolt", 3)) 
-                                && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+                                && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)
+                            ),
 
                         new Throttle( 1,
                             new Decorator( 

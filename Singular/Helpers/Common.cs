@@ -186,6 +186,8 @@ namespace Singular.Helpers
                                     }
                                 }                                
                             }
+
+                            return RunStatus.Failure;
                         })
                         )
                     );
@@ -216,7 +218,7 @@ namespace Singular.Helpers
                                     {
                                         // pickup aggroed mobs I'm not attacking (grab easy agro first)
                                         WoWUnit aggroedOnMe = Unit.NearbyUnfriendlyUnits
-                                            .Where(u => u.Combat && u.GotTarget() && u.CurrentTarget.IsMe && u.Guid != Me.CurrentTargetGuid && !u.IsCrowdControlled())
+                                            .Where(u => u.CurrentTargetGuid == Me.Guid && u.Combat && !u.IsCrowdControlled())
                                             .OrderBy(u => u.Location.DistanceSqr(Me.Pet.Location))
                                             .FirstOrDefault();
                                         
@@ -224,7 +226,7 @@ namespace Singular.Helpers
                                         if (aggroedOnMe == null)
                                             aggroedOnMe = Me.CurrentTarget;
 
-                                        if (aggroedOnMe != null)
+                                        if (aggroedOnMe != null && Me.Pet.CurrentTargetGuid != aggroedOnMe.Guid)
                                         {
                                             if (SingularSettings.Debug)
                                             {
@@ -242,6 +244,8 @@ namespace Singular.Helpers
                                     }
                                 }                                
                             }
+
+                            return RunStatus.Failure;
                         })
                         )
                     );

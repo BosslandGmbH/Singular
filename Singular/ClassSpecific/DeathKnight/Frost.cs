@@ -12,6 +12,11 @@ using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Styx.CommonBot;
+using System.Drawing;
+using System;
+
+using Action = Styx.TreeSharp.Action;
+using Rest = Singular.Helpers.Rest;
 
 namespace Singular.ClassSpecific.DeathKnight
 {
@@ -849,5 +854,78 @@ namespace Singular.ClassSpecific.DeathKnight
             public static int tier17_2pc { get { return StyxWoW.Me.HasAura("Item - Death Knight T17 Frost 2P Bonus") ? 1 : 0; } }
         }
 
+        #region Diagnostics
+
+        [Behavior(BehaviorType.Pull, WoWClass.DeathKnight, WoWSpec.DeathKnightFrost, WoWContext.All, 99)]
+        [Behavior(BehaviorType.Heal, WoWClass.DeathKnight, WoWSpec.DeathKnightFrost, WoWContext.All, 99)]
+        public static Composite CreateDeathKnightFrostDiagnostic()
+        {
+            return CreateCombatDiagnosticOutputBehavior(
+                Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull ? "PULL" : "COMBAT"
+                );
+        }
+
+        private static Composite CreateCombatDiagnosticOutputBehavior(string sState = "")
+        {
+            if (!SingularSettings.Debug)
+                return new Action(ret => { return RunStatus.Failure; });
+
+            return new Decorator(
+                req => !Spell.IsGlobalCooldown(),
+                new ThrottlePasses(
+                    TimeSpan.FromMilliseconds(1000),
+                    new Action(ret =>
+                    {
+                        string sMsg;
+                        sMsg = string.Format(".... [{0}] h={1:F1}%, e={2:F1}%, runes(b{3} f{4} u{5} d{6}), moving={7}, how={8}, fog={9}, drksuc={10}, soulreap={11}",
+                            sState,
+                            Me.HealthPercent,
+                            runic_power,
+                            blood,
+                            frost,
+                            unholy,
+                            death,
+                            Me.IsMoving,
+                            (int)Me.GetAuraTimeLeft("Horn of Winter", true).TotalSeconds,
+                            (long)Me.GetAuraTimeLeft(Common.FreezingFog).TotalSeconds,
+                            (long)Me.GetAuraTimeLeft(Common.KillingMachine).TotalSeconds,
+                            (long)Me.GetAuraTimeLeft("Dark Succor").TotalSeconds,
+                            (long) Me.GetAuraTimeLeft("Soul Reaper").TotalSeconds
+                            );
+
+                        WoWUnit target = Me.CurrentTarget;
+                        if (target != null)
+                        {
+                            sMsg += string.Format(
+                                ", {0}, {1:F1}%, dies {2}, {3:F1} yds, inmelee={4}, loss={5}, ff={6:F1}, bp={7:F1}, np={8:F1}, disticking={9}",
+                                target.SafeName(),
+                                target.HealthPercent,
+                                target.TimeToDeath(),
+                                target.Distance,
+                                target.IsWithinMeleeRange.ToYN(),
+                                target.InLineOfSpellSight,
+                                dot.frost_fever_remains,
+                                dot.blood_plague_remains,
+                                dot.necrotic_plague_remains,
+                                disease.ticking.ToYN()
+                                );
+                        }
+
+                        if (!Me.GotAlivePet)
+                            sMsg += ", no pet";
+                        else
+                            sMsg += string.Format(", peth={0:F1}%, drktrns={1}",
+                                Me.Pet.HealthPercent,
+                                Me.Pet.ActiveAuras.ContainsKey("Dark Transformation").ToYN()
+                                );
+
+                        Logger.WriteDebug(Color.LightYellow, sMsg);
+                        return RunStatus.Failure;
+                    })
+                    )
+                );
+        }
+
+        #endregion
     }
 }

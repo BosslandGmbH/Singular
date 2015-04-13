@@ -26,6 +26,9 @@ namespace Singular.Helpers
     {
         private static Color targetColor = LogColor.Targeting;
 
+        private static WoWGuid guidPrevTotem { get; set; }
+        private static DateTime timePrevTotem { get; set; }
+        
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
         private static DateTime _timeNextInvalidTargetMessage = DateTime.MinValue;
@@ -129,6 +132,37 @@ namespace Singular.Helpers
                                         }
                                     }
                                 }
+                                #endregion
+
+                                #region TOTEM KILLER
+
+                                if (SingularRoutine.CurrentWoWContext == WoWContext.Normal && SingularSettings.Instance.TargetCurrentTargetTotems)
+                                {
+                                    if (Me.GotTarget() && !Me.CurrentTarget.IsPlayer && Unit.ValidUnit(Me.CurrentTarget))
+                                    {
+                                        if (Me.CurrentTarget.IsTotem)
+                                        {
+                                            if (Me.CurrentTarget.SummonedByUnit != null && !Me.CurrentTarget.SummonedByUnit.IsPlayer)
+                                            {
+                                                return Me.CurrentTarget;
+                                            }
+                                        }
+                                        else if ((DateTime.UtcNow - timePrevTotem).TotalSeconds > 15)
+                                        {
+                                            float range = Me.IsMelee() ? 15 : 39;
+                                            WoWUnit totem = ObjectManager.GetObjectsOfType<WoWUnit>(false, false)
+                                                .FirstOrDefault(t => t.IsTotem && guidPrevTotem != t.Guid && t.SummonedByUnitGuid == Me.CurrentTargetGuid && Unit.ValidUnit(t) && t.SpellDistance() < range);
+                                            if (totem != null)
+                                            {
+                                                guidPrevTotem = totem.Guid;
+                                                timePrevTotem = DateTime.UtcNow;
+                                                Logger.Write(targetColor, "Switching to Totem: {0} set by {1}", totem.Name, totem.SummonedUnit.SafeName());
+                                                return totem;
+                                            }
+                                        }
+                                    }
+                                }
+
                                 #endregion
 
 #if ALWAYS_SWITCH_TO_BOTPOI

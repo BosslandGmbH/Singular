@@ -523,6 +523,8 @@ namespace Singular.GUI
                 SetLabelColumnWidth(pgGeneral, 205);
             else if (tabControl1.SelectedIndex == 1)
                 SetLabelColumnWidth(pgClass, 205);
+            else if (tabControl1.SelectedTab.Text == "Group Healing")
+                SetLabelColumnWidth(pgHeal, 205);
         }
 
         private void groupBox2_Enter(object sender, EventArgs e)

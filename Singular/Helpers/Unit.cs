@@ -1528,6 +1528,52 @@ namespace Singular.Helpers
             return ProfileManager.CurrentProfile != null && ProfileManager.CurrentProfile.AvoidMobs != null && ProfileManager.CurrentProfile.AvoidMobs.Contains(unit.Entry);
         }
 
+
+        public static bool IsFlyingOrUnreachableMob(this WoWUnit unit)
+        {
+            if (!StyxWoW.Me.GotTarget())
+                return false;
+
+            // return immediately if already in melee range
+            if (StyxWoW.Me.CurrentTarget.IsWithinMeleeRange)
+                return false;
+
+            // ignore players above ground
+            if (StyxWoW.Me.CurrentTarget.IsPlayer)
+                return false;
+
+            // check if target appears to be higher than melee range off ground
+            float heightOffGround = StyxWoW.Me.CurrentTarget.HeightOffTheGround();
+            float meleeDist = StyxWoW.Me.CurrentTarget.MeleeDistance();
+            if (heightOffGround > meleeDist)
+            {
+                Logger.Write(LogColor.Hilite, "Ranged Attack: {0} {1:F3} yds above ground using Ranged attack since reach is {2:F3} yds....", StyxWoW.Me.CurrentTarget.SafeName(), heightOffGround, meleeDist);
+                return true;
+            }
+
+            // additional check for off ground
+            double heightCheck = StyxWoW.Me.CurrentTarget.MeleeDistance();
+            if (StyxWoW.Me.CurrentTarget.Distance2DSqr < heightCheck * heightCheck && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= heightCheck)
+            {
+                Logger.Write(LogColor.Hilite, "Ranged Attack: {0} appears to be off the ground! using Ranged attack....", StyxWoW.Me.CurrentTarget.SafeName());
+                return true;
+            }
+
+            if ((DateTime.Now - Singular.Utilities.EventHandlers.LastNoPathFailure).TotalSeconds < 3f)
+            {
+                Logger.Write( LogColor.Hilite, "Ranged Attack: No Path Available error just happened, so using Ranged attack ....", StyxWoW.Me.CurrentTarget.SafeName());
+                return true;
+            }
+
+            WoWPoint dest = StyxWoW.Me.CurrentTarget.Location;
+            if (!StyxWoW.Me.CurrentTarget.IsWithinMeleeRange && !Styx.Pathing.Navigator.CanNavigateFully(StyxWoW.Me.Location, dest))
+            {
+                Logger.Write(LogColor.Hilite, "Ranged Attack: {0} is not Fully Pathable! using ranged attack....", StyxWoW.Me.CurrentTarget.SafeName());
+                return true;
+            }
+
+            return false;
+        }
     }
 
     public enum CombatArea

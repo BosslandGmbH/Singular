@@ -701,6 +701,52 @@ namespace Singular.Settings
 
         #endregion
 
+        #region Category: Death
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(20)]
+        [Category("Death")]
+        [DisplayName("Ressurect: Safe Distance (Normal)")]
+        [Description("Minimum safe distance from enemies when dea")]
+        public int RezSafeDistSolo { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(30)]
+        [Category("Death")]
+        [DisplayName("Ressurect: Safe Distance (PVP)")]
+        [Description("Minimum safe distance from enemies in Battlegrounds -OR- when death from World PVP")]
+        public int RezSafeDistPVP { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(0)]
+        [Category("Death")]
+        [DisplayName("Ressurect: Safe Distance (Instance)")]
+        [Description("Minimum safe distance from enemies in Instances")]
+        public int RezSafeDistInstance { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(15)]
+        [Category("Death")]
+        [DisplayName("Ressurect: Max Wait (seconds)")]
+        [Description("Maximum time (seconds) to wait for all enemies to be Min Safe Distance away")]
+        public int RezMaxWaitTime { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(true)]
+        [Category("Death")]
+        [DisplayName("Res Sickness: Wait")]
+        [Description("Wait for resurrection sickness to wear off.")]
+        public bool ResSicknessWait { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(false)]
+        [Category("Death")]
+        [DisplayName("Res Sickness: Stealth")]
+        [Description("Stealth while waiting for resurrection sickness to wear off.")]
+        public bool ResSicknessStealthDuring { get; set; }
+
+        #endregion
+
         #region Category: General
 
         [Setting,ReadOnly(false)]
@@ -709,20 +755,6 @@ namespace Singular.Settings
         [DisplayName("Use Framelock in Singular")]
         [Description("Force use of Framelock in Singular.  Primarily for use with Botbases that do not support Framelock")]
         public bool UseFrameLock { get; set; }
-
-        [Setting, ReadOnly(false)]
-        [DefaultValue(true)]
-        [Category("General")]
-        [DisplayName("Res Sickness: Wait")]
-        [Description("Wait for resurrection sickness to wear off.")]
-        public bool ResSicknessWait { get; set; }
-
-        [Setting, ReadOnly(false)]
-        [DefaultValue(false)]
-        [Category("General")]
-        [DisplayName("Res Sickness: Stealth")]
-        [Description("Stealth while waiting for resurrection sickness to wear off.")]
-        public bool ResSicknessStealthDuring { get; set; }
 
         [Setting, ReadOnly(false)]
         [DefaultValue(false)]
@@ -1082,6 +1114,13 @@ namespace Singular.Settings
         [Description("Solo Only.  True: when attacked by player, ignore everything else and fight back;  False: attack based upon Targeting priority list.")]
         public bool TargetWorldPvpRegardless { get; set; }
 
+        [Setting, ReadOnly(false)]
+        [DefaultValue(true)]
+        [Category("Targeting")]
+        [DisplayName("Target Enemy Totems")]
+        [Description("Solo Only.  True: kill any totems set by Current Target if NPC;  False: attack based upon Targeting priority list.")]
+        public bool TargetCurrentTargetTotems { get; set; }
+
         #endregion
 
         #region Category: Enemy Control
@@ -1323,6 +1362,7 @@ namespace Singular.Settings
                 return setting;
             }
         }
+
     }
 
 }

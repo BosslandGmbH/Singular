@@ -188,6 +188,8 @@ namespace Singular
                 SetPluginEnabled("DrinkPotions", false);
             }
 
+            SpellImmunityManager.Add(16292, WoWSpellSchool.Frost);      // http://www.wowhead.com/npc=16292/aquantion
+
             Logger.WriteDebug(Color.White, "Verified behaviors can be created!");
             Logger.Write("Initialization complete!");
             Logger.WriteDiagnostic(Color.White, "Initialize: completed taking {0:F2} seconds", (DateTime.Now - timeStart).TotalSeconds);
@@ -436,7 +438,7 @@ namespace Singular
                 // output messages about pulldistance and behaviorflag changes here
                 MonitorPullDistance();
                 MonitorBehaviorFlags();
-
+/*
                 // now if combat disabled, bail out 
                 bool combatDisabled = Bots.Grind.BehaviorFlags.Combat != (Bots.Grind.LevelBot.BehaviorFlags & Bots.Grind.BehaviorFlags.Combat);
                 if (combatDisabled != _lastCombatDisabledState)
@@ -448,7 +450,7 @@ namespace Singular
                             : "info: botbase enabled BehaviorFlags.Combat"
                         );
                 }
-
+*/
                 // check time since last call and be sure user knows if Singular isn't being called
                 if (SingularSettings.Debug)
                 {

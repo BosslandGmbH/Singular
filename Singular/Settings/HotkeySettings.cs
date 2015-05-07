@@ -50,6 +50,13 @@ namespace Singular.Settings
         public bool SavedToFile { get; set; }
 
         [Setting]
+        [DefaultValue(Keys.M | Keys.Alt | Keys.Shift | Keys.Control )]
+        [Category("Hotkeys")]
+        [DisplayName("Key - LOGMARK")]
+        [Description("Adds a LOGMARK entry to LogFile when pressed")]
+        public Keys LogMarkKey { get; set; }
+
+        [Setting]
         [DefaultValue(true)]
         [Category("Control")]
         [DisplayName("Game Message")]
@@ -57,7 +64,7 @@ namespace Singular.Settings
         public bool ChatFrameMessage { get; set; }
 
         [Setting]
-        [DefaultValue(2000)]
+        [DefaultValue(2500)]
         [Category("Control")]
         [DisplayName("Game Message Duration (ms)")]
         [Description("Duration in milliseconds to display message regarding HotKeys")]

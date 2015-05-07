@@ -16,6 +16,15 @@ namespace Singular.Settings
         Cat
     }
 
+    public enum ProwlMode
+    {
+        Never = 0,
+        Auto = 1,
+        PVP = 2,
+        Always = 4
+    }
+
+
     internal class DruidSettings : Styx.Helpers.Settings
     {
         public DruidSettings()
@@ -463,6 +472,14 @@ namespace Singular.Settings
         [DisplayName("Prowl Always")]
         [Description("Prowl at all times out of combat. Does not disable mounting (you can in HB Settings if desired)")]
         public bool ProwlAlways { get; set; }
+
+        [Setting]
+        [DefaultValue(ProwlMode.Auto)]
+        [Category("Feral")]
+        [DisplayName("Prowl Mode")]
+        [Description("Auto: Prowl used on Pull; PVP: used only against players; Always: Prowl when not in Combat; Never: disable Prowl")]
+        public ProwlMode Prowl { get; set; }
+
 
 /*
                 [Setting]

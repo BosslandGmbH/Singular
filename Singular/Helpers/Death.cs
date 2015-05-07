@@ -59,9 +59,9 @@ namespace Singular.Helpers
 
                         if (SingularSettings.Instance.SelfRessurect == Singular.Settings.SelfRessurectStyle.Auto && MovementManager.IsMovementDisabled)
                         {
-                            if (NextSuppressMessage < DateTime.Now)
+                            if (NextSuppressMessage < DateTime.UtcNow)
                             {
-                                NextSuppressMessage = DateTime.Now.AddSeconds(SingularSettings.Instance.RezMaxWaitTime);
+                                NextSuppressMessage = DateTime.UtcNow.AddSeconds(SingularSettings.Instance.RezMaxWaitTime);
                                 Logger.Write(Color.Aquamarine, "Death: Suppressing automatic {0} since movement disabled...", hasSoulstone[0]);
                             }
                             return false;

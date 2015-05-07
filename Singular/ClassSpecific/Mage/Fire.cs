@@ -64,11 +64,11 @@ namespace Singular.ClassSpecific.Mage
                             Spell.Cast("Pyroblast", req => {
                                 if (Me.CurrentTarget.SpellDistance() > 18)
                                     return true;
-                                if (DateTime.Now > _lastPyroPull.AddMilliseconds(3000))
+                                if (DateTime.UtcNow > _lastPyroPull.AddMilliseconds(3000))
                                     return true;
                                 return false;
                                 }),
-                            new Action( r => _lastPyroPull = DateTime.Now )
+                            new Action( r => _lastPyroPull = DateTime.UtcNow )
                             ),
                         Spell.Cast("Fire Blast", ret => !SpellManager.HasSpell("Inferno Blast")),
                         Spell.Cast("Scorch"),
@@ -133,6 +133,19 @@ namespace Singular.ClassSpecific.Mage
                             Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.SpellDistance() < 8 && !u.IsFrozen()))
                             ),
                         */
+
+                        new PrioritySelector(
+                            ctx => Unit.UnfriendlyUnits(12)
+                                .FirstOrDefault(
+                                    u => u.IsTargetingMeOrPet
+                                    && (u.IsStressful() || (u.Guid == Me.CurrentTargetGuid && u.TimeToDeath() > 6))
+                                    && !u.IsCrowdControlled()
+                                    ),
+                            Common.CreateSlowMeleeBehavior()
+                            ),
+
+
+
 
                         // AoE comes first
                         new Decorator(

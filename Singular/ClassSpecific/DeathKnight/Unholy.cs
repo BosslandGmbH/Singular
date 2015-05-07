@@ -53,7 +53,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         new Decorator(
-                            ret => !Me.HasAnyAura("Food", "Refreshment"),
+                            ret => !Helpers.Rest.IsEatingOrDrinking,
                             new PrioritySelector(
                                 UnholyCastRaiseDead(),
                                 Spell.Cast("Death Coil", on => Me.Pet, req => Me.GotAlivePet && Me.Pet.HealthPercent < 85)
@@ -607,8 +607,7 @@ namespace Singular.ClassSpecific.DeathKnight
         {
             return Spell.BuffSelf(
                 "Raise Dead",
-                req => PetManager.IsPetUseAllowed && !Me.GotAlivePet
-                    && PetManager.PetSummonAfterDismountTimer.IsFinished
+                req => PetManager.IsPetSummonAllowed
                     && !Me.Mounted
                     && !Me.OnTaxi
                     );

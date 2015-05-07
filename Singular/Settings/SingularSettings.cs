@@ -167,10 +167,21 @@ namespace Singular.Settings
                             MinMana = 50;
                     }
 
+
                     if (verConfigFile < new Version("4.0.0.4000"))
                     {
                         weSetPullMoreValues = true;
                         SetDefaultPullMoreSettingValues();
+                    }
+
+                    Version ver_4_0_0_4631 = new Version("4.0.0.4631");
+                    if (verConfigFile <= ver_4_0_0_4631)
+                    {
+                        if (StyxWoW.Me.Class == WoWClass.Mage && this.KiteAllow == false)
+                        {
+                            this.KiteAllow = true;
+                            Logger.Write(LogColor.Init, "Settings: set Kiting Allowed to 'true' for Mages upgrading from {0} or earlier", ver_4_0_0_4631);
+                        }
                     }
 
                     ConfigVersion = verSourceCode.ToString();
@@ -190,6 +201,14 @@ namespace Singular.Settings
                         Logger.Write(LogColor.Init, "Settings: default Min Health to {0}% since Death Knight", this.MinHealth);
                     }
 
+                    if (StyxWoW.Me.Class == WoWClass.Mage)
+                    {
+                        if (this.KiteAllow == false)
+                        {
+                            this.KiteAllow = true;
+                            Logger.Write(LogColor.Init, "Settings: default Allow Kiting to true since Mage");
+                        }
+                    }
                 }
             }
 
@@ -565,13 +584,6 @@ namespace Singular.Settings
         public AllowMovementType AllowMovement { get; set; }
 
         [Setting, ReadOnly(false)]
-        [DefaultValue(true)]
-        [Category("Movement")]
-        [DisplayName("Move Sideways to Gather Mobs")]
-        [Description("Allow movement to move attacking NPCs in front")]
-        public bool MoveSidewaysToGatherMobs { get; set; }
-
-        [Setting, ReadOnly(false)]
         [DefaultValue(12)]
         [Category("Movement")]
         [DisplayName("Melee Dismount Range")]
@@ -592,12 +604,19 @@ namespace Singular.Settings
         [Description("Allow Singular to move melee classes to keep melee attackers in front.  Works only in Normal (Solo) context")]
         public bool MeleeKeepMobsInFront { get; set; }
 
-        [Setting,ReadOnly(false)]
+        [Setting, ReadOnly(false)]
         [DefaultValue(true)]
         [Category("Movement")]
         [DisplayName("Use Cast While Moving Buffs")]
         [Description("True: attempting to use a non-instant while moving will first cast Spiritwalker's Grace, Ice Floes, Kil'Jaedan's Cunning, etc.")]
         public bool UseCastWhileMovingBuffs { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(20)]
+        [Category("Movement")]
+        [DisplayName("Move to Target Timeout (secs)")]
+        [Description("Max time in seconds that player is out of attack distance (5 yds for melee, 40 yds for ranged) and/or line of sight before blacklisting.  Target is blacklisted for Pull if no aggro, and for Combat if aggro present")]
+        public int MoveToTargetTimeout { get; set; }
 
         #endregion 
 
@@ -684,12 +703,19 @@ namespace Singular.Settings
         [Description("Kite if this many mobs in melee range")]
         public int KiteMobCount { get; set; }
 
-        [Setting,ReadOnly(false)]
+        [Setting, ReadOnly(false)]
         [DefaultValue(8)]
         [Category("Avoidance")]
-        [DisplayName("Avoid Distance")]
+        [DisplayName("Kite Avoid Distance")]
         [Description("Only mobs within this distance that are attacking you count towards Disengage/Kite mob counts")]
-        public int AvoidDistance { get; set; }
+        public int KiteAvoidDistance { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(12)]
+        [Category("Avoidance")]
+        [DisplayName("Kite Safe Distance")]
+        [Description("Only mobs within this distance that are attacking you count towards Disengage/Kite mob counts")]
+        public int KiteSafeDistance { get; set; }
 
         [Browsable(false)]
         [Setting,ReadOnly(false)]
@@ -1019,17 +1045,24 @@ namespace Singular.Settings
         [DefaultValue(true)]
         [Category("Items")]
         [DisplayName("Use Flasks/Crystals/etc")]
-        [Description("Uses flasks not consumed on use (Alchemist Flasks, Crystal of Insanity, Orialius' Whispering Crystal, others ...?)")]
+        [Description("Uses flasks/items that are not consumed on use (Alchemist Flasks, Crystal of Insanity, and Orialius' Whispering Crystal)")]
         public bool UseAlchemyFlasks { get; set; }
 
-        [Setting,ReadOnly(false)]
+        [Setting, ReadOnly(false)]
         [DefaultValue(false)]
         [Category("Items")]
         [DisplayName("Use Scrolls of ...")]
-        [Description("Uses Scrolls present in bags that temporarily buff a useful stat. Uses those buffing primary stat first, then Scrolls of Stamina")]
+        [Description("Uses Scrolls present in bags that temporarily buff a useful stat. Uses scrolls buffing primary stat first, then Scrolls of Stamina")]
         public bool UseScrolls { get; set; }
 
-        [Setting,ReadOnly(false)]
+        [Setting, ReadOnly(false)]
+        [DefaultValue(false)]
+        [Category("Items")]
+        [DisplayName("Use XP Buff Potions")]
+        [Description("Use Excess Potion of Accelerated Learning")]
+        public bool UseXPBuffPotions { get; set; }
+
+        [Setting, ReadOnly(false)]
         [DefaultValue(TrinketUsage.Never)]
         [Category("Items")]
         [DisplayName("Trinket 1 Usage")]

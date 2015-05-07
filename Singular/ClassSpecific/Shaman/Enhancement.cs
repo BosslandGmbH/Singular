@@ -73,7 +73,7 @@ namespace Singular.ClassSpecific.Shaman
                     new PrioritySelector(
 
                         new Decorator(
-                            ret => !Me.HasAnyAura("Drink", "Food", "Refreshment"),
+                            ret => !Helpers.Rest.IsEatingOrDrinking,
                             Common.CreateShamanDpsHealBehavior()
                             ),
 
@@ -471,7 +471,7 @@ namespace Singular.ClassSpecific.Shaman
                         new Decorator(
                             ret => MovementManager.IsClassMovementAllowed
                                 && !Me.HasAura("Ghost Wolf")
-                                && Me.IsMoving // (DateTime.Now - GhostWolfRequest).TotalMilliseconds < 1000
+                                && Me.IsMoving // (DateTime.UtcNow - GhostWolfRequest).TotalMilliseconds < 1000
                                 && !Me.OnTaxi && !Me.InVehicle 
                                 && !Utilities.EventHandlers.IsShapeshiftSuppressed,
 

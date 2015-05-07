@@ -115,7 +115,7 @@ namespace Singular
                 if (Me.IsInInstance)
                 {
                     if (_lastContext != WoWContext.Instances)
-                        Logger.Write( LogColor.Hilite, "Context: using {0} behaviors since inside an instance", WoWContext.Instances);
+                        Logger.Write( LogColor.Hilite, "Context: using {0} behaviors since in group inside an Instance", WoWContext.Instances);
 
                     return WoWContext.Instances;
                 }

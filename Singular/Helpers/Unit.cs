@@ -1,26 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Styx;
-using Styx.CommonBot;
-using Styx.WoWInternals;
-using Styx.WoWInternals.WoWObjects;
-using Styx.TreeSharp;
-using Action = Styx.TreeSharp.Action;
-using Rest = Singular.Helpers.Rest;
-using Singular.Settings;
-using Styx.Common;
-using System.Diagnostics;
-using Styx.Common.Helpers;
-using System.Drawing;
-using Styx.WoWInternals.DBC;
-using Styx.CommonBot.POI;
 using System.Text;
-using Singular.Managers;
-using Singular.Utilities;
-using Singular.Dynamics;
+using Styx;
+using Styx.Common.Helpers;
+using Styx.CommonBot;
 using Styx.CommonBot.Profiles;
+using Styx.TreeSharp;
+using Styx.WoWInternals;
+using Styx.WoWInternals.DBC;
+using Styx.WoWInternals.WoWObjects;
+using Action = Styx.TreeSharp.Action;
+using Singular.Dynamics;
+using Singular.Managers;
+using Singular.Settings;
+using Singular.Utilities;
 
 namespace Singular.Helpers
 {
@@ -126,7 +123,8 @@ namespace Singular.Helpers
         {
             get
             {
-                HashSet<WoWGuid> guids = new HashSet<WoWGuid>(StyxWoW.Me.GroupInfo.RaidMemberGuids);
+                HashSet<WoWGuid> guids = new HashSet<WoWGuid>( StyxWoW.Me.GroupInfo.RaidMemberGuids);
+                guids.Add(StyxWoW.Me.Guid);
                 List<WoWUnit> list = ObjectManager.ObjectList
                     .Where(o => IsUnit(o) && guids.Contains(o.Guid))
                     .Select(o => o.ToUnit())
@@ -503,8 +501,38 @@ namespace Singular.Helpers
                 return true;
 
             uint maxh = unit.MaxHealth;
-            return maxh > StyxWoW.Me.MaxHealth * 2 || unit.Level > (StyxWoW.Me.Level + (unit.Elite ? -10 : 2));
+            return maxh > StyxWoW.Me.MaxHealth * 2 || unit.Level > (StyxWoW.Me.Level + (unit.Elite ? -6 : 2));
         }
+
+        public static bool IsStressfulFight(int minHealth, int minTimeToDeath, int minAttackers, int maxAttackRange)
+        {
+            if (!Unit.ValidUnit(StyxWoW.Me.CurrentTarget))
+                return false;
+
+            int mobCount = Unit.UnitsInCombatWithUsOrOurStuff(maxAttackRange).Count();
+            if (mobCount > 0)
+            {
+                if (mobCount >= minAttackers)
+                    return true;
+
+                if (StyxWoW.Me.HealthPercent <= minHealth)
+                {
+                    if (mobCount > 1)
+                        return true;
+                    if (StyxWoW.Me.CurrentTarget.TimeToDeath(-1) > minTimeToDeath)
+                        return true;
+                    if (StyxWoW.Me.CurrentTarget.IsPlayer)
+                        return true;
+                    if (StyxWoW.Me.CurrentTarget.MaxHealth > (StyxWoW.Me.MaxHealth * 2) && StyxWoW.Me.CurrentTarget.CurrentHealth > StyxWoW.Me.CurrentHealth)
+                        return true;
+                    if (StyxWoW.Me.HealthPercent < minHealth / 2)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
 
         public static WoWPlayer GetPlayerParent(WoWUnit unit)
         {
@@ -1559,7 +1587,7 @@ namespace Singular.Helpers
                 return true;
             }
 
-            if ((DateTime.Now - Singular.Utilities.EventHandlers.LastNoPathFailure).TotalSeconds < 3f)
+            if ((DateTime.UtcNow - Singular.Utilities.EventHandlers.LastNoPathFailure).TotalSeconds < 3f)
             {
                 Logger.Write( LogColor.Hilite, "Ranged Attack: No Path Available error just happened, so using Ranged attack ....", StyxWoW.Me.CurrentTarget.SafeName());
                 return true;
@@ -1779,11 +1807,11 @@ namespace Singular.Helpers
                 guid = target.Guid;
                 _firstLife = target.CurrentHealth;
                 _firstLifeMax = target.MaxHealth;
-                _firstTime = ConvDate2Timestam(DateTime.Now);
+                _firstTime = ConvDate2Timestam(DateTime.UtcNow);
                 //Lets do a little trick and calculate with seconds / u know Timestamp from unix? we'll do so too
             }
             _currentLife = target.CurrentHealth;
-            _currentTime = ConvDate2Timestam(DateTime.Now);
+            _currentTime = ConvDate2Timestam(DateTime.UtcNow);
             int timeDiff = _currentTime - _firstTime;
             uint hpDiff = _firstLife - _currentLife;
             if (hpDiff > 0)
@@ -1812,7 +1840,7 @@ namespace Singular.Helpers
                 guid = target.Guid;
                 _firstLife = target.CurrentHealth;
                 _firstLifeMax = target.MaxHealth;
-                _firstTime = ConvDate2Timestam(DateTime.Now);
+                _firstTime = ConvDate2Timestam(DateTime.UtcNow);
                 //Lets do a little trick and calculate with seconds / u know Timestamp from unix? we'll do so too
                 //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) was healed, resetting data.", target.SafeName(), target.Guid, target.Entry);
                 return indeterminateValue;

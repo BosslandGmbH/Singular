@@ -19,6 +19,7 @@ using Styx.TreeSharp;
 using CommonBehaviors.Actions;
 using Action = Styx.TreeSharp.Action;
 using System.Drawing;
+using Styx.CommonBot.Routines;
 
 namespace Singular.ClassSpecific.Shaman
 {
@@ -67,6 +68,14 @@ namespace Singular.ClassSpecific.Shaman
                 return SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.PetSummoning);
             }
         }
+        public static bool AllowElementalTotems
+        {
+            get
+            {
+                return !Common.talentPrimalElementalist || !PetManager.IsPetSummonAllowed;
+            }
+        }
+
         private static bool ShouldWeDropTotemsYet
         {
             get
@@ -131,8 +140,13 @@ namespace Singular.ClassSpecific.Shaman
             // create Fire Totems behavior first, then wrap if needed
             PrioritySelector fireTotemBehavior = new PrioritySelector();
             fireTotemBehavior.AddChild(
-                Spell.BuffSelf("Fire Elemental Totem",
-                    ret => Common.StressfulSituation && !Exist(WoWTotem.EarthElemental) && !Spell.CanCastHack("Earth Elemental Totem"))
+                Spell.Buff(WoWTotem.FireElemental.ToSpellId(),
+                    req => Common.StressfulSituation
+                        && Totems.AllowElementalTotems
+                        && !Exist(WoWTotem.EarthElemental) 
+                        && !Spell.CanCastHack("Earth Elemental Totem")
+
+                    )
                 );
 
             if (TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement)
@@ -209,7 +223,10 @@ namespace Singular.ClassSpecific.Shaman
 
                         // earth totems
                         Spell.BuffSelf(WoWTotem.EarthElemental.ToSpellId(),
-                            ret => ((bool)ret || Group.Tanks.Any(t => t.IsDead && t.Distance < 40)) && !Exist(WoWTotem.StoneBulwark)),
+                            ret => ((bool)ret || Group.Tanks.Any(t => t.IsDead && t.Distance < 40))
+                                && Totems.AllowElementalTotems
+                                && !Exist(WoWTotem.StoneBulwark)
+                            ),
 
                         Spell.BuffSelf(WoWTotem.StoneBulwark.ToSpellId(),
                             ret => Me.Combat && Me.HealthPercent < ShamanSettings.StoneBulwarkTotemPercent && !Exist(WoWTotem.EarthElemental)),
@@ -284,7 +301,11 @@ namespace Singular.ClassSpecific.Shaman
             PrioritySelector fireTotemBehavior = new PrioritySelector();
 
             fireTotemBehavior.AddChild(
-                    Spell.Cast("Fire Elemental Totem", ret => Me.CurrentTarget.IsBoss())
+                    Spell.Buff(
+                       "Fire Elemental Totem", 
+                       req => Me.CurrentTarget.IsBoss()
+                           && AllowElementalTotems
+                       )
                     );
 
             if (TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement)
@@ -342,7 +363,10 @@ namespace Singular.ClassSpecific.Shaman
                         // earth totems
                         Spell.Cast(WoWTotem.EarthElemental.ToSpellId(),
                             on => Me.CurrentTarget ?? Me,
-                            ret => {
+                            req => {
+                                if (!Totems.AllowElementalTotems)
+                                    return false;
+
                                 if (Exist(WoWTotem.StoneBulwark))
                                     return false;
 
@@ -435,9 +459,9 @@ namespace Singular.ClassSpecific.Shaman
                 if (ti.WoWTotem == WoWTotem.Searing)
                 {
                     /*
-                    if (ti.Unit != null && ti.Expires < (DateTime.Now + TimeSpan.FromSeconds(2)))
+                    if (ti.Unit != null && ti.Expires < (DateTime.UtcNow + TimeSpan.FromSeconds(2)))
                     {
-                        Logger.WriteDebug("IsSearingTotemNeeded: Searing Totem expired! expires={0}, current={1}, refreshing", ti.Expires.ToString("MM/dd/yyyy hh:mm:ss.fff"), DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss.fff"));
+                        Logger.WriteDebug("IsSearingTotemNeeded: Searing Totem expired! expires={0}, current={1}, refreshing", ti.Expires.ToString("MM/dd/yyyy hh:mm:ss.fff"), DateTime.UtcNow.ToString("MM/dd/yyyy hh:mm:ss.fff"));
                         return true;
                     }
                     */

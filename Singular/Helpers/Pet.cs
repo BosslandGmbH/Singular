@@ -19,8 +19,7 @@ namespace Singular.Helpers
         public static Composite CreateSummonPet(string petName)
         {
             return new Decorator(
-                ret => !SingularSettings.Instance.DisablePetUsage 
-                    && SingularRoutine.IsAllowed( CapabilityFlags.PetSummoning)
+                ret => PetManager.IsPetSummonAllowed
                     && !StyxWoW.Me.GotAlivePet 
                     && PetManager.PetSummonAfterDismountTimer.IsFinished,
                 new Sequence(

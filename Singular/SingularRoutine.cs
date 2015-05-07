@@ -22,11 +22,14 @@ using Styx.Common.Helpers;
 using Styx.CommonBot.POI;
 using System.Text;
 using Styx.WoWInternals.DBC;
+using System.Runtime.InteropServices;
 
 namespace Singular
 {
     public partial class SingularRoutine : CombatRoutine
     {
+        [DllImport("kernel32")] extern static UInt64 GetTickCount64(); 
+        
         private static LogLevel _lastLogLevel = LogLevel.None;
 
         public static uint Latency { get; set; }
@@ -65,7 +68,7 @@ namespace Singular
 
         public override void Initialize()
         {
-            DateTime timeStart = DateTime.Now;
+            DateTime timeStart = DateTime.UtcNow;
 
             Logger.WriteFile("Initialize: started");    // cannot call method which references SingularSettings
 
@@ -192,7 +195,7 @@ namespace Singular
 
             Logger.WriteDebug(Color.White, "Verified behaviors can be created!");
             Logger.Write("Initialization complete!");
-            Logger.WriteDiagnostic(Color.White, "Initialize: completed taking {0:F2} seconds", (DateTime.Now - timeStart).TotalSeconds);
+            Logger.WriteDiagnostic(Color.White, "Initialize: completed taking {0:F2} seconds", (DateTime.UtcNow - timeStart).TotalSeconds);
         }
 
         private void PullMoreWeighTargetsFilter(List<Targeting.TargetPriority> units)
@@ -215,7 +218,8 @@ namespace Singular
             Logger.Write( LogColor.Hilite, "Starting " + singularName);
 
             // save some support info in case we need
-            Logger.WriteFile("{0:F1} days since Windows was restarted", TimeSpan.FromMilliseconds(Environment.TickCount).TotalHours / 24.0);
+            // Logger.WriteFile("{0:F1} days since Windows was restarted", TimeSpan.FromMilliseconds(Environment.TickCount).TotalHours / 24.0);
+            Logger.WriteFile("{0:F1} days since Windows was restarted", TimeSpan.FromMilliseconds(GetTickCount64()).TotalDays);
             Logger.WriteFile("{0} FPS currently in WOW", GetFPS());
             Logger.WriteFile("{0} ms of Latency in WOW", SingularRoutine.Latency);
             Logger.WriteFile("{0} local system time", DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss"));
@@ -372,9 +376,9 @@ namespace Singular
             }
         }
 
-        private ConfigurationForm _configForm;
+        public ConfigurationForm _configForm { get; set; }
         public override void OnButtonPress()
-        {
+        {            
             if (_configForm == null || _configForm.IsDisposed || _configForm.Disposing)
             {
                 _configForm = new ConfigurationForm();
@@ -402,10 +406,10 @@ namespace Singular
             /*
             if (!StyxWoW.IsInGame)
             {
-                if (DateTime.Now > _nextNotInGameMsgAllowed)
+                if (DateTime.UtcNow > _nextNotInGameMsgAllowed)
                 {
                     Logger.WriteDebug(Color.HotPink, "info: not in game");
-                    _nextNotInGameMsgAllowed = DateTime.Now.AddSeconds(30);
+                    _nextNotInGameMsgAllowed = DateTime.UtcNow.AddSeconds(30);
                 }
                 return;
             }
@@ -413,10 +417,10 @@ namespace Singular
 
             if (!StyxWoW.IsInWorld)
             {
-                if (DateTime.Now > _nextNotInWorldMsgAllowed)
+                if (DateTime.UtcNow > _nextNotInWorldMsgAllowed)
                 {
                     Logger.WriteDebug(Color.HotPink, "info: not in world");
-                    _nextNotInWorldMsgAllowed = DateTime.Now.AddSeconds(30);
+                    _nextNotInWorldMsgAllowed = DateTime.UtcNow.AddSeconds(30);
                 }
                 return;
             }
@@ -457,10 +461,10 @@ namespace Singular
                     TimeSpan since = CallWatch.TimeSpanSinceLastCall;
                     if (since.TotalSeconds > (4 * CallWatch.SecondsBetweenWarnings))
                     {
-                        if (!Me.IsGhost && !Me.Mounted && !Me.IsFlying && DateTime.Now > _nextNoCallMsgAllowed)
+                        if (!Me.IsGhost && !Me.Mounted && !Me.IsFlying && DateTime.UtcNow > _nextNoCallMsgAllowed)
                         {
                             Logger.WriteDebug(Color.HotPink, "info: {0:F0} seconds since {1} BotBase last called Singular", since.TotalSeconds, GetBotName());
-                            _nextNoCallMsgAllowed = DateTime.Now.AddSeconds(4 * CallWatch.SecondsBetweenWarnings);
+                            _nextNoCallMsgAllowed = DateTime.UtcNow.AddSeconds(4 * CallWatch.SecondsBetweenWarnings);
                         }
                     }
                 }
@@ -761,7 +765,7 @@ namespace Singular
                 if (SingularSettings.DebugSpellCasting)
                 {
                     /// Special: provide diagnostics if healer 
-                    if (HealerManager.NeedHealTargeting && (_nextAbcWarning < DateTime.Now) && !Me.IsCasting && !Me.IsChanneling && !Spell.IsGlobalCooldown(LagTolerance.No))
+                    if (HealerManager.NeedHealTargeting && (_nextAbcWarning < DateTime.UtcNow) && !Me.IsCasting && !Me.IsChanneling && !Spell.IsGlobalCooldown(LagTolerance.No))
                     {
                         WoWUnit low = HealerManager.FindLowestHealthTarget();
                         if (low != null)
@@ -770,7 +774,7 @@ namespace Singular
                             if (!SingularSettings.Instance.HealerCombatAllow && lh < 70)
                             {
                                 Logger.WriteDebug("Healer ABC Warning: no cast in progress detected, low health {0} {1:F1}% @ {2:F1} yds", low.SafeName(), lh, low.SpellDistance());
-                                _nextAbcWarning = DateTime.Now + TimeSpan.FromSeconds(1);
+                                _nextAbcWarning = DateTime.UtcNow + TimeSpan.FromSeconds(1);
                             }
                         }
                     }

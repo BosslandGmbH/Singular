@@ -114,7 +114,7 @@ namespace Singular.Dynamics
                 CurrentBehaviorType = behavior;
                 CurrentBehaviorPriority = kvp.Key.PriorityLevel;
                 CurrentBehaviorName = kvp.Value.Name;
-                string invokeInfo = string.Format("{0} {1} {2}", kvp.Key.PriorityLevel.ToString().AlignRight(4), behavior.ToString().AlignLeft(15), kvp.Value.Name);
+                string invokeInfo = string.Format("{0} {1} {2}", kvp.Key.PriorityLevel.ToString().AlignRight(5), behavior.ToString().AlignLeft(15), kvp.Value.Name);
                 if (!silent)
                     Logger.WriteFile(invokeInfo);
                 kvp.Value.Invoke(null, null);

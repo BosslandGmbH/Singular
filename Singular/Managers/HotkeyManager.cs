@@ -58,7 +58,7 @@ namespace Singular.Managers
                     return false;
 
                 // check if still suspended
-                if ( _MovementTemporarySuspendEndtime > DateTime.Now )
+                if ( _MovementTemporarySuspendEndtime > DateTime.UtcNow )
                     return true;
 
                 // suspend has timed out, so refresh suspend timer if key is still down
@@ -66,7 +66,7 @@ namespace Singular.Managers
                 // if ( HotkeySettings.SuspendMovementKeys.Any( k => IsKeyDown( k )))
                 if ( IsKeyDown( _lastMovementTemporarySuspendKey ))
                 {
-                    _MovementTemporarySuspendEndtime = DateTime.Now + TimeSpan.FromSeconds(HotkeySettings.SuspendDuration);
+                    _MovementTemporarySuspendEndtime = DateTime.UtcNow + TimeSpan.FromSeconds(HotkeySettings.SuspendDuration);
                     return true;
                 }
 
@@ -77,7 +77,7 @@ namespace Singular.Managers
             set
             {
                 if (value)
-                    _MovementTemporarySuspendEndtime = DateTime.Now + TimeSpan.FromSeconds(HotkeySettings.SuspendDuration);
+                    _MovementTemporarySuspendEndtime = DateTime.UtcNow + TimeSpan.FromSeconds(HotkeySettings.SuspendDuration);
                 else
                     _MovementTemporarySuspendEndtime = DateTime.MinValue;
             }
@@ -109,6 +109,9 @@ namespace Singular.Managers
 
             // Hook the  hotkeys for the appropriate WOW Window...
             HotkeysManager.Initialize( StyxWoW.Memory.Process.MainWindowHandle);
+
+            if (HotkeySettings.LogMarkKey != Keys.None)
+                RegisterHotkeyAssignment("LogMark", HotkeySettings.LogMarkKey, (hk) => { Logger.LogMark(); TellUser("LogMark #{0} Added", Logger.LogMarkIndex); });
 
             // define hotkeys for behaviors when using them as toggles (press once to disable, press again to enable)
             // .. otherwise, keys are polled for in Pulse()
@@ -144,7 +147,10 @@ namespace Singular.Managers
             if ((key & Keys.Control) != 0)
                 mods |= ModifierKeys.Control;
 
-            Logger.Write( LogColor.Hilite, "Hotkey: To disable {0}, press: [{1}]", name, key.ToFormattedString());
+            if (name == "LogMark")
+                Logger.Write(LogColor.Hilite, "Hotkey: To add a LOGMARK, press: [{0}]", key.ToFormattedString());
+            else 
+                Logger.Write( LogColor.Hilite, "Hotkey: To disable {0}, press: [{1}]", name, key.ToFormattedString());
             HotkeysManager.Register(name, keyCode, mods, callback);
         }
 
@@ -170,6 +176,7 @@ namespace Singular.Managers
             _HotkeysRegistered = false;
 
             // remove hotkeys for commands with 1:1 key assignment          
+            HotkeysManager.Unregister("LogMark");
             HotkeysManager.Unregister("AOE");
             HotkeysManager.Unregister("Combat");
             HotkeysManager.Unregister("Movement");

@@ -35,6 +35,20 @@ namespace Singular.Settings
         public int FortifyingBrewPct { get; set; }
 
         [Setting]
+        [DefaultValue(60)]
+        [Category("Common")]
+        [DisplayName("Dampen Harm Percent")]
+        [Description("Dampen Harm is used when health percent is at or below this value")]
+        public int DampenHarmPct { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Common")]
+        [DisplayName("Dampen Harm Percent")]
+        [Description("Dampen Harm is used when facing this many attackers")]
+        public int DampenHarmCount { get; set; }
+
+        [Setting]
         [DefaultValue(70)]
         [Category("Common")]
         [DisplayName("Chi Wave Percent")]

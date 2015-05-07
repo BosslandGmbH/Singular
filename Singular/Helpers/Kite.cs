@@ -145,7 +145,6 @@ namespace Singular.Helpers
                         ret => needKiting(ret),
                         new Sequence(
                             crowdControl,
-                            new Action(r => Logger.Write( LogColor.Hilite, "^Avoidance: kiting away from mobs!")),
                             Kite.BeginKitingBehavior()
                             )
                         )
@@ -182,10 +181,11 @@ namespace Singular.Helpers
         }
 
         public static State bstate = State.None;
-        public static WoWPoint safeSpot = WoWPoint.Empty;
-        public static DateTime timeOut = DateTime.Now;
+        public static WoWPoint locSafeSpot = WoWPoint.Empty;
+        public static DateTime timeOut = DateTime.UtcNow;
+        public static WoWPoint locKiteBegin = WoWPoint.Empty;
 
-        private static Composite _SlowAttackBehavior;
+        // private static Composite _SlowAttackBehavior;
 
         const int DISTANCE_WE_NEED_TO_START_BACK_PEDAL = 7;
         const int DISTANCE_CLOSE_ENOUGH_TO_DESTINATION = 2;
@@ -200,7 +200,7 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static void CreateKitingBehavior(Composite slowAttack, Composite runawayAttack, Composite jumpturnAttack)
         {
-            _SlowAttackBehavior = slowAttack;
+            // _SlowAttackBehavior = slowAttack;
 
             Composite kitingBehavior =
                 new PrioritySelector(
@@ -213,27 +213,27 @@ namespace Singular.Helpers
                         ret => bstate != State.None,
 
                         new PrioritySelector(
-                            new Decorator(ret => !StyxWoW.IsInGame, new Action(ret => EndKiting("BP: not in game so cancelling"))),
-                            new Decorator(ret => !Me.IsAlive, new Action(ret => EndKiting("BP: i am dead so cancelling"))),
-                            new Decorator(ret => timeOut < DateTime.Now, new Action(ret => EndKiting("BP: taking too long, so cancelling"))),
-                            new Decorator(ret => jumpturnAttack != null && !Me.GotTarget(), new Action(ret => EndKiting("BP: attack behavior but no target, cancelling"))),
+                            new Decorator(ret => !StyxWoW.IsInGame, new Action(ret => EndKiting("not in game so cancelling"))),
+                            new Decorator(ret => !Me.IsAlive, new Action(ret => EndKiting("i am dead so cancelling"))),
+                            new Decorator(ret => timeOut < DateTime.UtcNow, new Action(ret => EndKiting("taking too long, so cancelling"))),
+                            new Decorator(ret => jumpturnAttack != null && !Me.GotTarget(), new Action(ret => EndKiting("attack behavior but no target, cancelling"))),
 
-                            new Decorator(ret => Me.Stunned || Me.IsStunned(), new Action(ret => EndKiting("BP: stunned, cancelling"))),
-                            new Decorator(ret => Me.Rooted || Me.IsRooted(), new Action(ret => EndKiting("BP: rooted, cancelling"))),
+                            new Decorator(ret => Me.Stunned || Me.IsStunned(), new Action(ret => EndKiting("stunned, cancelling"))),
+                            new Decorator(ret => Me.Rooted || Me.IsRooted(), new Action(ret => EndKiting("rooted, cancelling"))),
 
-                            new Decorator(ret => Me.Location.Distance(safeSpot) < DISTANCE_CLOSE_ENOUGH_TO_DESTINATION, new Action(ret => EndKiting("BP: reached safe spot!!!!"))),
-                            new Decorator(ret => Me.Location.Distance(safeSpot) > DISTANCE_TOO_FAR_FROM_DESTINATION, new Action(ret => EndKiting(string.Format("BP: too far from safe spot ( {0:F1} > {1:F1} yds), cancelling", Me.Location.Distance(safeSpot), DISTANCE_TOO_FAR_FROM_DESTINATION)))),
+                            new Decorator(ret => Me.Location.Distance(locSafeSpot) < DISTANCE_CLOSE_ENOUGH_TO_DESTINATION, new Action(ret => EndKiting(string.Format("reached safe spot {0:F1} yds away", StyxWoW.Me.Location.Distance(locKiteBegin))))),
+                            new Decorator(ret => Me.Location.Distance(locSafeSpot) > DISTANCE_TOO_FAR_FROM_DESTINATION, new Action(ret => EndKiting(string.Format("too far from safe spot ( {0:F1} > {1:F1} yds), cancelling", Me.Location.Distance(locSafeSpot), DISTANCE_TOO_FAR_FROM_DESTINATION)))),
 
                             new Decorator(ret => bstate == State.Slow,
-                                new PrioritySelector(
-                                    new Sequence(
-                                        new Action(ret => Logger.WriteDebug(Color.Cyan, "BP: entering SlowAttack behavior")),
-                                        slowAttack ?? new Action(r => { return RunStatus.Failure; }),
-                                        new Action(r => { return RunStatus.Failure; })
+                                new Sequence(
+                                    new SeqDbg(0f, Color.Cyan, s => "KITE: entering SlowAttack behavior"),
+                                    new PrioritySelector(
+                                        slowAttack ?? new SeqDbg( 0f, Color.Cyan, s => "KITE: no SlowAttack behavior so skipping"),
+                                        new PriDbg(0f, Color.Cyan, s => "KITE: ended SlowAttack behavior with Failure")
                                         ),
                                     new Action(ret =>
                                     {
-                                        Logger.WriteDebug(Color.Cyan, "BP: transition from SlowAttack to Moving");
+                                        Logger.WriteDebug(Color.Cyan, "KITE: SlowAttack done, transition to Moving");
                                         bstate = State.Moving;
                                     })
                                     )
@@ -241,16 +241,16 @@ namespace Singular.Helpers
 
                             new Decorator(ret => bstate == State.Moving,
                                 new Sequence(
-                                    new Action(d => Navigator.MoveTo(safeSpot)),
+                                    new Action(d => Navigator.MoveTo(locSafeSpot)),
                 // following 3 lines make sure we are facing and have started moving in the correct direction.  it will force
                 //  .. a minimum wait of 250 ms after movement has started in the correct direction
-                                    new WaitContinue(TimeSpan.FromMilliseconds(250), r => Me.IsDirectlyFacing(safeSpot), new ActionAlwaysSucceed()),
+                                    new WaitContinue(TimeSpan.FromMilliseconds(250), r => Me.IsDirectlyFacing(locSafeSpot), new ActionAlwaysSucceed()),
                                     new WaitContinue(TimeSpan.FromMilliseconds(500), r => Me.IsMoving, new ActionAlwaysSucceed()),  // wait till we are moving (should be very quick)
                                     new DecoratorContinue(
                                         r => !Me.IsMoving,
                                         new Action(ret => { 
-                                            EndKiting("BP: we stopped moving, so end kiting");
-                                            return RunStatus.Failure;
+                                            EndKiting("KITE: we stopped moving, so end kiting");
+                                            return RunStatus.Success;
                                             })
                                         ),
 
@@ -259,7 +259,7 @@ namespace Singular.Helpers
                                         if (runawayAttack != null)
                                         {
                                             bstate = State.NonFaceAttack;
-                                            Logger.WriteDebug(Color.Cyan, "BP: transition from Moving to NonFaceAttack");
+                                            Logger.WriteDebug(Color.Cyan, "KITE: transition from Moving to NonFaceAttack");
                                             return RunStatus.Failure;
                                         }
                                         return RunStatus.Success;
@@ -272,21 +272,21 @@ namespace Singular.Helpers
                                             if (JumpTurn.IsJumpTurnInProgress())
                                             {
                                                 bstate = State.JumpTurnAndAttack;
-                                                Logger.WriteDebug(Color.Cyan, "BP: transition error - active jumpturn? forcing state JumpTurn");
+                                                Logger.WriteDebug(Color.Cyan, "KITE: transition error - active jumpturn? forcing state JumpTurn");
                                                 return RunStatus.Failure;
                                             }
 
                                             if (Me.IsMoving && Me.IsSafelyFacing(Me.CurrentTarget, 120f))
                                             {
                                                 bstate = State.AttackWithoutJumpTurn;
-                                                Logger.WriteDebug(Color.Cyan, "BP: already facing so transition from Moving to AttackNoJumpTurn");
+                                                Logger.WriteDebug(Color.Cyan, "KITE: already facing so transition from Moving to AttackNoJumpTurn");
                                                 return RunStatus.Failure;
                                             }
 
                                             if (JumpTurn.IsJumpTurnNeeded())
                                             {
                                                 bstate = State.JumpTurnAndAttack;
-                                                Logger.WriteDebug(Color.Cyan, "BP: transition from Moving to JumpTurn");
+                                                Logger.WriteDebug(Color.Cyan, "KITE: transition from Moving to JumpTurn");
                                                 return RunStatus.Failure;
                                             }
                                         }
@@ -304,12 +304,12 @@ namespace Singular.Helpers
                                                             if (JumpTurn.IsNeeded())
                                                             {
                                                                 bstate = State.JumpTurn;
-                                                                Logger.WriteDebug(Color.Cyan, "BP: transition from Moving to JumpTurn");
+                                                                Logger.WriteDebug(Color.Cyan, "KITE: transition from Moving to JumpTurn");
                                                             }
                                                             else if (JumpTurn.ActiveJumpTurn())
                                                             {
                                                                 bstate = State.JumpTurn;
-                                                                Logger.WriteDebug(Color.Cyan, "BP: transition error - active jumpturn? forcing state JumpTurn");
+                                                                Logger.WriteDebug(Color.Cyan, "KITE: transition error - active jumpturn? forcing state JumpTurn");
                                                             }
                                                         }
                                                     }
@@ -320,13 +320,13 @@ namespace Singular.Helpers
                             new Decorator(ret => bstate == State.NonFaceAttack,
                                 new PrioritySelector(
                                     new Sequence(
-                                        new Action(ret => Logger.WriteDebug(Color.Cyan, "BP: entering NonFaceAttack behavior")),
+                                        new Action(ret => Logger.WriteDebug(Color.Cyan, "KITE: entering NonFaceAttack behavior")),
                                         runawayAttack ?? new Action(r => { return RunStatus.Failure; }),
                                         new Action(r => { return RunStatus.Failure; })
                                         ),
                                     new Action(ret =>
                                     {
-                                        Logger.WriteDebug(Color.Cyan, "BP: transition from NonFaceAttack to Moving");
+                                        Logger.WriteDebug(Color.Cyan, "KITE: transition from NonFaceAttack to Moving");
                                         bstate = State.Moving;
                                     })
                                     )
@@ -335,13 +335,13 @@ namespace Singular.Helpers
                             new Decorator(ret => bstate == State.AttackWithoutJumpTurn,
                                 new PrioritySelector(
                                     new Sequence(
-                                        new Action(ret => Logger.WriteDebug(Color.Cyan, "BP: entering AttackNoJumpTurn behavior")),
+                                        new Action(ret => Logger.WriteDebug(Color.Cyan, "KITE: entering AttackNoJumpTurn behavior")),
                                         jumpturnAttack ?? new Action(r => { return RunStatus.Failure; }),
                                         new Action(r => { return RunStatus.Failure; })
                                         ),
                                     new Action(ret =>
                                     {
-                                        Logger.WriteDebug(Color.Cyan, "BP: transition from AttackNoJumpTurn to Moving");
+                                        Logger.WriteDebug(Color.Cyan, "KITE: transition from AttackNoJumpTurn to Moving");
                                         bstate = State.Moving;
                                     })
                                     )
@@ -354,13 +354,13 @@ namespace Singular.Helpers
                                         new Action(ret =>
                                         {
                                             bstate = State.Moving;
-                                            Logger.WriteDebug(Color.Cyan, "BP: transition from JumpTurn to Moving");
+                                            Logger.WriteDebug(Color.Cyan, "KITE: transition from JumpTurn to Moving");
                                         })
                                         )
                                     )
                                 ),
 
-                            new Action(ret => Logger.WriteDebug(Color.Cyan, "BP: fell through with state {0}", bstate.ToString()))
+                            new Action(ret => Logger.WriteDebug(Color.Cyan, "KITE: fell through with state {0}", bstate.ToString()))
                             )
                         )
                     );
@@ -374,7 +374,7 @@ namespace Singular.Helpers
                 && !MovementManager.IsMovementDisabled
 
                 && Me.HealthPercent < SingularSettings.Instance.DisengageHealth
-                && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count(m => m.SpellDistance() < SingularSettings.Instance.AvoidDistance) >= SingularSettings.Instance.DisengageMobCount;
+                && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count(m => m.SpellDistance() < SingularSettings.Instance.KiteAvoidDistance) >= SingularSettings.Instance.DisengageMobCount;
         }
 
         public static bool IsKitingWantedByUserSettings()
@@ -382,12 +382,12 @@ namespace Singular.Helpers
             return SingularSettings.Instance.KiteAllow 
                 && !MovementManager.IsMovementDisabled
                 && Me.HealthPercent < SingularSettings.Instance.KiteHealth
-                && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count( m => m.SpellDistance() < SingularSettings.Instance.AvoidDistance) >= SingularSettings.Instance.KiteMobCount;
+                && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count( m => m.SpellDistance() < SingularSettings.Instance.KiteAvoidDistance) >= SingularSettings.Instance.KiteMobCount;
         }
 
         public static bool IsKitingPossible(int minScan = -1)
         {
-            if (!SingularRoutine.IsAllowed(CapabilityFlags.Movement))
+            if (MovementManager.IsMovementDisabled)
                 return false;
             if (!SingularRoutine.IsAllowed(CapabilityFlags.Kiting))
                 return false;
@@ -458,13 +458,13 @@ namespace Singular.Helpers
                 sa.DirectPathOnly = true;   // faster to check direct path than navigable route
             }
 
-            safeSpot = sa.FindLocation();
-            if (safeSpot == WoWPoint.Empty)
+            locSafeSpot = sa.FindLocation();
+            if (locSafeSpot == WoWPoint.Empty)
             {
                 return false;
             }
 
-            return BeginKiting(String.Format("BP: back peddle initiated due to {0} @ {1:F1} yds", mob.Name, mob.Distance));
+            return BeginKiting(String.Format("^Kiting(begin): moving {0:F1} yds away from {1}", locSafeSpot.Distance(StyxWoW.Me.Location), mob.SafeName()));
         }
 
         public static bool IsKitingActive()
@@ -483,10 +483,11 @@ namespace Singular.Helpers
         private static bool BeginKiting(string s)
         {
             StopMoving.Clear();
-            bstate =  _SlowAttackBehavior != null ? State.Slow : State.Moving;
-            DISTANCE_TOO_FAR_FROM_DESTINATION = (int) (Me.Location.Distance(safeSpot) + 3);
-            Logger.WriteDebug(Color.Gold, s);
-            timeOut = DateTime.Now.Add(TimeSpan.FromSeconds(6));
+            bstate =  State.Slow;
+            DISTANCE_TOO_FAR_FROM_DESTINATION = (int) (Me.Location.Distance(locSafeSpot) + 3);
+            Logger.Write(LogColor.Hilite, s);
+            timeOut = DateTime.UtcNow.Add(TimeSpan.FromSeconds(6));
+            locKiteBegin = Me.Location;
             return true;
         }
 
@@ -494,7 +495,7 @@ namespace Singular.Helpers
         {
             bstate = State.None;
             JumpTurn.EndJumpTurn(null);
-            Logger.WriteDebug(Color.Gold, s);
+            Logger.Write(LogColor.Hilite, "^Kiting(ended): " + s);
             WoWMovement.StopFace();
             WoWMovement.MoveStop(WoWMovement.MovementDirection.All);
 
@@ -502,6 +503,7 @@ namespace Singular.Helpers
 
             return RunStatus.Success;
         }
+
     }
 
     public static class JumpTurn
@@ -593,7 +595,7 @@ namespace Singular.Helpers
                                                     new Action( ret => StyxWoW.Me.SetFacing( originalFacing)),
                                                     new WaitContinue( new TimeSpan(0,0,0,0,250), ret => StyxWoW.Me.IsDirectlyFacing(originalFacing), new ActionAlwaysSucceed()),
                 */
-                                    new Action(ret => Navigator.MoveTo(Kite.safeSpot)),
+                                    new Action(ret => Navigator.MoveTo(Kite.locSafeSpot)),
                                     new WaitContinue(new TimeSpan(0, 0, 0, 0, 250), ret => StyxWoW.Me.IsDirectlyFacing(originalFacing), new ActionAlwaysSucceed()),
 
                                     new Action(ret =>
@@ -732,14 +734,14 @@ namespace Singular.Helpers
                             new PrioritySelector(
 
                                 // RESET IF NOT READY
-                                new Decorator(ret => stopKiting < DateTime.Now, new Action(ret => EndKiting("BPWJ: back peddle timed out, cancelling"))),
+                                new Decorator(ret => stopKiting < DateTime.UtcNow, new Action(ret => EndKiting("BPWJ: back peddle timed out, cancelling"))),
                                 new Decorator(ret => !StyxWoW.IsInGame, new Action(ret => EndKiting("BPWJ: not in game so cancelling"))),
                                 new Decorator(ret => !Me.IsAlive, new Action(ret => EndKiting("BPWJ: i am dead so cancelling"))),
                                 new Decorator(ret => !Me.GotTarget(), new Action(ret => EndKiting("BPWJ: no target, cancelling"))),
                                 new Decorator(ret => !Me.CurrentTarget.IsAlive, new Action(ret => EndKiting("BPWJ: target dead, cancelling"))),
 
-                                // new DecoratorContinue(ret => Me.IsMoving, new Action( a => movementCheck = DateTime.Now.Add(new TimeSpan(0, 0, 0, 0, 1000)))),
-                                new Decorator(ret => movementCheck < DateTime.Now && !Me.IsMoving, 
+                                // new DecoratorContinue(ret => Me.IsMoving, new Action( a => movementCheck = DateTime.UtcNow.Add(new TimeSpan(0, 0, 0, 0, 1000)))),
+                                new Decorator(ret => movementCheck < DateTime.UtcNow && !Me.IsMoving, 
                                     new Action( ret => {
                                         if (Me.Stunned || Me.IsStunned())
                                             EndKiting("BPWJ: stunned so cancelling");
@@ -763,7 +765,7 @@ namespace Singular.Helpers
 
                                 // STOP IF JUMP TIMED OUT
                                 new Decorator(
-                                    ret => IsStateJumping() && stopJump <= DateTime.Now,
+                                    ret => IsStateJumping() && stopJump <= DateTime.UtcNow,
                                     new Action(ret => EndKiting("BPWJ: cancel, jump turn timeout"))),
 
                                 // GOBLINS ROCKET JUMP IF WE CAN AND MAKES SENSE 
@@ -838,7 +840,7 @@ namespace Singular.Helpers
             {
                 state = JumpTurnState.RunAway;
                 Logger.WriteDebug( Color.Cyan,  "Back peddling");
-                movementCheck = DateTime.Now.Add(new TimeSpan(0, 0, 0, 0, 500));
+                movementCheck = DateTime.UtcNow.Add(new TimeSpan(0, 0, 0, 0, 500));
                 Navigator.MoveTo(bpwjDest);
             }
 
@@ -860,8 +862,8 @@ namespace Singular.Helpers
                 state = JumpTurnState.RunAway;
                 Logger.WriteDebug( Color.Cyan,  "Back peddling");
                 Navigator.MoveTo(bpwjDest);
-                movementCheck = DateTime.Now.Add(new TimeSpan(0, 0, 0, 0, 1000));
-                stopKiting = DateTime.Now.Add(new TimeSpan(0, 0, 0, 0, 8000));
+                movementCheck = DateTime.UtcNow.Add(new TimeSpan(0, 0, 0, 0, 1000));
+                stopKiting = DateTime.UtcNow.Add(new TimeSpan(0, 0, 0, 0, 8000));
                 return RunStatus.Success;
             }
 
@@ -898,8 +900,8 @@ namespace Singular.Helpers
                 return RunStatus.Failure;
             }
 
-            stopJump = DateTime.Now.Add(new TimeSpan(0, 0, 0, 0, 750));
-            waitBeforeJumpTurnAttack = DateTime.Now.Add(new TimeSpan(0, 0, 0, 0, WAIT_BEFORE_ATTACK ));
+            stopJump = DateTime.UtcNow.Add(new TimeSpan(0, 0, 0, 0, 750));
+            waitBeforeJumpTurnAttack = DateTime.UtcNow.Add(new TimeSpan(0, 0, 0, 0, WAIT_BEFORE_ATTACK ));
             WoWMovement.Move(WoWMovement.MovementDirection.JumpAscend);
             Me.CurrentTarget.Face();
             Logger.WriteDebug( Color.Cyan,  "Jump Turn");
@@ -913,12 +915,12 @@ namespace Singular.Helpers
             Debug.Assert(state == JumpTurnState.WaitBeforeAttack, "State is not WAITBEFOREATTACK");
 
             Logger.WriteDebug(Color.Cyan, "BPWJ: pre-attack");
-            if (waitBeforeJumpTurnAttack > DateTime.Now)
+            if (waitBeforeJumpTurnAttack > DateTime.UtcNow)
             {
                 return RunStatus.Success;
             }
 
-            waitAfterJumpTurnAttack = DateTime.Now.Add(new TimeSpan(0, 0, 0, 0, WAIT_AFTER_ATTACK ));
+            waitAfterJumpTurnAttack = DateTime.UtcNow.Add(new TimeSpan(0, 0, 0, 0, WAIT_AFTER_ATTACK ));
             Logger.WriteDebug( Color.Cyan,  "BPWJ: transition to attack");
 
             state = JumpTurnState.Attacking;
@@ -930,7 +932,7 @@ namespace Singular.Helpers
             Debug.Assert(state == JumpTurnState.WaitAfterAttack, "State is not WAITAFTERATTACK");
 
             Logger.WriteDebug(Color.Cyan, "BPWJ: waiting to turn back and move away");
-            if (waitAfterJumpTurnAttack > DateTime.Now)
+            if (waitAfterJumpTurnAttack > DateTime.UtcNow)
             {
                 return RunStatus.Success;
             }
@@ -1107,7 +1109,7 @@ namespace Singular.Helpers
 
         public WoWPoint FindLocation(WoWPoint ptOrigin)
         {
-            DateTime startFind = DateTime.Now;
+            DateTime startFind = DateTime.UtcNow;
             int countPointsChecked = 0;
             int countFailDiff = 0;
             int countFailTrace = 0;
@@ -1170,9 +1172,9 @@ namespace Singular.Helpers
 
                     Logger.WriteDebug("SafeArea: checking {0:F1} degrees at {1:F1} yds", WoWMathHelper.RadiansToDegrees(checkFacing), distFromOrigin);
 
-                    DateTime start = DateTime.Now;
+                    DateTime start = DateTime.UtcNow;
                     bool failTrace = Movement.MeshTraceline(Me.Location, ptDestination);
-                    spanTrace += DateTime.Now - start;
+                    spanTrace += DateTime.UtcNow - start;
 
                     bool failNav;
                     if (DirectPathOnly)
@@ -1182,9 +1184,9 @@ namespace Singular.Helpers
                     }
                     else
                     {
-                        start = DateTime.Now;
+                        start = DateTime.UtcNow;
                         failNav = !Navigator.CanNavigateFully(Me.Location, ptDestination);
-                        spanNav += DateTime.Now - start;
+                        spanNav += DateTime.UtcNow - start;
                     }
 
                     if (failTrace)
@@ -1258,7 +1260,7 @@ namespace Singular.Helpers
                     }
 
                     Logger.WriteDebug(Color.Cyan, "SafeArea: Found mob-free location ({0:F1} yd radius) at degrees={1:F1} dist={2:F1} on point check# {3} at {4}, {5}, {6}", MinSafeDistance, WoWMathHelper.RadiansToDegrees(checkFacing), distFromOrigin, countPointsChecked, ptDestination.X, ptDestination.Y, ptDestination.Z);
-                    Logger.WriteDebug(Color.Cyan, "SafeArea: processing took {0:F0} ms", (DateTime.Now - startFind).TotalMilliseconds);
+                    Logger.WriteDebug(Color.Cyan, "SafeArea: processing took {0:F0} ms", (DateTime.UtcNow - startFind).TotalMilliseconds);
                     Logger.WriteDebug(Color.Cyan, "SafeArea: meshtrace took {0:F0} ms / fullynav took {1:F0} ms", spanTrace.TotalMilliseconds, spanNav.TotalMilliseconds);
                     Logger.WriteDebug(Color.Cyan, "SafeArea: stats for ({0:F1} yd radius) found within {1:F1} yds ({2} checked, {3} nav, {4} not safe, {5} range, {6} pt los, {7} mob los, {8} mesh trace)", MinSafeDistance, MaxScanDistance, countPointsChecked, countFailToPointNav, countFailSafe, countFailRange, countFailToPointLoS, countFailToMobLoS, countFailTrace);
                     return ptDestination;
@@ -1269,12 +1271,12 @@ namespace Singular.Helpers
             if (ChooseSafestAvailable && ptFurthest != WoWPoint.Empty)
             {
                 Logger.WriteDebug(Color.Cyan, "SafeArea: choosing best available spot in {0:F1} yd radius where closest mob is {1:F1} yds", MinSafeDistance, Math.Sqrt(furthestNearMobDistSqr));
-                Logger.WriteDebug(Color.Cyan, "SafeArea: processing took {0:F0} ms", (DateTime.Now - startFind).TotalMilliseconds);
+                Logger.WriteDebug(Color.Cyan, "SafeArea: processing took {0:F0} ms", (DateTime.UtcNow - startFind).TotalMilliseconds);
                 Logger.WriteDebug(Color.Cyan, "SafeArea: meshtrace took {0:F0} ms / fullynav took {1:F0} ms", spanTrace.TotalMilliseconds, spanNav.TotalMilliseconds);
                 return ChooseSafestAvailable ? ptFurthest : WoWPoint.Empty;
             }
 
-            Logger.WriteDebug(Color.Cyan, "SafeArea: processing took {0:F0} ms", (DateTime.Now - startFind).TotalMilliseconds);
+            Logger.WriteDebug(Color.Cyan, "SafeArea: processing took {0:F0} ms", (DateTime.UtcNow - startFind).TotalMilliseconds);
             Logger.WriteDebug(Color.Cyan, "SafeArea: meshtrace took {0:F0} ms / fullynav took {1:F0} ms", spanTrace.TotalMilliseconds, spanNav.TotalMilliseconds);
             return WoWPoint.Empty;
         }
@@ -1403,6 +1405,7 @@ namespace Singular.Helpers
                         new Action( r => Logger.WriteDebug("DIS: no slow attack given, skipping"))
                         ),
 
+                    new Action(r => Logger.Write( LogColor.Hilite, "^Avoidance(begin): cast {0} to jump away from {1}", spell, mobToGetAwayFrom.SafeName())),
                     new Action(r => Logger.WriteDebug("face {0} safespot as needed", dir == Direction.Frontwards ? "towards" : "away from")),
                     new Action(ret =>
                     {
@@ -1427,6 +1430,7 @@ namespace Singular.Helpers
                         new Wait(new TimeSpan(0, 0, 1), ret => Me.IsDirectlyFacing(needFacing), new ActionAlwaysSucceed()),
                         new Action(ret =>
                         {
+                            Logger.Write(LogColor.Hilite, "^Avoidance(ended): taking too long to face safe spot");
                             Logger.WriteDebug(Color.Cyan, "DIS: timed out waiting to face safe spot - need:{0:F4} have:{1:F4}", needFacing, Me.RenderFacing);
                             return RunStatus.Failure;
                         })
@@ -1444,7 +1448,7 @@ namespace Singular.Helpers
                         new PrioritySelector(
                             Spell.BuffSelf(spell),
                             new Action(ret => {
-                                Logger.WriteDebug(Color.Cyan, "DIS: {0} cast appears to have failed", spell);
+                                Logger.Write(LogColor.Hilite, "^Avoidance(ended): cast of {0} appears to have failed", spell);
                                 return RunStatus.Failure;
                                 })
                             ),
@@ -1452,11 +1456,12 @@ namespace Singular.Helpers
                         new WaitContinue(TimeSpan.FromMilliseconds(1250), req => !Me.IsAlive || !Me.IsFalling, new ActionAlwaysSucceed()),
                         new Action(ret =>
                         {
-                            NextDisengageAllowed = DateTime.Now.Add(TimeSpan.FromMilliseconds(750));
+                            NextDisengageAllowed = DateTime.UtcNow.Add(TimeSpan.FromMilliseconds(750));
                             Logger.WriteDebug(Color.Cyan, "DIS: finished {0} cast", spell);
+                            Logger.Write(LogColor.Hilite, "^Avoidance(ended): jumped {0:F1} yds, now {1:F1} yds away from {2}", Me.Location.Distance(origSpot), Me.Location.Distance(mobToGetAwayFrom.Location), mobToGetAwayFrom.SafeName());
                             Logger.WriteDebug(Color.Cyan, "DIS: jumped {0:F1} yds to land {1:F1} yds away from safespot={2} at curr={3}", Me.Location.Distance(origSpot), Me.Location.Distance(safeSpot), safeSpot, Me.Location);
                             if (Kite.IsKitingActive())
-                                Kite.EndKiting(String.Format("BP: Interrupted by {0}", spell));
+                                Kite.EndKiting(String.Format("interrupted by {0}", spell));
                             return RunStatus.Success;
                         })
                         )
@@ -1470,7 +1475,7 @@ namespace Singular.Helpers
             if (!SpellManager.HasSpell(spell))
                 return false;
 
-            if (DateTime.Now < NextDisengageAllowed)
+            if (DateTime.UtcNow < NextDisengageAllowed)
                 return false;
 
             if (!Me.IsAlive || Me.IsFalling || Me.IsCasting || Me.IsSwimming)
@@ -1486,7 +1491,7 @@ namespace Singular.Helpers
             if (mobToGetAwayFrom == null)
                 return false;
 
-            if (mobToGetAwayFrom.Distance > mobToGetAwayFrom.MeleeDistance() + 3f)
+            if (mobToGetAwayFrom.SpellDistance() > mobToGetAwayFrom.MeleeDistance() + 3f)
                 return false;
 
             SafeArea sa = new SafeArea();
@@ -1513,6 +1518,7 @@ namespace Singular.Helpers
 
             return true;
         }
+
     }
 
 #endregion

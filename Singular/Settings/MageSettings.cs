@@ -106,6 +106,13 @@ namespace Singular.Settings
 
         #region Category: Talents
         [Setting]
+        [DefaultValue(35)]
+        [Category("Talents")]
+        [DisplayName("Cold Snap %")]
+        [Description("Health % to cast this ability")]
+        public int ColdSnapHealthPct { get; set; }
+
+        [Setting]
         [DefaultValue(65)]
         [Category("Talents")]
         [DisplayName("Evanesce %")]

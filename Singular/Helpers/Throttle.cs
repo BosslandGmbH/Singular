@@ -123,7 +123,7 @@ namespace Singular.Helpers
 
         protected override IEnumerable<RunStatus> Execute(object context)
         {
-            if (DateTime.Now < _end && _count >= Limit)
+            if (DateTime.UtcNow < _end && _count >= Limit)
             {
                 yield return _limitStatus;
                 yield break;
@@ -139,10 +139,10 @@ namespace Singular.Helpers
 
             DecoratedChild.Stop(context);
 
-            if (DateTime.Now > _end)
+            if (DateTime.UtcNow > _end)
             {
                 _count = 0;
-                _end = DateTime.Now + TimeFrame;
+                _end = DateTime.UtcNow + TimeFrame;
             }
 
             _count++;
@@ -286,7 +286,7 @@ namespace Singular.Helpers
 
         protected override IEnumerable<RunStatus> Execute(object context)
         {
-            if (DateTime.Now < _end && _count >= Limit)
+            if (DateTime.UtcNow < _end && _count >= Limit)
             {
                 yield return _limitStatus;
                 yield break;
@@ -315,10 +315,10 @@ namespace Singular.Helpers
                 yield break;
             }
 
-            if (DateTime.Now > _end)
+            if (DateTime.UtcNow > _end)
             {
                 _count = 0;
-                _end = DateTime.Now + TimeFrame;
+                _end = DateTime.UtcNow + TimeFrame;
             }
 
             _count++;
@@ -353,8 +353,8 @@ namespace Singular.Helpers
 
         public override void Start(object context)
         {
-            _begin = DateTime.Now;
-            _end = DateTime.Now + _span(context);
+            _begin = DateTime.UtcNow;
+            _end = DateTime.UtcNow + _span(context);
             base.Start(context);
         }
 
@@ -365,13 +365,13 @@ namespace Singular.Helpers
 
             if (_measure)
             {
-                Logger.Write("Duration: {0:F0} ms", (DateTime.Now - _begin).TotalMilliseconds);
+                Logger.Write("Duration: {0:F0} ms", (DateTime.UtcNow - _begin).TotalMilliseconds);
             }
         }
 
         protected override IEnumerable<RunStatus> Execute(object context)
         {
-            while (DateTime.Now < _end)
+            while (DateTime.UtcNow < _end)
             {
                 if (Runner != null)
                 {
@@ -391,7 +391,7 @@ namespace Singular.Helpers
                 yield return RunStatus.Running;
             }
 
-            if (DateTime.Now > _end)
+            if (DateTime.UtcNow > _end)
             {
                 yield return RunStatus.Failure;
                 yield break;
@@ -438,8 +438,8 @@ namespace Singular.Helpers
 
         public override void Start(object context)
         {
-            _begin = DateTime.Now;
-            _end = DateTime.Now + _span(context);
+            _begin = DateTime.UtcNow;
+            _end = DateTime.UtcNow + _span(context);
             base.Start(context);
         }
 
@@ -449,13 +449,13 @@ namespace Singular.Helpers
             base.Stop(context);
             if (_measure)
             {
-                Logger.Write("Duration: {0:F0} ms", (DateTime.Now - _begin).TotalMilliseconds);
+                Logger.Write("Duration: {0:F0} ms", (DateTime.UtcNow - _begin).TotalMilliseconds);
             }
         }
 
         protected override IEnumerable<RunStatus> Execute(object context)
         {
-            while (DateTime.Now < _end)
+            while (DateTime.UtcNow < _end)
             {
                 if (Runner != null)
                 {
@@ -475,7 +475,7 @@ namespace Singular.Helpers
                 yield return RunStatus.Running;
             }
 
-            if (DateTime.Now > _end)
+            if (DateTime.UtcNow > _end)
             {
                 yield return RunStatus.Success;
                 yield break;

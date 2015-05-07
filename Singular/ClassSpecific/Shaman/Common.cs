@@ -53,6 +53,8 @@ namespace Singular.ClassSpecific.Shaman
 
         public static bool talentTotemicPersistance { get; set; }
 
+        public static bool talentPrimalElementalist { get; set; }
+
         public static bool HasTalent(ShamanTalents tal)
         {
             return TalentManager.IsSelected((int)tal);
@@ -103,8 +105,10 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Initialize, WoWClass.Shaman)]
         public static Composite CreateShamanInitialize()
         {
-            PetManager.NeedsPetSupport = HasTalent(ShamanTalents.PrimalElementalist);
             talentTotemicPersistance = HasTalent(ShamanTalents.TotemicPersistence);
+            talentPrimalElementalist = HasTalent(ShamanTalents.PrimalElementalist);
+
+            PetManager.NeedsPetSupport = HasTalent(ShamanTalents.PrimalElementalist);
             return null;
         }
 
@@ -575,7 +579,7 @@ namespace Singular.ClassSpecific.Shaman
                     && !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown()
                     && MovementManager.IsClassMovementAllowed
                     && SingularRoutine.CurrentWoWContext != WoWContext.Instances
-                    && Me.IsMoving // (DateTime.Now - GhostWolfRequest).TotalMilliseconds < 1000
+                    && Me.IsMoving // (DateTime.UtcNow - GhostWolfRequest).TotalMilliseconds < 1000
                     && Me.IsAlive
                     && !Me.OnTaxi && !Me.InVehicle && !Me.Mounted && !Me.IsOnTransport && !Me.IsSwimming 
                     && !Me.HasAura("Ghost Wolf")

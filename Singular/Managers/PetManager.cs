@@ -39,7 +39,6 @@ namespace Singular.Managers
         [Behavior(BehaviorType.Initialize, WoWClass.None, priority: int.MaxValue - 1)]
         public static Composite CreatePetManagerInitializeBehaviour()
         {
-            NeedsPetSupport = false;
             NeedToCheckPetTauntAutoCast = true;
             return null;
         }
@@ -80,8 +79,20 @@ namespace Singular.Managers
         {
             get
             {
-                return !SingularSettings.Instance.DisablePetUsage 
+                return !SingularSettings.Instance.DisablePetUsage
                     && SingularRoutine.IsAllowed(CapabilityFlags.PetUse);
+            }
+        }
+
+        public static bool IsPetSummonAllowed
+        {
+            get
+            {
+                return IsPetUseAllowed
+                    && !StyxWoW.Me.GotAlivePet
+                    && SingularRoutine.IsAllowed(CapabilityFlags.PetSummoning)
+                    && PetManager.PetSummonAfterDismountTimer.IsFinished
+                    ;
             }
         }
 
@@ -330,6 +341,11 @@ namespace Singular.Managers
         public static bool CallPet(string petName)
         {
             if (!CallPetTimer.IsFinished)
+            {
+                return false;
+            }
+
+            if (!IsPetSummonAllowed)
             {
                 return false;
             }

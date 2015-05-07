@@ -58,7 +58,7 @@ namespace Singular.ClassSpecific.Rogue
                 if (RogueSettings.PickPocketOnlyPull)
                     Logger.Write(LogColor.Init, "Stealth: 'Auto' cast when approaching aggro range");
                 else
-                    Logger.Write(LogColor.Init, "Stealth: 'Auto' cast for targets Level {0}+)", Unit.TrivialLevel + 1);
+                    Logger.Write(LogColor.Init, "Stealth: 'Auto' cast for targets Level {0}+", Unit.TrivialLevel + 1);
             }
 
             return null;
@@ -90,7 +90,7 @@ namespace Singular.ClassSpecific.Rogue
             return new PrioritySelector(
                 CreateRogueOpenBoxes(),
 
-                CreateStealthBehavior(ret => RogueSettings.StealthIfEating && StyxWoW.Me.HasAnyAura("Food", "Refreshment")),
+                CreateStealthBehavior(ret => RogueSettings.StealthIfEating && Helpers.Rest.IsEatingOrDrinking),
                 Rest.CreateDefaultRestBehaviour( ),
 
                 CheckThatDaggersAreEquippedIfNeeded(),
@@ -224,26 +224,34 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 // new Action( r => { Logger.WriteDebug("PullBuffs -- stealthed={0}", Stealthed ); return RunStatus.Failure; } ),
-                CreateStealthBehavior( 
-                    ret => {
-                        if (!Me.GotTarget() || (Unit.IsTrivial(Me.CurrentTarget) && !RogueSettings.PickPocketOnlyPull))
+                new Sequence(
+                    new DecoratorContinue(
+                        req => AreStealthAbilitiesAvailable,
+                        new ActionAlwaysFail()
+                        ),
+                    new DecoratorContinue(
+                        req => !Me.GotTarget(),
+                        new PriDbg(3, LogColor.Hilite, s => "^Stealth: suppressed - no current target")
+                        ),
+                    new DecoratorContinue(
+                        req => Me.CurrentTarget.IsTrivial() && (!RogueSettings.UsePickPocket || !IsMobPickPocketable(Me.CurrentTarget)),
+                        new PriDbg(3, LogColor.Hilite, s => string.Format("^Stealth: suppressed for trivial level {0} mob {1}", Me.CurrentTarget.Level, !RogueSettings.UsePickPocket ? "" : "we cannot Pick Pocket"))
+                        ),
+                    CreateStealthBehavior( 
+                        ret => {
+                            float dist = Me.CurrentTarget.SpellDistance();
+                            if (dist < 42 && CloakAndDagger(Me.CurrentTarget))
+                                return true;
+
+                            if (dist < 9)
+                                return true;
+
+                            if (dist < 32 && !Me.CurrentTarget.IsNeutral())
+                                return true;
+
                             return false;
-
-                        if (AreStealthAbilitiesAvailable)
-                            return false;
-                        
-                        float dist = Me.CurrentTarget.SpellDistance();
-                        if (dist < 42 && CloakAndDagger(Me.CurrentTarget))
-                            return true;
-
-                        if (dist < 9)
-                            return true;
-
-                        if (dist < 32 && !Me.CurrentTarget.IsNeutral())
-                            return true;
-
-                        return false;
-                    }),
+                        })
+                    ),
 
                 Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.ComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !Spell.CanCastHack("Redirect"))),
                 new Throttle( 1,
@@ -563,7 +571,7 @@ namespace Singular.ClassSpecific.Rogue
             {
                 lastSapTarget = closestTarget.Guid;
                 // reset the Melee Range check timeer to avoid timing out
-                SingularRoutine.ResetCurrentTargetTimer();
+                SingularRoutine.TargetTimeoutTimer.Reset();
                 Logger.Write( LogColor.Hilite, msg, closestTarget.SafeName());
             }
 

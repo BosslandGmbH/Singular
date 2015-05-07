@@ -91,7 +91,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateMonkPreCombatBuffs()
         {
             return new PrioritySelector(
-				new Decorator(ret => !StyxWoW.Me.HasAnyAura("Drink", "Food", "Refreshment"),
+                new Decorator(ret => !Helpers.Rest.IsEatingOrDrinking,
 					PartyBuff.BuffGroup("Legacy of the White Tiger"))
                 );
         }
@@ -252,15 +252,36 @@ namespace Singular.ClassSpecific.Monk
         {
             return new PrioritySelector(
 
+                // keep FoF only as long as we can hit something alive in melee range
                 new Decorator(
-                    ret => StyxWoW.Me.HasAura("Fists of Fury")
-                        && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)),
-                    new Action(ret =>
-                    {
-                        Logger.WriteDebug("cancelling Fists of Fury - no targets within range");
-                        SpellManager.StopCasting();
-                        return RunStatus.Success;
-                    })
+                    ret => StyxWoW.Me.HasMyAura("Fists of Fury"),
+                    new PrioritySelector(
+                        // no enemies in melee, cancel cast so we can move
+                        new Decorator(
+                            req => !Unit.UnfriendlyUnits().Any(u => u.IsWithinMeleeRange),
+                            new Sequence(
+                                new Action(ret =>
+                                {
+                                    Logger.Write( LogColor.Cancel, "/cancel Fists of Fury: no enemies in melee range");
+                                    SpellManager.StopCasting();
+                                    return RunStatus.Success;
+                                }),
+                                new Wait( TimeSpan.FromMilliseconds(500), until => !Me.HasMyAura("Fists of Fury"), new ActionAlwaysSucceed())
+                                )
+                            ),
+                        // enemies in melee, but not facing currently
+                        new Decorator(
+                            req => !Unit.UnfriendlyUnits().Any(u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)),
+                            new PrioritySelector(
+                                ctx => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange 
+                                    ? Me.CurrentTarget
+                                    : Unit.UnfriendlyUnits().FirstOrDefault( u => u.IsWithinMeleeRange),
+                                Movement.CreateFaceTargetBehavior( on => (WoWUnit) on, 60f, true)
+                                )
+                            ),
+
+                        Spell.WaitForCastOrChannel()
+                        )
                     ),
 
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
@@ -305,26 +326,37 @@ namespace Singular.ClassSpecific.Monk
                         Common.CastTouchOfDeath(),
 
                         // AoE behavior
-                        Spell.Cast("Paralysis", 
-                            onu => Unit.NearbyUnfriendlyUnits
-                                .FirstOrDefault( u => u.IsCasting && u.Distance.Between( 9, 20) && Me.IsSafelyFacing(u) )),
+                        Spell.Cast(
+                            "Paralysis", 
+                            on => Unit.UnfriendlyUnits()
+                                .FirstOrDefault( u => u.IsCasting && u.Distance.Between( 9, 20) && Me.IsSafelyFacing(u) )
+                            ),
 
-                        Spell.Cast("Rising Sun Kick"),
+                        Spell.Buff(
+                            "Rising Sun Kick",
+                            on => Unit.UnitsInCombatWithUsOrOurStuff()
+                                .FirstOrDefault(u => 
+                                    !u.IsCrowdControlled()
+                                    && Spell.CanCastHack("Rising Sun Kick", u)
+                                    && Me.IsSafelyFacing(u, 160)
+                                    ),
+                            req => Unit.UnitsInCombatWithUsOrOurStuff(8).Any(u => !u.HasMyAura("Rising Sun Kick") && Me.IsSafelyFacing(u, 160))
+                            ),
+
+                        Spell.Buff("Tiger Palm", req => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
 
                         Spell.Cast("Fists of Fury", 
-                            ret => Unit.NearbyUnfriendlyUnits.Count( u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)) >= 2),
-
-                        Spell.Cast("Rushing Jade Wind", ctx => HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 4),
-                        Spell.Cast("Spinning Crane Kick", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= MonkSettings.SpinningCraneKickCnt),
-
-                        Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired( "Tiger Power")),
-
-                        // chi dump
-                        Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi),
+                            ret => Unit.NearbyUnfriendlyUnits.Count( u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u, 170)) >= 2),
 
                         // free Tiger Palm or Blackout Kick... do before Jab
                         Spell.Cast("Blackout Kick", ret => Me.HasAura("Combo Breaker: Blackout Kick")),
                         Spell.Cast("Tiger Palm", ret => Me.HasAura("Combo Breaker: Tiger Palm")),
+
+                        Spell.Cast("Rushing Jade Wind", ctx => HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 4),
+                        Spell.Cast("Spinning Crane Kick", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= MonkSettings.SpinningCraneKickCnt),
+
+                        // chi dump
+                        Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi),
 
                         Spell.Buff( "Expel Harm", on => Common.BestExpelHarmTarget(), req => Me.CurrentChi < (Me.MaxChi-2) && Me.HealthPercent < 80),
 

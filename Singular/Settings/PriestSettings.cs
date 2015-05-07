@@ -187,14 +187,21 @@ namespace Singular.Settings
         [Description("True: cast Fade on aggro -or- snare if Phantasm talent taken")]
         public bool UseFade { get; set; }
 
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Levitate")]
+        [Description("True: cast Levitate when falling")]
+        public static bool UseLevitate { get; set; }
+
         /*
-                        [Setting]
-                        [DefaultValue(true)]
-                        [Category("Common")]
-                        [DisplayName("Use Shadow Protection")]
-                        [Description("Use Shadow Protection buff")]
-                        public bool UseShadowProtection { get; set; }
-                */
+                                [Setting]
+                                [DefaultValue(true)]
+                                [Category("Common")]
+                                [DisplayName("Use Shadow Protection")]
+                                [Description("Use Shadow Protection buff")]
+                                public bool UseShadowProtection { get; set; }
+                        */
         [Setting]
         [DefaultValue(50)]
         [Category("Common")]
@@ -434,6 +441,7 @@ namespace Singular.Settings
 
 
         #endregion
+
     }
 
     internal class HolyPriestHealSettings : Singular.Settings.HealerSettings

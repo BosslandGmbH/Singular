@@ -26,6 +26,7 @@ namespace Singular
         public static Color Cancel = Color.OrangeRed;
         public static Color Init = Color.Cyan;
         public static Color Targeting = Color.LightCoral;
+        public static Color Info = Color.LightPink;
     }
 
     public static class Logger
@@ -257,15 +258,28 @@ namespace Singular
 
         public static void TellUser(string template, params object[] args)
         {
+            TellUser(Color.LightYellow, template, args);
+        }
+
+        public static void TellUser(Color clr, string template, params object[] args)
+        {
+            TellUser(clr, TimeSpan.FromMilliseconds(SingularSettings.Instance.Hotkeys().ChatFrameMessageDuration), template, args);
+        }
+
+        public static void TellUser(Color clr, TimeSpan ts, string template, params object[] args)
+        {
+            System.Windows.Media.Color newColor = System.Windows.Media.Color.FromArgb(clr.A, clr.R, clr.G, clr.B);
+            const float coef = 0.5f;
+            System.Windows.Media.Color backColor = System.Windows.Media.Color.FromArgb((byte)(clr.A * coef), (byte)(clr.R * coef), (byte)(clr.G * coef), (byte)(clr.B * coef));
             string msg = string.Format(template, args);
-            Logger.Write(Color.Yellow, msg);
+            Logger.Write(clr, msg);
             if (SingularSettings.Instance.Hotkeys().ChatFrameMessage)
             {
                 StyxWoW.Overlay.AddToast(
                     () => { return msg; },
-                    TimeSpan.FromMilliseconds(SingularSettings.Instance.Hotkeys().ChatFrameMessageDuration),
-                    System.Windows.Media.Colors.LightYellow,
-                    System.Windows.Media.Colors.Blue,
+                    ts,
+                    newColor,
+                    backColor,
                     new System.Windows.Media.FontFamily("Consolas")
                     );
             }
@@ -273,6 +287,14 @@ namespace Singular
 
         #endregion
 
+
+        public static int LogMarkIndex { get; set; }
+
+        public static void LogMark()
+        {
+            LogMarkIndex++;
+            Logger.Write(Color.HotPink, " LOGMARK # {0} at {1}", LogMarkIndex, DateTime.Now.ToString("HH:mm:ss.fff"));
+        }
     }
 
     public class LogMessage : Action
@@ -316,6 +338,10 @@ namespace Singular
             : base(1, TimeSpan.FromSeconds(secs), RunStatus.Success, new Action(r => { if (SingularSettings.Debug) Logger.WriteDebug(msg(r)); return RunStatus.Success; }))
         {
         }
+        public SeqDbg(double secs, Color clr, SimpleStringDelegate msg)
+            : base(1, TimeSpan.FromSeconds(secs), RunStatus.Success, new Action(r => { if (SingularSettings.Debug) Logger.WriteDebug(clr, msg(r)); return RunStatus.Success; }))
+        {
+        }
     }
 
     public class SeqDiag : ThrottlePasses
@@ -348,6 +374,11 @@ namespace Singular
 
         public PriDbg(double secs, SimpleStringDelegate msg)
             : base(1, TimeSpan.FromSeconds(secs), RunStatus.Failure, new Action(r => { if (SingularSettings.Debug) Logger.WriteDebug(msg(r)); return RunStatus.Failure; }))
+        {
+        }
+
+        public PriDbg(double secs, Color clr, SimpleStringDelegate msg)
+            : base(1, TimeSpan.FromSeconds(secs), RunStatus.Failure, new Action(r => { if (SingularSettings.Debug) Logger.WriteDebug(clr, msg(r)); return RunStatus.Failure; }))
         {
         }
     }

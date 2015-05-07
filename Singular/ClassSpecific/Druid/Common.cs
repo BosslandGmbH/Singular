@@ -103,7 +103,6 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateDruidCombatBuffsNormal()
         {
             return new PrioritySelector(                
-                CreateRootBreakShapeshift(),
                 new Decorator(
                     req => !Unit.IsTrivial(Me.CurrentTarget),
                     new PrioritySelector(
@@ -221,6 +220,8 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateDpsDruidHealBehavior()
         {
             return new PrioritySelector(
+
+                CreateRootBreakShapeshift(),
 
             #region Self-Heal: NON-COMBAT
 
@@ -697,12 +698,67 @@ namespace Singular.ClassSpecific.Druid
         }
 
 
-        internal static Composite CreateProwlBehavior(SimpleBooleanDelegate req = null)
+        internal static Composite CreateProwlBehavior(SimpleBooleanDelegate requirements = null)
         {
+            if (DruidSettings.Prowl == ProwlMode.Never)
+                return new ActionAlwaysFail();
+
+            requirements = requirements ?? (req => true);
+
+            BehaviorType createdByBehavior = Dynamics.CompositeBuilder.CurrentBehaviorType;
+            SimpleBooleanDelegate needProwl =
+                req =>
+                {
+                    bool isProwlAllowed = false;
+                    if (DruidSettings.Prowl == ProwlMode.Always)
+                        isProwlAllowed = true;
+                    else if (DruidSettings.Prowl == ProwlMode.Auto && (createdByBehavior == BehaviorType.Pull || createdByBehavior == BehaviorType.PullBuffs))
+                        isProwlAllowed = true;
+                    else if (DruidSettings.Prowl == ProwlMode.PVP)
+                    {
+                        if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                            isProwlAllowed = true;
+                        else if (StyxWoW.Me.GotTarget() && StyxWoW.Me.CurrentTarget.IsPlayer && Unit.ValidUnit(StyxWoW.Me.CurrentTarget))
+                            isProwlAllowed = true;
+                        else if (BotPoi.Current.Type == PoiType.Kill && BotPoi.Current.AsObject is WoWPlayer)
+                            isProwlAllowed = true;
+                    }
+
+                    if (isProwlAllowed)
+                    {
+                        if (!Me.Combat && requirements(req) && !Me.HasAura("Prowl") && !Me.GetAllAuras().Any(a => a.IsHarmful))
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+
+            string createdBy = createdByBehavior.ToString() + " " + Dynamics.CompositeBuilder.CurrentBehaviorName;
             return new Sequence(
-                // Prowl invokes Cat Form, so removed that as a requirement
-                // Spell.BuffSelf("Prowl", ret => Me.Shapeshift == ShapeshiftForm.Cat && (req == null || req(ret))),
-                Spell.BuffSelf("Prowl", ret => req == null || req(ret)),
+                ctx => needProwl(ctx),
+
+                //// no Prowl? then throttle message
+                //new DecoratorContinue(
+                //    req => ! (bool) req && !Me.Mounted && !AreProwlAbilitiesAvailable,
+                //    new SeqDbg( 1, s => string.Format("CreateProwlBehavior: need = {0}, called by {1}", ((bool)s).ToYN(), createdBy))
+                //    ),
+
+                Spell.BuffSelf(
+                    "Prowl",
+                    req =>
+                    {
+                        bool need = (bool)req;
+                        if (!need)
+                            return false;
+
+                        // yes Prowl? message throttled by virtue of buff logic
+                        Logger.WriteDebug("CreateProwlBehavior: need = {0}, called by {1}", need.ToYN(), createdBy);
+                        if (!Spell.CanCastHack("Prowl"))
+                            return false;
+                        return true;
+                    }),
+                // now wait until we can Sap, Pick Pocket, etc...
                 new Wait(TimeSpan.FromMilliseconds(500), ret => Me.HasAura("Prowl"), new ActionAlwaysSucceed())
                 );
         }
@@ -752,7 +808,7 @@ namespace Singular.ClassSpecific.Druid
                 return false;
 
             double dist = -1;
-            if (BotPoi.Current.Type != PoiType.Kill || BotPoi.Current.AsObject.ToUnit() == null)
+            if (BotPoi.Current.Type != PoiType.Kill || BotPoi.Current.AsObject == null || !(BotPoi.Current.AsObject is WoWUnit))
             {
                 dist = Me.Location.Distance(BotPoi.Current.Location);
                 if ( dist < minDistOtherPoi)
@@ -916,22 +972,27 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateRootBreakShapeshift()
         {
             return new Decorator(
-                req => Me.Rooted && Me.HasAnyShapeshift(ShapeshiftForm.Bear, ShapeshiftForm.Cat, ShapeshiftForm.Travel),
+                req => Me.IsRooted()
+                    && !Me.Stunned
+                    && !Me.HasAnyShapeshift(ShapeshiftForm.Travel, ShapeshiftForm.FlightForm, ShapeshiftForm.EpicFlightForm)
+                    && SpellManager.HasSpell("Cat Form") && SpellManager.HasSpell("Bear Form")
+                    && (Me.Specialization != WoWSpec.DruidGuardian || !Me.IsInInstance),
                 new ThrottlePasses(
                     1, TimeSpan.FromSeconds(1), RunStatus.Failure,
                     new Sequence(
-                        ctx => 
+                        new Action(r =>
                         {
-                            SpellFindResults sfr;
-                            string spellName = Me.Shapeshift.ToString() + " Form";
-                            if (!SpellManager.FindSpell(spellName, out sfr))
-                                return null;
-                            return (sfr.Override ?? sfr.Original).Name;
-                        },
-                        new Decorator(req => req != null, new ActionAlwaysSucceed()),
-                        new SeqLog(1, LogColor.Hilite,  s => string.Format("^Rooted: attempting root-break shapeshift")),
-                        new Action(r => Me.CancelAura((string) r)),
-                        new Wait(1, until => !Me.HasAura((string)until), new ActionAlwaysSucceed())
+                            string spellName = Me.Shapeshift != ShapeshiftForm.Bear ? "Bear Form" : "Cat Form";
+                            if (!Spell.CanCastHack(spellName, Me))
+                                return RunStatus.Failure;
+                            return RunStatus.Success;
+                        }),
+                        new SeqLog(1, LogColor.Hilite, s => string.Format("^Rooted: attempting root-break shapeshift")),
+                        new PrioritySelector(
+                            CastForm(ShapeshiftForm.Bear, req => Me.Shapeshift != ShapeshiftForm.Bear),
+                            CastForm(ShapeshiftForm.Cat, req => Me.Shapeshift == ShapeshiftForm.Bear)
+                            ),
+                        new Wait(TimeSpan.FromMilliseconds(500), until => !Me.IsRooted(), new ActionAlwaysSucceed())
                         )
                     )
                 );
@@ -997,12 +1058,12 @@ namespace Singular.ClassSpecific.Druid
                         }
                     }
 
-                    _CrowdControlTarget = Unit.UnfriendlyUnits(25)
+                    _CrowdControlTarget = Unit.UnitsInCombatWithUsOrOurStuff(25)
                         .Where(u => u.CurrentTargetGuid == Me.Guid
                             && u.Guid != _CrowdControlGuid
                             && u.Combat && !u.IsCrowdControlled())
                         .OrderByDescending(k => k.IsPlayer)
-                        .ThenBy(k => k.Guid != Me.CurrentTargetGuid)
+                        .ThenBy(k => k.Guid == Me.CurrentTargetGuid)
                         .ThenBy(k => k.DistanceSqr)
                         .FirstOrDefault();
 
@@ -1238,6 +1299,47 @@ namespace Singular.ClassSpecific.Druid
             return true;
         }
 #endif
+
+        public static Composite CreateAttackFlyingOrUnreachableMobs()
+        {
+            return new Decorator(
+                ret =>
+                {
+                    if (!Me.GotTarget())
+                        return false;
+
+                    return Me.CurrentTarget.IsFlyingOrUnreachableMob();
+                },
+                new Decorator(
+                    req => !Me.CurrentTarget.IsWithinMeleeRange,
+                    new Sequence(
+                        new PrioritySelector(
+                            Spell.Cast("Growl"),
+                            Spell.Buff("Moonfire", req => Me.Specialization == WoWSpec.DruidFeral && Common.HasTalent(DruidTalents.LunarInspiration)),
+                            CreateFaerieFireBehavior(),
+                            Spell.Buff("Moonfire"),
+                            new Sequence(
+                                new PrioritySelector(
+                                    Movement.CreateEnsureMovementStoppedBehavior(27f, on => Me.CurrentTarget, reason: "To cast Wrath"),
+                                    new ActionAlwaysSucceed()
+                                    ),
+                                new Wait(1, until => !Me.IsMoving, new ActionAlwaysSucceed()),
+                                Spell.Cast("Wrath")
+                                )
+                            ),
+                        // otherwise cant reach and 
+                        new Action(r =>
+                        {
+                            if (Me.CurrentTarget.TimeToDeath(99) < 40 && Movement.InLineOfSpellSight(Me.CurrentTarget,5000))
+                            {
+                                SingularRoutine.TargetTimeoutTimer.Reset();
+                            }
+                        })
+                        )
+                    )
+                );
+        }
+
 
     }
 

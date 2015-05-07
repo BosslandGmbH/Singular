@@ -55,7 +55,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => !StyxWoW.Me.HasAnyAura("Drink", "Food", "Refreshment"),
+                    ret => !Helpers.Rest.IsEatingOrDrinking,
                     CreateRestoShamanCombatBuffs()    // call here so any Earth Shield done before we drink
                     ),
                 Singular.Helpers.Rest.CreateDefaultRestBehaviour("Healing Surge", "Ancestral Spirit"),
@@ -464,7 +464,7 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator(
                     ret => (Me.Combat || ((WoWUnit)ret).Combat) 
                         && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid)
-                        && (Common.talentTotemicPersistance || !Totems.Exist(WoWTotem.Cloudburst) || (Totems.GetTotem(WoWTotem.Cloudburst).Expires - DateTime.Now).TotalMilliseconds < 1500),
+                        && (Common.talentTotemicPersistance || !Totems.Exist(WoWTotem.Cloudburst) || (Totems.GetTotem(WoWTotem.Cloudburst).Expires - DateTime.UtcNow).TotalMilliseconds < 1500),
                     Spell.Cast(
                         "Healing Tide Totem",
                         on => Me,

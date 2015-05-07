@@ -19,6 +19,7 @@ using System.Text.RegularExpressions;
 using Singular.Managers;
 using Styx.WoWInternals.DBC;
 using Styx.WoWInternals.DB;
+using Styx.CommonBot.Frames;
 
 namespace Singular.Helpers
 {
@@ -103,12 +104,14 @@ namespace Singular.Helpers
                 ctx => ObjectManager.GetObjectsOfType<WoWItem>().FirstOrDefault(item => item.Entry == id),
                 new Decorator(
                     ctx => ctx != null && CanUseItem((WoWItem)ctx),
-                    new Action(ctx => UseItem((WoWItem)ctx))));
+                    new Action(ctx => UseItem((WoWItem)ctx))
+                    )
+                );
         }
 
         private static bool CanUseItem(WoWItem item)
         {
-            return item.Usable && item.Cooldown <= 0;
+            return item.Usable && item.Cooldown <= 0 && !MerchantFrame.Instance.IsVisible;
         }
 
         private static bool CanUseEquippedItem(WoWItem item)
@@ -118,7 +121,7 @@ namespace Singular.Helpers
             if (string.IsNullOrEmpty(itemSpell))
                 return false;
 
-            return item.Usable && item.Cooldown <= 0;
+            return CanUseItem(item);
         }
 
         public static WoWSpell GetItemSpell(WoWItem item)
@@ -133,16 +136,24 @@ namespace Singular.Helpers
             return WoWSpell.FromId(spellId);
         }
 
-        private static void UseItem(WoWItem item)
+        private static void UseItem(WoWItem item, SimpleStringDelegate log = null)
         {
-            Logger.Write(LogColor.Hilite, "/use {0}", item.Name);
+            if (!CanUseItem(item))
+                return;
+
+            if ( log == null)
+                log = s => string.Format( "/use {0}", item.Name);
+
+            Logger.Write(LogColor.Hilite, log(item));
             item.Use();
         }
 
         private static void UseItem(WoWItem item, WoWUnit on)
         {
-            Logger.Write(LogColor.Hilite, "/use {0} on {1} @ {2:F1} yds", item.Name, on.SafeName(), on.SpellDistance());
-            item.Use();
+            if (!CanUseItem(item))
+                return;
+
+            UseItem( item, log => string.Format("/use {0} on {1} @ {2:F1} yds", item.Name, on.SafeName(), on.SpellDistance()));
         }
 
         /// <summary>
@@ -206,8 +217,8 @@ namespace Singular.Helpers
                         new Decorator(
                             ret => ret != null,
                             new Sequence(
-                                new Action(ret => Logger.Write(LogColor.SpellHeal, "/use {0} @ {1:F1}% Health", ((WoWItem)ret).Name, StyxWoW.Me.HealthPercent )),
-                                new Action(ret => ((WoWItem)ret).UseContainerItem()),
+                                // new Action(ret => ((WoWItem)ret).UseContainerItem()),
+                                new Action(ret => UseItem((WoWItem)ret, log => string.Format("/use {0} @ {1:F1}% Health", ((WoWItem)ret).Name, StyxWoW.Me.HealthPercent ))),
                                 Helpers.Common.CreateWaitForLagDuration()
                                 )
                             ),
@@ -224,8 +235,7 @@ namespace Singular.Helpers
                         new Decorator(
                             ret => ret != null,
                             new Sequence(
-                                new Action(ret => Logger.Write(LogColor.Hilite, "/use {0} @ {1:F1}% Mana", ((WoWItem)ret).Name, StyxWoW.Me.ManaPercent )),
-                                new Action(ret => ((WoWItem)ret).UseContainerItem()),
+                                new Action(ret => UseItem((WoWItem)ret, log => string.Format("/use {0} @ {1:F1}% Mana", ((WoWItem)ret).Name, StyxWoW.Me.ManaPercent ))),
                                 Helpers.Common.CreateWaitForLagDuration()
                                 )
                             )
@@ -241,9 +251,6 @@ namespace Singular.Helpers
 
         public static Composite CreateUseFlasksBehavior()
         {
-            const int ACCELERATED_LEARNING = 178119;                    // (aura)
-            const int EXCESS_POTION_OF_ACCELERATED_LEARNING = 120182;   // (item)
-
             if (!SingularSettings.Instance.UseAlchemyFlasks || Me.Level < 85)
                 return new ActionAlwaysFail();
 
@@ -272,8 +279,7 @@ namespace Singular.Helpers
                             new Decorator(
                                 req => req != null && CanUseItem((WoWItem)req),
                                 new Sequence(
-                                    new Action(r => Logger.Write(LogColor.Hilite, "/use flask: {0}", ((WoWItem)r).Name)),
-                                    new Action(r => ((WoWItem)r).UseContainerItem()),
+                                    new Action(r => UseItem((WoWItem)r, log => string.Format("/use flask: {0}", ((WoWItem)r).Name))),
                                     new PrioritySelector(
                                         new DynaWait( 
                                             ts => TimeSpan.FromMilliseconds(Math.Max(500, SingularRoutine.Latency * 2)),
@@ -293,13 +299,42 @@ namespace Singular.Helpers
                                     )
                                 )
                             )
-                        ),
-
-                    new Decorator(
-                        req => Me.Level.Between(90,99) && !Me.HasAura(ACCELERATED_LEARNING),
-                        UseItem( EXCESS_POTION_OF_ACCELERATED_LEARNING)
                         )
                     )
+                );
+        }
+
+        /// <summary>
+        /// use Alchemist's Flask if no flask buff active. do over optimize since this is a precombatbuff behavior
+        /// </summary>
+        /// <returns></returns>
+
+        public static Composite CreateUseXPBuffPotionsBehavior()
+        {
+            const int ACCELERATED_LEARNING = 178119;                    // (aura)
+            const int EXCESS_POTION_OF_ACCELERATED_LEARNING = 120182;   // (item)
+
+            if (!SingularSettings.Instance.UseXPBuffPotions)
+                return new ActionAlwaysFail();
+
+            PrioritySelector pri = new PrioritySelector();
+
+            if (Me.Level.Between(91, 99))
+                pri.AddChild(
+                    new Decorator(
+                        req => !Me.HasAura(ACCELERATED_LEARNING),
+                        UseItem(EXCESS_POTION_OF_ACCELERATED_LEARNING)
+                        )
+                    );
+
+            if (!pri.Children.Any())
+                return new ActionAlwaysFail();
+
+            return new ThrottlePasses(
+                1,
+                TimeSpan.FromSeconds(15),
+                RunStatus.Failure,
+                pri
                 );
         }
 
@@ -341,7 +376,7 @@ namespace Singular.Helpers
 
         private static bool IsScrollNeeded()
         {
-            if (suppressScrollsUntil > DateTime.Now)
+            if (suppressScrollsUntil > DateTime.UtcNow)
                 return false;
 
             if (Me.Auras.Any(a => a.Value.ApplyAuraType == WoWApplyAuraType.ModStat))
@@ -374,7 +409,7 @@ namespace Singular.Helpers
                 new Action(r =>
                     {
                         ScrollContext sc = (ScrollContext)r;
-                        sc.usedAt = DateTime.Now;
+                        sc.usedAt = DateTime.UtcNow;
                         UseItem(sc.scroll);
                     }),
 
@@ -383,7 +418,7 @@ namespace Singular.Helpers
                     until => Utilities.EventHandlers.LastRedErrorMessage > ((ScrollContext) until).usedAt,
                     new Action(r => {
                         int suppressFor = 5;
-                        suppressScrollsUntil = DateTime.Now.AddMinutes(suppressFor);
+                        suppressScrollsUntil = DateTime.UtcNow.AddMinutes(suppressFor);
                         Logger.WriteDebug("UseBestScroll: suppressing Scroll Use for {0} minutes due to WoWRedError encountered", suppressFor);
                         return RunStatus.Failure;
                         })
@@ -803,11 +838,7 @@ namespace Singular.Helpers
                         ret => bandage != null && !Me.IsMoving,
 
                         new Sequence(
-                            new Action(ret =>
-                            {
-                                Logger.Write(LogColor.Hilite, "/use {0} @ {1:F1}%", bandage.Name, Me.HealthPercent);
-                                bandage.Use();
-                            }),
+                            new Action(ret => Item.UseItem(bandage, log => string.Format("/use {0} @ {1:F1}%", bandage.Name, Me.HealthPercent))),
                             new WaitContinue(new TimeSpan(0, 0, 0, 0, 750), ret => Me.IsCasting || Me.IsChanneling, new ActionAlwaysSucceed()),
                             new WaitContinue(8, ret => (!Me.IsCasting && !Me.IsChanneling) || Me.HealthPercent > 99, new ActionAlwaysSucceed()),
                             new DecoratorContinue(
@@ -866,7 +897,7 @@ namespace Singular.Helpers
                             && Me.CurrentTarget.SpellDistance() >= 20
                             && Me.CurrentTarget.InLineOfSight
                             && Me.IsSafelyFacing(Me.CurrentTarget)
-                            && (DateTime.Now - Utilities.EventHandlers.LastNoPathFailure) > TimeSpan.FromSeconds(15),
+                            && (DateTime.UtcNow - Utilities.EventHandlers.LastNoPathFailure) > TimeSpan.FromSeconds(15),
                         new Sequence(
                             new Action(r =>
                             {

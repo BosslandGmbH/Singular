@@ -133,7 +133,7 @@ namespace Singular.Helpers
         {
             if (unit != null && unit.InLineOfSpellSight)
             {
-                if ((DateTime.Now - EventHandlers.LastLineOfSightFailure).TotalMilliseconds < timeOut)
+                if ((DateTime.UtcNow - EventHandlers.LastLineOfSightFailure).TotalMilliseconds < timeOut)
                 {
                     if (nextLossMessage < DateTime.UtcNow)
                     {
@@ -248,8 +248,19 @@ namespace Singular.Helpers
                 ctx => toUnit(ctx),
 
                 new DecoratorContinue(
-                    req => req == null || MovementManager.IsFacingDisabled || Me.IsSafelyFacing(toUnit(req), viewDegrees) || (req as WoWUnit).IsMe,
+                    req => req == null || MovementManager.IsFacingDisabled || (req as WoWUnit).IsMe,
                     new ActionAlwaysFail()
+                    ),
+
+                new PrioritySelector(
+                    new Decorator(
+                        req => (req as WoWUnit).IsNotFacingErrorTarget(),
+                        new SeqDiag(0.5, s => string.Format("FaceTarget: {0} matches last Not Facing Target error", (s as WoWUnit).SafeName()))
+                        ),
+                    new DecoratorContinue(
+                        req => Me.IsSafelyFacing((WoWUnit)req, viewDegrees),
+                        new ActionAlwaysFail()
+                        )
                     ),
 
                 // Failure: wait to face until not moving
@@ -270,7 +281,7 @@ namespace Singular.Helpers
                             WoWUnit unit = (WoWUnit)ret;
                             _strafeDuration = TimeSpan.FromMilliseconds(150f);
                             _strafeStopTime = DateTime.UtcNow + _strafeDuration;
-                            _strafeDirection = (((int)DateTime.Now.Second) & 1) == 0 ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
+                            _strafeDirection = (((int)DateTime.UtcNow.Second) & 1) == 0 ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
                             Logger.WriteDiagnostic(LogColor.Hilite, "FaceTarget: {0} for {1:F0} ms since too close to target @ {2:F2} yds", _strafeDirection, _strafeDuration.TotalMilliseconds, unit.Distance);
                             WoWMovement.Move(_strafeDirection, _strafeDuration);
                         }),
@@ -343,28 +354,23 @@ namespace Singular.Helpers
 
                 new DecoratorContinue(
                     req => req == null,
-                    new PrioritySelector(
-                        new Throttle(5, new Action(r => Logger.WriteDiagnostic(LogColor.Diagnostic, "waiting: for WaitFaceTarget, but no target selected"))),
-                        new ActionAlwaysSucceed()
-                        )
+                    new SeqLog( 5, LogColor.Diagnostic, s => "waiting: for WaitFaceTarget, but no target selected")
+                    ),
+
+                new DecoratorContinue(
+                    req => Me.InVehicle,
+                    new PriLog( 5f, LogColor.Diagnostic, s => string.Format("warning: in vehicle so ignoring facing requirement for {0}", (s as WoWUnit).SafeName()))
                     ),
 
                 new DecoratorContinue(
                     req => req != null && MovementManager.IsFacingDisabled,
-                    new PrioritySelector(
-                        new Throttle(5, new Action(r => Logger.Write(LogColor.Diagnostic, "warning: facing disabled and not facing {0} @ {1:F1} yds", (r as WoWUnit).SafeName(), (r as WoWUnit).SpellDistance()))),
-                        new ActionAlwaysSucceed()
-                        )
+                    new SeqLog( 5, LogColor.Diagnostic, s => string.Format("warning: facing disabled and not facing {0} @ {1:F1} yds", (s as WoWUnit).SafeName(), (s as WoWUnit).SpellDistance()))
                     ),
 
                 new DecoratorContinue(
                     req => req != null && !MovementManager.IsFacingDisabled,
-                    new PrioritySelector(
-                        new Throttle(1, new Action(r => Logger.WriteDebug(LogColor.Diagnostic, "waiting: for WaitFaceTarget, attempting to face {0} @ {1:F1} yds", (r as WoWUnit).SafeName(), (r as WoWUnit).SpellDistance()))),
-                        new ActionAlwaysSucceed()
-                        )
+                    new SeqDbg( 1, LogColor.Diagnostic, s => string.Format("waiting: for WaitFaceTarget, attempting to face {0} @ {1:F1} yds", (s as WoWUnit).SafeName(), (s as WoWUnit).SpellDistance()))
                     ),
-
 
                 // at this point, we have target, movement allowed, so return Success until in line of sight
                 new ActionAlwaysSucceed()
@@ -550,7 +556,7 @@ namespace Singular.Helpers
             if (unit.IsPlayer)
                 return unit.DistanceSqr < (2 * 2);
 
-            float preferredDistance = Spell.MeleeDistance(unit) - (unit.IsMoving ? 1.5f : 1f);
+            float preferredDistance = Math.Max(2f, unit.CombatReach + 1f);
             if (unit.Distance <= preferredDistance && unit.IsWithinMeleeRange)
                 return true;
 
@@ -823,7 +829,7 @@ namespace Singular.Helpers
 
                         Logger.Write( LogColor.Hilite, "MoveToSide: moving diagonally {0} for {1:F1} yds", CMTS(r).Direction.ToString().Substring(6), CMTS(r).Distance);
                         Navigator.MoveTo(CMTS(r).Destination);
-                        CMTS(r).TimeToStop = DateTime.Now + TimeSpan.FromSeconds(CMTS(r).MoveTime);
+                        CMTS(r).TimeToStop = DateTime.UtcNow + TimeSpan.FromSeconds(CMTS(r).MoveTime);
                         return RunStatus.Success;
                     }),
 
@@ -835,7 +841,7 @@ namespace Singular.Helpers
 
                     new WaitContinue(
                         TimeSpan.FromSeconds(3), 
-                        until => !Me.IsMoving || DateTime.Now > CMTS(until).TimeToStop,
+                        until => !Me.IsMoving || DateTime.UtcNow > CMTS(until).TimeToStop,
                         new Action(r => Logger.WriteDebug("MoveToSide: timed stop of diagonal movement {0} successful", Me.IsMoving ? "WAS NOT" : "was"))
                         ),
 

@@ -87,7 +87,7 @@ namespace Singular.ClassSpecific.Monk
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => !StyxWoW.Me.HasAnyAura("Drink", "Food", "Refreshment"),
+                    ret => !Helpers.Rest.IsEatingOrDrinking,
                     new PrioritySelector(
                         // pickup free heals from Life Spheres
                         new Decorator(
@@ -158,8 +158,9 @@ namespace Singular.ClassSpecific.Monk
                             // add buff / shield here
                             Spell.HandleOffGCD(
                                 new Throttle(
-                                    3, 
-                                    Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HealthPercent < MonkSettings.TigereyeBrewHealth && Me.HasAura("Tigereye Brew", 1))
+                                    1, 
+                                    Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HealthPercent < MonkSettings.TigereyeBrewHealth && Me.HasAura("Tigereye Brew", 1)),
+                                    Spell.BuffSelf("Dampen Harm", req => Me.HealthPercent < MonkSettings.DampenHarmPct || MonkSettings.DampenHarmCount <= Unit.UnfriendlyUnits(40).Count( u => u.IsAlive && u.CurrentTargetGuid == Me.Guid && !u.IsTrivial()))
                                     )
                                 ),
                             
@@ -659,7 +660,7 @@ namespace Singular.ClassSpecific.Monk
 
         private static WoWGuid guidSphere = WoWGuid.Empty;
         private static WoWPoint locSphere = WoWPoint.Empty;
-        private static DateTime timeAbortSphere = DateTime.Now;
+        private static DateTime timeAbortSphere = DateTime.UtcNow;
 
         public static Composite CreateMoveToSphereBehavior(SphereType typ, float range)
         {
@@ -689,13 +690,13 @@ namespace Singular.ClassSpecific.Monk
 
                         guidSphere = sph.Guid;
                         locSphere = sph.Location;
-                        timeAbortSphere = DateTime.Now + TimeSpan.FromSeconds(5);
+                        timeAbortSphere = DateTime.UtcNow + TimeSpan.FromSeconds(5);
                         Logger.WriteDebug("MoveToSphere: Moving {0:F1} yds to {1} Sphere {2} @ {3}", sph.Distance, typ, guidSphere, locSphere);
                         return RunStatus.Failure;
                     }),
 
                     new Decorator( 
-                        ret => DateTime.Now > timeAbortSphere, 
+                        ret => DateTime.UtcNow > timeAbortSphere, 
                         new Action( ret => {
                             Logger.WriteDebug("MoveToSphere: blacklisting timed out {0} sphere {1} at {2}", typ, guidSphere, locSphere);
                             Blacklist.Add(guidSphere, BlacklistFlags.Combat, TimeSpan.FromMinutes(5));

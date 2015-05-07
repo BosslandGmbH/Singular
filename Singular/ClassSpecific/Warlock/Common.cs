@@ -114,7 +114,7 @@ namespace Singular.ClassSpecific.Warlock
                 //new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && Me.GotAlivePet,
                 //    new Action(ctx => Lua.DoString("PetDismiss()"))),
                 new Decorator(
-                    req => !Me.HasAnyAura("Drink", "Food", "Refreshment") && !Me.Mounted,
+                    req => !Helpers.Rest.IsEatingOrDrinking && !Me.Mounted,
                     new PrioritySelector(
                         // new ThrottlePasses( 5, new Action( r => { Logger.Write( "in Rest()"); return RunStatus.Failure; } )),
                         new Sequence(
@@ -179,7 +179,7 @@ namespace Singular.ClassSpecific.Warlock
                                         new Action( r => {
                                             WoWGameObject obj = r as WoWGameObject;
                                             const int StrafeTime = 250;
-                                            WoWMovement.MovementDirection strafe = (((int)DateTime.Now.Second) & 1) == 0 ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
+                                            WoWMovement.MovementDirection strafe = (((int)DateTime.UtcNow.Second) & 1) == 0 ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
                                             Logger.Write( LogColor.Hilite, "Soulwell {0} for {1} ms since too close to Soulwell @ {2:F2} yds", strafe, StrafeTime, obj.Distance);
                                             WoWMovement.Move(strafe, TimeSpan.FromMilliseconds(StrafeTime));
                                         })
@@ -513,8 +513,7 @@ namespace Singular.ClassSpecific.Warlock
         private static Composite CreateWarlockSummonPet()
         {
             return new Decorator(
-                ret => !SingularSettings.Instance.DisablePetUsage
-                    && SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.PetSummoning) 
+                ret => PetManager.IsPetSummonAllowed
                     && !Me.HasAura( "Grimoire of Sacrifice")        // don't summon pet if this buff active
                     && GetBestPet() != GetCurrentPet()
                     && Spell.CanCastHack( "Summon " + GetBestPet()), 

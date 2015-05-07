@@ -69,9 +69,9 @@ namespace Singular.ClassSpecific.Druid
         {
             scenario = new CombatScenario(44, 1.5f);
 
-            glyphFlappingOwl = TalentManager.HasGlyph("Flapping Owl");
+            glyphFlappingOwl = TalentManager.HasGlyph("the Flapping Owl");
             if (glyphFlappingOwl)
-                Logger.Write(LogColor.Init, "Glyph of Flapping Owl: will [Flap] when falling");
+                Logger.Write(LogColor.Init, "Glyph of the Flapping Owl: will [Flap] when falling");
 
             glyphUntamedStars = TalentManager.HasGlyph("Untamed Stars");
             if (glyphUntamedStars)

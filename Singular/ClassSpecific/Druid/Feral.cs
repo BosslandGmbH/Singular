@@ -33,6 +33,8 @@ namespace Singular.ClassSpecific.Druid
         #region Common
 
         public static bool talentBloodtalons { get; set; }
+        public static bool talentLunarInspiration { get; set; }
+
 
         [Behavior(BehaviorType.Initialize, WoWClass.Druid, WoWSpec.DruidFeral)]
         public static Composite CreateFeralDruidInitialize()
@@ -45,6 +47,8 @@ namespace Singular.ClassSpecific.Druid
                 else
                     Logger.Write(LogColor.Init, "Bloodtalons: save Predatory Swiftness Healing Touch until 4+ combat points or {0}%", DruidSettings.PredSwiftnessHealingTouchHealth);
             }
+
+            talentLunarInspiration = Common.HasTalent(DruidTalents.LunarInspiration);
 
             return null;
         }
@@ -96,7 +100,7 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
                 CreateFeralDiagnosticOutputBehavior( "Pull" ),
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(req => !Me.HasAura("Prowl")),
 
                 Spell.WaitForCast(),
 
@@ -107,6 +111,8 @@ namespace Singular.ClassSpecific.Druid
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
 
+                        Common.CreateAttackFlyingOrUnreachableMobs(),  
+/*
                         //Shoot flying targets
                         new Decorator(
                             ret => Me.CurrentTarget.IsAboveTheGround(),
@@ -127,27 +133,41 @@ namespace Singular.ClassSpecific.Druid
                                 Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 27f, 22f)
                                 )
                             ),
+*/
+                        Spell.Buff("Moonfire", req => Me.GotTarget() && Me.CurrentTarget.IsTrivial() && (Me.Shapeshift != ShapeshiftForm.Cat || (talentLunarInspiration && !Me.HasAura("Prowl")))),
 
-                        Common.CastForm( ShapeshiftForm.Cat, req => Me.Shapeshift != ShapeshiftForm.Cat && !Utilities.EventHandlers.IsShapeshiftSuppressed),
+                        Common.CreateProwlBehavior(
+                            req =>
+                            {
+                                if (!Me.GotTarget() || Unit.IsTrivial(Me.CurrentTarget))
+                                    return false;
 
-                        Common.CreateProwlBehavior(),
+                                float dist = Me.CurrentTarget.SpellDistance();
+                                if (dist < 29 && !Spell.IsSpellOnCooldown("Wild Charge"))
+                                    return true;
+                                if (dist < 9)
+                                    return true;
+                                if (dist < Math.Max( 18, 4 + Me.GetAggroRange(Me.CurrentTarget)) && Me.GetReactionTowards(Me.CurrentTarget) < WoWUnitReaction.Neutral)
+                                    return true;
+                                return false;
+                            }
+                            ),
+
+                        Common.CastForm(ShapeshiftForm.Cat, req => Me.Shapeshift != ShapeshiftForm.Cat && !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
                         CreateFeralWildChargeBehavior(),
 
                         // only Dash if we dont have WC or WC was cast more than 2 seconds ago
 
-                        new Decorator(
-                            ret => Me.HasAura("Prowl"),
-                            new PrioritySelector(
-                                Spell.BuffSelf("Dash", 
-                                    ret => MovementManager.IsClassMovementAllowed && Me.IsMoving
-                                        && ((Me.CurrentTarget.Distance > 15 && Spell.GetSpellCooldown("Wild Charge", 999).TotalSeconds > 3)
-                                            || Spell.GetSpellCooldown("Wild Charge", 999).TotalSeconds > 40)
-                                    ),
-                                Spell.Buff("Rake", 3)
-                                )
+                        Spell.BuffSelf("Dash", 
+                            ret => MovementManager.IsClassMovementAllowed 
+                                && Me.IsMoving
+                                && Me.HasAura("Prowl")
+                                && Me.CurrentTarget.Distance > 17 
+                                && Spell.GetSpellCooldown("Wild Charge", 999).TotalSeconds > 1
                             ),
-                        Spell.Buff("Rake", 3)
+
+                        Spell.Buff("Rake", req => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.Distance < (Me.CurrentTarget.CombatReach + 2))
                         )
                     ),
 
@@ -204,6 +224,16 @@ namespace Singular.ClassSpecific.Druid
                 ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(), 
                 new PrioritySelector(
 
+                    // prowl will cast form if used, so check for it first
+                    Common.CreateProwlBehavior(
+                        ret => DruidSettings.Prowl == ProwlMode.Always
+                            && (Me.Shapeshift == ShapeshiftForm.Cat || !Utilities.EventHandlers.IsShapeshiftSuppressed)
+                            && !Me.HasAnyShapeshift(ShapeshiftForm.Aqua, ShapeshiftForm.FlightForm, ShapeshiftForm.EpicFlightForm)
+                            && BotPoi.Current.Type != PoiType.Loot
+                            && BotPoi.Current.Type != PoiType.Skin
+                            && !ObjectManager.GetObjectsOfType<WoWUnit>().Any(u => u.IsDead && ((CharacterSettings.Instance.LootMobs && u.CanLoot && u.Lootable) || (CharacterSettings.Instance.SkinMobs && u.Skinnable && u.CanSkin)) && u.Distance < CharacterSettings.Instance.LootRadius)
+                        ),
+
                     // cast cat form 
                     // since this check comes while not in combat (so will be doing other things like Questing) need to add some checks:
                     // - only if Moving
@@ -220,13 +250,6 @@ namespace Singular.ClassSpecific.Druid
                                 && !Me.IsFlying && !Me.IsSwimming 
                                 && !Me.HasAnyShapeshift( ShapeshiftForm.Cat, ShapeshiftForm.Travel, ShapeshiftForm.Aqua, ShapeshiftForm.FlightForm, ShapeshiftForm.EpicFlightForm)
                             )
-                        ),
-
-                    Common.CreateProwlBehavior(
-                        ret => DruidSettings.ProwlAlways
-                            && BotPoi.Current.Type != PoiType.Loot
-                            && BotPoi.Current.Type != PoiType.Skin
-                            && !ObjectManager.GetObjectsOfType<WoWUnit>().Any(u => u.IsDead && ((CharacterSettings.Instance.LootMobs && u.CanLoot && u.Lootable) || (CharacterSettings.Instance.SkinMobs && u.Skinnable && u.CanSkin)) && u.Distance < CharacterSettings.Instance.LootRadius)
                         )
                     )
                 );
@@ -308,7 +331,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateFeralNormalCombat()
         {
             return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(req => !Me.HasAura("Prowl")),
 
                 Spell.WaitForCast(),
 
@@ -367,7 +390,7 @@ namespace Singular.ClassSpecific.Druid
                                 && Me.CurrentTarget.TimeToDeath() >= 7
                                 && Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds < 3),
 
-                        Spell.Buff("Rake", 3 ),
+                        Spell.Buff("Rake", req => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange),
 
 #if MULTI_DOT_MOONFIRE
                         // multi-dot with if we can (in range and enough energy)
@@ -403,13 +426,14 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 
+
         static long _currTargetTimeToDeath { get; set; }
 
         [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Instances )]
         public static Composite CreateFeralCombatInstances()
         {
             return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
+                Helpers.Common.EnsureReadyToAttackFromMelee( req => !Me.HasAura("Prowl")),
 
                 Spell.WaitForCast(),
 

@@ -281,7 +281,7 @@ namespace Singular.Helpers
         /// </summary>
         public static void ResetReadyToPartyBuffTimer()
         {
-            timeAllowBuff = DateTime.Now + spanBuffFrequency;
+            timeAllowBuff = DateTime.UtcNow + spanBuffFrequency;
         }
 
         /// <summary>
@@ -295,7 +295,7 @@ namespace Singular.Helpers
             if (!StyxWoW.Me.IsInGroup())
                 return true;
 
-            if (DateTime.Now < timeAllowBuff)
+            if (DateTime.UtcNow < timeAllowBuff)
                 return false;
 
             if (!Battlegrounds.IsInsideBattleground)

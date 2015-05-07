@@ -475,9 +475,9 @@ namespace Singular.Helpers
 
                                         // And there's nothing left, so just return null, kthx.
                                         // ... but show a message about botbase still calling our Combat behavior with nothing to kill
-                                        if (DateTime.Now >= _timeNextInvalidTargetMessage)
+                                        if (DateTime.UtcNow >= _timeNextInvalidTargetMessage)
                                         {
-                                            _timeNextInvalidTargetMessage = DateTime.Now + TimeSpan.FromSeconds(5);
+                                            _timeNextInvalidTargetMessage = DateTime.UtcNow + TimeSpan.FromSeconds(5);
                                             Logger.Write(targetColor, "Bot TargetList is empty, no targets available");
                                         }
 

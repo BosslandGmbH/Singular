@@ -45,7 +45,7 @@ namespace Singular.ClassSpecific.Mage
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         new Decorator(
-                            ret => !Me.HasAnyAura("Drink", "Food", "Refreshment"),
+                            ret => !Helpers.Rest.IsEatingOrDrinking,
                             new PrioritySelector(
                                 CreateSummonWaterElemental(),
                                 Common.CreateHealWaterElemental()
@@ -101,15 +101,7 @@ namespace Singular.ClassSpecific.Mage
 
             #region TRIVIAL MOB FARM SUPPORT
                         new Decorator(
-                            ret => {
-                                if (!SpellManager.HasSpell("Cone of Cold"))
-                                    return false;
-                                WoWUnit careful = Unit.UnfriendlyUnits(50)
-                                    .Where(u => !u.IsPlayer && u.IsTrivial())
-                                    .OrderByDescending(u => u.MaxHealth)
-                                    .FirstOrDefault();
-                                return careful == null;
-                            },
+                            req => Me.CurrentTarget.IsTrivial(),
                             new PrioritySelector(
                                 Spell.Cast("Cone of Cold", mov => false, on => Me.CurrentTarget, req => 
                                 {
@@ -117,7 +109,7 @@ namespace Singular.ClassSpecific.Mage
                                     int count = coneUnits.Count();
                                     if (count > 1 && Spell.CanCastHack("Cone of Cold", Me.CurrentTarget) && coneUnits.Any(u => u.Guid == Me.CurrentTargetGuid))
                                     {
-                                        if (!coneUnits.Where(u => !u.IsTrivial() || u.IsCrowdControlled()).Any())
+                                        if (coneUnits.All(u => u.IsTrivial()))
                                         {
                                             Logger.Write("^AOE Trivial Pull: casting Cone of Cold");
                                             return true;
@@ -314,6 +306,8 @@ namespace Singular.ClassSpecific.Mage
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
 
+                        Spell.Buff("Deep Freeze", req => Me.CurrentTarget.IsCasting && Me.CurrentTarget.IsFrozen()),
+
                         // stack buffs for some burst... only every few minutes, but we'll use em if we got em
                         new Decorator(
                              req => Me.GotTarget() && !Me.CurrentTarget.IsTrivial() && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TimeToDeath(-1) > 40 || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3),
@@ -356,7 +350,7 @@ namespace Singular.ClassSpecific.Mage
                                             )
                                         )
                                     ),
-                                Spell.Cast("Frozen Orb", req => Spell.UseAOE && Me.IsSafelyFacing(Me.CurrentTarget, 5f) && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage() && Me.IsSafelyFacing(u, 20))),
+                                Spell.Cast("Frozen Orb", req => Spell.UseAOE && Me.IsSafelyFacing(Me.CurrentTarget, 5f) && !Unit.UnfriendlyUnits(45).Any(u => Me.IsSafelyFacing(u, 25))),
                                 Spell.Cast(
                                     "Fire Blast", 
                                     ret => !SpellManager.HasSpell("Ice Lance")
@@ -380,13 +374,18 @@ namespace Singular.ClassSpecific.Mage
                         CreateIceLanceFoFBehavior(),
 
                         new PrioritySelector(
-                            ctx => Unit.UnfriendlyUnits(12).FirstOrDefault(u => u.CurrentTargetGuid == Me.Guid && !u.IsCrowdControlled()),
+                            ctx => Unit.UnfriendlyUnits(12)
+                                .FirstOrDefault(
+                                    u => u.CurrentTargetGuid == Me.Guid 
+                                    && (u.IsStressful() || (u.Guid == Me.CurrentTargetGuid && u.TimeToDeath() > 6)) 
+                                    && !u.IsCrowdControlled()
+                                    ),
                             new Decorator(
                                 ret => ret != null,
                                 new Sequence(
                                     new PrioritySelector(
-                                        CastFreeze(on => (WoWUnit) on, req => !Unit.UnfriendlyUnitsNearTarget(12).Any(u => u.IsCrowdControlled())),
-                                        Spell.BuffSelf("Frost Nova", req => !Unit.UnfriendlyUnits(12).Any(u => u.IsCrowdControlled())),
+                                        Spell.Buff("Frost Nova", on => (WoWUnit) on, req => !Unit.UnitsInCombatWithUsOrOurStuff(12).Any(u => u.IsCrowdControlled())),
+                                        CastFreeze(on => (WoWUnit)on, req => !Unit.UnfriendlyUnitsNearTarget(12).Any(u => u.IsCrowdControlled())),
                                         Spell.Cast( 
                                             "Cone of Cold", 
                                             on => Clusters.GetConeCluster(Unit.UnfriendlyUnits(12), 12f).FirstOrDefault(),
@@ -498,7 +497,7 @@ namespace Singular.ClassSpecific.Mage
                             new PrioritySelector(
                                 CastFreeze(on => Me.CurrentTarget),
                                 Spell.BuffSelf(
-                                "Frost Nova",
+                                    "Frost Nova",
                                     ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 11 && !u.TreatAsFrozen())
                                     )
                                 )
@@ -679,8 +678,7 @@ namespace Singular.ClassSpecific.Mage
         public static Composite CreateSummonWaterElemental()
         {
             return new Decorator(
-                ret => SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.PetSummoning)
-                    && !SingularSettings.Instance.DisablePetUsage
+                ret => PetManager.IsPetSummonAllowed    
                     && (!Me.GotAlivePet || Me.Pet.Distance > 40)
                     && PetManager.PetSummonAfterDismountTimer.IsFinished
                     && Spell.CanCastHack("Summon Water Elemental"),
@@ -759,17 +757,24 @@ namespace Singular.ClassSpecific.Mage
                 require = req => true;
 
             return new Sequence(
+                ctx => onUnit(ctx),
                 new Decorator( 
-                    ret => onUnit(ret) != null && require(ret), 
-                    new Action( ret => _locFreeze = onUnit(ret).Location)
+                    req => req != null && (req as WoWUnit).SpellDistance() < 40 && require(req), 
+                    new Action( r => 
+                    {
+                        _locFreeze = (r as WoWUnit).Location;
+                        if (StyxWoW.Me.Location.Distance(_locFreeze) > 45)
+                            _locFreeze = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, _locFreeze, 7f + (r as WoWUnit).CombatReach);
+                        if (StyxWoW.Me.Location.Distance(_locFreeze) > 45)
+                            return RunStatus.Failure;
+                        return RunStatus.Success;
+                    })
                     ),
                 new Throttle( TimeSpan.FromMilliseconds(250),
                     Pet.CastPetActionOnLocation(
                         "Freeze",
                         on => _locFreeze,
-                        ret => Me.Pet.ManaPercent >= 12
-                            && Me.Pet.Location.Distance(_locFreeze) < 45
-                            && !Me.CurrentTarget.TreatAsFrozen()
+                        ret => !Me.CurrentTarget.TreatAsFrozen()
                         )
                     )
                 );

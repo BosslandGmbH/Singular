@@ -41,7 +41,7 @@ namespace Singular.Utilities
         // generate list from a given path recursing downwards
         public void Generate(string sPath)
         {
-            ScanTime = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
+            ScanTime = DateTime.UtcNow.ToString("MM/dd/yyyy HH:mm:ss");
 
             Filelist = new List<FileCheck>();
             DirectoryInfo di = new DirectoryInfo(sPath);

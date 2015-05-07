@@ -223,7 +223,7 @@ namespace Singular.ClassSpecific.Rogue
                 new Action(ret =>
                 {           
                     string sMsg;
-                    sMsg = string.Format(".... [{0}] h={1:F1}%, e={2:F1}%, mov={3}, stlth={4}, aoe={5}, recup={6}, slic={7}, rawc={8}, combo={9}, aoe={10}",
+                    sMsg = string.Format(".... [{0}] h={1:F1}%, e={2:F1}%, mov={3}, stlth={4}, aoe={5}, recup={6}, slic={7}, rawc={8}, combo={9}, aoe={10}, combat={11}",
                         sState,
                         Me.HealthPercent,
                         Me.CurrentEnergy,
@@ -234,7 +234,8 @@ namespace Singular.ClassSpecific.Rogue
                         (int) Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds,
                         Me.ComboPoints,
                         Me.ComboPoints,
-                        Common.AoeCount
+                        Common.AoeCount,
+                        Me.Combat.ToYN()
                         );
 
                     WoWAura aura = Me.GetAllAuras().FirstOrDefault(a => a.Name == "Shallow Insight" || a.Name == "Moderate Insight" || a.Name == "Deep Insight");

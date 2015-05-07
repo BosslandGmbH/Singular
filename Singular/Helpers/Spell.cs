@@ -89,31 +89,37 @@ namespace Singular.Helpers
 
         public static bool CastPrimative(string spellName)
         {
+            LastSpellTarget = WoWGuid.Empty;
             return SpellManager.Cast(spellName);
         }
 
         public static bool CastPrimative(int id)
         {
+            LastSpellTarget = WoWGuid.Empty;
             return SpellManager.Cast(id);
         }
 
         public static bool CastPrimative(WoWSpell spell)
         {
+            LastSpellTarget = WoWGuid.Empty;
             return SpellManager.Cast(spell);
         }
 
         public static bool CastPrimative(string spellName, WoWUnit unit)
         {
+            LastSpellTarget = unit == null ? WoWGuid.Empty : unit.Guid;
             return SpellManager.Cast(spellName, unit);
         }
 
         public static bool CastPrimative(int id, WoWUnit unit)
         {
+            LastSpellTarget = unit == null ? WoWGuid.Empty : unit.Guid;
             return SpellManager.Cast(id, unit);
         }
 
         public static bool CastPrimative(WoWSpell spell, WoWUnit unit)
         {
+            LastSpellTarget = unit == null ? WoWGuid.Empty : unit.Guid;
             return SpellManager.Cast(spell, unit);
         }
 
@@ -216,7 +222,8 @@ namespace Singular.Helpers
             if (atTarget.IsPlayer && unit.IsPlayer)
                 return 3.5f;
 
-            return Math.Max(5f, atTarget.CombatReach + 1.3333334f + unit.CombatReach);
+            // return Math.Max(5f, atTarget.CombatReach + 1.3333334f + unit.CombatReach);
+            return Math.Max(5f, atTarget.CombatReach + 1.3333334f);
         }
 
         public static float MeleeRange
@@ -436,6 +443,7 @@ namespace Singular.Helpers
         #region Properties
 
         internal static string LastSpellCast { get; set; }
+        internal static WoWGuid LastSpellTarget { get; set; }
 
         #endregion
 
@@ -2968,18 +2976,18 @@ namespace Singular.Helpers
 
         static public void Add(uint spellID, TimeSpan duration)
         {
-            SpellBlacklistDict[spellID] = new BlacklistTime(DateTime.Now, duration);
+            SpellBlacklistDict[spellID] = new BlacklistTime(DateTime.UtcNow, duration);
         }
 
         static public void Add(string spellName, TimeSpan duration)
         {
-            SpellStringBlacklistDict[spellName] = new BlacklistTime(DateTime.Now, duration);
+            SpellStringBlacklistDict[spellName] = new BlacklistTime(DateTime.UtcNow, duration);
         }
 
         static void RemoveIfExpired(uint spellID)
         {
             if (SpellBlacklistDict.ContainsKey(spellID) &&
-                SpellBlacklistDict[spellID].TimeStamp + SpellBlacklistDict[spellID].Duration <= DateTime.Now)
+                SpellBlacklistDict[spellID].TimeStamp + SpellBlacklistDict[spellID].Duration <= DateTime.UtcNow)
             {
                 SpellBlacklistDict.Remove(spellID);
             }
@@ -2988,7 +2996,7 @@ namespace Singular.Helpers
         static void RemoveIfExpired(string spellName)
         {
             if (SpellStringBlacklistDict.ContainsKey(spellName) &&
-                SpellStringBlacklistDict[spellName].TimeStamp + SpellStringBlacklistDict[spellName].Duration <= DateTime.Now)
+                SpellStringBlacklistDict[spellName].TimeStamp + SpellStringBlacklistDict[spellName].Duration <= DateTime.UtcNow)
             {
                 SpellStringBlacklistDict.Remove(spellName);
             }

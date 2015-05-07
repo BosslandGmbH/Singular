@@ -1,22 +1,58 @@
-﻿using Bots.DungeonBuddy.Helpers;
-using Styx;
-using Styx.CommonBot;
-using Styx.WoWInternals;
-using System;
-using System.Linq;
-using Singular.Settings;
-using System.Drawing;
-using Styx.Common.Helpers;
+﻿using System;
 using System.Collections.Generic;
-using Singular.Helpers;
-using Styx.Pathing;
 using System.Diagnostics;
+using System.Drawing;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using Styx;
+using Styx.Common.Helpers;
+using Styx.CommonBot;
+using Styx.CommonBot.Profiles;
+using Styx.TreeSharp;
+using Styx.WoWInternals;
+using Styx.WoWInternals.DBC;
+using Styx.WoWInternals.WoWObjects;
+using Action = Styx.TreeSharp.Action;
+using Singular.Dynamics;
+using Singular.Managers;
+using Singular.Settings;
+using Singular.Utilities;
+using Styx.Pathing;
+using Bots.DungeonBuddy.Helpers;
 using System.IO;
+
 
 namespace Singular.Managers
 {
     internal static class MovementManager
     {
+        #region INIT
+
+        static NavigationProvider _origNavigation = null;
+        static IPlayerMover _origPlayerMover = null;
+        static StuckHandler _origStuckHandler = null; 
+        
+        static NavigationProvider _prevNavigation = null;
+        static IPlayerMover _prevPlayerMover = null;
+        static StuckHandler _prevStuckHandler = null;
+
+        private static DebugNavigationProvider pDebugNavigation = new DebugNavigationProvider();
+        private static DebugPlayerMover pDebugPlayerMovement = new DebugPlayerMover();
+
+        private static NoNavigation pNoNavigation = new NoNavigation();
+        private static NoPlayerMovement pNoPlayerMovement = new NoPlayerMovement();
+        private static NoStuckHandling pNoStuckHandling = new NoStuckHandling();
+
+
+        [Behavior(BehaviorType.Initialize, WoWClass.None, priority: int.MaxValue - 2)]
+        public static Composite CreateMovementManagerInitializeBehaviour()
+        {
+            return null;
+        }
+
+        #endregion
+
         /// <summary>
         /// True: Singular movement is currently disabled.  This could be due to a setting,
         /// the current Bot, or a Hotkey toggled.  All code needing to check if
@@ -128,10 +164,6 @@ namespace Singular.Managers
         /// </remarks>
         private static bool IsManualMovementBotActive { get; set; }
 
-        // static INavigationProvider _prevNavigation = null;
-        static IPlayerMover _prevPlayerMover = null;
-        static StuckHandler _prevStuckHandler = null;
-
         #region Initialization
 
         internal static void Init()
@@ -167,6 +199,12 @@ namespace Singular.Managers
 
         private static void Start()
         {
+            //if (SingularSettings.Debug)
+            //    DebugNavigationProvider.Install();
+
+            _origNavigation = Navigator.NavigationProvider;
+            _origPlayerMover = Navigator.PlayerMover;
+            _origStuckHandler = Navigator.NavigationProvider.StuckHandler;
             Update();
         }
 
@@ -174,12 +212,16 @@ namespace Singular.Managers
         {
             // restore in case we had taken over 
             AllowMovement();
+
+            //DebugNavigationProvider.Remove();
         }
 
         private static void Change()
         {
             // restore in case we had taken over
             AllowMovement();
+
+            //DebugNavigationProvider.Remove();
         }
 
         #endregion
@@ -192,6 +234,7 @@ namespace Singular.Managers
             {
                 Logger.WriteDebug("MovementManager: restoring Player Movement");
                 Navigator.PlayerMover = _prevPlayerMover;
+                _prevPlayerMover = null;
             }
 
             //if (Navigator.NavigationProvider == pNoNavigation)
@@ -204,6 +247,7 @@ namespace Singular.Managers
             {
                 Logger.WriteDebug("MovementManager: restoring Stuck Handler");
                 Navigator.NavigationProvider.StuckHandler = _prevStuckHandler;
+                _prevStuckHandler = null;
             }
         }
 
@@ -277,44 +321,105 @@ namespace Singular.Managers
 			public override void Reset() { }
 			public override void Unstick() { }
         }
+       
+        #endregion
 
-        private static NoNavigation pNoNavigation = new NoNavigation();
-        private static NoPlayerMovement pNoPlayerMovement = new NoPlayerMovement();
-        private static NoStuckHandling pNoStuckHandling = new NoStuckHandling();
+        #region Local Classes for Debug Movement Provider
 
-
-        public class PlayerMovementDebug : IPlayerMover
+        public class DebugNavigationProvider : MeshNavigator
         {
-            private IPlayerMover Prev { get; set; }
-            public static PlayerMovementDebug Instance { get; set; }
+            public static DebugNavigationProvider Instance { get; set; }
+
+            public NavigationProvider Prev { get; set; }
 
             public static void Install()
             {
-                Instance = new PlayerMovementDebug();
+                if (Instance == null && Navigator.NavigationProvider != null)
+                {
+                    Instance = new DebugNavigationProvider();
+                    Instance.Prev = Navigator.NavigationProvider;
+                    Navigator.NavigationProvider = Instance;
+                }
+            }
+
+            public static void Remove()
+            {
+                if (Instance != null)
+                {
+                    if (Instance.Prev != null)
+                        Navigator.NavigationProvider = Instance.Prev;
+                    Instance.Prev = null;
+                    Instance = null;
+                }
+            }
+
+            //public override bool AtLocation(WoWPoint point1, WoWPoint point2)
+            //{
+            //    return Prev.AtLocation(point1, point2);
+            //}
+
+            //public override WoWPoint[] GeneratePath(WoWPoint from, WoWPoint to)
+            //{
+            //    return Prev.GeneratePath(from, to);
+            //}
+
+            public override MoveResult MoveTo(WoWPoint location)
+            {
+
+                MoveResult rslt = base.MoveTo(location);
+                Logger.WriteDebug("~NavigatorMoveTo({0}): to {1} {2}", StyxWoW.Me.Location.Distance(location), location, DebugPlayerMover.StackCaller(5));
+                return rslt;
+            }
+
+            //public override float PathPrecision
+            //{
+            //    get
+            //    {
+            //        return Prev.PathPrecision;
+            //    }
+            //    set
+            //    {
+            //        Prev.PathPrecision = value;
+            //    }
+            //}
+        }
+
+        public class DebugPlayerMover : IPlayerMover
+        {
+            private IPlayerMover Prev { get; set; }
+            public static DebugPlayerMover Instance { get; set; }
+
+            public static void Install()
+            {
+                Instance = new DebugPlayerMover();
                 Instance.Prev = Navigator.PlayerMover;
                 Navigator.PlayerMover = Instance;
             }
 
             public static void Remove()
             {
-                Navigator.PlayerMover = Instance.Prev;
+                if (Instance.Prev != null)
+                {
+                    Navigator.PlayerMover = Instance.Prev;
+                    Instance.Prev = null;
+                }
             }
 
             public void Move(WoWMovement.MovementDirection direction) 
             {
-                Logger.WriteDebug("~Move({0}): {1}", direction, StackCaller(2));
+                Logger.WriteDebug("~MoveTrace({0}): {1}", direction, StackCaller(5));
                 Instance.Prev.Move(direction);
             }
 
             public void MoveStop() 
             {
-                Logger.WriteDebug("~Move(Stop): {0}", StackCaller(2));
+                Logger.WriteDebug("~MoveTrace(Stop): {0}", StackCaller(5));
                 Instance.Prev.MoveStop();
             }
 
             public void MoveTowards(WoWPoint location) 
             {
-                Logger.WriteDebug("~Move({0}): to {1} {2}", StyxWoW.Me.Location.Distance(location), location, StackCaller(2));
+                Logger.WriteDebug("~MoveTrace({0}): to {1} {2}", StyxWoW.Me.Location.Distance(location), location, StackCaller(5));
                 Instance.Prev.MoveTowards(location);
             }
 
@@ -322,8 +427,20 @@ namespace Singular.Managers
             {
                 var stackTrace = new StackTrace(true);
                 StackFrame[] stackFrames = stackTrace.GetFrames();
-                StackFrame frame = stackFrames[1 + levelsUp];
-                return string.Format("{0}, {1} line {2}", frame.GetMethod().Name, Path.GetFileName(frame.GetFileName()), frame.GetFileLineNumber());
+                int maxLevels = stackFrames.GetUpperBound(0);
+                maxLevels = Math.Min(6, maxLevels);
+                int level = 0;
+
+                string retval = "";
+                foreach (var frame in stackFrames)
+                {
+                    if (level++ == 0)
+                        continue;
+                    if (level > maxLevels)
+                        break;
+                    retval += string.Format("\r\n      {0}, {1} line {2}", frame.GetMethod().Name, Path.GetFileName(frame.GetFileName()), frame.GetFileLineNumber());
+                }
+                return retval;
             }
 
         }

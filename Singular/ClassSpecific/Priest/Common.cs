@@ -56,6 +56,17 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                        Spell.BuffSelfAndWait("Levitate", req => PriestSettings.UseLevitate && Me.IsFalling),
+                        new Decorator(
+                            req => SingularRoutine.IsQuestBotActive && Me.HasMyAura("Levitate") && !Me.IsFalling,
+                            new Sequence(
+                                new SeqDiag(1, s => string.Format("Levitate: no longer needed since NOT falling and QuestBot active")),
+                                new Action( r => Me.CancelAura("Levitate")),
+                                new Wait( 1, until => !Me.HasMyAura("Levitate"), new ActionAlwaysSucceed())
+                                )
+                            ),
+
                         PartyBuff.BuffGroup("Power Word: Fortitude"),
                         //Spell.BuffSelf("Shadow Protection", ret => PriestSettings.UseShadowProtection && Unit.NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && (u.IsInMyPartyOrRaid() || u.IsMe) && !Unit.HasAura(u, "Shadow Protection", 0))), // we no longer have Shadow resist
                         Spell.BuffSelf("Fear Ward", ret => PriestSettings.UseFearWard),

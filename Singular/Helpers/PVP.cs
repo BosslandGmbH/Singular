@@ -26,7 +26,7 @@ namespace Singular.Helpers
         {
             get
             {
-                return Math.Max(0, (int)(BattlegroundStart - DateTime.Now).TotalSeconds);
+                return Math.Max(0, (int)(BattlegroundStart - DateTime.UtcNow).TotalSeconds);
             }
         }
 
@@ -151,7 +151,7 @@ namespace Singular.Helpers
         {
             int secondsUntil = Int32.Parse(args.Args[1].ToString());
             DateTime prevStart = BattlegroundStart;
-            BattlegroundStart = DateTime.Now + TimeSpan.FromSeconds(secondsUntil);
+            BattlegroundStart = DateTime.UtcNow + TimeSpan.FromSeconds(secondsUntil);
 
             if (!(BattlegroundStart - prevStart).TotalSeconds.Between( -1, 1))
             {
@@ -162,9 +162,9 @@ namespace Singular.Helpers
         internal static void HandleContextChanged(object sender, WoWContextEventArg e)
         {
             if (e.CurrentContext != WoWContext.Battlegrounds)
-                BattlegroundStart = DateTime.Now;
+                BattlegroundStart = DateTime.UtcNow;
             else
-                BattlegroundStart = DateTime.Now + TimeSpan.FromSeconds(120);   // just add enough for now... accurate time set by event handler
+                BattlegroundStart = DateTime.UtcNow + TimeSpan.FromSeconds(120);   // just add enough for now... accurate time set by event handler
 
             if (e.PreviousContext == WoWContext.Battlegrounds)
             {

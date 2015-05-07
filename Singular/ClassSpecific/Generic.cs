@@ -154,7 +154,7 @@ namespace Singular.ClassSpecific
                     // even though not on GCD, return success so we resume at top of tree
                     new Sequence(
                         Spell.BuffSelf("Shadowmeld", ret => NeedShadowmeld()),
-                        new Action( r => shadowMeldStart = DateTime.Now )
+                        new Action( r => shadowMeldStart = DateTime.UtcNow )
                         )
                     );
             }
@@ -284,7 +284,7 @@ namespace Singular.ClassSpecific
                         {
                             const int timeLimitSeconds = 20;
                             TimeSpan timeLimit = TimeSpan.FromSeconds(timeLimitSeconds);
-                            DateTime now = DateTime.Now;
+                            DateTime now = DateTime.UtcNow;
 
                             if (shadowMeldStart == null || shadowMeldStart == DateTime.MinValue)
                                 shadowMeldStart = now;
@@ -319,7 +319,7 @@ namespace Singular.ClassSpecific
                             ),
                         new Action( r => 
                         {
-                            Logger.WriteDiagnostic("Shadowmeld: removed - after {0:F1} seconds", (DateTime.Now - shadowMeldStart).TotalSeconds );
+                            Logger.WriteDiagnostic("Shadowmeld: removed - after {0:F1} seconds", (DateTime.UtcNow - shadowMeldStart).TotalSeconds );
                             shadowMeldStart = DateTime.MinValue;
                             return RunStatus.Success;
                         })

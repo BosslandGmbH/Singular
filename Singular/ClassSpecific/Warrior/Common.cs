@@ -495,22 +495,31 @@ namespace Singular.ClassSpecific.Warrior
                 },
                 new Decorator( 
                     req => !Me.CurrentTarget.IsWithinMeleeRange ,
-                    new PrioritySelector(
-                        Spell.Cast("Taunt"),
-                        Spell.Cast("Heroic Throw"),
-                        Spell.Cast("Whirlwind", req => !Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8 + _DistanceWindAndThunder),
-                        Spell.Cast("Shockwave", req => !Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 10 && Me.IsSafelyFacing(Me.CurrentTarget, 60)),
-                        Spell.Cast("Dragon Roar", req => !Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8),
-                        Spell.Cast("Thunder Clap", req => !Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8 + _DistanceWindAndThunder),
-                        Spell.Cast("Storm Bolt"),
-                        new Sequence(
-                            new PrioritySelector(
-                                Movement.CreateEnsureMovementStoppedBehavior( 27f, on => Me.CurrentTarget, reason: "To cast Throw"),
-                                new ActionAlwaysSucceed()
-                                ),
-                            new Wait( 1, until => !Me.IsMoving, new ActionAlwaysSucceed()),
-                            Spell.Cast("Throw")
-                            )
+                    new Sequence(
+                        new PrioritySelector(
+                            Spell.Cast("Taunt"),
+                            Spell.Cast("Heroic Throw"),
+                            Spell.Cast("Whirlwind", req => !Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8 + _DistanceWindAndThunder),
+                            Spell.Cast("Shockwave", req => !Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 10 && Me.IsSafelyFacing(Me.CurrentTarget, 60)),
+                            Spell.Cast("Dragon Roar", req => !Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8),
+                            Spell.Cast("Thunder Clap", req => !Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8 + _DistanceWindAndThunder),
+                            Spell.Cast("Storm Bolt"),
+                            new Sequence(
+                                new PrioritySelector(
+                                    Movement.CreateEnsureMovementStoppedBehavior( 27f, on => Me.CurrentTarget, reason: "To cast Throw"),
+                                    new ActionAlwaysSucceed()
+                                    ),
+                                new Wait( 1, until => !Me.IsMoving, new ActionAlwaysSucceed()),
+                                Spell.Cast("Throw")
+                                )
+                            ),
+                        new Action( r => 
+                        {
+                            if (Me.CurrentTarget.TimeToDeath(99) < 40)
+                            {
+                                SingularRoutine.TargetTimeoutTimer.Reset();
+                            }
+                        })
                         )
                     )
                 );

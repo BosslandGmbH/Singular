@@ -296,7 +296,12 @@ namespace Singular.ClassSpecific.Monk
                                     )
                                 ),
 
-                            Spell.Cast(SpinningCraneKick, ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= MonkSettings.SpinningCraneKickCnt),
+                            Spell.Cast(
+                                SpinningCraneKick, 
+                                req => Spell.UseAOE 
+                                    && Unit.UnitsInCombatWithUsOrOurStuff(8).Count() >= MonkSettings.SpinningCraneKickCnt
+                                    && !Unit.UnfriendlyUnits(8).Any(u => !u.Combat || u.IsPlayer || u.IsCrowdControlled() || u.IsTargetingMyStuff())
+                                ),
 
                             // chi dump
                             Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
@@ -1435,16 +1440,13 @@ namespace Singular.ClassSpecific.Monk
         {
             return new PrioritySelector(
                 new Decorator(
-                    req => RangedAttacks,
+                    req => RangedAttacks || SingularRoutine.CurrentWoWContext != WoWContext.Normal,
                     Helpers.Common.EnsureReadyToAttackFromLongRange()
-                    )
-/*
-                ,
+                    ),
                 new Decorator(
                     req => !RangedAttacks,
                     Helpers.Common.EnsureReadyToAttackFromMelee()
                     )
- */ 
                 );
         }
 

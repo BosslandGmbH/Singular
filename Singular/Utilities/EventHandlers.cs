@@ -113,16 +113,26 @@ namespace Singular.Utilities
         public static DateTime LastUnitNotInfrontFailure { get; set; }
         public static DateTime LastNoPathFailure { get; set; }
         public static DateTime SuppressShapeshiftUntil { get; set; }
-        public static bool IsShapeshiftSuppressed { get { return SuppressShapeshiftUntil > DateTime.Now; } }
+        public static bool IsShapeshiftSuppressed { get { return SuppressShapeshiftUntil > DateTime.UtcNow; } }
 
         public static WoWUnit LastLineOfSightTarget { get; set; }
-        public static WoWGuid LastNoPathTarget { get; set; }
+        public static WoWGuid LastUnitNotInfrontGuid { get; set; }
+        public static WoWGuid LastNoPathGuid { get; set; }
 
         public static bool IsPathErrorTarget(this WoWUnit unit)
-        { 
-            if ( unit.Guid != Singular.Utilities.EventHandlers.LastNoPathTarget )
+        {
+            if (unit.Guid != Singular.Utilities.EventHandlers.LastNoPathGuid)
                 return false;
-            if (Singular.Utilities.EventHandlers.LastNoPathFailure < DateTime.Now - TimeSpan.FromMinutes(15))
+            if (Singular.Utilities.EventHandlers.LastNoPathFailure < DateTime.UtcNow - TimeSpan.FromMinutes(15))
+                return false;
+            return true;
+        }
+
+        public static bool IsNotFacingErrorTarget(this WoWUnit unit)
+        {
+            if (unit.Guid != Singular.Utilities.EventHandlers.LastUnitNotInfrontGuid)
+                return false;
+            if (Singular.Utilities.EventHandlers.LastNoPathFailure < DateTime.UtcNow - TimeSpan.FromMilliseconds(750))
                 return false;
             return true;
         }
@@ -326,13 +336,28 @@ namespace Singular.Utilities
                             guid = StyxWoW.Me.CurrentTargetGuid;
                         }
 
-                        LastLineOfSightFailure = DateTime.Now;
+                        LastLineOfSightFailure = DateTime.UtcNow;
                         Logger.WriteFile("[CombatLog] cast failed due to los reported at {0} on target {1:X}", LastLineOfSightFailure.ToString("HH:mm:ss.fff"), e.DestGuid );
+                    }
+                    else if (e.Args[14].ToString() == LocalizedUnitNotInfrontFailure )
+                    {
+                        WoWGuid guid = e.DestGuid;
+                        LastUnitNotInfrontFailure = DateTime.UtcNow;
+                        if (guid.IsValid && guid != WoWGuid.Empty)
+                        {
+                            LastUnitNotInfrontGuid = guid;
+                            Logger.WriteFile("[CombatLog] not facing SpellTarget [{0}] at {1}", LastUnitNotInfrontGuid, LastUnitNotInfrontFailure.ToString("HH:mm:ss.fff"));
+                        }
+                        else
+                        {
+                            LastUnitNotInfrontGuid = Spell.LastSpellTarget;
+                            Logger.WriteFile("[CombatLog] not facing LastTarget [{0}] at {1}", LastUnitNotInfrontGuid, LastUnitNotInfrontFailure.ToString("HH:mm:ss.fff"), guid);
+                        }
                     }
                     else if (!MovementManager.IsMovementDisabled && StyxWoW.Me.Class == WoWClass.Warrior && e.Args[14].ToString() == LocalizedNoPathAvailableFailure)
                     {
-                        LastNoPathFailure = DateTime.Now;
-                        LastNoPathTarget = StyxWoW.Me.CurrentTargetGuid;
+                        LastNoPathFailure = DateTime.UtcNow;
+                        LastNoPathGuid = StyxWoW.Me.CurrentTargetGuid;
                         if (!StyxWoW.Me.GotTarget())
                             Logger.WriteFile("[CombatLog] cast failed - no path available to current target");
                         else
@@ -347,8 +372,8 @@ namespace Singular.Utilities
                         if (LocalizedShapeshiftMessages.ContainsKey(e.Args[14].ToString()))
                         {
                             string symbolicName = LocalizedShapeshiftMessages[e.Args[14].ToString()];
-                            SuppressShapeshiftUntil = DateTime.Now.Add( TimeSpan.FromSeconds(30));
-                            Logger.Write(LogColor.Cancel, "/cancel{0} - due to Shapeshift Error '{1}' on cast, suppress form until {2}!", StyxWoW.Me.Shapeshift.ToString().CamelToSpaced(), symbolicName, SuppressShapeshiftUntil.ToString("HH:mm:ss.fff"));
+                            SuppressShapeshiftUntil = DateTime.UtcNow.Add( TimeSpan.FromSeconds(30));
+                            Logger.Write(LogColor.Cancel, "/cancel{0} - due to Shapeshift Error '{1}' on cast, suppress form for {2:F1} seconds", StyxWoW.Me.Shapeshift.ToString().CamelToSpaced(), symbolicName, (SuppressShapeshiftUntil - DateTime.UtcNow).TotalSeconds);
                             Lua.DoString("CancelShapeshiftForm()");
                         }
                     }
@@ -584,7 +609,7 @@ namespace Singular.Utilities
                 return;
 
             // bool handled = false;
-            LastRedErrorMessage = DateTime.Now;
+            LastRedErrorMessage = DateTime.UtcNow;
 
             if (SingularSettings.Debug)
             {
@@ -610,7 +635,7 @@ namespace Singular.Utilities
                     if (LocalizedShapeshiftMessages.ContainsKey(args.Args[0].ToString()))
                     {
                         string symbolicName = LocalizedShapeshiftMessages[args.Args[0].ToString()];
-                        SuppressShapeshiftUntil = DateTime.Now.Add(TimeSpan.FromSeconds(30));
+                        SuppressShapeshiftUntil = DateTime.UtcNow.Add(TimeSpan.FromSeconds(30));
                         Logger.Write(LogColor.Cancel, "/cancel{0} - due to Error '{1}', suppress form until {2}!", StyxWoW.Me.Shapeshift.ToString().CamelToSpaced(), symbolicName, SuppressShapeshiftUntil.ToString("HH:mm:ss.fff"));
                         Lua.DoString("CancelShapeshiftForm()");
                         // handled = true;

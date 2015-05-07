@@ -1,4 +1,123 @@
 
+--- Release 4.0.0.4719 ---
+
+General
+
+*new* - LogMark Hotkey: a new hotkey in Singular defaulting to Ctrl+Alt+Shift+M will allow adding a logmark while your game client is the active window
+
+*new* - Enabling/Disabling of Singular: botbases and quest profiles sometimes intentionally disable functionallity including Combat.  This is often seen by the user as Singular ignoring a mob attacking it.  To more clearly communicate this, a message will be written briefly to the game overlay announcing when a capability has been disabled or enabled.
+
+*new* - Behavior and Capability Flags: the Debug tab of Class Config now displays the current state of these
+
+fixed - Class Config Dialog: no longer throws an exception if choosing Save while HonorBuddy is running
+
+fixed - General: an error occurring randomly when attempting to determine if a target locatio is above the ground
+
+fixed - Kiting: a number of revisions and fixes to Kiting support
+
+fixed - Movement Timeout: fixed issue where targets just out of melee reach that could not be pathed to were not being blacklisted
+
+fixed - Use Mage Table: all classes now correctly checks if bags are full
+
+fixed - Use Item (for consuming potion, on /use armor ability, etc.): will now check if a Vendor window is open and suppress use until closed to avoid inadvertently selling item
+
+*new* - User XP Buff Potion: use of the Excess Potion of Accelerated Learning still supported, but now controlled by a new config setting to separate from Use Flasks setting
+
+fixed - Facing Mobs which are Quest Vehicles: fixed bug where Singular waited to successfully face target which never happens when picked up or consumed by some NPCs (like Direglob).  Will no longer wait for facing to return true when in a Quest Vehicle
+
+fixed - Refreshments: suppress attempt to drink or eat if moving.  Previously movement was stopped immediately prior but if movement disabled and botbase takes over movement, was still in some cases attempting to eat while moving resulting in message spam
+
+fixed - Buffing: some specs which have party buffs which are still important when solo, were not casting these when not in a group.
+
+fixed - Facing: added handling of Combat Log Events for Not Facing to automatically handle casts where the HB API is indicating character facing target, but game returning that it is not
+
+
+
+Druid
+
+fixed - Balance - Flapping Owl: now correctly recognizes glyph equipped and will cast when falling
+
+*new* - Feral - Prowl: revised to so now controlled by Prowl Mode setting which allows: Auto, Never, PVP, Always.   Auto will attempt to cast Prowl just outside of aggro range to minimize the impact of reduced speed in reaching target and avoids casting for trivial targets.
+
+fixed - All Specs - Movement Buff: fixed exception occurring infrequently when checking if Travel or Cat form wanted for speed buff to reach destination more quickly
+
+fixed - Feral/Guardian - Flying Mobs: should now correctly use ranged attack on flying mobs that cannot be reached in melee
+
+fixed - Feral - Lunar Inspiration: now supports use of Moonfire when this talent selected
+
+fixed - Feral - Rake: was resulting in a number of attempts to cast while out of range
+
+
+
+
+Mage
+
+change- All Specs - Kiting: all Mages will now default to Allow Kiting = true.  This is required to support movement away from rooted enemies
+
+change- All Specs - Kiting: loading a Class Config settings file created with an earlier version of Singular, will force Allow Kiting to true.  
+
+change- All Specs - Slow Melee Mobs: improved range and conical detection for use of Cone of Cold 
+
+change- All Specs - Cold Snap: will now cast for self-heal based on Health % in Class Config settings for Mages
+
+change- All Specs - Slow Fall: spell now supported for all Mages when falling
+
+change- All Specs - Alter Time: corrected mob scan used which was finding more aggroed enemies than existed and resulting in too frequent cast for health restore usage while Solo
+
+fixed - All Specs - Pull More: become eligible at Level 10.  Previously was disabled due to typo in pull more eligibiltiy spellname
+
+change- Arcane/Fire - Pull More: defaults to Min Health 70 (increased from 60) and Mob Count 2 (reduced from 3)
+
+change- All Specs - Polymorph: now only cast on adds at least 14 yds away to avoid breaking with Frost Nova or preventing use of Frost Nova or Freeze
+
+change- All Specs - Time Warp: if enabled, will now also be cast while Solo at points where a combat buff is needed (enemy player, multiple mobs, single mob that will live atleast another 40 seconds, etc.)
+
+fixed - Frost - Trivial Mob Farming: will now correctly select or suppress use of Cone of Cold for farming multiple trivial mobs
+
+fixed - Frost - Frozen Orb: larger area of effect checked for unwanted aggro before casting this ability.  
+
+fixed - Frost - Frost Nova/Freeze Priority: now prioritizes casts of Frost Nova over Freeze to save ranged root if not needed
+
+
+
+Monk 
+
+fixed - Windwalker - Dampen Harm: now supported for use while Solo
+
+fixed - Mistweaver - Spinning Crane Kick: now correctly checks for unwanted aggro or crowd controlled mobs in area of effect before cast
+
+fixed - Windwalker - Solo Fists of Fury: arc checked for enemies in melee increased to all frontal mobs.  Will also turn and face mobs behind if all frontal mobs die during cast
+
+fixed - Windwalker - Solo Fists of Fury: now correctly cancels ability if now mobs in melee range
+
+fixed - Windwalker - Solo AOE: moved Combo Breaker proc casts higher in priority than Spinning Crane Kick
+
+
+Paladin
+
+fixed - All Specs - Blessings: now correctly casts when solo
+
+
+Priest
+
+fixed - All Specs - Levitate: now correctly cast when falling
+
+
+Rogue
+
+change- All Specs - Stealth: additional debug messages added to detail why (or why not) Stealth was cast.
+
+
+Shaman
+
+*new* - All Specs - Primal Elementalist: now supports Pet control of Elementals for Shaman with this talent. Note: these are considered Pets, so if Pet usage disabled by either user setting or another component disabling Pet CapabilityFlags, these totems will not be set
+
+
+Warrior
+
+change- All Specs - Movement Timeout: will now reset the target melee distance timer if in combat with a Flying target that is within ranged abilities
+
+
 --- Release 4.0.0.4631 ---
 
 General

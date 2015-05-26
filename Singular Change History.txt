@@ -1,4 +1,16 @@
 
+--- Release 4.0.0.4725 ---
+
+General
+
+change- Behavior Flag Changes: added setting (on Class Config / Debug tab) to control display of Behavior Flag and Capability Flag changes to game overlay.  Default is false (do not display).
+
+
+Priest
+
+fixed - Shadow - Instances: now correctly prioritizes Devouring Plague and SW: Death at top of priority
+
+
 --- Release 4.0.0.4719 ---
 
 General

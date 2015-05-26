@@ -517,6 +517,11 @@ namespace Singular.ClassSpecific.Priest
                                     new PrioritySelector(
                                         ctx => Me.CurrentTarget,
 
+                                        Spell.Cast("Devouring Plague", req => OrbCount >= 3),
+                                        CastMindBlast(),
+
+                                        Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20 && OrbCount < MaxOrbs),
+                
                                         // halo only if nothing near we aren't already in combat with
                                         Spell.Cast("Halo", 
                                             ret => Unit.NearbyUnfriendlyUnits

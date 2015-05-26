@@ -105,6 +105,7 @@ namespace Singular.GUI
 
             InitializeDebugOutputDropdown();
             chkDebugCasting.Checked = SingularSettings.Instance.EnableDebugSpellCasting;
+            chkShowBehaviorFlags.Checked = SingularSettings.Instance.EnableShowBehaviorFlagChanges;
             chkDebugTrace.Checked = SingularSettings.Instance.EnableDebugTrace;
             chkDebugTraceHeal.Checked = SingularSettings.Instance.EnableDebugHealTrace;
             chkTraceBuffs.Checked = SingularSettings.Instance.EnableDebugTraceBuffPresence;
@@ -408,10 +409,11 @@ namespace Singular.GUI
                 // deal with Debug tab controls individually
                 SingularSettings.Instance.DebugOutput = (DebugOutputDest) GetComboBoxEnum(cboDebugOutput);               
                 SingularSettings.Instance.EnableDebugSpellCasting = chkDebugCasting.Checked;
+                SingularSettings.Instance.EnableShowBehaviorFlagChanges = chkShowBehaviorFlags.Checked;
                 SingularSettings.Instance.EnableDebugTrace = chkDebugTrace.Checked;
                 SingularSettings.Instance.EnableDebugHealTrace = chkDebugTraceHeal.Checked;
                 SingularSettings.Instance.EnableDebugTraceBuffPresence = chkTraceBuffs.Checked;
-                Extensions.ShowPlayerNames = ShowPlayerNames.Checked;
+                // Extensions.ShowPlayerNames = ShowPlayerNames.Checked;
 
                 SingularRoutine.TrainingDummyBehaviors = (WoWContext) GetComboBoxEnum(cboForceUseOf);
 
@@ -587,11 +589,6 @@ namespace Singular.GUI
             timerTargeting.Stop();
         }
 
-        private void ShowPlayerNames_CheckedChanged(object sender, EventArgs e)
-        {
-
-        }
-
         private void cboHealContext_SelectedIndexChanged(object sender, EventArgs e)
         {
             HealContextItem ctx = (HealContextItem)cboHealContext.SelectedItem;
@@ -710,6 +707,15 @@ namespace Singular.GUI
         private void groupBox4_Enter(object sender, EventArgs e)
         {
 
+        }
+
+        private void chkShowBehaviorFlags_CheckedChanged(object sender, EventArgs e)
+        {
+            DebugOutputDest dbgdest = (DebugOutputDest)GetComboBoxEnum(cboDebugOutput);
+            if (chkShowBehaviorFlags.Checked && dbgdest == DebugOutputDest.None)
+                chkShowBehaviorFlags.Checked = false;
+
+            chkShowBehaviorFlags.Enabled = (dbgdest != DebugOutputDest.None);
         }
 
     }

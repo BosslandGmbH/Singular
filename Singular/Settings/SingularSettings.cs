@@ -446,6 +446,15 @@ namespace Singular.Settings
         }
 
         [Browsable(false)]
+        public static bool ShowBehaviorFlagChanges
+        {
+            get
+            {
+                return Instance.EnableShowBehaviorFlagChanges && Debug;
+            }
+        }
+
+        [Browsable(false)]
         public static bool DebugStopMoving
         {
             get
@@ -505,12 +514,21 @@ namespace Singular.Settings
         // code should reference SingularSettings.DebugSpellCasting
         //
         [Browsable(false)]
-        [Setting,ReadOnly(false)]
+        [Setting, ReadOnly(false)]
         [DefaultValue(false)]
         [Category("Debug")]
         [DisplayName("Debug Spell Casting Detection")]
         [Description("Enables logging of GCD/Cast/Channeling in Singular. Debug Logging setting must also be true")]
         public bool EnableDebugSpellCasting { get; set; }
+
+        // code should reference SingularSettings.ShowBehaviorFlagChanges
+        //
+        [Browsable(false)]
+        [Setting, ReadOnly(false)]
+        [DefaultValue(false)]
+        [Category("Debug")]
+        [DisplayName("Show Behavior Flag Changes")]
+        public bool EnableShowBehaviorFlagChanges { get; set; }
 
         // code should reference SingularSettings.Trace
         //

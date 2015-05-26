@@ -863,13 +863,17 @@ namespace Singular
                 _prevBehaviorFlags = Bots.Grind.LevelBot.BehaviorFlags;
                 if (disabled != 0)
                 {
-                    // Logger.Write(LogColor.Info, "info: BehaviorFlags [{0}] disabled by {1}, Plug-in or Profile", disabled.ToString(), GetBotName());
-                    Logger.TellUser(LogColor.Info, "Behavior [{0}] DISABLED by {1} or Plug-in", disabled.ToString(), GetBotName());
+                    if (SingularSettings.ShowBehaviorFlagChanges)
+                        Logger.TellUser(LogColor.Info, "info: Behavior [{0}] DISABLED by {1} or Plug-in", disabled.ToString(), GetBotName());
+                    else
+                        Logger.WriteDiagnostic(LogColor.Info, "info: Behavior [{0}] DISABLED by {1} or Plug-in", disabled.ToString(), GetBotName());
                 }
                 if (enabled != 0)
                 {
-                    // Logger.Write(LogColor.Info, "info: BehaviorFlags [{0}] enabled by {1}, Plug-in or Profile", enabled.ToString(), GetBotName());
-                    Logger.TellUser(LogColor.Info, "Behavior [{0}] ENABLED by {1} or Plug-in", enabled.ToString(), GetBotName());
+                    if (SingularSettings.ShowBehaviorFlagChanges)
+                        Logger.TellUser(LogColor.Info, "Behavior [{0}] ENABLED by {1} or Plug-in", enabled.ToString(), GetBotName());
+                    else
+                        Logger.WriteDiagnostic(LogColor.Info, "Behavior [{0}] ENABLED by {1} or Plug-in", enabled.ToString(), GetBotName());
                 }
 
                 if ( SingularRoutine.Instance._configForm != null)

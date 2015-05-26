@@ -76,7 +76,6 @@
             this.label6 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.chkDebugCasting = new System.Windows.Forms.CheckBox();
-            this.ShowPlayerNames = new System.Windows.Forms.CheckBox();
             this.chkDebugTraceHeal = new System.Windows.Forms.CheckBox();
             this.chkDebugTrace = new System.Windows.Forms.CheckBox();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
@@ -94,6 +93,7 @@
             this.lblBuildTime = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.chkShowBehaviorFlags = new System.Windows.Forms.CheckBox();
             this.tabControl1.SuspendLayout();
             this.tabGeneral.SuspendLayout();
             this.tabClass.SuspendLayout();
@@ -137,7 +137,7 @@
             this.tabGeneral.Location = new System.Drawing.Point(4, 22);
             this.tabGeneral.Name = "tabGeneral";
             this.tabGeneral.Padding = new System.Windows.Forms.Padding(3);
-            this.tabGeneral.Size = new System.Drawing.Size(339, 616);
+            this.tabGeneral.Size = new System.Drawing.Size(339, 394);
             this.tabGeneral.TabIndex = 0;
             this.tabGeneral.Text = "General";
             this.tabGeneral.UseVisualStyleBackColor = true;
@@ -147,7 +147,7 @@
             this.pgGeneral.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pgGeneral.Location = new System.Drawing.Point(3, 3);
             this.pgGeneral.Name = "pgGeneral";
-            this.pgGeneral.Size = new System.Drawing.Size(333, 610);
+            this.pgGeneral.Size = new System.Drawing.Size(333, 388);
             this.pgGeneral.TabIndex = 0;
             // 
             // tabClass
@@ -156,7 +156,7 @@
             this.tabClass.Location = new System.Drawing.Point(4, 22);
             this.tabClass.Name = "tabClass";
             this.tabClass.Padding = new System.Windows.Forms.Padding(3);
-            this.tabClass.Size = new System.Drawing.Size(339, 616);
+            this.tabClass.Size = new System.Drawing.Size(339, 394);
             this.tabClass.TabIndex = 1;
             this.tabClass.Text = "Class Specific";
             this.tabClass.UseVisualStyleBackColor = true;
@@ -166,7 +166,7 @@
             this.pgClass.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pgClass.Location = new System.Drawing.Point(3, 3);
             this.pgClass.Name = "pgClass";
-            this.pgClass.Size = new System.Drawing.Size(333, 610);
+            this.pgClass.Size = new System.Drawing.Size(333, 388);
             this.pgClass.TabIndex = 0;
             // 
             // tabGroupHeal
@@ -175,7 +175,7 @@
             this.tabGroupHeal.Controls.Add(this.grpHealHeader);
             this.tabGroupHeal.Location = new System.Drawing.Point(4, 22);
             this.tabGroupHeal.Name = "tabGroupHeal";
-            this.tabGroupHeal.Size = new System.Drawing.Size(339, 616);
+            this.tabGroupHeal.Size = new System.Drawing.Size(339, 394);
             this.tabGroupHeal.TabIndex = 3;
             this.tabGroupHeal.Text = "Group Healing";
             this.tabGroupHeal.UseVisualStyleBackColor = true;
@@ -186,7 +186,7 @@
             this.pgHeal.Location = new System.Drawing.Point(0, 39);
             this.pgHeal.Name = "pgHeal";
             this.pgHeal.PropertySort = System.Windows.Forms.PropertySort.NoSort;
-            this.pgHeal.Size = new System.Drawing.Size(339, 577);
+            this.pgHeal.Size = new System.Drawing.Size(339, 355);
             this.pgHeal.TabIndex = 5;
             // 
             // grpHealHeader
@@ -233,7 +233,7 @@
             this.tabHotkeys.Location = new System.Drawing.Point(4, 22);
             this.tabHotkeys.Name = "tabHotkeys";
             this.tabHotkeys.Padding = new System.Windows.Forms.Padding(3);
-            this.tabHotkeys.Size = new System.Drawing.Size(339, 616);
+            this.tabHotkeys.Size = new System.Drawing.Size(339, 394);
             this.tabHotkeys.TabIndex = 4;
             this.tabHotkeys.Text = "Hotkeys";
             this.tabHotkeys.UseVisualStyleBackColor = true;
@@ -244,7 +244,7 @@
             this.pgHotkeys.Location = new System.Drawing.Point(3, 3);
             this.pgHotkeys.Name = "pgHotkeys";
             this.pgHotkeys.PropertySort = System.Windows.Forms.PropertySort.Categorized;
-            this.pgHotkeys.Size = new System.Drawing.Size(333, 610);
+            this.pgHotkeys.Size = new System.Drawing.Size(333, 388);
             this.pgHotkeys.TabIndex = 1;
             // 
             // tabDebug
@@ -612,8 +612,8 @@
             this.groupBox3.Controls.Add(this.cboForceUseOf);
             this.groupBox3.Controls.Add(this.label6);
             this.groupBox3.Controls.Add(this.label5);
+            this.groupBox3.Controls.Add(this.chkShowBehaviorFlags);
             this.groupBox3.Controls.Add(this.chkDebugCasting);
-            this.groupBox3.Controls.Add(this.ShowPlayerNames);
             this.groupBox3.Controls.Add(this.chkDebugTraceHeal);
             this.groupBox3.Controls.Add(this.chkDebugTrace);
             this.groupBox3.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
@@ -687,18 +687,6 @@
             this.toolTip1.SetToolTip(this.chkDebugCasting, "Enable additional debug output for spell casting (more verbose)");
             this.chkDebugCasting.UseVisualStyleBackColor = true;
             this.chkDebugCasting.CheckedChanged += new System.EventHandler(this.chkDebugLogging_CheckedChanged);
-            // 
-            // ShowPlayerNames
-            // 
-            this.ShowPlayerNames.AutoSize = true;
-            this.ShowPlayerNames.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.ShowPlayerNames.Location = new System.Drawing.Point(6, 63);
-            this.ShowPlayerNames.Name = "ShowPlayerNames";
-            this.ShowPlayerNames.Size = new System.Drawing.Size(121, 17);
-            this.ShowPlayerNames.TabIndex = 6;
-            this.ShowPlayerNames.Text = "Show Player Names";
-            this.toolTip1.SetToolTip(this.ShowPlayerNames, "*not saved* - Use Player Name in log output instad of class name");
-            this.ShowPlayerNames.UseVisualStyleBackColor = true;
             // 
             // chkDebugTraceHeal
             // 
@@ -882,6 +870,18 @@
             this.label1.TabIndex = 4;
             this.label1.Text = "Singular";
             // 
+            // chkShowBehaviorFlags
+            // 
+            this.chkShowBehaviorFlags.AutoSize = true;
+            this.chkShowBehaviorFlags.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.chkShowBehaviorFlags.Location = new System.Drawing.Point(6, 65);
+            this.chkShowBehaviorFlags.Name = "chkShowBehaviorFlags";
+            this.chkShowBehaviorFlags.Size = new System.Drawing.Size(162, 17);
+            this.chkShowBehaviorFlags.TabIndex = 2;
+            this.chkShowBehaviorFlags.Text = "Display Behav Flag Changes";
+            this.chkShowBehaviorFlags.UseVisualStyleBackColor = true;
+            this.chkShowBehaviorFlags.CheckedChanged += new System.EventHandler(this.chkShowBehaviorFlags_CheckedChanged);
+            // 
             // ConfigurationForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -952,7 +952,6 @@
         private System.Windows.Forms.Label lblTargets;
         private System.Windows.Forms.Button btnLogMark;
         private System.Windows.Forms.ToolTip toolTip1;
-        private System.Windows.Forms.CheckBox ShowPlayerNames;
         private System.Windows.Forms.GroupBox groupBox5;
         private System.Windows.Forms.Label lblPoi;
         private System.Windows.Forms.CheckBox chkDebugTrace;
@@ -992,5 +991,6 @@
         private System.Windows.Forms.CheckBox chkBFCombat;
         private System.Windows.Forms.CheckBox chkBFDeath;
         private System.Windows.Forms.CheckBox chkBFPull;
+        private System.Windows.Forms.CheckBox chkShowBehaviorFlags;
     }
 }

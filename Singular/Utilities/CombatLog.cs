@@ -32,7 +32,7 @@ namespace Singular
                 WoWGuid cachedSourceGuid = SourceGuid;
                 return
                     ObjectManager.GetObjectsOfType<WoWUnit>(true, true).FirstOrDefault(
-                        o => o.IsValid && (o.Guid == cachedSourceGuid || o.DescriptorGuid == cachedSourceGuid));
+                        o => o.IsValid && (o.Guid == cachedSourceGuid || o.Guid == cachedSourceGuid));
             }
         }
 
@@ -49,7 +49,7 @@ namespace Singular
                 WoWGuid cachedDestGuid = DestGuid;
                 return
                     ObjectManager.GetObjectsOfType<WoWUnit>(true, true).FirstOrDefault(
-                        o => o.IsValid && (o.Guid == cachedDestGuid || o.DescriptorGuid == cachedDestGuid));
+                        o => o.IsValid && (o.Guid == cachedDestGuid || o.Guid == cachedDestGuid));
             }
         }
 

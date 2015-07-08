@@ -1047,9 +1047,11 @@ namespace Singular.ClassSpecific.Druid
                         if (_CrowdControlTarget != null)
                         {
                             if (Spell.DoubleCastContainsAny(_CrowdControlTarget, "Incapacitating Roar", "Mighty Bash", "Cyclone"))
-                                ;
+                            {
+                            }
                             else if (_CrowdControlTarget.IsCrowdControlled())
-                                ;
+                            {
+                            }
                             else if (_CrowdControlTarget.IsMelee() && _CrowdControlTarget.SpellDistance() > 25)
                             {
                                 _CrowdControlGuid = WoWGuid.Empty;

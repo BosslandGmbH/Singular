@@ -174,6 +174,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         Common.CreateGetOverHereBehavior(),
                         new Throttle(
                             TimeSpan.FromSeconds(1.5),
+                            Spell.Cast("Plague Strike", req => Me.Specialization == WoWSpec.DeathKnightUnholy),
                             Spell.Cast("Outbreak"),
                             Spell.Cast("Howling Blast"),
                             Spell.Buff("Icy Touch")
@@ -547,7 +548,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     req => !MovementManager.IsMovementDisabled 
                         && !Me.CurrentTarget.IsBoss() 
                         && Me.CurrentTarget.DistanceSqr > 10 * 10 
-                        && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TaggedByMe || (!Me.CurrentTarget.TaggedByOther && Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull && SingularRoutine.CurrentWoWContext != WoWContext.Instances))
+                        && (((Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TaggedByMe) && !Me.CurrentTarget.IsMovingTowards() ) || (!Me.CurrentTarget.TaggedByOther && Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull && SingularRoutine.CurrentWoWContext != WoWContext.Instances))
                     ),
                 new DecoratorContinue( req => Me.IsMoving, new Action(req => StopMoving.Now())),
                 new WaitContinue( 1, until => !Me.GotTarget() || Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())

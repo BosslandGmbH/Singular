@@ -1457,6 +1457,19 @@ namespace Singular.Helpers
             return unit.IsMoving && !unit.IsWithinMeleeRange && StyxWoW.Me.IsSafelyBehind(unit);
         }
 
+        public static bool IsMovingTowards(this WoWUnit unit)
+        {
+            if ( !unit.IsMoving || unit.IsWithinMeleeRange )
+                return false;
+
+            float checkDist = (float) StyxWoW.Me.CurrentTarget.Distance - Spell.MeleeDistance(StyxWoW.Me.CurrentTarget);
+            if (checkDist < 0)
+                return false;
+
+            WoWPoint loc = WoWPoint.RayCast(StyxWoW.Me.CurrentTarget.Location, StyxWoW.Me.CurrentTarget.RenderFacing, checkDist);
+            return StyxWoW.Me.IsFacing( loc );
+        }
+
 
         private static bool lastMovingAwayAnswer = false;
         private static WoWGuid guidLastMovingAwayCheck;

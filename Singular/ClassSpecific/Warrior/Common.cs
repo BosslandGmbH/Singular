@@ -157,7 +157,7 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
                         Common.CreateChargeBehavior(),
                         Spell.Cast("Heroic Throw", req => Me.IsSafelyFacing(Me.CurrentTarget) && !Me.CurrentTarget.IsWithinMeleeRange),
-                        Spell.Cast("Taunt"),
+                        Spell.Cast("Taunt", req => SingularSettings.Instance.EnableTaunting),
                         new Decorator(
                             req => SpellManager.HasSpell("Throw") && Me.CurrentTarget.SpellDistance().Between(6, 27),
                             new Sequence(
@@ -497,7 +497,7 @@ namespace Singular.ClassSpecific.Warrior
                     req => !Me.CurrentTarget.IsWithinMeleeRange ,
                     new Sequence(
                         new PrioritySelector(
-                            Spell.Cast("Taunt"),
+                            Spell.Cast("Taunt", req => SingularSettings.Instance.EnableTaunting),
                             Spell.Cast("Heroic Throw"),
                             Spell.Cast("Whirlwind", req => !Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8 + _DistanceWindAndThunder),
                             Spell.Cast("Shockwave", req => !Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 10 && Me.IsSafelyFacing(Me.CurrentTarget, 60)),

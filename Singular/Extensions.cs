@@ -85,6 +85,7 @@ namespace Singular
         public static string UnitID(WoWGuid guid)
         {
             return Right(string.Format("{0:X4}", guid.Lowest), 4);
+            // return guid.ToString();
         }
 
         public static Styx.StatType GetPrimaryStat(this WoWUnit unit)

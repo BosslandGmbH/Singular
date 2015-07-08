@@ -295,7 +295,9 @@ namespace Singular.ClassSpecific.Warrior
                     ),
 
                 // Dump Rage
-                new Throttle(
+                Spell.Cast("Execute", req => Me.CurrentRage >= RageDump && Me.CurrentTarget.HealthPercent <= 20),
+
+                Spell.HandleOffGCD(
                     Spell.Cast(
                         "Heroic Strike",
                         on => Me.CurrentTarget,
@@ -305,11 +307,20 @@ namespace Singular.ClassSpecific.Warrior
                                 return false;
                             if (!Spell.CanCastHack("Heroic Strike", Me.CurrentTarget))
                                 return false;
-                            if (!HasUltimatum)
-                                return false;
 
-                            Logger.Write(LogColor.Hilite, "^Ultimatum: free Heroic Strike");
-                            return true;
+                            if (HasUltimatum)
+                            {
+                                Logger.Write(LogColor.Hilite, "^Ultimatum: free Heroic Strike @ {0:F1}% rage", Me.RagePercent);
+                                return true;
+                            }
+
+                            if (Me.CurrentRage >= RageDump && (Me.CurrentTarget.HealthPercent > 20 || !SpellManager.HasSpell("Execute")))
+                            {
+                                Logger.Write(LogColor.Hilite, "^Rage Dump: Heroic Strike @ {0:F1}% rage", Me.RagePercent );
+                                return true;
+                            }
+
+                            return false;
                         },
                         gcd: HasGcd.No
                         )
@@ -346,7 +357,6 @@ namespace Singular.ClassSpecific.Warrior
                 // Generate Rage
                 Spell.Cast("Shield Slam", ret => Me.CurrentRage < RageBuild && HasShieldInOffHand),
                 Spell.Cast("Revenge"),
-                Spell.Cast("Execute", req => Me.CurrentRage >= RageDump && Me.CurrentTarget.HealthPercent <= 20),
 
                 // Dump Rage
                 new Throttle(
@@ -357,7 +367,7 @@ namespace Singular.ClassSpecific.Warrior
                         {
                             if (scenario.AvoidAOE && glyphCleave) 
                                 return false;
-                            if (Me.CurrentRage > RageDump || !SpellManager.HasSpell("Devastate") || !HasShieldInOffHand)
+                            if (!SpellManager.HasSpell("Devastate") || !HasShieldInOffHand)
                                 return true;
                             return false;
                         },

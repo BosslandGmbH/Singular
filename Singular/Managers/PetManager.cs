@@ -39,7 +39,7 @@ namespace Singular.Managers
         [Behavior(BehaviorType.Initialize, WoWClass.None, priority: int.MaxValue - 1)]
         public static Composite CreatePetManagerInitializeBehaviour()
         {
-            NeedToCheckPetTauntAutoCast = true;
+            NeedToCheckPetTauntAutoCast = SingularSettings.Instance.PetAutoControlTaunt;
             return null;
         }
 
@@ -60,7 +60,7 @@ namespace Singular.Managers
                 };
 
             // force us to check initially upon load
-            NeedToCheckPetTauntAutoCast = true;
+            NeedToCheckPetTauntAutoCast = true;     // defaulting to scalar since this is a static ctor (and we dont want to reference settings here)
 
             // Lets hook this event so we can disable growl
             SingularRoutine.OnWoWContextChanged += PetManager_OnWoWContextChanged;
@@ -126,7 +126,7 @@ namespace Singular.Managers
                         // save Pet's Guid so we don't have to repeat
                         _petGuid = StyxWoW.Me.Pet.Guid;
 
-                        NeedToCheckPetTauntAutoCast = true;
+                        NeedToCheckPetTauntAutoCast = SingularSettings.Instance.PetAutoControlTaunt;
 
                         // Cache the list. yea yea, we should just copy it, but I'd rather have shallow copies of each object, rather than a copy of the list.
                         PetSpells.AddRange(StyxWoW.Me.PetSpells);
@@ -424,7 +424,7 @@ namespace Singular.Managers
         // set needtocheck flag anytime context changes
         static void PetManager_OnWoWContextChanged(object sender, WoWContextEventArg e)
         {
-            NeedToCheckPetTauntAutoCast = true;
+            NeedToCheckPetTauntAutoCast = SingularSettings.Instance.PetAutoControlTaunt;
             PetSpellsAvailableAfterNeedToCheck = false;
         }
 

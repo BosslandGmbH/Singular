@@ -600,7 +600,6 @@ namespace Singular.GUI
             
         }
 
-        private static int LogMarkIndex = 1;
         private void btnLogMark_Click(object sender, EventArgs e)
         {
             Logger.LogMark();

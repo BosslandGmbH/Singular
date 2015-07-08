@@ -29,6 +29,8 @@ namespace Singular.Managers
     {
         #region INIT
 
+#pragma warning disable 0414
+
         static NavigationProvider _origNavigation = null;
         static IPlayerMover _origPlayerMover = null;
         static StuckHandler _origStuckHandler = null; 
@@ -44,6 +46,7 @@ namespace Singular.Managers
         private static NoPlayerMovement pNoPlayerMovement = new NoPlayerMovement();
         private static NoStuckHandling pNoStuckHandling = new NoStuckHandling();
 
+#pragma warning restore 0414
 
         [Behavior(BehaviorType.Initialize, WoWClass.None, priority: int.MaxValue - 2)]
         public static Composite CreateMovementManagerInitializeBehaviour()
@@ -170,7 +173,7 @@ namespace Singular.Managers
         {
             SingularRoutine.OnBotEvent += (src, arg) =>
             {
-                IsManualMovementBotActive = SingularRoutine.IsBotInUse("LazyRaider", "Raid Bot", "Tyrael", "Enyo");
+                IsManualMovementBotActive = SingularRoutine.IsBotInUse("LazyRaider", "Raid Bot", "Tyrael", "Enyo", "HazzNyo");
                 if (arg.Event == SingularBotEvent.BotStarted)
                     MovementManager.Start();
                 else if (arg.Event == SingularBotEvent.BotStopped)

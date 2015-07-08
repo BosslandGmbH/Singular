@@ -459,7 +459,7 @@ namespace Singular.Settings
         {
             get
             {
-                return false && Debug;
+                return false;
             }
         }
 
@@ -853,12 +853,19 @@ namespace Singular.Settings
         [Description("Enabling that will disable pet usage")]
         public bool DisablePetUsage { get; set; }
 
-        [Setting,ReadOnly(false)]
+        [Setting, ReadOnly(false)]
         [DefaultValue(true)]
         [Category("Pets")]
         [DisplayName("Solo: Pet will Tanks Adds")]
         [Description("True: when Solo, switch Pet target to pickup those attacking player")]
         public bool PetTankAdds { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(true)]
+        [Category("Pets")]
+        [DisplayName("Taunt: Automatically Enable/Disable")]
+        [Description("False: user controls Taunt Auto-Cast; True: disable Taunt in groups, enable Taunt when solo")]
+        public bool PetAutoControlTaunt { get; set; }
 
         #endregion 
 

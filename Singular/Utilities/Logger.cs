@@ -318,8 +318,6 @@ namespace Singular
 
     public class SeqLog : ThrottlePasses
     {
-        SimpleStringDelegate msg;
-
         public SeqLog(double secs, SimpleStringDelegate msg)
             : base(1, TimeSpan.FromSeconds(secs), RunStatus.Success, new Action(r => { Logger.Write(msg(r)); return RunStatus.Success; }))
         {
@@ -332,8 +330,6 @@ namespace Singular
 
     public class SeqDbg : ThrottlePasses
     {
-        SimpleStringDelegate msg;
-
         public SeqDbg(double secs, SimpleStringDelegate msg)
             : base(1, TimeSpan.FromSeconds(secs), RunStatus.Success, new Action(r => { if (SingularSettings.Debug) Logger.WriteDebug(msg(r)); return RunStatus.Success; }))
         {
@@ -346,8 +342,6 @@ namespace Singular
 
     public class SeqDiag : ThrottlePasses
     {
-        SimpleStringDelegate msg;
-
         public SeqDiag(double secs, SimpleStringDelegate msg)
             : base(1, TimeSpan.FromSeconds(secs), RunStatus.Success, new Action(r => { Logger.WriteDiagnostic(msg(r)); return RunStatus.Success; }))
         {
@@ -356,8 +350,6 @@ namespace Singular
 
     public class PriLog : ThrottlePasses
     {
-        SimpleStringDelegate msg;
-
         public PriLog(double secs, SimpleStringDelegate msg)
             : base(1, TimeSpan.FromSeconds(secs), RunStatus.Failure, new Action(r => { Logger.Write(msg(r)); return RunStatus.Failure; }))
         {
@@ -370,8 +362,6 @@ namespace Singular
 
     public class PriDbg : ThrottlePasses
     {
-        SimpleStringDelegate msg;
-
         public PriDbg(double secs, SimpleStringDelegate msg)
             : base(1, TimeSpan.FromSeconds(secs), RunStatus.Failure, new Action(r => { if (SingularSettings.Debug) Logger.WriteDebug(msg(r)); return RunStatus.Failure; }))
         {
@@ -385,8 +375,6 @@ namespace Singular
 
     public class PriDiag : ThrottlePasses
     {
-        SimpleStringDelegate msg;
-
         public PriDiag(double secs, SimpleStringDelegate msg)
             : base(1, TimeSpan.FromSeconds(secs), RunStatus.Failure, new Action(r => { Logger.WriteDiagnostic(msg(r)); return RunStatus.Failure; }))
         {

@@ -1,4 +1,47 @@
 
+--- Release 4.0.0.4748 ---
+
+General
+
+change - HazzNyo - will now recognize this as a manual movement botbase when Allow Movement = Auto
+
+*new* - Pets Setting - new setting Taunt: Automatically Enable/Disable allows user to choose either Singular or user management of Taunt auto-cast
+
+
+Death Knight
+
+fixed - Unholy - Pull: added Unholy specific cast of Plague Strike to common Pull logic to leverage its applying all diseases
+
+fixed - All Specs - Death Grip: added logic to suppress DG if target is moving towards player
+
+
+Monk
+
+fixed - Windwalker - Provoke: updated max range check to 30 yds
+
+
+Priest
+
+fixed - Shadow - Shadowform: added logic to prevent double casts of this buff (extremely infrequent, but should be eliminated now)
+
+fixed - Shadow - Mind Sear: now cast at a higher priority if only Trivial Mobs are in area of effect
+
+*new* - Shadow - Multi-Dotting: will now write log message prior to casting SW:Pain or VT on a mob other than current target indicating that it was initiated by multi-dotting logic
+
+
+Warrior
+
+change - All Specs - Pull More: will now only use Taunt to pull additional mobs if the Enable Taunting setting is true
+
+change - All Specs - Attack Flying Mobs: will now only use Taunt to pull additional mobs if the Enable Taunting setting is true
+
+fixed - Protection - Execute: now correctly casts at high priority if rage dump needed
+
+fixed - Protection - Heroic Strike: revised to includes explicit log messages indicating why it was cast (Ultimatum proc or Rage dump.)
+
+fixed - Protection - Heroic Strike: added low priority cast only when Devastate has not been learned or we do not have a shield equipped (whether momentary disarm or user gearing error.)
+
+
 --- Release 4.0.0.4725 ---
 
 General

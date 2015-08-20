@@ -215,8 +215,21 @@ namespace Singular.Helpers
                         new PrioritySelector(
                             new Decorator(ret => !StyxWoW.IsInGame, new Action(ret => EndKiting("not in game so cancelling"))),
                             new Decorator(ret => !Me.IsAlive, new Action(ret => EndKiting("i am dead so cancelling"))),
-                            new Decorator(ret => timeOut < DateTime.UtcNow, new Action(ret => EndKiting("taking too long, so cancelling"))),
                             new Decorator(ret => jumpturnAttack != null && !Me.GotTarget(), new Action(ret => EndKiting("attack behavior but no target, cancelling"))),
+                            new PrioritySelector(
+                                ctx => SafeArea.NearestEnemyMobAttackingMe,
+                                new Decorator(ret => ret == null, new Action(ret => EndKiting("no non-trivial mobs attacking me, so cancelling"))),
+                                new Decorator(
+                                    ret => (ret as WoWUnit).SpellDistance() > 20, 
+                                    new Action(ret => EndKiting(string.Format("closest non-trivial attacker {0} is {1:F1} yds away, so cancelling", (ret as WoWUnit).SafeName(), (ret as WoWUnit).SpellDistance())))
+                                    ),
+                                new Decorator(
+                                    ret => (ret as WoWUnit).MovementInfo.CurrentSpeed >= Me.MovementInfo.CurrentSpeed
+                                        && (ret as WoWUnit).IsMovingTowards(), 
+                                    new Action(ret => EndKiting(string.Format("closest non-trivial attacker {0} moving faster than me, so cancelling", (ret as WoWUnit).SafeName())))
+                                    )
+                                ),
+                            new Decorator(ret => timeOut < DateTime.UtcNow, new Action(ret => EndKiting("taking too long, so cancelling"))),
 
                             new Decorator(ret => Me.Stunned || Me.IsStunned(), new Action(ret => EndKiting("stunned, cancelling"))),
                             new Decorator(ret => Me.Rooted || Me.IsRooted(), new Action(ret => EndKiting("rooted, cancelling"))),
@@ -372,9 +385,10 @@ namespace Singular.Helpers
         {
             return SingularSettings.Instance.DisengageAllowed
                 && !MovementManager.IsMovementDisabled
-
                 && Me.HealthPercent < SingularSettings.Instance.DisengageHealth
-                && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count(m => m.SpellDistance() < SingularSettings.Instance.KiteAvoidDistance) >= SingularSettings.Instance.DisengageMobCount;
+                // changed following to just Combat with Me to avoid disengage when pet is tanking
+                // && Unit.UnitsInCombatWithMeOrMyStuff(SingularSettings.Instance.KiteAvoidDistance).Count() >= SingularSettings.Instance.DisengageMobCount;
+                && Unit.UnitsInCombatWithMe(SingularSettings.Instance.KiteAvoidDistance).Count() >= SingularSettings.Instance.DisengageMobCount;
         }
 
         public static bool IsKitingWantedByUserSettings()
@@ -1073,11 +1087,12 @@ namespace Singular.Helpers
         {
             get
             {
-                return AllEnemyMobs.Where(u => 
-                    u.Combat 
-                    && u.CurrentTargetGuid == Me.Guid
-                    && !u.IsPet
-                    && StyxWoW.Me.Level < (u.Level + (u.Elite ? 12 : 5)));
+                return AllEnemyMobs
+                    .Where(u => u.Combat 
+                        && (u.CurrentTargetGuid == Me.Guid || u.Aggro)
+                        && !u.IsPet
+                        && !u.IsTrivial()
+                        );
             }
         }
 

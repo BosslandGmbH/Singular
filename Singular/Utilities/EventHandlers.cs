@@ -140,6 +140,7 @@ namespace Singular.Utilities
         public static Dictionary<WoWGuid, int> MobsThatEvaded = new Dictionary<WoWGuid, int>();
 
         public static WoWUnit AttackingEnemyPlayer { get; set; }
+        public static WoWSpellSchool AttackedWithSpellSchool { get; set; }
         private static DateTime TimeLastAttackedByEnemyPlayer { get; set; }
         public static TimeSpan TimeSinceAttackedByEnemyPlayer
         {
@@ -246,41 +247,17 @@ namespace Singular.Utilities
 
             // convert args to usable form
             var e = new CombatLogEventArgs(args.EventName, args.FireTimeStamp, args.Args);
+            bool itWasDamage = false;
 
-            if (e.DestGuid == StyxWoW.Me.Guid && e.SourceGuid != StyxWoW.Me.Guid)
+            if (TrackDamage || SingularRoutine.CurrentWoWContext == WoWContext.Normal)
             {
-                if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
-                {
-                    WoWUnit enemy = e.SourceUnit;
-                    if (Unit.ValidUnit(enemy) && enemy.IsPlayer)
-                    {
-                        Logger.WriteDiagnostic("GankDetect: received {0} src={1} dst={2}", args.EventName, e.SourceGuid, e.DestGuid);
-                        AttackingEnemyPlayer = enemy;
-                        TimeLastAttackedByEnemyPlayer = DateTime.UtcNow;
-
-                        // if (guidLastEnemy != enemy.Guid)
-                        {
-                            guidLastEnemy = enemy.Guid;
-                            string extra = "";
-                            if (e.Args.GetUpperBound(0) >= 12)
-                                extra = string.Format(" using {0}", e.SpellName);
-
-                            Logger.WriteDiagnostic("GankDetect: attacked by Level {0} {1}{2}", enemy.Level, enemy.SafeName(), extra);
-                            if (SingularSettings.Instance.TargetWorldPvpRegardless && (BotPoi.Current == null || BotPoi.Current.Guid != enemy.Guid))
-                            {
-                                Logger.Write(LogColor.Hilite, "GankDetect: setting {0} as BotPoi Kill Target", enemy.SafeName());
-                                BotPoi.Current = new BotPoi(enemy, PoiType.Kill);
-                            }
-                        }
-                    }
-                }
-
-                if (TrackDamage)
+                if (e.DestGuid == StyxWoW.Me.Guid && e.SourceGuid != StyxWoW.Me.Guid)
                 {
                     long damageAmount = 0;
                     switch (e.EventName)
                     {
                         case "SWING_DAMAGE":
+                            itWasDamage = true;
                             damageAmount = (long)e.Args[11];
                             Logger.WriteDebug("HandleCombatLog(Damage): {0} = {1}", e.EventName, damageAmount);
                             break;
@@ -288,18 +265,53 @@ namespace Singular.Utilities
                         case "SPELL_DAMAGE":
                         case "SPELL_PERIODIC_DAMAGE":
                         case "RANGE_DAMAGE":
+                            itWasDamage = true;
                             damageAmount = (long)e.Args[14];
-                            Logger.WriteDebug("HandleCombatLog(Damage): {0} = {1}", e.EventName, damageAmount);
-                            break;
-
-                        default:
-                            LogUndesirableEvent("On Character", e);
                             break;
                     }
 
-                    if (damageAmount > 0)
+                    if (TrackDamage)
                     {
-                        DamageHistory.Enqueue(new Damage(DateTime.UtcNow, damageAmount));
+                        if (itWasDamage)
+                            Logger.WriteDebug("HandleCombatLog(Damage): {0} = {1}", e.EventName, damageAmount);
+                        else 
+                            LogUndesirableEvent("On Character", e);
+
+                        if (damageAmount > 0)
+                        {
+                            DamageHistory.Enqueue(new Damage(DateTime.UtcNow, damageAmount));
+                        }
+                    }
+
+                    if (itWasDamage && SingularRoutine.CurrentWoWContext == WoWContext.Normal)
+                    {
+                        WoWUnit enemy = e.SourceUnit;
+                        if (Unit.ValidUnit(enemy) && enemy.IsPlayer)
+                        {
+                            Logger.WriteDiagnostic("GankDetect: received {0} src={1} dst={2}", args.EventName, e.SourceGuid, e.DestGuid);
+
+                            // if (guidLastEnemy != enemy.Guid || (TimeLastAttackedByEnemyPlayer - DateTime.UtcNow).TotalSeconds > 30)
+                            {
+                                guidLastEnemy = enemy.Guid;
+                                string extra = "";
+                                if (e.Args.GetUpperBound(0) >= 12)
+                                    extra = string.Format(" using {0}", e.SpellName);
+
+                                AttackedWithSpellSchool = WoWSpellSchool.None;
+                                if (e.Args.GetUpperBound(0) >= 12)
+                                    AttackedWithSpellSchool = e.SpellSchool;
+
+                                Logger.WriteDiagnostic("GankDetect: attacked by Level {0} {1}{2}", enemy.Level, enemy.SafeName(), extra);
+                                if (SingularSettings.Instance.TargetWorldPvpRegardless && (BotPoi.Current == null || BotPoi.Current.Guid != enemy.Guid))
+                                {
+                                    Logger.Write(LogColor.Hilite, "GankDetect: setting {0} as BotPoi Kill Target", enemy.SafeName());
+                                    BotPoi.Current = new BotPoi(enemy, PoiType.Kill);
+                                }
+                            }
+
+                            AttackingEnemyPlayer = enemy;
+                            TimeLastAttackedByEnemyPlayer = DateTime.UtcNow;
+                        }
                     }
                 }
 

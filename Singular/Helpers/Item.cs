@@ -184,7 +184,8 @@ namespace Singular.Helpers
                 && i.ItemInfo.RequiredLevel <= StyxWoW.Me.Level
                 && (i.ItemInfo.RequiredSkillId == 0 || i.ItemInfo.RequiredSkillLevel <= Me.GetSkill(i.ItemInfo.RequiredSkillId).CurrentValue)
                 && (i.ItemInfo.RequiredSpellId == 0 || (SpellManager.HasSpell(i.ItemInfo.RequiredSpellId) || Me.HasAura(i.ItemInfo.RequiredSpellId)))
-                && i.Effects.Any(s => s.Spell != null && spellNameHashes.Contains(s.Spell.Name) && s.Spell.CanCast)
+                // && i.Effects.Any(s => s.Spell != null && spellNameHashes.Contains(s.Spell.Name) && s.Spell.CanCast)
+                && i.Effects.Any(s => s.Spell != null && spellNameHashes.Contains(s.Spell.Name) && (s.Spell.IsInstantCast() || s.Spell.CanCast))
                 && i.Entry != 32905 // ignore Bottled Nethergon Vapor
                 ;
         }

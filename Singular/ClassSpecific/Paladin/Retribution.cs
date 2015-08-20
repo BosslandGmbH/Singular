@@ -14,6 +14,7 @@ using Rest = Singular.Helpers.Rest;
 using System.Drawing;
 using CommonBehaviors.Actions;
 using System;
+using Singular.Utilities;
 
 namespace Singular.ClassSpecific.Paladin
 {
@@ -41,31 +42,7 @@ namespace Singular.ClassSpecific.Paladin
 
         #endregion
 
-        #region Heal
-        [Behavior(BehaviorType.Heal, WoWClass.Paladin, WoWSpec.PaladinRetribution)]
-        public static Composite CreatePaladinRetributionHeal()
-        {
-            return new PrioritySelector(
-
-                Spell.BuffSelf("Devotion Aura", req => Me.Silenced),
-
-                Spell.Cast("Lay on Hands",
-                    mov => false,
-                    on => Me,
-                    req => Me.PredictedHealthPercent(includeMyHeals: true) <= PaladinSettings.SelfLayOnHandsHealth),
-
-                Common.CreateWordOfGloryBehavior(on => Me),
-
-                Spell.Cast("Flash of Light",
-                    mov => false,
-                    on => Me,
-                    req => Me.PredictedHealthPercent(includeMyHeals: true) <= PaladinSettings.SelfFlashOfLightHealth
-                        || (Me.HasAura("Divine Shield") && Me.PredictedHealthPercent(includeMyHeals: true) <= 90),
-                    cancel => (!Me.HasAura("Divine Shield") && Me.HealthPercent > PaladinSettings.SelfFlashOfLightHealth)
-                        || (Me.PredictedHealthPercent(includeMyHeals: true) > 90)
-                    )
-                );
-        }
+        #region Rest
 
         [Behavior(BehaviorType.Rest, WoWClass.Paladin, WoWSpec.PaladinRetribution)]
         public static Composite CreatePaladinRetributionRest()
@@ -80,6 +57,7 @@ namespace Singular.ClassSpecific.Paladin
                     )
                 );
         }
+
         #endregion
 
         #region Normal Rotation
@@ -125,12 +103,17 @@ namespace Singular.ClassSpecific.Paladin
                                                                   WoWSpellMechanic.Slowed,
                                                                   WoWSpellMechanic.Snared)),
 
-                        Spell.BuffSelf("Divine Shield", ret => Me.HealthPercent <= 20 && !Me.HasAura("Forbearance") && !Me.HasAnyAura("Horde Flag", "Alliance Flag")),
-                        Spell.BuffSelf("Divine Protection", ret => Me.HealthPercent <= PaladinSettings.DivineProtectionHealthProt),
-
                         Common.CreatePaladinSealBehavior(),
 
                         Spell.Cast( "Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal ),
+                        Spell.Cast( 
+                            "War Stomp", 
+                            req => PaladinSettings.StunMobsWhileSolo 
+                                && Me.Race == WoWRace.Tauren
+                                && EventHandlers.TimeSinceAttackedByEnemyPlayer.TotalSeconds < 5
+                                && EventHandlers.AttackingEnemyPlayer != null 
+                                && EventHandlers.AttackingEnemyPlayer.SpellDistance() < 8
+                            ),
 
                         //7	Blow buffs seperatly.  No reason for stacking while grinding.
                         Spell.BuffSelf(

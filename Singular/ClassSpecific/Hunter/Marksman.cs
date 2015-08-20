@@ -230,7 +230,10 @@ namespace Singular.ClassSpecific.Hunter
 
                         CreateMarksmanDiagnosticOutputBehavior(),
 
-                        Common.CreateHunterAvoidanceBehavior(null, null),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+
+                        Common.CreateHunterAvoidancePvpBehavior(null, null),
 
                         Helpers.Common.CreateInterruptBehavior(),
                 // Helpers.Common.CreateInterruptBehavior(),
@@ -254,12 +257,14 @@ namespace Singular.ClassSpecific.Hunter
                                 && (!Me.CurrentTarget.GotTarget() || Me.CurrentTarget.CurrentTarget == Me)),
 
                         // Single Target Rotation
-                        Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
+                        Spell.Cast("A Murder of Crows"),
+                        Spell.Cast("Stampede"),
                         Spell.Cast("Chimaera Shot"),
-                        Spell.Cast("Aimed Shot", ret => Me.HasAura("Fire!")),
+                        Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
+                        Spell.Cast("Glaive Toss"),
+                        
+                        Spell.Cast("Aimed Shot", ret => Me.HasAura("Fire!") || Me.CurrentFocus >= 60),
 
-                        // don't use long casts in PVP
-                // Spell.Cast("Aimed Shot", ret => Me.CurrentFocus > 60),
                         Common.CastSteadyShot(on => Me.CurrentTarget)
                         )
                     ),
@@ -304,7 +309,10 @@ namespace Singular.ClassSpecific.Hunter
             if (!SingularSettings.Debug)
                 return new ActionAlwaysFail();
 
-            return new ThrottlePasses( 1,
+            return new ThrottlePasses( 
+                1, 
+                TimeSpan.FromSeconds(1), 
+                RunStatus.Failure,
                 new Action(ret =>
                 {
                     string sMsg;

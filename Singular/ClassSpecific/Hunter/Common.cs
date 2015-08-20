@@ -938,9 +938,34 @@ namespace Singular.ClassSpecific.Hunter
         /// <returns></returns>
         public static Composite CreateHunterAvoidanceBehavior(Composite nonfacingAttack, Composite jumpturnAttack)
         {
-            return Avoidance.CreateAvoidanceBehavior("Disengage", 20, Disengage.Direction.Backwards, new ActionAlwaysSucceed());
+            return Avoidance.CreateAvoidanceBehavior(
+                "Disengage",
+                20,
+                Disengage.Direction.Backwards,
+                new ActionAlwaysSucceed()
+                );
         }
 
+        /// <summary>
+        /// creates a Hunter specific avoidance behavior based upon settings.  will check for safe landing
+        /// zones before using disengage or rocket jump.  will additionally do a running away or jump turn
+        /// attack while moving away from attacking mob if behaviors provided
+        /// </summary>
+        /// <param name="nonfacingAttack">behavior while running away (back to target - instants only)</param>
+        /// <param name="jumpturnAttack">behavior while facing target during jump turn (instants only)</param>
+        /// <returns></returns>
+        public static Composite CreateHunterAvoidancePvpBehavior(Composite nonfacingAttack, Composite jumpturnAttack)
+        {
+            return Avoidance.CreateAvoidanceBehavior(
+                "Disengage",
+                20,
+                Disengage.Direction.Backwards,
+                new PrioritySelector(
+                    CreateSlowMeleeBehaviorForDisengage(),
+                    new ActionAlwaysSucceed()
+                    )
+                );
+        }
 
         #endregion
 
@@ -1069,14 +1094,18 @@ namespace Singular.ClassSpecific.Hunter
         /// <returns></returns>
         public static Composite CastSteadyShot(UnitSelectionDelegate onUnit, SimpleBooleanDelegate req = null)
         {
-            return new Decorator(
-                ret => onUnit(ret) != null
-                    && (req == null || req(ret))
-                    && onUnit(ret).SpellDistance() < 40
-                    && SpellManager.HasSpell("Steady Shot"),
-                new Sequence(
-                    new Action(ret => Spell.LogCast("Steady Shot", onUnit(ret))),
-                    new Action(ret => Spell.CastPrimative("Steady Shot", onUnit(ret)))
+            return new Throttle(
+                TimeSpan.FromMilliseconds(500), 
+                new Decorator(
+                    ret => onUnit(ret) != null
+                        && (req == null || req(ret))
+                        && onUnit(ret).SpellDistance() < 40
+                        && SpellManager.HasSpell("Steady Shot"),
+                
+                    new Sequence(
+                        new Action(ret => Spell.LogCast("Steady Shot", onUnit(ret))),
+                        new Action(ret => Spell.CastPrimative("Steady Shot", onUnit(ret)))
+                        )
                     )
                 );
         }
@@ -1166,7 +1195,7 @@ namespace Singular.ClassSpecific.Hunter
         //
         private static bool NeedsPvpCrowdControl(WoWUnit u)
         {
-            bool good = u.Distance <= 40 && !u.IsCrowdControlled() && u.Guid != TargetGuid && !Blacklist.Contains(u.Guid, BlacklistFlags.Combat);
+            bool good = u.SpellDistance().Between(8, 40) && !u.IsCrowdControlled() && u.Guid != TargetGuid && !Blacklist.Contains(u.Guid, BlacklistFlags.Combat);
             // && !Unit.NearbyGroupMembers.Any( g => g.CurrentTargetGuid == u.Guid);
             return good;
         }

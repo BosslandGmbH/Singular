@@ -122,6 +122,33 @@ namespace Singular.Settings
 
         #endregion
 
+
+        #region Category: Elemental
+
+        [Setting]
+        [DefaultValue(6)]
+        [Category("Elemental")]
+        [DisplayName("Earthquake Count")]
+        [Description("If NOT instant, cast Earthquake on CurrentTarget if this many enemies at that location")]
+        public int EarthquakeCountInstant { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Elemental")]
+        [DisplayName("Earthquake Count (Instant)")]
+        [Description("If instant, cast Earthquake on CurrentTarget if this many enemies at that location")]
+        public int EarthquakeCount { get; set; }
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Elemental")]
+        [DisplayName("Earthquake Mana %")]
+        [Description("Do not cast Earthquake if Mana below this percent and cast is not free")]
+        public int EarthquakeManaPercent { get; set; }
+
+        #endregion 
+
+
         #region Category: Enhancement
         [Setting]
         [DefaultValue(CastOn.All)]

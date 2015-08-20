@@ -31,6 +31,17 @@ namespace Singular.ClassSpecific.Shaman
 
         // private static int NormalPullDistance { get { return Math.Max( 35, CharacterSettings.Instance.PullDistance); } }
 
+        [Behavior(BehaviorType.Initialize, WoWClass.Shaman, WoWSpec.ShamanElemental, priority: 9999)]
+        public static Composite CreateShamanElementalInitialize()
+        {
+            if (SpellManager.HasSpell("Enhanced Chain Lightning"))
+            {
+                Logger.Write(LogColor.Init, "Enhanced Chain Lightning: will now cast Earthquake on proc");
+            }
+
+            return null;
+        }
+
         [Behavior(BehaviorType.PreCombatBuffs | BehaviorType.CombatBuffs, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Normal|WoWContext.Instances)]
         public static Composite CreateElementalPreCombatBuffsNormal()
         {
@@ -180,14 +191,14 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.BuffSelf("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Count( u => u.Distance < 10f ) >= 3),
 
                         new Decorator(
-                            ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled()),
+                            ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= ShamanSettings.EarthquakeCountInstant && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled()),
                             new PrioritySelector(
                                 new Action( act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
 
                                 new Decorator(
                                     req => SpellManager.HasSpell("Enhanced Chain Lightning")
-                                        && Me.GetAuraTimeLeft("Enhanced Chain Lightning") == TimeSpan.Zero
-                                        && Unit.UnfriendlyUnitsNearTarget(12f).Count() >= 3,                                        
+                                        && Me.GetAuraTimeLeft("Enhanced Chain Lightning") > TimeSpan.Zero
+                                        && Unit.UnfriendlyUnitsNearTarget(12f).Count() >= ShamanSettings.EarthquakeCountInstant,                                        
                                     new Throttle(
                                         3,
                                         new Sequence(
@@ -195,7 +206,7 @@ namespace Singular.ClassSpecific.Shaman
                                             Spell.Cast(
                                                 "Chain Lightning", 
                                                 on => (WoWUnit) on,
-                                                req => 3 <= Clusters.GetChainedClusterCount((WoWUnit) req, Unit.UnfriendlyUnitsNearTarget(20f), 12)                                                    ,
+                                                req => ShamanSettings.EarthquakeCountInstant <= Clusters.GetChainedClusterCount((WoWUnit)req, Unit.UnfriendlyUnitsNearTarget(20f), 12),
                                                 cancel => false
                                                 ),
                                             new WaitContinue(TimeSpan.FromSeconds(0.5), until => Me.GetAuraTimeLeft("Enhanced Chain Lightning") > TimeSpan.Zero, new ActionAlwaysSucceed())
@@ -208,8 +219,8 @@ namespace Singular.ClassSpecific.Shaman
                                         on => StyxWoW.Me.CurrentTarget,
                                         req => StyxWoW.Me.GotTarget() 
                                             && StyxWoW.Me.CurrentTarget.Distance < 34
-                                            && (StyxWoW.Me.ManaPercent > 50 || Me.GetAuraTimeLeft( "Lucidity") > TimeSpan.Zero) 
-                                            && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 6),
+                                            && (StyxWoW.Me.ManaPercent > ShamanSettings.EarthquakeManaPercent || Me.GetAuraTimeLeft("Lucidity") > TimeSpan.Zero)
+                                            && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= ShamanSettings.EarthquakeCount),
                                     new Wait( TimeSpan.FromMilliseconds(500), until => Me.CurrentTarget.HasMyAura("Earthquake"), new ActionAlwaysSucceed())
                                     ),
 

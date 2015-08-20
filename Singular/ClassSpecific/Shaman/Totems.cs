@@ -274,11 +274,11 @@ namespace Singular.ClassSpecific.Shaman
                             ret => !Exist(WoWTotemType.Air),
                             new PrioritySelector(
                                 Spell.Cast("Grounding Totem",
-                                    ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 40 && u.IsTargetingMeOrPet && u.IsCasting)),
+                                    ret => Unit.NearbyUnfriendlyUnits.Any(u => u.SpellDistance() < 40 && u.IsTargetingMeOrPet && u.IsCasting)),
 
                                 Spell.Cast("Capacitor Totem",
                                     ret => ((bool)ret)
-                                        && Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < GetTotemRange(WoWTotem.Capacitor))),
+                                        && Unit.NearbyUnfriendlyUnits.Any(u => u.SpellDistance() < GetTotemRange(WoWTotem.Capacitor))),
 
                                 Spell.BuffSelf("Windwalk Totem",
                                     ret => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared))
@@ -430,10 +430,10 @@ namespace Singular.ClassSpecific.Shaman
                             ret => !Exist(WoWTotemType.Air),
                             new PrioritySelector(
                                 Spell.Cast("Grounding Totem",
-                                    on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.Distance < 40 && u.IsTargetingMeOrPet && u.IsCasting)),
+                                    on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.SpellDistance() < 40 && u.IsTargetingMeOrPet && u.IsCasting)),
 
                                 Spell.Cast("Capacitor Totem",
-                                    on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.Distance < GetTotemRange(WoWTotem.Capacitor))),
+                                    on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.SpellDistance() < GetTotemRange(WoWTotem.Capacitor) && u.IsTargetingMeOrPet)),
 
                                 Spell.BuffSelf("Windwalk Totem",
                                     ret => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared))

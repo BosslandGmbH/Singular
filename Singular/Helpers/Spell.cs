@@ -1213,13 +1213,11 @@ namespace Singular.Helpers
         {
             System.Diagnostics.Debug.Assert(name != null);
             System.Diagnostics.Debug.Assert(onUnit != null);
+            System.Diagnostics.Debug.Assert(require != null);
 
             return new Decorator(
                 ret =>
                 {
-                    if (onUnit == null || name == null || require == null)
-                        return false;
-
                     _buffUnit = onUnit(ret);
                     if (_buffUnit == null)
                         return false;

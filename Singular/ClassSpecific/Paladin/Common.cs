@@ -3,9 +3,11 @@ using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
 using Singular.Settings;
+using Singular.Utilities;
 using Styx;
 using Styx.CommonBot;
 using Styx.TreeSharp;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using System;
 using System.Linq;
@@ -47,6 +49,89 @@ namespace Singular.ClassSpecific.Paladin
                 );
         }
 
+        [Behavior(BehaviorType.Heal, WoWClass.Paladin, (WoWSpec) 0)]
+        [Behavior(BehaviorType.Heal, WoWClass.Paladin, WoWSpec.PaladinProtection, WoWContext.Normal | WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Heal, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.Normal | WoWContext.Battlegrounds)]
+        public static Composite CreateDpsPaladinHeal()
+        {
+            return new PrioritySelector(
+                Spell.BuffSelfAndWait("Divine Shield", ret => Me.HealthPercent <= PaladinSettings.DivineShieldHealthProt && !Me.HasAura("Forbearance") && !Me.HasAnyAura("Horde Flag", "Alliance Flag")),
+                Spell.BuffSelf("Divine Protection", ret => Me.HealthPercent <= PaladinSettings.DivineProtectionHealthProt),
+
+                Spell.BuffSelf("Devotion Aura", req => Me.Silenced),
+
+                Spell.Cast(
+                    "Lay on Hands",
+                    mov => false,
+                    on => Me,
+                    req => Me.PredictedHealthPercent(includeMyHeals: true) <= PaladinSettings.SelfLayOnHandsHealth
+                        && !Me.HasAura("Divine Shield") && Spell.CanCastHack("Flash of Light", Me) // save if we have DS and able to cast FoL
+                    ),
+
+                Common.CreateWordOfGloryBehavior(on => Me),
+
+                new Decorator(
+                    req => Me.Race == WoWRace.Tauren
+                        && EventHandlers.TimeSinceAttackedByEnemyPlayer.TotalSeconds < 5
+                        && EventHandlers.AttackingEnemyPlayer != null
+                        && EventHandlers.AttackingEnemyPlayer.SpellDistance() < 8
+                        && Me.HealthPercent <= PaladinSettings.SelfFlashOfLightHealth,
+                    Spell.BuffSelf("War Stomp", req => Unit.UnitsInCombatWithMeOrMyStuff(8).Any(u => u.IsPlayer && !u.IsCrowdControlled()))
+                    ),
+
+                Spell.Cast("Flash of Light",
+                    mov => false,
+                    on => Me,
+                    req => NeedFlashOfLight(),
+                    cancel => CancelFlashOfLight()
+                    )
+                );
+        }
+
+        private static bool NeedFlashOfLight()
+        {
+            // always check predicted health with our heals included when determining need for self-heal
+            float myPredictedHealth = Me.PredictedHealthPercent(includeMyHeals: true);
+            if (myPredictedHealth <= PaladinSettings.SelfFlashOfLightHealth)
+                return true;
+
+            if (myPredictedHealth <= 90)
+            {
+                if (Me.HasAura("Divine Shield"))
+                    return true;
+
+                if (!Me.IsMoving)
+                {
+                    if (!Unit.UnitsInCombatWithMeOrMyStuff(45)
+                            .Any(u => !u.HasAuraWithEffect(WoWApplyAuraType.ModConfuse, WoWApplyAuraType.ModCharm, WoWApplyAuraType.ModFear, WoWApplyAuraType.ModPacify, WoWApplyAuraType.ModPossess, WoWApplyAuraType.ModStun)))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private static bool CancelFlashOfLight()
+        {
+            // use our current health (not predicted) when seeing if we should cancel
+            double myHealth = Me.HealthPercent;
+            if (myHealth <= PaladinSettings.SelfFlashOfLightHealth)
+                return false;
+
+            if (myHealth <= 90)
+            {
+                if (Me.HasAura("Divine Shield"))
+                    return false;
+
+                if (Unit.UnitsInCombatWithMeOrMyStuff(5)
+                        .Any(u => !u.HasAuraWithEffect(WoWApplyAuraType.ModConfuse, WoWApplyAuraType.ModCharm, WoWApplyAuraType.ModFear, WoWApplyAuraType.ModPacify, WoWApplyAuraType.ModPossess, WoWApplyAuraType.ModStun)))
+                    return true;
+            }
+
+            return true;
+        }
+
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Paladin, (WoWSpec)int.MaxValue, WoWContext.Normal, 1)]
         public static Composite CreatePaladinCombatBuffs()
         {
@@ -55,8 +140,8 @@ namespace Singular.ClassSpecific.Paladin
                 new Decorator(
                     req => !Unit.IsTrivial(Me.CurrentTarget),
                     new PrioritySelector(
-                        Spell.Cast("Repentance", 
-                            onUnit => 
+                        Spell.Cast("Repentance",
+                            onUnit =>
                             Unit.NearbyUnfriendlyUnits
                             .Where(u => (u.IsPlayer || u.IsDemon || u.IsHumanoid || u.IsDragon || u.IsGiant || u.IsUndead)
                                     && Me.CurrentTargetGuid != u.Guid
@@ -66,6 +151,30 @@ namespace Singular.ClassSpecific.Paladin
                             .OrderByDescending(u => u.Distance)
                             .FirstOrDefault()
                             )
+                        )
+                    ),
+
+                new Throttle(
+                    3,
+                    Spell.BuffSelf(
+                        "Emancipate",
+                        req =>
+                        {
+                            if (!PaladinSettings.UseEmancipate)
+                                return false;
+
+                            WoWAura aura = Me.GetAuraWithMechanic(WoWSpellMechanic.Rooted, WoWSpellMechanic.Slowed, WoWSpellMechanic.Snared);
+                            if (aura != null)
+                            {
+                                TimeSpan left = aura.TimeLeft;
+                                if (left.TotalSeconds > 1.5 && Spell.CanCastHack("Emancipate", Me))
+                                {
+                                    Logger.Write( LogColor.Hilite, "^Emancipate: countering {0}#{1} which has {2:F1} seconds remaining", aura.Name, aura.SpellId, left.TotalSeconds );
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
                         )
                     )
                 );

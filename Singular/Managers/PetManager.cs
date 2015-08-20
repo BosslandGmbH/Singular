@@ -153,7 +153,7 @@ namespace Singular.Managers
         }
 
         private static WoWGuid lastPetAttack = WoWGuid.Empty;
-        private static WaitTimer waitNextPetAttack = new WaitTimer(TimeSpan.FromSeconds(2));
+        private static WaitTimer waitNextPetAttack = new WaitTimer(TimeSpan.FromSeconds(3));
         public static bool Attack(WoWUnit unit)
         {
             if (unit == null || StyxWoW.Me.Pet == null || !IsPetUseAllowed)
@@ -434,11 +434,11 @@ namespace Singular.Managers
             {
                 if (StyxWoW.Me.GotAlivePet)
                 {
-                    if (!IsAnySpellOnPetToolbar("Growl", "Taunt", "Thunderstomp", "Suffering"))
+                    if (!IsAnySpellOnPetToolbar("Growl", "Taunt", "Thunderstomp", "Suffering", "Threatening Presence"))
                     {
                         NeedToCheckPetTauntAutoCast = false;
                     }
-                    else if (CanWeCheckAutoCastForAnyOfThese("Growl", "Taunt", "Thunderstomp", "Suffering"))
+                    else if (CanWeCheckAutoCastForAnyOfThese("Growl", "Taunt", "Thunderstomp", "Suffering", "Threatening Presence"))
                     {
                         if (StyxWoW.Me.Class == WoWClass.Hunter)
                         {
@@ -447,6 +447,10 @@ namespace Singular.Managers
                         else if (StyxWoW.Me.Class == WoWClass.Warlock && Singular.ClassSpecific.Warlock.Common.GetCurrentPet() == Settings.WarlockPet.Voidwalker)
                         {
                             NeedToCheckPetTauntAutoCast = !HandleAutoCastForSpell("Suffering");
+                        }
+                        else if (StyxWoW.Me.Specialization == WoWSpec.WarlockDemonology && Singular.ClassSpecific.Warlock.Common.GetCurrentPet() == Settings.WarlockPet.Felguard)
+                        {
+                            NeedToCheckPetTauntAutoCast = !HandleAutoCastForSpell("Threatening Presence");
                         }
                     }
                 }

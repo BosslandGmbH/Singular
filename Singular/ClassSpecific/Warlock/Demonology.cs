@@ -107,9 +107,20 @@ namespace Singular.ClassSpecific.Warlock
 
             #region Felguard Use
 
- new Decorator(
-                            ret => Common.GetCurrentPet() == WarlockPet.Felguard && Me.GotTarget() && Me.CurrentTarget.Fleeing,
-                            Pet.CastPetAction("Axe Toss")
+                        new ThrottlePasses(
+                            1,
+                            TimeSpan.FromSeconds(0.5),
+                            RunStatus.Failure,
+                            Spell.HandleOffGCD(
+                                new Decorator(
+                                    ret => Me.GotTarget()
+                                        && Common.GetCurrentPet() == WarlockPet.Felguard
+                                        && Me.CurrentTarget.SpellDistance() < 30
+                                        && ((WarlockSettings.StunWhileSolo && Me.CurrentTarget.CurrentTargetGuid == Me.Guid) || Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsMovingAway()) 
+                                        && !Me.CurrentTarget.IsCrowdControlled(),
+                                    Pet.CastPetAction("Axe Toss")
+                                    )
+                                )
                             ),
 
             #endregion

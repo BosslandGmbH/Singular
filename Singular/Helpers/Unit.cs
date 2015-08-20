@@ -275,6 +275,15 @@ namespace Singular.Helpers
             }
         }
 
+        public static IEnumerable<WoWUnit> UnitsInCombatWithMe(int maxSpellDist = -1)
+        {
+            return UnfriendlyUnits(maxSpellDist)
+                .Where(
+                    p => (p.Aggro || (p.Combat && p.TaggedByMe)) && p.CurrentTargetGuid == StyxWoW.Me.Guid
+                        || (p == EventHandlers.AttackingEnemyPlayer && EventHandlers.TimeSinceAttackedByEnemyPlayer.TotalSeconds < 15)
+                    );
+        }
+
         public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithMe
         {
             get { return NearbyUnfriendlyUnits.Where(p => p.Aggro || (p.Combat && p.CurrentTargetGuid == StyxWoW.Me.Guid)); }
@@ -897,18 +906,50 @@ namespace Singular.Helpers
         }
 
         /// <summary>
+        ///  Checks for the auras on a specified unit. Returns true if the unit has any aura with any of the mechanics in the mechanics list.
+        /// </summary>
+        /// <param name="unit"> The unit to check auras for. </param>
+        /// <param name="mechanics"> Mechanics to be checked. </param>
+        /// <returns></returns>
+        public static WoWAura GetAuraWithMechanic(this WoWUnit unit, params WoWSpellMechanic[] mechanics)
+        {
+            if (unit == null)
+                return null;
+
+            var auras = unit.GetAllAuras();
+            WoWAura aura = auras.FirstOrDefault(a => mechanics.Contains(a.Spell.Mechanic));
+            return aura;
+        }
+
+        /// <summary>
         ///  Checks for the auras on a specified unit. Returns true if the unit has any aura with any apply aura type in the list.
         /// </summary>
         /// <param name="unit"> The unit to check auras for. </param>
         /// <param name="mechanics"> Mechanics to be checked. </param>
         /// <returns></returns>
-        public static bool HasAuraWithMechanic(this WoWUnit unit, params WoWApplyAuraType [] applyType)
+        public static bool HasAuraWithMechanic(this WoWUnit unit, params WoWApplyAuraType[] applyType)
         {
             if (unit == null)
                 return false;
 
             var auras = unit.GetAllAuras();
-            return auras.Any(a => a.Spell.SpellEffects.Any( se => applyType.Contains(se.AuraType)));
+            return auras.Any(a => a.Spell.SpellEffects.Any(se => applyType.Contains(se.AuraType)));
+        }
+
+        /// <summary>
+        ///  Checks for the auras on a specified unit. Returns true if the unit has any aura with any apply aura type in the list.
+        /// </summary>
+        /// <param name="unit"> The unit to check auras for. </param>
+        /// <param name="mechanics"> Mechanics to be checked. </param>
+        /// <returns></returns>
+        public static WoWAura GetAuraWithMechanic(this WoWUnit unit, params WoWApplyAuraType[] applyType)
+        {
+            if (unit == null)
+                return null;
+
+            var auras = unit.GetAllAuras();
+            WoWAura aura = auras.FirstOrDefault(a => a.Spell.SpellEffects.Any(se => applyType.Contains(se.AuraType)));
+            return aura;    // extra step for assign to local and return is to simplify debug and conditional brkpts
         }
 
         /// <summary>
@@ -1462,12 +1503,14 @@ namespace Singular.Helpers
             if ( !unit.IsMoving || unit.IsWithinMeleeRange )
                 return false;
 
-            float checkDist = (float) StyxWoW.Me.CurrentTarget.Distance - Spell.MeleeDistance(StyxWoW.Me.CurrentTarget);
+            float checkDist = (float) unit.Distance - Spell.MeleeDistance(unit);
             if (checkDist < 0)
                 return false;
 
-            WoWPoint loc = WoWPoint.RayCast(StyxWoW.Me.CurrentTarget.Location, StyxWoW.Me.CurrentTarget.RenderFacing, checkDist);
-            return StyxWoW.Me.IsFacing( loc );
+            // WoWPoint loc = WoWPoint.RayCast(StyxWoW.Me.CurrentTarget.Location, StyxWoW.Me.CurrentTarget.RenderFacing, checkDist);
+            // return StyxWoW.Me.IsFacing( loc );
+
+            return unit.IsSafelyFacing(StyxWoW.Me, 10);
         }
 
 

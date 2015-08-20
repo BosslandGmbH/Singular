@@ -249,6 +249,11 @@ namespace Singular
                     return false;
             }
 
+            if (Me.Mounted && Me.IsFlying)
+            {
+                return false;
+            }
+
             // disable if in pet battle and using a plugin/botbase 
             //  ..  that doesn't prevent combat routine from being called
             //  ..  note: this won't allow pet combat to work correclty, it 
@@ -412,6 +417,12 @@ namespace Singular
                             new PrioritySelector(
 
                                 // TestDynaWait(),
+
+                                // following is to allow cancelling of kiting in progress
+                                new Decorator(
+                                    ret => Kite.IsKitingActive(),
+                                    new HookExecutor(HookName("KitingBehavior"))
+                                    ),
 
                                 new Decorator(
                                     req => ShouldWeFightDuringRest(),

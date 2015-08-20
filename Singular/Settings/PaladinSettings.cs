@@ -77,6 +77,15 @@ namespace Singular.Settings
         [Description("Stun mobs while Solo immediately to reduce damage taken")]
         public bool StunMobsWhileSolo { get; set; }
 
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Emancipate")]
+        [Description("Use Emancipate when Rooted, Slowed, or Snared. Applies to Solo contexts only")]
+        public bool UseEmancipate { get; set; }
+
+
+
         #endregion
 
         #region Self-Heal
@@ -204,8 +213,15 @@ namespace Singular.Settings
         [DefaultValue(80)]
         [Category("Protection")]
         [DisplayName("Divine Protection Health")]
-        [Description("Divine Protection will be used at this value")]
+        [Description("Divine Protection will be used at this health %")]
         public int DivineProtectionHealthProt { get; set; }
+
+        [Setting]
+        [DefaultValue(20)]
+        [Category("Protection")]
+        [DisplayName("Divine Shield Health")]
+        [Description("Divine Shield will be used at this health %")]
+        public int DivineShieldHealthProt { get; set; }
 
         [Setting]
         [DefaultValue(false)]

@@ -501,6 +501,11 @@ namespace Singular
                 WatchAurasForProcs();
             }
 
+            if (Me.Class == WoWClass.Warlock)
+            {
+                ClassSpecific.Warlock.Common.CancelBurningRushIfNeeded(fromPulse: true);
+            }
+
             // Output if Target changed 
             CheckCurrentTarget();
 

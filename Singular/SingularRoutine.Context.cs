@@ -120,6 +120,16 @@ namespace Singular
                     return WoWContext.Instances;
                 }
 
+                const int ZONE_ASHRAN = 6941;
+                const int ZONE_WINTERGRASP = 4197;
+                if (Me.ZoneId == ZONE_ASHRAN || Me.ZoneId == ZONE_WINTERGRASP)
+                {
+                    if (_lastContext != WoWContext.Battlegrounds)
+                        Logger.Write(LogColor.Hilite, "Context: using {0} behaviors since in group in Zone: {1} #{2}", WoWContext.Battlegrounds, Me.RealZoneText, Me.ZoneId);
+
+                    return WoWContext.Battlegrounds;
+                }
+
                 // if (Group.Tanks.Any() || Group.Healers.Any())
                 const WoWPartyMember.GroupRole hasGroupRoleMask = WoWPartyMember.GroupRole.Healer | WoWPartyMember.GroupRole.Tank | WoWPartyMember.GroupRole.Damage;
                 if ((Me.Role & hasGroupRoleMask) != WoWPartyMember.GroupRole.None)

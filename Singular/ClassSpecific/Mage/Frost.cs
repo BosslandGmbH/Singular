@@ -122,7 +122,7 @@ namespace Singular.ClassSpecific.Mage
                                     if (!Spell.CanCastHack("Ice Lance", Me.CurrentTarget))
                                         return false;
 
-                                    Logger.Write("^Trivial Pull: casting Ice Lance");
+                                    Logger.Write(LogColor.Hilite, "^Trivial Pull: casting Ice Lance");
                                     return true;
                                 })
                                 )
@@ -152,7 +152,7 @@ namespace Singular.ClassSpecific.Mage
                                     if (!Spell.CanCastHack("Ice Lance", Me.CurrentTarget))
                                         return false;
 
-                                    Logger.Write("^Fast Pull: casting Ice Lance for instant cast pull");
+                                    Logger.Write(LogColor.Hilite, "^Fast Pull: casting Ice Lance for instant pull");
                                     return true;
                                 }),
                                 Spell.Cast("Fire Blast", req => !SpellManager.HasSpell("Ice Lance") || Me.CurrentTarget.IsImmune( WoWSpellSchool.Frost))
@@ -186,7 +186,7 @@ namespace Singular.ClassSpecific.Mage
                             if (!Me.IsMoving)
                                 return false;
 
-                            Logger.WriteDiagnostic("Ice Lance: casting while moving");
+                            Logger.Write(LogColor.Hilite, "^Cast on the Move: Ice Lance");
                             return true;
                         }),
 

@@ -120,6 +120,20 @@ namespace Singular.Settings
         public Soulstone UseSoulstone { get; set; }
 
         [Setting]
+        [DefaultValue(90)]
+        [Category("Common")]
+        [DisplayName("Burning Rush Health %")]
+        [Description("Will cast Burning Rush if moving and Health above this %")]
+        public int BurningRushHealthCast { get; set; }
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Common")]
+        [DisplayName("Burning Rush Cancel %")]
+        [Description("Will cancel Burning Rush if we stop moving OR Health falls below this %")]
+        public int BurningRushHealthCancel { get; set; }
+
+        [Setting]
         [DefaultValue(750)]
         [Category("Demonology")]
         [DisplayName("Switch to Caster Fury Level")]
@@ -139,6 +153,13 @@ namespace Singular.Settings
         [DisplayName("Felstorm Mob Count")]
         [Description("0: disable ability, otherwise mob count required within 8 yds.  Controls Wrathstorm also")]
         public int FelstormMobCount { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Demonology")]
+        [DisplayName("Stun While Solo")]
+        [Description("True: use Axe Toss on cooldown when Solo; False: save for Casters and Enemy Players")]
+        public bool StunWhileSolo { get; set; }
 
         public enum SpellPriority
         {

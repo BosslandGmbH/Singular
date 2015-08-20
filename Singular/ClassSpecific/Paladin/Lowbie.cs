@@ -28,15 +28,6 @@ namespace Singular.ClassSpecific.Paladin
                     )
                 );
         }
-        [Behavior(BehaviorType.Heal, WoWClass.Paladin, 0)]
-        public static Composite CreateLowbiePaladinHeal()
-        {
-            return
-                new PrioritySelector(
-                    Spell.Cast("Word of Glory", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 50),
-                    Spell.Cast("Holy Light", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40)
-                    );
-        }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Paladin, 0)]
         public static Composite CreateLowbiePaladinPreCombatBuffs()

@@ -55,13 +55,6 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
-        [DisplayName("Use Disengage")]
-        [Description("Will be used in battlegrounds no matter what this is set")]
-        public bool UseDisengage { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
         [DisplayName("Use Fetch")]
         [Description("Will loot mobs further than 10 yds away via Fetch")]
         public bool UseFetch { get; set; }

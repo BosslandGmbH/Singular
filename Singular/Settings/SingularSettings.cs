@@ -864,7 +864,7 @@ namespace Singular.Settings
         [DefaultValue(true)]
         [Category("Pets")]
         [DisplayName("Taunt: Automatically Enable/Disable")]
-        [Description("False: user controls Taunt Auto-Cast; True: disable Taunt in groups, enable Taunt when solo")]
+        [Description("True: Singular manages Taunt auto-cast; False: user controls Taunt Auto-Cast; ")]
         public bool PetAutoControlTaunt { get; set; }
 
         #endregion 

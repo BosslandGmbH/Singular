@@ -1,4 +1,59 @@
 
+--- Release 4.0.0.4772 ---
+
+General
+
+fixed - Potions: bug blocking recognition of health and mana potions in bag caused them not to be used.
+
+fixed - Ability Use While Flying: will now disable behaviors if mounted and flying 
+
+fixed - Kiting: will now properly cancel logic when enemies have died and out of combat
+
+fixed - Kiting: will now cancel if no enemy mobs attacking with in range
+
+*new* - Battlegrounds: both Ashran and Wintergrasp are identified as Battlegrounds and will activate PVP logic
+
+*new* - Threatening Presence: now manages this Warlock Felguard taunt as a Singular Auto-Cast
+
+
+Hunter
+
+*new* - Marksmanship - PVP: will now slow/snare enemies prior to disengage use
+
+fixed - All Specs - Settings: obsolete Use Disengage setting removed.  Use the settings for Avoidance on General tab
+
+fixed - All Specs - Steady Shot: will no longer spam this ability if cast fails
+
+fixed - Marksmanship - PVP: fixed rotation to use cooldowns and more abilities
+
+
+Paladin
+
+*new* - All Specs - Defensive: better use of Divine Shield
+
+*new* - All Specs - Defensive: will detect if Divine Shield active and top health off
+
+*new* - Retribution - Emancipate: will now cast if slowed and setting enabled and buff has more than 1.5 seconds left
+
+*new* - Retribution - War Stomp: will cast if Stun Mobs While Solo is active
+
+
+Shaman
+
+fixed - Elemental - Earthquake: addressed bug with check for Enhanced Chain Lightning proc.  
+
+*new* - Elemental - Earthquake: several new settings available controlling when to cast this ability
+
+
+Warlock
+
+*new* - All Specs - Burning Rush: speed buff now supported.  Settings added to limit casting to only when health > Burning Rush: Health, casting the buff if health drops below Burning Rush: Cancel
+
+fixed - Demonology - Axe Toss: will now throttle this to avoid message spam if taret out of range, etc.  Additionally will cast if target is enemy player, or stun mobs while solo setting enabled
+
+
+
+
 --- Release 4.0.0.4748 ---
 
 General

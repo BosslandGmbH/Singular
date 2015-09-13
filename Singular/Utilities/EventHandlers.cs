@@ -393,16 +393,7 @@ namespace Singular.Utilities
                     {
                         if (e.Args[14].ToString() == LocalizedNoPocketsToPickFailure)
                         {
-                            // args on this event don't match standard SPELL_CAST_FAIL
-                            // -- so, Singular only casts on current target so use that assumption
-                            WoWUnit unit = StyxWoW.Me.CurrentTarget;
-                            if (unit == null)
-                                Logger.WriteFile("[CombatLog] has no pockets event did not have a valid unit");
-                            else
-                            {
-                                Logger.WriteDebug("[CombatLog] {0} has no pockets, blacklisting from pick pocket for 2 minutes", unit.SafeName());
-                                Blacklist.Add(unit.Guid, BlacklistFlags.Node, TimeSpan.FromMinutes(2), "Singular: has no pockets to pick");
-                            }
+                            HandleRogueNoPocketsError();
                         }
                     }
                     break;
@@ -497,6 +488,27 @@ namespace Singular.Utilities
                     {
                     }
                     break;
+            }
+        }
+
+        private static void HandleRogueNoPocketsError()
+        {
+            // args on this event don't match standard SPELL_CAST_FAIL
+            // -- so, Singular only casts on current target so use that assumption
+            WoWUnit unit = StyxWoW.Me.CurrentTarget;
+            if (unit == null)
+            {
+                Logger.WriteFile("[CombatLog] no pockets error but no current target");
+            }
+            else if (Singular.ClassSpecific.Rogue.Common.mobEntryWithNoPockets.Contains(unit.Entry))
+            {
+                Logger.WriteDiagnostic("[CombatLog] {0} has no pockets, blacklisting for Pick Pocket for 2 minutes", unit.SafeName());
+                Blacklist.Add(unit.Guid, BlacklistFlags.Node, TimeSpan.FromMinutes(2), "Singular: has no pockets to pick");
+            }
+            else
+            {
+                Logger.Write(LogColor.Hilite, "^No Pockets: {0} has no pockets, adding #{1} to Pick Pock Ignore list", unit.SafeName(), unit.Entry);
+                Singular.ClassSpecific.Rogue.Common.mobEntryWithNoPockets.Add(unit.Entry);
             }
         }
 
@@ -628,14 +640,21 @@ namespace Singular.Utilities
                 Logger.WriteDebug("[WoWRedError] {0}", args.Args[0].ToString());
             }
 
-            if (StyxWoW.Me.Class == WoWClass.Rogue && SingularSettings.Instance.Rogue().UsePickPocket && args.Args[0].ToString() == LocalizedAlreadyPickPocketedError)
+            if (StyxWoW.Me.Class == WoWClass.Rogue && SingularSettings.Instance.Rogue().UsePickPocket)
             {
-                if (StyxWoW.Me.GotTarget())
+                if (args.Args[0].ToString() == LocalizedAlreadyPickPocketedError)
                 {
-                    WoWUnit unit = StyxWoW.Me.CurrentTarget;
-                    Logger.WriteDebug("WowRedError Handler: already pick pocketed {0}, blacklisting from pick pocket for 2 minutes", unit.SafeName());
-                    Blacklist.Add(unit.Guid, BlacklistFlags.Node, TimeSpan.FromMinutes(2), "Singular: already pick pocketed mob");
-                    //handled = true;
+                    if (StyxWoW.Me.GotTarget())
+                    {
+                        WoWUnit unit = StyxWoW.Me.CurrentTarget;
+                        Logger.WriteDebug("WowRedError Handler: already pick pocketed {0}, blacklisting from pick pocket for 2 minutes", unit.SafeName());
+                        Blacklist.Add(unit.Guid, BlacklistFlags.Node, TimeSpan.FromMinutes(2), "Singular: already pick pocketed mob");
+                        //handled = true;
+                    }
+                }
+                else if (args.Args[0].ToString() == LocalizedNoPocketsToPickFailure)
+                {
+                    HandleRogueNoPocketsError();
                 }
             }
 

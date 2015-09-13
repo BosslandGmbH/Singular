@@ -747,7 +747,8 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 
-        [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidRestoration)]
+
+        [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidRestoration, priority: 999)]
         public static Composite CreateRestoDruidHealBehavior()
         {
             return new PrioritySelector(

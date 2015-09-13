@@ -154,6 +154,33 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+                // grinding or questing, if target meets either of these cast instant if possible
+                // 1. mob is less than 12 yds, so no benefit from delay in Lightning Bolt missile arrival
+                // 2. area has another player competing for mobs (we want to tag the mob quickly)
+                        new Decorator(
+                            ret =>
+                            {
+                                if (StyxWoW.Me.CurrentTarget.IsHostile && StyxWoW.Me.CurrentTarget.Distance < 12)
+                                {
+                                    Logger.Write(LogColor.Hilite, "Pull with Instant since hostile target is {0:F1} yds away", StyxWoW.Me.CurrentTarget.Distance);
+                                    return true;
+                                }
+                                WoWPlayer nearby = ObjectManager.GetObjectsOfType<WoWPlayer>(true, false).FirstOrDefault(p => !p.IsMe && p.SpellDistance(Me.CurrentTarget) <= 40);
+                                if (nearby != null)
+                                {
+                                    Logger.Write(LogColor.Hilite, "Pull with Instant since player {0} nearby @ {1:F1} yds", nearby.SafeName(), nearby.Distance);
+                                    return true;
+                                }
+                                Logger.WriteDiagnostic("Pull with normal rotation since no urgency");
+                                return false;
+                            },
+
+                            new PrioritySelector(
+                                Spell.Buff("Devouring Plague", req => OrbCount >= 3),
+                                Spell.Buff("Shadow Word: Pain", true)
+                                )
+                            ),
+
                         Spell.BuffSelf("Power Word: Shield", ret => PriestSettings.UseShieldPrePull && !Me.HasAura("Weakened Soul")),
 
                         Spell.BuffSelfAndWait("Shadowform"),
@@ -976,10 +1003,11 @@ namespace Singular.ClassSpecific.Priest
                     if (target == null)
                         line += ", target=(null)";
                     else
-                        line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, tface={3}, tloss={4}, sw:p={5}, vamptch={6}, devplague={7}",
+                        line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, ttd={3}, tface={4}, tloss={5}, sw:p={6}, vamptch={7}, devplague={8}",
                             target.SafeName(),
                             target.Distance,
                             target.HealthPercent,
+                            target.TimeToDeath(),
                             Me.IsSafelyFacing(target),
                             target.InLineOfSpellSight,
                             (long)target.GetAuraTimeLeft("Shadow Word: Pain", true).TotalMilliseconds,

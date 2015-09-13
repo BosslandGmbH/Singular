@@ -213,31 +213,37 @@ namespace Singular.Helpers
             return new PrioritySelector(
                 new Decorator(
                     ret => StyxWoW.Me.HealthPercent < healthPercent,
-                    new PrioritySelector(
-                        ctx => FindFirstUsableItemBySpell("Healthstone", "Healing Potion", "Life Spirit"),
-                        new Decorator(
-                            ret => ret != null,
-                            new Sequence(
-                                // new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                new Action(ret => UseItem((WoWItem)ret, log => string.Format("/use {0} @ {1:F1}% Health", ((WoWItem)ret).Name, StyxWoW.Me.HealthPercent ))),
-                                Helpers.Common.CreateWaitForLagDuration()
+                    new ThrottlePasses(
+                        TimeSpan.FromMilliseconds( 250),
+                        new PrioritySelector(
+                            ctx => FindFirstUsableItemBySpell("Healthstone", "Healing Potion", "Life Spirit"),
+                            new Decorator(
+                                ret => ret != null,
+                                new Sequence(
+                                    // new Action(ret => ((WoWItem)ret).UseContainerItem()),
+                                    new Action(ret => UseItem((WoWItem)ret, log => string.Format("/use {0} @ {1:F1}% Health", ((WoWItem)ret).Name, StyxWoW.Me.HealthPercent ))),
+                                    Helpers.Common.CreateWaitForLagDuration()
+                                    )
+                                ),
+                            new Decorator(
+                                req => Me.Inventory.Equipped.Neck != null && Item.IsUsableItemBySpell(Me.Inventory.Equipped.Neck, new HashSet<string>() {"Heal"}),
+                                Item.UseEquippedItem((uint) WoWInventorySlot.Neck)
                                 )
-                            ),
-                        new Decorator(
-                            req => Me.Inventory.Equipped.Neck != null && Item.IsUsableItemBySpell(Me.Inventory.Equipped.Neck, new HashSet<string>() {"Heal"}),
-                            Item.UseEquippedItem((uint) WoWInventorySlot.Neck)
                             )
                         )
                     ),
                 new Decorator(
                     ret => Me.PowerType == WoWPowerType.Mana && StyxWoW.Me.ManaPercent < manaPercent,
-                    new PrioritySelector(
-                        ctx => FindFirstUsableItemBySpell("Restore Mana", "Water Spirit"),
-                        new Decorator(
-                            ret => ret != null,
-                            new Sequence(
-                                new Action(ret => UseItem((WoWItem)ret, log => string.Format("/use {0} @ {1:F1}% Mana", ((WoWItem)ret).Name, StyxWoW.Me.ManaPercent ))),
-                                Helpers.Common.CreateWaitForLagDuration()
+                    new ThrottlePasses(
+                        TimeSpan.FromMilliseconds(250),
+                        new PrioritySelector(
+                            ctx => FindFirstUsableItemBySpell("Restore Mana", "Water Spirit"),
+                            new Decorator(
+                                ret => ret != null,
+                                new Sequence(
+                                    new Action(ret => UseItem((WoWItem)ret, log => string.Format("/use {0} @ {1:F1}% Mana", ((WoWItem)ret).Name, StyxWoW.Me.ManaPercent ))),
+                                    Helpers.Common.CreateWaitForLagDuration()
+                                    )
                                 )
                             )
                         )
@@ -394,35 +400,38 @@ namespace Singular.Helpers
 
         private static Composite CreateUseBestScroll()
         {
-            return new Sequence(
-                ctx =>
-                {
-                    ScrollContext sc = new ScrollContext();
-                    sc.scroll = FindBestScroll();
-                    return sc;
-                },
-
-                new Decorator(
-                    req => req != null && ((ScrollContext)req).scroll != null,
-                    new Action(r => Logger.WriteDebug("UseBestScroll: will attempt to use {0} #{1}", ((ScrollContext)r).scroll.Name, ((ScrollContext)r).scroll.Entry))
-                    ),
-
-                new Action(r =>
+            return new ThrottlePasses(
+                TimeSpan.FromMilliseconds(250),
+                new Sequence(
+                    ctx =>
                     {
-                        ScrollContext sc = (ScrollContext)r;
-                        sc.usedAt = DateTime.UtcNow;
-                        UseItem(sc.scroll);
-                    }),
+                        ScrollContext sc = new ScrollContext();
+                        sc.scroll = FindBestScroll();
+                        return sc;
+                    },
 
-                new WaitContinue(
-                    TimeSpan.FromMilliseconds(250),
-                    until => Utilities.EventHandlers.LastRedErrorMessage > ((ScrollContext) until).usedAt,
-                    new Action(r => {
-                        int suppressFor = 5;
-                        suppressScrollsUntil = DateTime.UtcNow.AddMinutes(suppressFor);
-                        Logger.WriteDebug("UseBestScroll: suppressing Scroll Use for {0} minutes due to WoWRedError encountered", suppressFor);
-                        return RunStatus.Failure;
-                        })
+                    new Decorator(
+                        req => req != null && ((ScrollContext)req).scroll != null,
+                        new Action(r => Logger.WriteDebug("UseBestScroll: will attempt to use {0} #{1}", ((ScrollContext)r).scroll.Name, ((ScrollContext)r).scroll.Entry))
+                        ),
+
+                    new Action(r =>
+                        {
+                            ScrollContext sc = (ScrollContext)r;
+                            sc.usedAt = DateTime.UtcNow;
+                            UseItem(sc.scroll);
+                        }),
+
+                    new WaitContinue(
+                        TimeSpan.FromMilliseconds(250),
+                        until => Utilities.EventHandlers.LastRedErrorMessage > ((ScrollContext) until).usedAt,
+                        new Action(r => {
+                            int suppressFor = 5;
+                            suppressScrollsUntil = DateTime.UtcNow.AddMinutes(suppressFor);
+                            Logger.WriteDebug("UseBestScroll: suppressing Scroll Use for {0} minutes due to WoWRedError encountered", suppressFor);
+                            return RunStatus.Failure;
+                            })
+                        )
                     )
                 );
         }

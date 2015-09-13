@@ -301,7 +301,8 @@ namespace Singular.ClassSpecific.Priest
                         if (Me.HealthPercent < 35)
                             return true;
 
-                        if (Me.ManaPercent < PriestSettings.ShadowfiendMana && Me.CurrentTarget.TimeToDeath() > 15)
+                        long ttd = Me.CurrentTarget.TimeToDeath();
+                        if (Me.ManaPercent < PriestSettings.ShadowfiendMana &&  ttd >= PriestSettings.ShadowfiendTimeToDeath)
                             return true;
 
                         return false;
@@ -317,7 +318,8 @@ namespace Singular.ClassSpecific.Priest
                         if (Me.CurrentTarget.IsPlayer)
                             return true;
 
-                        if (Me.ManaPercent < PriestSettings.ShadowfiendMana && Me.CurrentTarget.TimeToDeath() > 15)
+                        long ttd = Me.CurrentTarget.TimeToDeath();
+                        if (Me.ManaPercent < PriestSettings.ShadowfiendMana && ttd >= PriestSettings.ShadowfiendTimeToDeath)
                             return true;
 
                         return false;

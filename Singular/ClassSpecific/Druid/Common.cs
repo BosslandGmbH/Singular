@@ -217,6 +217,7 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidFeral)]
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidGuardian)]
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidBalance)]
+        [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidRestoration, WoWContext.Normal)]
         public static Composite CreateDpsDruidHealBehavior()
         {
             return new PrioritySelector(

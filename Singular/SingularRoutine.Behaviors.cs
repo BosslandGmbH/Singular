@@ -1505,6 +1505,7 @@ namespace Singular
 
                 WoWDescriptorQuest wd;
                 playerQuest.GetData(out wd);
+
                 //string wdout = "";
                 //
                 //foreach (ushort i in wd.ObjectivesDone)
@@ -1524,9 +1525,9 @@ namespace Singular
                         else if (objective.Count >= 0)
                         {
                             if (objective.Index < wd.ObjectivesDone.GetLowerBound(0))
-                                Logger.WriteDebug("PullMoreQuestTargets: quest:{0}  obj:{1}  wd:{2} - Done.LowerBound:{3} but obj.Index{4} too low", playerQuest.Id, objective.ID, wd.Id, wd.ObjectivesDone.GetLowerBound(0), objective.Index);
+                                Logger.WriteDebug("PullMoreQuestTargets: quest:{0}  obj:{1}  wd:{2} - Done.LowerBound:{3} but obj.Index={4} too low", playerQuest.Id, objective.ID, wd.Id, wd.ObjectivesDone.GetLowerBound(0), objective.Index);
                             else if (objective.Index > wd.ObjectivesDone.GetUpperBound(0))
-                                Logger.WriteDebug("PullMoreQuestTargets: quest:{0}  obj:{1}  wd:{2} - Done.UpperBound:{3} but obj.Index{4} too high", playerQuest.Id, objective.ID, wd.Id, wd.ObjectivesDone.GetUpperBound(0), objective.Index);
+                                Logger.WriteDebug("PullMoreQuestTargets: quest:{0}  obj:{1}  wd:{2} - Done.UpperBound:{3} but obj.Index={4} too high", playerQuest.Id, objective.ID, wd.Id, wd.ObjectivesDone.GetUpperBound(0), objective.Index);
                             else 
                                 addObjectiveToKillList = wd.ObjectivesDone[objective.Index] < objective.Count;
                         }

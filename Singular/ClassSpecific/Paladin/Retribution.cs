@@ -254,11 +254,14 @@ namespace Singular.ClassSpecific.Paladin
                         new Throttle(40,
                             new Decorator(
                                 ret => PartyBuff.WeHaveBloodlust,
-                                new PrioritySelector(
-                                    ctx => Item.FindFirstUsableItemBySpell("Golem's Strength", "Potion of Mogu Power"),
-                                    new Decorator(
-                                        ret => ret != null,
-                                        new Action(item => ((WoWItem)item).Use() )
+                                new ThrottlePasses(
+                                    TimeSpan.FromMilliseconds( 250),
+                                    new PrioritySelector(
+                                        ctx => Item.FindFirstUsableItemBySpell("Golem's Strength", "Potion of Mogu Power"),
+                                        new Decorator(
+                                            ret => ret != null,
+                                            new Action(item => ((WoWItem)item).Use() )
+                                            )
                                         )
                                     )
                                 )
@@ -397,12 +400,13 @@ namespace Singular.ClassSpecific.Paladin
                         if (target != null)
                         {
                             sMsg += string.Format(
-                                ", {0}, {1:F1}%, {2:F1} yds, face={3}, loss={4}",
+                                ", {0}, {1:F1}%, {2:F1} yds, face={3}, loss={4}, stun={5}",
                                 target.SafeName(),
                                 target.HealthPercent,
                                 target.Distance,
                                 Me.IsSafelyFacing(target).ToYN(),
-                                target.InLineOfSpellSight.ToYN()
+                                target.InLineOfSpellSight.ToYN(),
+                                target.IsStunned().ToYN()
                                 );
                         }
 

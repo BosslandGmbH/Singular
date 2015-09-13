@@ -106,7 +106,7 @@ namespace Singular.Helpers
 
             if (SingularSettings.Debug)
             {
-                if ((foundAura != null) == lastIsSlowedResult || lastIsSlowedTarget != unit.Guid || lastIsSlowedSpellId != foundSpellId)
+                if ((foundAura != null) != lastIsSlowedResult || lastIsSlowedTarget != unit.Guid || lastIsSlowedSpellId != foundSpellId)
                 {
                     lastIsSlowedResult = (foundAura != null);
                     lastIsSlowedTarget = unit.Guid;

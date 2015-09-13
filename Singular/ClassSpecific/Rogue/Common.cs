@@ -21,6 +21,7 @@ using Styx.Helpers;
 using System.Drawing;
 using Styx.Common;
 using Singular.Utilities;
+using Styx.CommonBot.Frames;
 
 namespace Singular.ClassSpecific.Rogue
 {
@@ -941,13 +942,14 @@ namespace Singular.ClassSpecific.Rogue
                 );
         }
 
+        public static HashSet<uint> mobEntryWithNoPockets = new HashSet<uint>();
         public static Composite CreateRoguePickPocket()
         {
             if (!RogueSettings.UsePickPocket)
             {
                 return new ActionAlwaysFail();
             }
-
+            
             // don't create behavior if pick pocket in combat not enabled
             if (!RogueSettings.AllowPickPocketInCombat && (Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Combat || Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.CombatBuffs))
             {
@@ -961,11 +963,11 @@ namespace Singular.ClassSpecific.Rogue
                 {
                     if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
                     {
-                        Logger.Write( LogColor.Init, "warning:  Cloak and Dagger will be skipped on Pick Pocketable mobs.  Turn off 'Use Pick Pocket' to always use ranged Ambush, Cheap Shot, and Garrote.");
+                        Logger.Write( LogColor.Init, "warning:  Cloak and Dagger skipped for Pick Pocketable targets.  Turn off 'Use Pick Pocket' to always use ranged Ambush, Cheap Shot, and Garrote.");
                     }
                     else
                     {
-                        Logger.Write( LogColor.Init, "warning:  Cloak and Dagger will greatly reduce Pick Pocket usage.");
+                        Logger.Write(LogColor.Init, "warning:  Cloak and Dagger casts greatly reduced by Pick Pocket usage.  Turn off 'Use Pick Pocket' to always use ranged Ambush, Cheap Shot, and Garrote.");
                     }
                 }
 
@@ -1002,6 +1004,7 @@ namespace Singular.ClassSpecific.Rogue
         private static bool IsMobPickPocketable(WoWUnit unit)
         {
             return (unit.IsHumanoid || unit.IsUndead)
+                && !mobEntryWithNoPockets.Contains(unit.Entry)
                 && !Blacklist.Contains(unit, BlacklistFlags.Node);
         }
 
@@ -1047,7 +1050,13 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueOpenBoxes()
         {
             return new Decorator(
-                ret => RogueSettings.UsePickLock && !Me.IsFlying && !Me.Mounted && !AreStealthAbilitiesAvailable && SpellManager.HasSpell("Pick Lock") && AutoLootIsEnabled(),
+                ret => RogueSettings.UsePickLock 
+                    && !Me.IsFlying 
+                    && !Me.Mounted 
+                    && !AreStealthAbilitiesAvailable 
+                    && SpellManager.HasSpell("Pick Lock") 
+                    && AutoLootIsEnabled()
+                    && !MerchantFrame.Instance.IsVisible,
 
                 new PrioritySelector(
                     // open unlocked box
@@ -1091,11 +1100,13 @@ namespace Singular.ClassSpecific.Rogue
             return option != null && !string.IsNullOrEmpty(option[0]) && option[0] == "1";
         }
 
-        private static bool AutoSelfCastIsEnabled()
-        {
-            List<string> option = Lua.GetReturnValues("return GetCVar(\"autoSelfCast\")");
-            return option != null && !string.IsNullOrEmpty(option[0]) && option[0] == "1";
-        }
+        // following code not referenced
+        //
+        //private static bool AutoSelfCastIsEnabled()
+        //{
+        //    List<string> option = Lua.GetReturnValues("return GetCVar(\"autoSelfCast\")");
+        //    return option != null && !string.IsNullOrEmpty(option[0]) && option[0] == "1";
+        //}
 
         internal static bool UseLongCoolDownAbility
         {

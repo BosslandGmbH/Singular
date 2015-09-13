@@ -256,17 +256,24 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(75)]
         [Category("Common")]
-        [DisplayName("Shadowfiend/Mindbender Mana")]
-        [Description("% Mana to cast Shadowfiend or Mindbender")]
+        [DisplayName("Shadowfiend: Mana %")]
+        [Description("% Mana to cast Shadowfiend or Mindbender (target must survive Time To Death setting)")]
         public int ShadowfiendMana { get; set; }
-/*
+
         [Setting]
-        [DefaultValue(50)]
+        [DefaultValue(10)]
         [Category("Common")]
-        [DisplayName("Mindbender Mana")]
-        [Description("Mindbender will be used at this value")] 
-        public int MindbenderMana { get; set; }
-*/
+        [DisplayName("Shadowfiend: Time to Death (secs)")]
+        [Description("Current target must be expected to survive longer than this (seconds)")]
+        public int ShadowfiendTimeToDeath { get; set; }
+        /*
+                        [Setting]
+                        [DefaultValue(50)]
+                        [Category("Common")]
+                        [DisplayName("Mindbender Mana")]
+                        [Description("Mindbender will be used at this value")] 
+                        public int MindbenderMana { get; set; }
+                */
         [Setting]
         [DefaultValue(30)]
         [Category("Common")]

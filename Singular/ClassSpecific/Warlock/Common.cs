@@ -66,6 +66,14 @@ namespace Singular.ClassSpecific.Warlock
             talent.demonic_servitude_enabled = Common.HasTalent(WarlockTalents.DemonicServitude);
             talent.charred_remains_enabled = Common.HasTalent(WarlockTalents.CharredRemains);
             talent.cataclysm_enabled = Common.HasTalent(WarlockTalents.Cataclysm);
+
+            if (SpellManager.HasSpell("Burning Rush"))
+            {
+                Logger.Write(LogColor.Init, "Burning Rush: cast if running and health above {0}%", WarlockSettings.BurningRushHealthCast);
+                Logger.Write(LogColor.Init, "Burning Rush: cancel if health drops below {0}% or stopped for {1} ms", WarlockSettings.BurningRushHealthCancel, WarlockSettings.BurningRushStopTimeCancel);
+                Logger.Write(LogColor.Init, "Burning Rush: cast suppressed for {0} to {1} milliseconds after cancel", WarlockSettings.BurningRushMinSuspend, WarlockSettings.BurningRushMaxSuspend);
+            }
+
             return null;
         }
 
@@ -254,16 +262,20 @@ namespace Singular.ClassSpecific.Warlock
                         // need combat healing?  check here since mix of buffs and abilities
                 // heal / shield self as needed
                         Spell.BuffSelf("Dark Regeneration", ret => Me.HealthPercent < 45),
-                        new Decorator(
-                            ret => StyxWoW.Me.HealthPercent < 60 || Me.HasAura("Dark Regeneration"),
-                            new PrioritySelector(
-                                ctx => Item.FindFirstUsableItemBySpell("Healthstone", "Healing Potion", "Life Spirit"),
-                                new Decorator(
-                                    ret => ret != null,
-                                    new Sequence(
-                                        new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
-                                        new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                        Helpers.Common.CreateWaitForLagDuration())
+
+                        new ThrottlePasses(
+                            TimeSpan.FromMilliseconds(250),
+                            new Decorator(
+                                ret => StyxWoW.Me.HealthPercent < 60 || Me.HasAura("Dark Regeneration"),
+                                new PrioritySelector(
+                                    ctx => Item.FindFirstUsableItemBySpell("Healthstone", "Healing Potion", "Life Spirit"),
+                                    new Decorator(
+                                        ret => ret != null,
+                                        new Sequence(
+                                            new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
+                                            new Action(ret => ((WoWItem)ret).UseContainerItem()),
+                                            Helpers.Common.CreateWaitForLagDuration())
+                                        )
                                     )
                                 )
                             ),
@@ -984,6 +996,7 @@ namespace Singular.ClassSpecific.Warlock
         const string BURNING_RUSH = "Burning Rush";
         private static DateTime timeNextBurningRush = DateTime.MinValue;
         private static DateTime lastCancelBurningRush = DateTime.MinValue;
+        private static DateTime lastStopInitiated = DateTime.MaxValue;
         private static string reasonCancelBurningRush;
 
         public static Composite CreateWarlockMovementBuff()
@@ -1029,7 +1042,7 @@ namespace Singular.ClassSpecific.Warlock
                     || Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.PreCombatBuffs)
                     distToAllow = SingularSettings.Instance.StayNearTankRangeRest;
 
-                if (tank.SpellDistance() > distToAllow)
+                if (tank.SpellDistance() > distToAllow && tank.IsMovingAway())
                 {
                     if (tank.SpellDistance() > (distToAllow * 2))
                     {
@@ -1066,12 +1079,13 @@ namespace Singular.ClassSpecific.Warlock
                 if ((DateTime.UtcNow - lastCancelBurningRush).TotalSeconds > 1)
                 {
                     lastCancelBurningRush = DateTime.UtcNow;
-                    TimeSpan delay = TimeSpan.FromSeconds( 1.0 + 2.0 * new Random().NextDouble());
+                    int range = WarlockSettings.BurningRushMaxSuspend - WarlockSettings.BurningRushMinSuspend;
+                    TimeSpan delay = TimeSpan.FromMilliseconds( new Random().NextDouble() * range + WarlockSettings.BurningRushMinSuspend);
                     timeNextBurningRush = DateTime.UtcNow + delay;
 
                     Logger.Write(
                         LogColor.Hilite,
-                        "^Burning Rush: cancel since {0}, suppress for {1:F1} seconds",
+                        "^Burning Rush: cancel since {0}, suppress for {1:F3} seconds",
                         reasonCancelBurningRush,
                         delay.TotalSeconds
                         );
@@ -1087,14 +1101,23 @@ namespace Singular.ClassSpecific.Warlock
         {
             if (Me.HasAura(BURNING_RUSH))
             {
+                if (Me.IsMoving)
+                {
+                    lastStopInitiated = DateTime.MaxValue;
+                }
+                else if (lastStopInitiated == DateTime.MaxValue)
+                {
+                    lastStopInitiated = DateTime.UtcNow;
+                }
+                else if ((DateTime.UtcNow - lastStopInitiated).TotalMilliseconds >= WarlockSettings.BurningRushStopTimeCancel)
+                {
+                    reasonCancelBurningRush = "Not Moving";
+                    return true;
+                }
+
                 if (Me.InVehicle)
                 {
                     reasonCancelBurningRush = "in Quest Vehicle";
-                    return true;
-                }
-                if (!Me.IsMoving)
-                {
-                    reasonCancelBurningRush = "Not Moving";
                     return true;
                 }
                 if (Me.Mounted)

@@ -194,15 +194,18 @@ namespace Singular.ClassSpecific.Warrior
                         //Heroic Leap
                         Common.CreateHeroicLeapCloser(),
 
-                        new Sequence(
-                            new Decorator(
-                                ret => Common.IsSlowNeeded(Me.CurrentTarget),
-                                new PrioritySelector(
-                                    Spell.Buff("Piercing Howl", ret => Me.CurrentTarget.SpellDistance().Between(8, 15)),
-                                    Spell.Buff("Hamstring")
-                                    )
-                                ),
-                            new Wait(TimeSpan.FromMilliseconds(500), until => !Common.IsSlowNeeded(Me.CurrentTarget), new ActionAlwaysSucceed())
+                        new Throttle(
+                            TimeSpan.FromSeconds( 0.5),
+                            new Sequence(
+                                new Decorator(
+                                    ret => Common.IsSlowNeeded(Me.CurrentTarget),
+                                    new PrioritySelector(
+                                        Spell.Buff("Piercing Howl", ret => Me.CurrentTarget.SpellDistance().Between(8, 15)),
+                                        Spell.Buff("Hamstring")
+                                        )
+                                    ),
+                                new Wait(TimeSpan.FromMilliseconds(500), until => !Common.IsSlowNeeded(Me.CurrentTarget), new ActionAlwaysSucceed())
+                                )
                             ),
 
                         //Interupts

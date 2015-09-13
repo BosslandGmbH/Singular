@@ -246,7 +246,7 @@ namespace Singular.ClassSpecific.Rogue
                     if (target != null)
                     {
                         sMsg += string.Format(
-                            ", {0}, {1:F1}%, dies {2}, {3:F1} yds, inmelee={4}, behind={5}, loss={6}, rvlstrk={7}, rupture={8}",
+                            ", {0}, {1:F1}%, dies {2}, {3:F1} yds, inmelee={4}, behind={5}, loss={6}, face={7}, rvlstrk={8}, rupture={9}",
                             target.SafeName(),
                             target.HealthPercent,
                             target.TimeToDeath(),
@@ -254,6 +254,7 @@ namespace Singular.ClassSpecific.Rogue
                             target.IsWithinMeleeRange.ToYN(),
                             Me.IsSafelyBehind(target).ToYN(),
                             target.InLineOfSpellSight.ToYN(),
+                            Me.IsSafelyFacing(target).ToYN(),
                             (int) target.GetAuraTimeLeft("Revealing Strike", true).TotalSeconds,
                             (int) target.GetAuraTimeLeft("Rupture", true).TotalSeconds
                             );

@@ -130,8 +130,29 @@ namespace Singular.Settings
         [DefaultValue(80)]
         [Category("Common")]
         [DisplayName("Burning Rush Cancel %")]
-        [Description("Will cancel Burning Rush if we stop moving OR Health falls below this %")]
+        [Description("Will cancel Burning Rush if Health falls below this %")]
         public int BurningRushHealthCancel { get; set; }
+
+        [Setting]
+        [DefaultValue(250)]
+        [Category("Common")]
+        [DisplayName("Burning Rush Cancel Stopped (ms)")]
+        [Description("Will cancel Burning Rush if stopped for this many milliseconds")]
+        public int BurningRushStopTimeCancel { get; set; }
+
+        [Setting]
+        [DefaultValue(1500)]
+        [Category("Common")]
+        [DisplayName("Burning Rush Suspend Max (ms)")]
+        [Description("Will prevent Burning Rush cast for max time (ms) after cancelling")]
+        public int BurningRushMaxSuspend { get; set; }
+
+        [Setting]
+        [DefaultValue(750)]
+        [Category("Common")]
+        [DisplayName("Burning Rush Suspend Min (ms)")]
+        [Description("Will prevent Burning Rush cast for min time (ms) after cancelling")]
+        public int BurningRushMinSuspend { get; set; }
 
         [Setting]
         [DefaultValue(750)]

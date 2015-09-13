@@ -124,9 +124,11 @@ namespace Singular.ClassSpecific.Paladin
                 if (Me.HasAura("Divine Shield"))
                     return false;
 
-                if (Unit.UnitsInCombatWithMeOrMyStuff(5)
+                if (!Unit.UnitsInCombatWithMeOrMyStuff(45)
                         .Any(u => !u.HasAuraWithEffect(WoWApplyAuraType.ModConfuse, WoWApplyAuraType.ModCharm, WoWApplyAuraType.ModFear, WoWApplyAuraType.ModPacify, WoWApplyAuraType.ModPossess, WoWApplyAuraType.ModStun)))
-                    return true;
+                {
+                    return false;
+                }
             }
 
             return true;

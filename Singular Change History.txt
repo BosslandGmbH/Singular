@@ -1,4 +1,49 @@
 
+--- Release 4.0.0.4791 ---
+
+General
+
+fixed - PVP: logic for slowing enemy target fixed - should no longer result in message spam by classes using IsSlowed check 
+
+fixed - Healthstone/Potion: should no longer receive failed use message spam immediately following successful consumption of item
+
+
+Druid
+
+fixed - Restoration - Solo:  fixed self-healing while in combat
+
+
+Paladin
+
+fixed - Retribution/Protection - spam of cast/cancel Holy Light fixed
+
+
+Priest
+
+*new* - All Specs - Shadowfiend/Mindbender: added settings to control mininum time target expected to survive and still allow cast
+
+*new* - Shadow - Instant Pull: automatic detection of other players in area will result in use of instant cast abilities on mobs
+
+
+Rogue
+
+*new* - All Specs - Pick Pocket: will now avoid mobs with same modid that generated an error of not having pockets.  Allows increased use of Cloak and Dagger in areas with humanoids that otherwise appear to be pickpocketable
+
+fixed - All Specs - Open Box: will now suppress opening unlocked boxes if a vendor frame is visible (was resulting in selling unlocked boxes in rare circumstances.)
+
+
+Warlock
+
+change- All Specs - Burning Rush: additional settings and logic added.  Now supports a setting to define maximum time toon can be stopped until cancelling, to allow a little more tolerance for brief stops when navigating in buildings, etc. Default is being stopped for 250ms
+
+*new* - All Specs - Burning Rush: will now cast in Instances if Tank is well out of range or Tank moving at faster speed than Warlock and out of range
+
+*new* - All Specs - Burning Rush: now supports a minimum and maximum suspend use value.  Will now suspend use of Burning Rush after it is canceled a randomly selected interval somewhere between these values.  Default is 750ms to 1500ms
+
+fixed - All Specs - Healthstone/Health Potion: now throttles attempted use to maximum of once per 250 ms to avoid unnecessary failed use messagers due to attempt use again too quickly
+
+
+
 --- Release 4.0.0.4772 ---
 
 General

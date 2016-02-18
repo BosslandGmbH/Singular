@@ -30,6 +30,8 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateWindwalkerMonkPullNormal()
         {
             return new PrioritySelector(
+				CreateAttackFlyingOrUnreachableMobs(),
+
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                 Spell.WaitForCast(),
@@ -66,26 +68,59 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast( "Expel Harm", on => Common.BestExpelHarmTarget(), ret => Me.CurrentChi < (Me.MaxChi-2) && Me.HealthPercent < 80 && Me.CurrentTarget.Distance < 10 ),
                         Spell.Cast("Jab", ret => Me.CurrentChi < Me.MaxChi)
                         )
-                    ),
-
-                //Shoot flying targets
-                new Decorator(
-                    ret => Me.CurrentTarget.IsAboveTheGround(),
-                    new PrioritySelector(
-                        new Action(r =>
-                        {
-                            Logger.WriteDebug("Target appears airborne: flying={0} aboveground={1}",
-                                Me.CurrentTarget.IsFlying.ToYN(),
-                                Me.CurrentTarget.IsAboveTheGround().ToYN()
-                                );
-                            return RunStatus.Failure;
-                        }),
-                        Spell.Cast(sp => "Crackling Jade Lightning", mov => true, on => Me.CurrentTarget, req => !Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.SpellDistance() < 40, cancel => false),
-                        Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget, 27f, 22f)
-                        )
-                    )
+                    )               
                 );
         }
+
+		internal static Composite CreateAttackFlyingOrUnreachableMobs()
+		{
+			return new Decorator(
+				// changed to only do on non-player targets
+				ret => {
+					if (!Me.GotTarget())
+						return false;
+
+					if (Me.CurrentTarget.IsPlayer)
+						return false;
+
+					if (Me.CurrentTarget.IsFlying)
+					{
+						Logger.Write(LogColor.Hilite, "{0} is Flying! using Ranged attack....", Me.CurrentTarget.SafeName());
+						return true;
+					}
+
+					if (Me.CurrentTarget.IsAboveTheGround())
+					{
+						Logger.Write(LogColor.Hilite, "{0} is {1:F1} yds above the ground! using Ranged attack....", Me.CurrentTarget.SafeName(), Me.CurrentTarget.HeightOffTheGround());
+						return true;
+					}
+
+					if (Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(Me.Z - Me.CurrentTarget.Z) >= 5)
+					{
+						Logger.Write(LogColor.Hilite, "{0} appears to be off the ground! using Ranged attack....", Me.CurrentTarget.SafeName());
+						return true;
+					}
+
+					WoWPoint dest = Me.CurrentTarget.Location;
+					if (!Me.CurrentTarget.IsWithinMeleeRange && !Styx.Pathing.Navigator.CanNavigateFully(Me.Location, dest))
+					{
+						Logger.Write(LogColor.Hilite, "{0} is not Fully Pathable! trying ranged attack....", Me.CurrentTarget.SafeName());
+						return true;
+					}
+
+					return false;
+				},
+				new PrioritySelector(
+					Movement.CreateMoveToLosBehavior(),
+					Movement.CreateFaceTargetBehavior(180, false),
+					new Decorator(ctx => !Me.CurrentTarget.IsWithinMeleeRange,
+						new PrioritySelector(
+							Spell.Cast(sp => "Provoke", mov => true, on => Me.CurrentTarget, req => Me.CurrentTarget.SpellDistance() < 30 && !Me.IsInMyParty,
+								cancel => false),
+							Spell.Cast(sp => "Crackling Jade Lightning", mov => true, on => Me.CurrentTarget,
+								req => Me.CurrentTarget.SpellDistance() < 40, cancel => false))),
+					Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget, 27f, 22f)));
+		}
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.All)]
         public static Composite CreateMonkPreCombatBuffs()
@@ -495,7 +530,8 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateWindwalkerMonkPullInstances()
         {
             return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
+				CreateAttackFlyingOrUnreachableMobs(),
+				Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                 Spell.WaitForCast(),
 

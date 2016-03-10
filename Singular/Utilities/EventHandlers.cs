@@ -32,37 +32,40 @@ namespace Singular.Utilities
 
         public static void Init()
         {
-            // get locale specific messasge strings we'll check for
-            InitializeLocalizedValues();
+            using (StyxWoW.Memory.AcquireFrame())
+            {
+                // get locale specific messasge strings we'll check for
+                InitializeLocalizedValues();
 
-            // set default values for timed error states
-            LastLineOfSightFailure = DateTime.MinValue;
-            LastUnitNotInfrontFailure = DateTime.MinValue;
-            SuppressShapeshiftUntil = DateTime.MinValue;
+                // set default values for timed error states
+                LastLineOfSightFailure = DateTime.MinValue;
+                LastUnitNotInfrontFailure = DateTime.MinValue;
+                SuppressShapeshiftUntil = DateTime.MinValue;
 
-            // reset the damage history
-            DamageHistory = new Queue<Damage>(50);
+                // reset the damage history
+                DamageHistory = new Queue<Damage>(50);
 
-            // hook combat log event if we are debugging or not in performance critical circumstance
-            if (SingularSettings.Debug || (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds && !StyxWoW.Me.CurrentMap.IsRaid))
-                AttachCombatLogEvent();
+                // hook combat log event if we are debugging or not in performance critical circumstance
+                if (SingularSettings.Debug || (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds && !StyxWoW.Me.CurrentMap.IsRaid))
+                    AttachCombatLogEvent();
 
-            // add context handler that reacts to context change with above rules for logging
-            SingularRoutine.OnWoWContextChanged += HandleContextChanged;
+                // add context handler that reacts to context change with above rules for logging
+                SingularRoutine.OnWoWContextChanged += HandleContextChanged;
 
-            // hook PVP start timer so we can identify end of prep phase
-            PVP.AttachStartTimer();
+                // hook PVP start timer so we can identify end of prep phase
+                PVP.AttachStartTimer();
 
-            // also hook wow error messages
-            Lua.Events.AttachEvent("UI_ERROR_MESSAGE", HandleErrorMessage);
+                // also hook wow error messages
+                Lua.Events.AttachEvent("UI_ERROR_MESSAGE", HandleErrorMessage);
 
-            // hook LOOT_BIND_CONFIRM to handle popup appearing when applying certain spells to weapon
-            // Lua.Events.AttachEvent("AUTOEQUIP_BIND_CONFIRM", HandleLootBindConfirm);
-            // Lua.Events.AttachEvent("LOOT_BIND_CONFIRM", HandleLootBindConfirm);
-            Lua.Events.AttachEvent("END_BOUND_TRADEABLE", HandleEndBoundTradeable);
+                // hook LOOT_BIND_CONFIRM to handle popup appearing when applying certain spells to weapon
+                // Lua.Events.AttachEvent("AUTOEQUIP_BIND_CONFIRM", HandleLootBindConfirm);
+                // Lua.Events.AttachEvent("LOOT_BIND_CONFIRM", HandleLootBindConfirm);
+                Lua.Events.AttachEvent("END_BOUND_TRADEABLE", HandleEndBoundTradeable);
 
-            Lua.Events.AttachEvent("PARTY_MEMBER_DISABLE", HandlePartyMemberDisable);
-            Lua.Events.AttachEvent("PARTY_MEMBER_ENABLE", HandlePartyMemberEnable);
+                Lua.Events.AttachEvent("PARTY_MEMBER_DISABLE", HandlePartyMemberDisable);
+                Lua.Events.AttachEvent("PARTY_MEMBER_ENABLE", HandlePartyMemberEnable);
+            }
         }
 
         private static void InitializeLocalizedValues()

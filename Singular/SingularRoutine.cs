@@ -23,6 +23,7 @@ using Styx.CommonBot.POI;
 using System.Text;
 using Styx.WoWInternals.DBC;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace Singular
 {
@@ -77,7 +78,7 @@ namespace Singular
 
             DetermineCurrentWoWContext();
 
-            WriteSupportInfo();
+            Task.Run(() => WriteSupportInfo());
 
             _lastLogLevel = GlobalSettings.Instance.LogLevel;
 
@@ -155,7 +156,7 @@ namespace Singular
             Logger.Write("Current spec is " + SpecName());
 
             // write current settings to log file... only written at startup and when Save press in Settings UI
-            SingularSettings.Instance.LogSettings();
+            Task.Run(() => SingularSettings.Instance.LogSettings());
 
             // Update the current WoWContext, and fire an event for the change.
             UpdateContext();

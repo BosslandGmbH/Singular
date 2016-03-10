@@ -81,10 +81,13 @@ namespace Singular
 
         public static void DetermineCurrentWoWContext()
         {
-            CurrentWoWContext = _DetermineCurrentWoWContext();
-            CurrentHealContext = (CurrentWoWContext == WoWContext.Instances && Me.GroupInfo.IsInRaid)
-                ? HealingContext.Raids
-                : (HealingContext)CurrentWoWContext;
+	        using (StyxWoW.Memory.AcquireFrame())
+	        {
+                CurrentWoWContext = _DetermineCurrentWoWContext();
+                CurrentHealContext = (CurrentWoWContext == WoWContext.Instances && Me.GroupInfo.IsInRaid)
+                    ? HealingContext.Raids
+                    : (HealingContext)CurrentWoWContext;
+	        }
         }
 
         private static WoWContext _DetermineCurrentWoWContext()
@@ -272,22 +275,24 @@ namespace Singular
 
         public static void DescribeContext()
         {
-            string sRace = RaceName();
-            if (Me.Race == WoWRace.Pandaren)
-                sRace = " " + Me.FactionGroup.ToString() + sRace;
+            using (StyxWoW.Memory.AcquireFrame())
+            {
+                string sRace = RaceName();
+                if (Me.Race == WoWRace.Pandaren)
+                    sRace = " " + Me.FactionGroup.ToString() + sRace;
 
-            Logging.Write(" "); // spacer before prior log text
+                Logging.Write(" "); // spacer before prior log text
 
-            Logger.Write(Color.LightGreen, "Your Level {0}{1}{2} Build is", Me.Level, SingularRoutine.RaceName(), SingularRoutine.SpecAndClassName());
+                Logger.Write(Color.LightGreen, "Your Level {0}{1}{2} Build is", Me.Level, SingularRoutine.RaceName(), SingularRoutine.SpecAndClassName());
 
-            Logger.Write(Color.LightGreen, "... running the {0} bot in {1} {2}",
-                 GetBotName(),
-                 Me.RealZoneText, 
-                 !Me.IsInInstance || Battlegrounds.IsInsideBattleground ? "" : "[" + GetInstanceDifficultyName() + "]"
-                );
+                Logger.Write(Color.LightGreen, "... running the {0} bot in {1} {2}",
+                             GetBotName(),
+                             Me.RealZoneText,
+                             !Me.IsInInstance || Battlegrounds.IsInsideBattleground ? "" : "[" + GetInstanceDifficultyName() + "]"
+                    );
 
-            Logger.WriteFile("   MapId            = {0}", Me.MapId);
-            Logger.WriteFile("   ZoneId           = {0}", Me.ZoneId);
+                Logger.WriteFile("   MapId            = {0}", Me.MapId);
+                Logger.WriteFile("   ZoneId           = {0}", Me.ZoneId);
 /*
             if (Me.CurrentMap != null && Me.CurrentMap.IsValid)
             {
@@ -307,48 +312,48 @@ namespace Singular
                 Logger.WriteFile("   Name             = {0}", Me.CurrentMap.Name);
             }
 */
-            string sRunningAs = "";
+                string sRunningAs = "";
 
-            if (Me.CurrentMap == null)
-                sRunningAs = "Unknown";
-            else if (Me.CurrentMap.IsArena)
-                sRunningAs = "Arena";
-            else if (Me.CurrentMap.IsBattleground)
-                sRunningAs = "Battleground";
-            else if (Me.CurrentMap.IsScenario)
-                sRunningAs = "Scenario";
-            else if (Me.CurrentMap.IsRaid)
-                sRunningAs = "Raid";
-            else if (Me.CurrentMap.IsDungeon)
-                sRunningAs = "Dungeon";
-            else if (Me.CurrentMap.IsInstance)
-                sRunningAs = "Instance";
-            else
-                sRunningAs = "Zone: " + Me.CurrentMap.Name;
+                if (Me.CurrentMap == null)
+                    sRunningAs = "Unknown";
+                else if (Me.CurrentMap.IsArena)
+                    sRunningAs = "Arena";
+                else if (Me.CurrentMap.IsBattleground)
+                    sRunningAs = "Battleground";
+                else if (Me.CurrentMap.IsScenario)
+                    sRunningAs = "Scenario";
+                else if (Me.CurrentMap.IsRaid)
+                    sRunningAs = "Raid";
+                else if (Me.CurrentMap.IsDungeon)
+                    sRunningAs = "Dungeon";
+                else if (Me.CurrentMap.IsInstance)
+                    sRunningAs = "Instance";
+                else
+                    sRunningAs = "Zone: " + Me.CurrentMap.Name;
 
-            Logger.Write(Color.LightGreen, "... {0} using my {1} Behaviors {2}",
-                 sRunningAs,
-                 CurrentWoWContext == WoWContext.Normal ? "SOLO" : CurrentWoWContext.ToString().ToUpper(),
-                 !Me.IsInGroup() ? "alone" : "in a group of " + Unit.GroupMemberInfos.Count().ToString()
-                 );
-
-            if (CurrentWoWContext != WoWContext.Battlegrounds && Me.IsInGroup())
-            {
-                Logger.Write(Color.LightGreen, "... in a group as {0} role with {1} of {2} players", 
-                    (Me.Role & (WoWPartyMember.GroupRole.Tank | WoWPartyMember.GroupRole.Healer | WoWPartyMember.GroupRole.Damage)).ToString().ToUpper(),
-                     Me.GroupInfo.NumRaidMembers, 
-                     (int) Math.Max(Me.CurrentMap.MaxPlayers, Me.GroupInfo.GroupSize)
+                Logger.Write(Color.LightGreen, "... {0} using my {1} Behaviors {2}",
+                             sRunningAs,
+                             CurrentWoWContext == WoWContext.Normal ? "SOLO" : CurrentWoWContext.ToString().ToUpper(),
+                             !Me.IsInGroup() ? "alone" : "in a group of " + Unit.GroupMemberInfos.Count().ToString()
                     );
-            }
 
-            Item.WriteCharacterGearAndSetupInfo();
+                if (CurrentWoWContext != WoWContext.Battlegrounds && Me.IsInGroup())
+                {
+                    Logger.Write(Color.LightGreen, "... in a group as {0} role with {1} of {2} players",
+                                 (Me.Role & (WoWPartyMember.GroupRole.Tank | WoWPartyMember.GroupRole.Healer | WoWPartyMember.GroupRole.Damage)).ToString().ToUpper(),
+                                 Me.GroupInfo.NumRaidMembers,
+                                 (int) Math.Max(Me.CurrentMap.MaxPlayers, Me.GroupInfo.GroupSize)
+                        );
+                }
 
-            Logger.WriteFile(" ");
-            Logger.WriteFile("My Current Dynamic Info");
-            Logger.WriteFile("=======================");
-            Logger.WriteFile("Combat Reach:    {0:F4}", Me.CombatReach);
-            Logger.WriteFile("Bounding Height: {0:F4}", Me.BoundingHeight );
-            Logger.WriteFile(" ");
+                Item.WriteCharacterGearAndSetupInfo();
+
+                Logger.WriteFile(" ");
+                Logger.WriteFile("My Current Dynamic Info");
+                Logger.WriteFile("=======================");
+                Logger.WriteFile("Combat Reach:    {0:F4}", Me.CombatReach);
+                Logger.WriteFile("Bounding Height: {0:F4}", Me.BoundingHeight );
+                Logger.WriteFile(" ");
 
 #if LOG_GROUP_COMPOSITION
             if (CurrentWoWContext == WoWContext.Instances)
@@ -375,8 +380,9 @@ namespace Singular
             }
 #endif
 
-            if (Styx.CommonBot.Targeting.PullDistance < 25)
-                Logger.Write( LogColor.Hilite, "your Pull Distance is {0:F0} yds which is low for any class!!!", Styx.CommonBot.Targeting.PullDistance);
+                if (Styx.CommonBot.Targeting.PullDistance < 25)
+                    Logger.Write(LogColor.Hilite, "your Pull Distance is {0:F0} yds which is low for any class!!!", Styx.CommonBot.Targeting.PullDistance);
+            }
         }
 
         public static string RaceName()

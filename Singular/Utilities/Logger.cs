@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using Singular.Settings;
 using Styx.Common;
 using Styx.TreeSharp;
@@ -136,9 +137,22 @@ namespace Singular
         /// <param name="args">replacement parameter values</param>
         public static void WriteFile( LogLevel ll, string message, params object[] args)
         {
-            if ( GlobalSettings.Instance.LogLevel >= LogLevel.Quiet)
-                Logging.WriteToFileSync( ll, "(Singular) " + message, args);
+            if (GlobalSettings.Instance.LogLevel >= LogLevel.Quiet)
+            {
+				// Required until Logging.WriteToFile makes it to public
+				// to make sure these appear in order
+	            lock (s_writeFileLog)
+	            {
+		            s_lastLog =
+			            s_lastLog.ContinueWith(
+				            t => Logging.WriteToFileSync(ll, "(Singular) " + message, args),
+				            TaskContinuationOptions.RunContinuationsAsynchronously);
+	            }
+            }
         }
+
+	    private static readonly object s_writeFileLog = new object();
+	    private static Task s_lastLog = Task.CompletedTask;
 
         /// <summary>
         /// write message to log window if Singular Debug Enabled setting true

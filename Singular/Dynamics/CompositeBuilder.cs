@@ -11,6 +11,8 @@ using Styx;
 
 using Styx.TreeSharp;
 using System.Drawing;
+using System.Threading.Tasks;
+using CommonBehaviors.Actions;
 using Singular.ClassSpecific;
 
 namespace Singular.Dynamics
@@ -58,8 +60,8 @@ namespace Singular.Dynamics
                     // All behavior methods should not be generic, and should have zero parameters, with their return types being of type Composite.
                     _methods.AddRange(
                         type.GetMethods(BindingFlags.Static | BindingFlags.Public).Where(
-                            mi => !mi.IsGenericMethod && mi.GetParameters().Length == 0).Where(
-                                mi => mi.ReturnType.IsAssignableFrom(typeof(Composite))));
+                            mi => !mi.IsGenericMethod && mi.GetCustomAttributes(typeof(BehaviorAttribute)).Any()).Where(
+                                mi => mi.ReturnType.IsAssignableFrom(typeof(Composite)) || mi.ReturnType.IsAssignableFrom(typeof(Task<bool>))));
                 }
                 Logger.WriteFile("Singular Behaviors: Added " + _methods.Count + " behaviors");
             }
@@ -164,10 +166,16 @@ namespace Singular.Dynamics
                         CurrentBehaviorName = mi.Name;
 
                         // if it blows up here, you defined a method with the exact same attribute and priority as one already found
-
-                        // wrap in trace class
-                        Composite comp = mi.Invoke(null, null) as Composite;
-                        string name = behavior.ToString() + "." + mi.Name + "." + attribute.PriorityLevel.ToString();
+						
+	                    Composite comp;
+	                    if (mi.ReturnType == typeof(Composite))
+		                    comp = mi.Invoke(null, null) as Composite;
+	                    else if (mi.ReturnType == typeof (Task<bool>) && mi.GetParameters().Length >= 1)
+		                    comp = new ActionRunCoroutine(o => mi.Invoke(null, new [] {o}) as Task<bool>);
+	                    else
+		                    continue;
+							
+                        string name = behavior + "." + mi.Name + "." + attribute.PriorityLevel;
 
                         if (SingularSettings.Trace)
                             comp = new CallTrace( name, comp);

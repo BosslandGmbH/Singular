@@ -62,7 +62,7 @@
     <File Hash="2369" Name="ClassSpecific\Warrior\Lowbie.cs" />
     <File Hash="44029" Name="ClassSpecific\Warrior\Protection.cs" />
     <File Hash="1275" Name="Dynamics\Attributes.cs" />
-    <File Hash="10726" Name="Dynamics\CompositeBuilder.cs" />
+    <File Hash="8710" Name="Dynamics\CompositeBuilder.cs" />
     <File Hash="837" Name="Dynamics\SessionState.cs" />
     <File Hash="11136" Name="Extensions.cs" />
     <File Hash="35911" Name="GUI\ConfigurationForm.cs" />

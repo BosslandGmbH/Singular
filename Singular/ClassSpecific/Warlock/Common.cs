@@ -82,22 +82,6 @@ namespace Singular.ClassSpecific.Warlock
         [Behavior(BehaviorType.Rest, WoWClass.Warlock)]
         public static Composite CreateWarlockRest()
         {
-            int id = 0;
-            if (id > 0)
-            {
-                WoWSpell spell = WoWSpell.FromId(id);
-                Logger.WriteDebug("Warlock: found spell {0} #{1}", spell.Name, spell.Id);
-                SpellEffect se = spell.SpellEffects.FirstOrDefault( s => s != null);
-                if (se != null)
-                {
-                    var row = StyxWoW.Db[ClientDb.SpellEffect].GetRow(se.Id);
-                    var internalInfo = row.GetStruct<WoWSpell.SpellEffectEntry>();
-                    Logger.Write("Warlock: spellentry: {0}", se);
-                    Logger.Write("Warlock: internalInfo: {0}", internalInfo);
-                }
-                id = spell.Id;
-            }
-
             return new PrioritySelector(
 
                 new Decorator(

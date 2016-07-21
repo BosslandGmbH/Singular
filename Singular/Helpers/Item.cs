@@ -515,46 +515,8 @@ namespace Singular.Helpers
             {
                 if (!t.Selected)
                     continue;
-
-                string talent = "unknown";
-                switch (Me.Class)
-                {
-                    case WoWClass.DeathKnight:
-                        talent = ((ClassSpecific.DeathKnight.DeathKnightTalents)t.Index).ToString();
-                        break;
-                    case WoWClass.Druid:
-                        talent = ((ClassSpecific.Druid.DruidTalents)t.Index).ToString();
-                        break;
-                    case WoWClass.Hunter:
-                        talent = ((ClassSpecific.Hunter.HunterTalents)t.Index).ToString();
-                        break;
-                    case WoWClass.Mage:
-                        talent = ((ClassSpecific.Mage.MageTalents)t.Index).ToString();
-                        break;
-                    case WoWClass.Monk:
-                        talent = ((ClassSpecific.Monk.MonkTalents)t.Index).ToString();
-                        break;
-                    case WoWClass.Paladin:
-                        talent = ((ClassSpecific.Paladin.PaladinTalents)t.Index).ToString();
-                        break;
-                    case WoWClass.Priest:
-                        talent = ((ClassSpecific.Priest.PriestTalents)t.Index).ToString();
-                        break;
-                    case WoWClass.Rogue:
-                        talent = ((ClassSpecific.Rogue.RogueTalents)t.Index).ToString();
-                        break;
-                    case WoWClass.Shaman:
-                        talent = ((ClassSpecific.Shaman.ShamanTalents)t.Index).ToString();
-                        break;
-                    case WoWClass.Warlock:
-                        talent = ((ClassSpecific.Warlock.WarlockTalents)t.Index).ToString();
-                        break;
-                    case WoWClass.Warrior:
-                        talent = ((ClassSpecific.Warrior.WarriorTalents)t.Index).ToString();
-                        break;
-                }
-
-                Logger.WriteFile("--- #{0} -{1}", t.Index, talent.CamelToSpaced());
+				
+                Logger.WriteFile("--- #{0}", t.Index);
             }
 
             Logger.WriteFile(" ");

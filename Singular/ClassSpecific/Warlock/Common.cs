@@ -343,9 +343,8 @@ namespace Singular.ClassSpecific.Warlock
                         new Decorator(
                             ret => (Me.GotTarget() && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss() || Me.CurrentTarget.TimeToDeath() > 20)) || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMyStuff()) >= 3,
                             new PrioritySelector(
-                                Spell.BuffSelf("Dark S  oul: Misery", ret => TalentManager.CurrentSpec == WoWSpec.WarlockAffliction),
-                                Spell.BuffSelf("Dark Soul: Instability", ret => TalentManager.CurrentSpec == WoWSpec.WarlockDestruction && Destruction.CurrentBurningEmbers >= 30),
-                                Spell.BuffSelf("Dark Soul: Knowledge", ret => TalentManager.CurrentSpec == WoWSpec.WarlockDemonology && Me.GetCurrentPower(WoWPowerType.DemonicFury) > 800)
+                                Spell.BuffSelf("Dark Soul: Misery", ret => TalentManager.CurrentSpec == WoWSpec.WarlockAffliction),
+                                Spell.BuffSelf("Dark Soul: Instability", ret => TalentManager.CurrentSpec == WoWSpec.WarlockDestruction)
                                 )
                             ),
 
@@ -567,8 +566,7 @@ namespace Singular.ClassSpecific.Warlock
                                 new Decorator(
                                     // need to check that no live pet here as FoX will only summon last living, so worthless if live pet (even if wrong one)
                                     ret => TalentManager.CurrentSpec == WoWSpec.WarlockDestruction                                        
-                                        && !Me.GotAlivePet && Spell.CanCastHack("Flames of Xoroth", Me) 
-                                        && Warlock.Destruction.CurrentBurningEmbers >= 10,
+                                        && !Me.GotAlivePet && Spell.CanCastHack("Flames of Xoroth", Me),
                                     new Sequence(
                                         new Action(r => 
                                         {

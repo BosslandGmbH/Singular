@@ -1004,11 +1004,10 @@ namespace Singular.Helpers
 
         public static uint GetAuraStacks(this WoWUnit onUnit, string auraName, bool fromMyAura = true)
         {
-            if (onUnit == null)
-                return 0;
-
-            WoWAura wantedAura =
-                onUnit.GetAllAuras().Where(a => a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
+	        WoWAura wantedAura =
+		        onUnit?.GetAllAuras()
+			        .FirstOrDefault(
+				        a => a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid));
 
             if (wantedAura == null)
                 return 0;

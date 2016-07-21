@@ -25,55 +25,16 @@ namespace Singular.ClassSpecific.Druid
 {
     public class Feral
     {
-        public delegate IEnumerable<WoWUnit> EnumWoWUnitDelegate(object context);
+        private static LocalPlayer Me => StyxWoW.Me;
+	    private static DruidSettings DruidSettings => SingularSettings.Instance.Druid();
 
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static DruidSettings DruidSettings { get { return SingularSettings.Instance.Druid(); } }
-
-        #region Common
-
-        public static bool talentBloodtalons { get; set; }
-        public static bool talentLunarInspiration { get; set; }
-
-
-        [Behavior(BehaviorType.Initialize, WoWClass.Druid, WoWSpec.DruidFeral)]
-        public static Composite CreateFeralDruidInitialize()
-        {
-            talentBloodtalons = Common.HasTalent(DruidTalents.Bloodtalons);
-            if (talentBloodtalons)
-            {
-                if (SingularRoutine.CurrentHealContext == HealingContext.Raids)
-                    Logger.Write(LogColor.Init, "Bloodtalons: Predatory Swiftness Healing Touch saved until 4+ combat points");
-                else
-                    Logger.Write(LogColor.Init, "Bloodtalons: save Predatory Swiftness Healing Touch until 4+ combat points or {0}%", DruidSettings.PredSwiftnessHealingTouchHealth);
-            }
-
-            talentLunarInspiration = Common.HasTalent(DruidTalents.LunarInspiration);
-
-            return null;
-        }
-
-        [Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All, 1)]
+	    #region Common
+		
+        [Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidFeral, priority: 1)]
         public static Composite CreateFeralDruidRest()
         {
             return new PrioritySelector(
-
-/* cp's are retained now, so don't consume just because they exist
-                new Throttle(10,
-                    new Decorator(
-                        ret => SpellManager.HasSpell("Savage Roar")
-                            && Me.ComboPoints > 0
-                            && Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds < (Me.ComboPoints * 6 + 6),
-                        new Sequence(
-                            new Action(r => Logger.WriteDebug("cast Savage Roar to use {0} points since buff has {1:F1} seconds left", 
-                                Me.ComboPoints, 
-                                Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds)
-                                ),
-                            CastSavageRoar( on => Me, req => true)
-                            )
-                        )
-                    ),
-*/
+				
                 new Decorator(
                     ret => !Rest.IsEatingOrDrinking
                         && Me.HasAura("Predatory Swiftness")
@@ -95,7 +56,7 @@ namespace Singular.ClassSpecific.Druid
         }
 
 
-        [Behavior(BehaviorType.Pull, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All)]
+        [Behavior(BehaviorType.Pull, WoWClass.Druid, WoWSpec.DruidFeral)]
         public static Composite CreateFeralNormalPull()
         {
             return new PrioritySelector(
@@ -134,7 +95,7 @@ namespace Singular.ClassSpecific.Druid
                                 )
                             ),
 */
-                        Spell.Buff("Moonfire", req => Me.GotTarget() && Me.CurrentTarget.IsTrivial() && (Me.Shapeshift != ShapeshiftForm.Cat || (talentLunarInspiration && !Me.HasAura("Prowl")))),
+                        Spell.Buff("Moonfire", req => Me.GotTarget() && Me.CurrentTarget.IsTrivial() && (Me.Shapeshift != ShapeshiftForm.Cat || (TalentManager.IsSelected(3) && !Me.HasAura("Prowl")))),
 
                         Common.CreateProwlBehavior(
                             req =>
@@ -273,7 +234,7 @@ namespace Singular.ClassSpecific.Druid
                             return null;
 
                         WoWUnit unit = null;
-                        if (talentBloodtalons && (Me.ComboPoints >= 4 || pstime < 1650))
+                        if (TalentManager.IsSelected(20) && (Me.ComboPoints >= 4 || pstime < 1650))
                         {
                             unit = Unit.GroupMembers
                                 .Where( u => u.IsAlive && Spell.CanCastHack("Healing Touch", u))
@@ -404,7 +365,7 @@ namespace Singular.ClassSpecific.Druid
                                 )
                             ),
 #else
-                        Spell.Buff( "Moonfire", req => Common.HasTalent(DruidTalents.LunarInspiration)),
+                        Spell.Buff( "Moonfire", req => TalentManager.IsSelected(3)),
 #endif
 
                         Spell.Cast("Shred"),
@@ -556,7 +517,7 @@ namespace Singular.ClassSpecific.Druid
                                         CastThrash(on => Me.CurrentTarget, req => Me.HasAura("Clearcasting"), 6),
 
                                         // added after bleeds
-                                        Spell.Buff("Moonfire", req => Common.HasTalent(DruidTalents.LunarInspiration)),
+                                        Spell.Buff("Moonfire", req => TalentManager.IsSelected(3)),
 
                                         // 12. Shred to generate combo points if Shred is available (Behind boss, berserk w/glyph, etc)
                                         Spell.Cast("Shred"),

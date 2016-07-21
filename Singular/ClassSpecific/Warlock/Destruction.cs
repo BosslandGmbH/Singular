@@ -31,13 +31,6 @@ namespace Singular.ClassSpecific.Warlock
 
         private static int _mobCount;
 
-        public static int active_enemies { get { return Common.scenario.Mobs.Count(); } }
-        public static double burning_ember { get { return Me.GetPowerInfo(WoWPowerType.BurningEmbers).Current / 10; } }
-        public static class set_bonus 
-        {
-            public static bool tier17_2pc { get { return StyxWoW.Me.HasAura(165455); } }
-        }
-
         #region Normal Rotation
 
         [Behavior(BehaviorType.Pull, WoWClass.Warlock, WoWSpec.WarlockDestruction, WoWContext.All)]
@@ -214,8 +207,6 @@ namespace Singular.ClassSpecific.Warlock
                                 {
                                     if (Me.CurrentTarget.HealthPercent < 20)
                                     {
-                                        if (CurrentBurningEmbers >= 35)
-                                            return true;
                                         if (Me.HasAnyAura("Dark Soul: Instability", "Toxic Power", "Expanded Mind"))
                                             return true;
                                         if (Me.CurrentTarget.TimeToDeath(99) < 3)
@@ -236,8 +227,6 @@ namespace Singular.ClassSpecific.Warlock
                                 {
                                     if (BackdraftStacks < 3)
                                     {
-                                        if (CurrentBurningEmbers >= 35)
-                                            return true;
                                         if (Me.HasAura("Dark Soul: Instability"))
                                             return true;
                                     }
@@ -298,15 +287,7 @@ namespace Singular.ClassSpecific.Warlock
 
 
         #endregion
-
-        public static double CurrentBurningEmbers
-        {
-            get
-            {
-                return Me.GetPowerInfo(WoWPowerType.BurningEmbers).Current;
-            }
-        }
-
+		
         static double ImmolateTime(WoWUnit u = null)
         {
             return (u ?? Me.CurrentTarget).GetAuraTimeLeft("Immolate", true).TotalSeconds;
@@ -337,15 +318,8 @@ namespace Singular.ClassSpecific.Warlock
                 new Action(ret =>
                 {
                     string msg;
-                    msg = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, embers={3}, backdraft={4}, conflag={5}, aoe={6}",
-                        s,
-                        Me.HealthPercent,
-                        Me.ManaPercent,
-                        CurrentBurningEmbers,
-                        BackdraftStacks,
-                        Spell.GetCharges("Conflagrate"),
-                        _mobCount
-                        );
+                    msg =
+	                    $".... [{s}] h={Me.HealthPercent:F1}%/m={Me.ManaPercent:F1}%, backdraft={BackdraftStacks}, conflag={Spell.GetCharges("Conflagrate")}, aoe={_mobCount}";
 
                     WoWUnit target = Me.CurrentTarget;
                     if (target != null)

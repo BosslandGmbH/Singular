@@ -19,7 +19,6 @@ namespace Singular.ClassSpecific.Warlock
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static WarlockSettings WarlockSettings { get { return SingularSettings.Instance.Warlock(); } }
-        private static uint CurrentDemonicFury { get { return Me.GetCurrentPower(WoWPowerType.DemonicFury); } }
 
         private static int _mobCount;
         public static readonly WaitTimer demonFormRestTimer = new WaitTimer(TimeSpan.FromSeconds(3));
@@ -176,16 +175,8 @@ namespace Singular.ClassSpecific.Warlock
 
                         string msg;
 
-                        msg = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, fury={3}, metamor={4}, mcore={5}, darksoul={6}, aoecnt={7}",
-                            s,
-                             Me.HealthPercent,
-                             Me.ManaPercent,
-                             CurrentDemonicFury,
-                             Me.HasAura("Metamorphosis"),
-                             lstks,
-                             Me.HasAura("Dark Soul: Knowledge"),
-                             _mobCount
-                             );
+                        msg =
+	                        $".... [{s}] h={Me.HealthPercent:F1}%/m={Me.ManaPercent:F1}%, metamor={Me.HasAura("Metamorphosis")}, mcore={lstks}, darksoul={Me.HasAura("Dark Soul: Knowledge")}, aoecnt={_mobCount}";
 
                         if (target != null)
                         {

@@ -14,10 +14,10 @@ namespace Singular.ClassSpecific.DeathKnight
 {
     public class Lowbie
     {
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static DeathKnightSettings DeathKnightSettings { get { return SingularSettings.Instance.DeathKnight(); } }
+        private static LocalPlayer Me => StyxWoW.Me;
+	    private static DeathKnightSettings DeathKnightSettings => SingularSettings.Instance.DeathKnight();
 
-        // Note:  in MOP we would only have Lowbie Death Knights if user doesn't select a spec when character
+	    // Note:  in MOP we would only have Lowbie Death Knights if user doesn't select a spec when character
         // is created.  Previously, you had to complete some quests to get talent points which then 
         // determined your spec, but that is no longer necessary
 
@@ -40,24 +40,8 @@ namespace Singular.ClassSpecific.DeathKnight
                         // Anti-magic shell - no cost and doesnt trigger GCD 
                         Spell.BuffSelf("Anti-Magic Shell", ret => Unit.NearbyUnfriendlyUnits.Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == StyxWoW.Me.Guid)),
 
-                        Common.CreateGetOverHereBehavior(),
+                        Common.CreateDeathGripBehavior(),
                         Spell.Cast("Death Coil"),
-                        Spell.Buff(
-                            "Icy Touch", 
-                            3, 
-                            on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsTargetingMeOrPet && u.NeedsFrostFever() && Me.SpellDistance(u) < 30 && Me.IsSafelyFacing(u) && u.InLineOfSpellSight), 
-                            req => true, 
-                            true, 
-                            "Frost Fever"
-                            ),
-                        Spell.Buff(
-                            "Plague Strike", 
-                            3, 
-                            on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsTargetingMeOrPet && u.NeedsBloodPlague() && u.IsWithinMeleeRange && Me.IsSafelyFacing(u) && u.InLineOfSpellSight), 
-                            req => true, 
-                            true, 
-                            "Blood Plague"
-                            ),
                         Spell.Buff("Icy Touch"),
                         Spell.Buff("Plague Strike")
                         )

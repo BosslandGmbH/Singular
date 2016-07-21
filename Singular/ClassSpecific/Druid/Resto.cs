@@ -24,7 +24,6 @@ namespace Singular.ClassSpecific.Druid
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static DruidSettings DruidSettings { get { return SingularSettings.Instance.Druid(); } }
-        public static bool HasTalent(DruidTalents tal) { return TalentManager.IsSelected((int)tal); }
 
         const int PriEmergencyBase = 500;
         const int PriHighBase = 400;
@@ -61,7 +60,7 @@ namespace Singular.ClassSpecific.Druid
         {
             glyphRegrowth = TalentManager.HasGlyph("Regrowth");
             glyphRejuv = TalentManager.HasGlyph("Rejuvenation");
-            talentGermination = HasTalent(DruidTalents.Germination);
+            talentGermination = TalentManager.IsSelected(18);
 
             MaxRejuvStacks = talentGermination ? 2u : 1u;
             return null;
@@ -333,54 +332,7 @@ namespace Singular.ClassSpecific.Druid
             }
 
             #endregion
-
-            #region Atonement Only
-            // only Atonement healing if above Health %
-            if (AddAtonementBehavior() && DruidSettings.Heal.DreamOfCenariusAbovePercent > 0)
-            {
-                behavs.AddBehavior( 100 + PriHighAtone, "DreamOfCenarius Above " + DruidSettings.Heal.DreamOfCenariusAbovePercent + "%", "Wrath",
-                    new Decorator(
-                        req => (Me.Combat || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds) && HealerManager.Instance.TargetList.Count(h => h.HealthPercent < DruidSettings.Heal.DreamOfCenariusAbovePercent) < DruidSettings.Heal.DreamOfCenariusAboveCount,
-                        new PrioritySelector(
-                            HealerManager.CreateAttackEnsureTarget(),
-                            Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                            new Decorator(
-                                req => Unit.ValidUnit(Me.CurrentTarget),
-                                new PrioritySelector(
-                                    new Action(r => { Logger.WriteDebug("--- DreamOfCenarius only! ---"); return RunStatus.Failure; }),
-                                    Movement.CreateFaceTargetBehavior(),
-                                    Spell.Cast("Wrath", mov => true, on => Me.CurrentTarget, req => true, cancel => false)
-                                    )
-                                )
-                            )
-                        )
-                    );
-
-                behavs.AddBehavior(HealerManager.HealthToPriority(DruidSettings.Heal.DreamOfCenariusAbovePercent) + PriHighAtone, "DreamOfCenarius Above " + DruidSettings.Heal.DreamOfCenariusAbovePercent + "%", "DreamOfCenarius",
-                    new Decorator(
-                        req => (Me.Combat || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-                            && !HealerManager.Instance.TargetList.Any(h => h.HealthPercent < DruidSettings.Heal.DreamOfCenariusCancelBelowHealthPercent && h.SpellDistance() < 50)
-                            && HealerManager.Instance.TargetList.Count(h => h.HealthPercent < DruidSettings.Heal.DreamOfCenariusAbovePercent) < DruidSettings.Heal.DreamOfCenariusAboveCount,
-                        new PrioritySelector(
-                            HealerManager.CreateAttackEnsureTarget(),
-                            Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                            new Decorator(
-                                req => Unit.ValidUnit(Me.CurrentTarget),
-                                new PrioritySelector(
-                                    Movement.CreateFaceTargetBehavior(),
-                                    new Decorator(
-                                        req => Me.IsSafelyFacing(Me.CurrentTarget, 150),
-                                        Spell.Cast("Wrath", mov => true, on => Me.CurrentTarget, req => true, cancel => CancelDreamOfCenariusDPS())
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    );                   
-
-            }
-            #endregion
-
+			
             #region AoE Heals
 
             if (DruidSettings.Heal.WildMushroom != 0)
@@ -690,20 +642,7 @@ namespace Singular.ClassSpecific.Druid
                 new WaitContinue( TimeSpan.FromMilliseconds(500), until => ((WoWUnit)until).GetAuraStacks("Rejuvenation") != RejuvStacksFound, new ActionAlwaysSucceed())
                 );
         }
-
-        private static bool AddAtonementBehavior()
-        {
-            if (!HasTalent(DruidTalents.DreamOfCenarius))
-                return false;
-
-            return Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Heal
-                || Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.PullBuffs
-                || Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull
-                || Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.CombatBuffs
-                || Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Combat;
-        }
-
-
+		
         /// <summary>
         /// non-combat heal to top people off and avoid lifebloom, buffs, etc.
         /// </summary>

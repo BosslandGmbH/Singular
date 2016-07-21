@@ -29,7 +29,7 @@ namespace Singular.ClassSpecific.Priest
         private static PriestSettings PriestSettings { get { return SingularSettings.Instance.Priest(); } }
 
         #region Orbs
-        private static uint OrbCount        { get { return Me.GetCurrentPower(WoWPowerType.ShadowOrbs); } }
+        private static uint OrbCount        { get { return 0; } }
         private static uint MaxOrbs         { get; set; }
         private static bool NeedMoreOrbs    { get { return OrbCount < MaxOrbs; } }
         #endregion 
@@ -37,8 +37,6 @@ namespace Singular.ClassSpecific.Priest
         [Behavior(BehaviorType.Initialize, WoWClass.Priest, WoWSpec.PriestShadow)]
         public static Composite CreateShadowInitialize()
         {
-            MaxOrbs = Me.GetMaxPower(WoWPowerType.ShadowOrbs);
-
             if (SpellManager.HasSpell("Flash Heal"))
             {
                 Logger.Write(LogColor.Init, "Flash Heal: if all enemies cc'd and health below {0}%", PriestSettings.ShadowFlashHeal);

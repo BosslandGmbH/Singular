@@ -83,8 +83,7 @@ namespace Singular.ClassSpecific.Warlock
         }
 
 
-        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.Normal)]
-        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.Instances)]
+        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.All)]
         public static Composite CreateWarlockAfflictionNormalCombat()
         {
             return new PrioritySelector(
@@ -119,12 +118,11 @@ namespace Singular.ClassSpecific.Warlock
                         Common.CastCataclysm(),
 
                         CreateApplyDotsBehaviorNormal(on => Me.CurrentTarget),
-
-                        Spell.Cast("Drain Life", req => Me.HealthPercent < WarlockSettings.DrainLifeCastPct),
-                        Spell.Cast("Drain Soul", mov => true, on => Me.CurrentTarget, req => true, cancel => false),
-                        Spell.Cast("Shadow Bolt", req => !SpellManager.HasSpell("Drain Soul")),
-                        Spell.Cast("Drain Life", mov => true, on => Me.CurrentTarget, req => !SpellManager.HasSpell("Drain Soul"))
-                
+                        Spell.Cast("Summon Doomguard"),
+                        Spell.Cast("Grimoire: Fel Hunter"),
+                        Spell.Buff("Life Tap", when => Me.ManaPercent < 50),
+                        Spell.Cast("Drain Life"),
+                        Spell.Cast("Drain Soul")      
                         )
                     )
                 );
@@ -195,86 +193,7 @@ namespace Singular.ClassSpecific.Warlock
             }
             return false;
         }
-
-        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.Battlegrounds )]
-        public static Composite CreateWarlockAfflictionPvpCombat()
-        {
-            return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromLongRange(),
-
-                Spell.WaitForCastOrChannel(),
-
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-
-                    new PrioritySelector(
-                        Helpers.Common.CreateInterruptBehavior(),
-
-                        new Action(ret =>
-                        {
-                            _mobCount = Common.TargetsInCombat.Count();
-                            return RunStatus.Failure;
-                        }),
-
-                        Movement.WaitForFacing(),
-                        Movement.WaitForLineOfSpellSight(),
-
-#if NOT_NOW
-                        new Throttle( 4, 
-                            Spell.Cast( "Curse of Enfeeblement", 
-                                on => Unit.NearbyUnfriendlyUnits
-                                        .Where( u => !u.IsCrowdControlled() && u.IsTargetingMeOrPet 
-                                            && ((u.PowerType != WoWPowerType.Mana && !u.HasAura("Weakened Blows")) || (u.PowerType == WoWPowerType.Mana && !u.HasAura("Slow Casting"))))
-                                        .OrderBy( u => u.Distance )
-                                        .FirstOrDefault()
-                                )
-                            ),
-#endif
-                        // make sure Primary Target is loaded up with DoTs
-                        CreateApplyDotsBehaviorPvp(on => Me.CurrentTarget, ret => true),
-
-                        // Glyph of Siphon Life? then spam Corruption around....
-                        new Decorator(
-                            ret => TalentManager.HasGlyph( "Siphon Life"),
-                            Spell.Buff( "Corruption", 2, ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HasAuraExpired("Corruption", 2)), req => true)
-                            ),
-
-                        // now go around the room with instant DoTs
-                        new PrioritySelector(
-                            ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => !u.HasAllMyAuras( "Corruption", "Agony")),
-                            CreateApplyDotsBehaviorPvp( on => (WoWUnit) on, ret => true)
-                            ),
-
-                        // fear target if targeting me and not cc'd (prio by distance)
-                        new Throttle(2, 8,
-                            new PrioritySelector(
-                                ctx => Unit.NearbyUnfriendlyUnits
-                                        .Where(u => !u.IsCrowdControlled() && u.CurrentTargetGuid == Me.Guid)
-                                        .OrderBy(u => u.Distance)
-                                        .FirstOrDefault(),
-
-                                Spell.Buff("Howl of Terror", on => (WoWUnit)on, req => Spell.IsSpellOnCooldown("Fear") || 1 < Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet && Me.SpellDistance(u) < 10f)),
-                                Spell.Buff("Mortal Coil", on => (WoWUnit)on, req => Me.HealthPercent < 70),
-                                Spell.Buff("Fear", on => Common.GetBestFearTarget())
-                                )
-                            ),
-
-                        // now try to spread some affliction
-                        new PrioritySelector(
-                            ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => !u.HasAllMyAuras("Unstable Affliction")),
-                            CreateApplyDotsBehaviorPvp(on => (WoWUnit)on, ret => true)
-                            ),
-
-                        Spell.Cast("Drain Soul"),
-
-                        // only a lowbie should hit this
-                        Spell.Cast("Drain Life", ret => !SpellManager.HasSpell("Drain Soul"))
-                        )
-                    )
-                );
-
-        }
-
+        
 
         public static Composite CreateAoeBehavior()
         {
@@ -338,9 +257,10 @@ namespace Singular.ClassSpecific.Warlock
                         new Decorator(
                             req => GetSoulSwapDotsNeeded((WoWUnit)req) > 0,
                             new PrioritySelector(
+                                Spell.Buff("Agony", 3, on => (WoWUnit)on, ret => true),
                                 Spell.Buff("Corruption", 3, on => (WoWUnit) on, ret => true),
-                                Spell.Buff("Agony", 3, on => (WoWUnit) on, ret => true),
-                                Spell.Buff("Unstable Affliction", 3, on => (WoWUnit) on, req => true),
+                                Spell.Buff("Unstable Affliction", 3, on => (WoWUnit) on, req => Me.GetPowerInfo(WoWPowerType.SoulShards).Current >= 5),
+                                Spell.Buff("Siphon Life"),
                                 new Action(r => {
                                     Logger.WriteDebug("ApplyDots: no DoTs needed on {0}", ((WoWUnit)r).SafeName());
                                     return RunStatus.Failure;
@@ -422,41 +342,7 @@ namespace Singular.ClassSpecific.Warlock
                     )
                 );
         }
-
-        public static Composite CreateApplyDotsBehaviorPvp(UnitSelectionDelegate onUnit, SimpleBooleanDelegate soulBurn)
-        {
-            return new PrioritySelector(
-
-                    // soulburn + soulswap sequence if requested
-                    new Sequence(
-                       Common.CreateCastSoulburn(
-                            ret => soulBurn(ret)
-                                && Me.CurrentSoulShards > 0
-                                && onUnit != null && onUnit(ret) != null
-                                && onUnit(ret).CurrentHealth > 1
-                                && SpellManager.HasSpell("Soul Swap")
-                                && onUnit(ret).HasAuraExpired("Unstable Affliction")
-                                && !Me.HasAura("Soulburn") 
-                                ),
-
-                        CreateCastSoulSwap(onUnit)
-                        ),
-
-                    Spell.Buff("Corruption", 3, ctx => onUnit(ctx), req => true),
-                    Spell.Buff("Agony", 3, ctx => onUnit(ctx), req => true),
-                    Spell.Buff("Unstable Affliction", 3, ctx => onUnit(ctx), req => true),
-
-                    // target has all my DoTs but not Haunt -- make sure Soulburn isn't active
-                   Spell.Buff("Haunt", 
-                        2,
-                        ctx => onUnit(ctx), 
-                        req => Me.CurrentSoulShards > 0
-                            && onUnit(req).HasAllMyAuras("Agony", "Corruption", "Unstable Affliction")
-                            && !Me.HasAura("Soulburn")
-                        )
-                    );
-        }
-
+        
 
         delegate bool NeedSoulSwapDelegate(WoWUnit unit);
 

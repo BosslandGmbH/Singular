@@ -124,7 +124,7 @@ namespace Singular.ClassSpecific.Shaman
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.All)]
         public static Composite CreateShamanEnhancementNormalPull()
         {
             return new PrioritySelector(
@@ -188,7 +188,7 @@ namespace Singular.ClassSpecific.Shaman
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
 
-                        Spell.BuffSelf("Feral Spirit", ret => !Unit.IsTrivial(Me.CurrentTarget) && NeedFeralSpirit),
+                        Spell.BuffSelf("Feral Spirit", ret => !Me.CurrentTarget.IsTrivial() && NeedFeralSpirit),
 
                         new Decorator(
                             req => AttackEvenIfGhostWolf,
@@ -201,44 +201,17 @@ namespace Singular.ClassSpecific.Shaman
 
                                 // pull more logic (use instants first, then ranged pulls if possible)
 
-
-                                Common.CastElementalBlast(),
-                                Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
-
+                                Spell.BuffSelf("Boulderfist", req => !Me.HasAura("Boulderfist")),
+                                Spell.BuffSelf("Frostbrand", req => !Me.HasAura("Frostbrand")),
+                                Spell.Buff("Boulderfist", req => Me.GetAuraStacks("Boulderfist") >= 2), // TODO: And 130 maelstrom!
+                                Spell.Buff("Flametongue", req => !Me.HasAura("Flametongue")),
+                                Spell.Cast("Feral Spirit"),
+                                Spell.Cast("Crash Lightning", mov => false, on => Me.CurrentTarget, when => Unit.UnfriendlyUnitsNearTarget(10).Count(u => u.TappedByAllThreatLists) >= 2),
                                 Spell.Cast("Stormstrike"),
-                                new Decorator(
-                                    req => Spell.UseAOE,
-                                    new PrioritySelector(
-                                        Spell.Cast("Flame Shock", req => StyxWoW.Me.HasAura("Unleash Flame")),
-                                        Spell.Buff("Flame Shock", true, req => Me.CurrentTarget.Elite || (!Me.CurrentTarget.IsTrivial() && Unit.UnfriendlyUnitsNearTarget(12).Count(u => u.IsTargetingUs()) > 1))
-                                        )
-                                    ),
-                                Spell.Buff("Frost Shock",
-                                    ret => Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3 
-                                        || !SpellManager.HasSpell("Improved Flame Shock")
-                                        || (Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.IsSlowed())
-                                    ),
-                                Spell.Cast("Lava Lash",
-                                    ret => StyxWoW.Me.Inventory.Equipped.OffHand != null &&
-                                           StyxWoW.Me.Inventory.Equipped.OffHand.ItemInfo.ItemClass == WoWItemClass.Weapon
-                                    ),
-                                Spell.Buff("Fire Nova",
-                                    on => StyxWoW.Me.CurrentTarget,
-                                    ret => Spell.UseAOE 
-                                        && StyxWoW.Me.CurrentTarget.HasMyAura("Flame Shock") 
-                                        && Unit.NearbyUnfriendlyUnits
-                                            .Count(u => u.IsTargetingUs() && u.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) < 10 * 10) >= 3
-                                    ),
-                                Spell.Cast("Primal Strike", ret => !SpellManager.HasSpell("Stormstrike")),
-                                Spell.Cast("Unleash Elements"),
-
-                                new Decorator(ret => !ShamanSettings.AvoidMaelstromDamage && StyxWoW.Me.HasAura("Maelstrom Weapon", 5) && (StyxWoW.Me.GetAuraTimeLeft("Maelstom Weapon", true).TotalSeconds < 3000 || StyxWoW.Me.PredictedHealthPercent(includeMyHeals: true) > 90),
-                                    new PrioritySelector(
-                                        Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
-                                        Spell.Cast("Lightning Bolt")
-                                        )
-                                    ),
-
+                                Spell.Cast("Lava Lash"),
+                                Spell.Cast("Boulderfist"),
+                                Spell.Cast("Flametongue"),
+                                Spell.Cast("Lightning Bolt", req => !Me.CurrentTarget.IsWithinMeleeRange),
                                 // won't happen often, but if at range and no abilities enter ghost wolf 
                                 CreateInCombatGapCloser()
                                 )
@@ -270,146 +243,6 @@ namespace Singular.ClassSpecific.Shaman
 
                 return true;
             }
-        }
-
-        #endregion
-
-        #region Battleground Rotation
-
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Battlegrounds)]
-        public static Composite CreateShamanEnhancementPvPPullAndCombat()
-        {
-            return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Spell.WaitForCastOrChannel(),
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(), 
-                    new PrioritySelector(
-
-                        CreateEnhanceDiagnosticOutputBehavior(),
-
-                        Helpers.Common.CreateInterruptBehavior(),
-
-                        CreateInCombatGapCloser(),
-
-                        Totems.CreateTotemsBehavior(),
-
-                        Movement.WaitForFacing(),
-                        Movement.WaitForLineOfSpellSight(),
-
-                        new Decorator(
-                            req => AttackEvenIfGhostWolf,
-                            new PrioritySelector(
-
-                                Dispelling.CreatePurgeEnemyBehavior("Purge"),
-
-                                Common.CreateShamanDpsShieldBehavior(),
-
-                                // Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
-                                Spell.BuffSelf("Feral Spirit", ret => !Unit.IsTrivial(Me.CurrentTarget) && NeedFeralSpirit),
-
-                                Common.CastElementalBlast(),
-                                Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
-
-                                Spell.Cast("Stormstrike"),
-                                Spell.Cast("Primal Strike", ret => !SpellManager.HasSpell("Stormstrike")),
-                                Spell.Cast("Lava Lash", 
-                                    ret => StyxWoW.Me.Inventory.Equipped.OffHand != null && 
-                                            StyxWoW.Me.Inventory.Equipped.OffHand.ItemInfo.ItemClass == WoWItemClass.Weapon),
-
-                                new Decorator(req => 
-                                    {
-                                        if (ShamanSettings.AvoidMaelstromDamage || !StyxWoW.Me.HasAura("Maelstrom Weapon", 5))
-                                            return false;                                        
-                                        if (StyxWoW.Me.PredictedHealthPercent() > 90)
-                                            return true;
-                                        if (StyxWoW.Me.GetAuraTimeLeft("Maelstom Weapon", true).TotalSeconds > 3000)
-                                            return true;
-                                        return false;
-                                    },
-                                    Spell.Cast("Lightning Bolt")
-                                    ),
-
-                                Spell.Cast("Unleash Elements"),
-                                Spell.Buff("Flame Shock", true, ret => StyxWoW.Me.HasAura("Unleash Wind") || !SpellManager.HasSpell("Unleash Elements")),
-                                Spell.Cast("Frost Shock", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 6)
-                                )
-                            )
-                        )
-                    )
-                );
-        }
-
-        #endregion
-
-        #region Instance Rotation
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Instances)]
-        public static Composite CreateShamanEnhancementInstancePullAndCombat()
-        {
-            return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Spell.WaitForCastOrChannel(),
-
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-
-                        CreateEnhanceDiagnosticOutputBehavior(),
-
-                        Helpers.Common.CreateInterruptBehavior(),
-                        Dispelling.CreatePurgeEnemyBehavior("Purge"),
-
-                        Common.CreateShamanDpsShieldBehavior(),
-
-                        // Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
-                        Spell.BuffSelf("Feral Spirit", ret =>
-                            !Unit.IsTrivial(Me.CurrentTarget)
-                            && Me.CurrentTarget.SpellDistance() < 12
-                            && NeedFeralSpirit 
-                            ),
-
-                        new Decorator(
-                            req => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled()),
-                            new PrioritySelector(
-                                Spell.Buff("Flame Shock", true),
-                                Spell.Cast("Lava Lash", req => StyxWoW.Me.CurrentTarget.HasMyAura("Flame Shock")),
-                                new PrioritySelector(
-                                    ctx => Unit.UnfriendlyUnitsNearTarget(10f).FirstOrDefault(p => p.HasMyAura("Flame Shock")),
-                                    Spell.Cast("Unleash Element", req => ((WoWUnit)req) != null && !Spell.IsSpellOnCooldown("Fire Nova")),
-                                    Spell.Buff("Fire Nova", on => (WoWUnit) on)
-                                    ),
-                                Spell.Cast("Chain Lightning", ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
-                                Spell.Cast("Stormstrike"),
-                                Spell.Cast("Primal Strike", ret => !SpellManager.HasSpell("Stormstrike")),
-                                Movement.CreateMoveToMeleeBehavior(true)
-                                )
-                            ),
-
-                        Spell.Cast("Lightning Bolt", ret => !ShamanSettings.AvoidMaelstromDamage && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
-                        Common.CastElementalBlast(),
-                        Spell.Cast("Stormstrike"),
-                        Spell.Buff(
-                            "Flame Shock", 
-                            9, 
-                            on => Me.CurrentTarget, 
-                            req => (StyxWoW.Me.HasAura("Unleash Flame") || !SpellManager.HasSpell("Unleash Elements"))
-                            ),
-                        Spell.Cast("Lava Lash",
-                            ret => StyxWoW.Me.Inventory.Equipped.OffHand != null &&
-                                   StyxWoW.Me.Inventory.Equipped.OffHand.ItemInfo.ItemClass == WoWItemClass.Weapon),
-                        Spell.Buff("Flame Shock", 9, on => Me.CurrentTarget, req => StyxWoW.Me.HasAura("Unleash Flame") || !SpellManager.HasSpell("Unleash Elements")),
-                        Spell.Cast("Unleash Elements"),
-                        Spell.Cast("Frost Shock", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 6),
-
-                        Spell.Cast("Primal Strike", ret => !SpellManager.HasSpell("Stormstrike")),
-
-                        Spell.Cast("Lightning Bolt", ret => !ShamanSettings.AvoidMaelstromDamage && StyxWoW.Me.HasAura("Maelstrom Weapon", 1))
-
-                        )
-                    ),
-
-                Movement.CreateMoveToMeleeBehavior(true)
-                );
         }
 
         #endregion

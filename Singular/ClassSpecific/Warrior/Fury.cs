@@ -90,7 +90,7 @@ namespace Singular.ClassSpecific.Warrior
 
                         Common.CreateChargeBehavior(),
 
-                        Spell.Cast("Bloodthirst")
+                        Spell.Cast("Rampage")
                         )
                     )
                 );
@@ -100,13 +100,11 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateFuryNormalHeal()
         {
             return new Decorator(
-                ret => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange && !Unit.IsTrivial(Me.CurrentTarget),
+                ret => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange && !Me.CurrentTarget.IsTrivial(),
                 new PrioritySelector(
                     Common.CreateWarriorEnragedRegeneration(),
 
-                    Common.CreateDieByTheSwordBehavior(),
-
-                    Spell.BuffSelf("Rallying Cry", req => !Me.IsInGroup() && Me.HealthPercent < 50)
+                    Common.CreateDieByTheSwordBehavior()
                     )
                 );
         }
@@ -123,12 +121,11 @@ namespace Singular.ClassSpecific.Warrior
                         ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal
                             && (Me.CurrentTarget.IsPlayer || 4 <= Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 1)) || Me.CurrentTarget.TimeToDeath() > 40),
                         new PrioritySelector(
-                            Spell.BuffSelfAndWait("Avatar", gcd: HasGcd.No),
-                            Spell.BuffSelfAndWait("Bloodbath", gcd: HasGcd.No)
+                            Spell.BuffSelfAndWait("Avatar", gcd: HasGcd.No)
                             )
                         ),
 
-                    Spell.BuffSelfAndWait("Recklessness", ret => (Spell.CanCastHack("Execute") || Common.Tier14FourPieceBonus) && (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances), gcd: HasGcd.No),
+                    Spell.BuffSelfAndWait("Battle Cry", ret => (Spell.CanCastHack("Execute") || Common.Tier14FourPieceBonus) && (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances), gcd: HasGcd.No),
 
                     new Decorator(
                         ret => Me.CurrentTarget.IsBoss(),
@@ -224,22 +221,16 @@ namespace Singular.ClassSpecific.Warrior
                             new PrioritySelector(
                                 Spell.BuffSelf("Bladestorm"),
                                 Spell.Cast("Shockwave"),
-                                Spell.Cast("Dragon Roar"),
+
+                                Spell.Cast("Whirlwind", ret => !Me.HasAura("Meat Cleaver")),
+                                Spell.Cast("Rampage", ret => !Me.HasAura("Enrage")),
+                                Spell.Cast("Bloodthirst"),
+                                Spell.Cast("Raging Blow", ret => scenario.MobCount < 3 && Me.HasAura("Raging Blow", 1)),
+                                Spell.Cast("Bloodthirst"),
+                                Spell.Cast("Whirlwind"),
 
                                 // do some AOE prior to learning BT
-                                Spell.Cast("Thunder Clap", req => !SpellManager.HasSpell("Whirlwind")),
-
-                                //Bloodthirst on cooldown when not Enraged. Procs Bloodsurge.
-                                Spell.Cast("Bloodthirst", ret => !Common.IsEnraged),
-
-                                //Whirlwind as a Rage dump and to build Raging Blow stacks.
-                                Spell.Cast("Whirlwind", ret => Me.RagePercent > 80),
-
-                                //Raging Blow with Raging Blow stacks.
-                                Spell.Cast("Raging Blow", ret => Me.HasAura("Raging Blow", 1)),
-
-                                //Wild Strike to consume Bloodsurge procs.
-                                Spell.Cast("Wild Strike", ret => Common.IsEnraged || StyxWoW.Me.HasAura("Bloodsurge"))
+                                Spell.Cast("Thunder Clap", req => !SpellManager.HasSpell("Whirlwind"))
                                 )
                             ),
 
@@ -331,7 +322,7 @@ namespace Singular.ClassSpecific.Warrior
                                 // # This incredibly long line (Due to differing talent choices) says 'Use recklessness on cooldown, unless the boss will die before the ability is usable again, and then use it with execute.'
                                 // actions+=/recklessness,if=((target.time_to_die>190|target.health.pct<20)&(buff.bloodbath.up|!talent.bloodbath.enabled))|target.time_to_die<=12|talent.anger_management.enabled
                                 Spell.BuffSelfAndWait(
-                                    "Recklessness", 
+                                    "Battle Cry", 
                                     req => ((Target.TimeToDeath() > 190 || Target.HealthPercent < 20) && (BloodbathUp || !Common.HasTalent(WarriorTalents.Bloodbath)))
                                         || Target.TimeToDeath() < 10
                                         || Common.HasTalent(WarriorTalents.AngerManagement),
@@ -340,7 +331,7 @@ namespace Singular.ClassSpecific.Warrior
                                 // actions+=/avatar,if=buff.recklessness.up|target.time_to_die<30
                                 Spell.BuffSelfAndWait(
                                     "Avatar",
-                                    req => Me.HasAura("Recklessness")
+                                    req => Me.HasAura("Battle Cry")
                                         || Target.TimeToDeath() < 25,
                                         gcd: HasGcd.No
                                     ),
@@ -374,10 +365,7 @@ namespace Singular.ClassSpecific.Warrior
                                         // 
                                         // actions.single_target=bloodbath
                                         Spell.BuffSelfAndWait("Bloodbath", gcd:HasGcd.No),
-                                        // actions.single_target+=/recklessness,if=target.health.pct<20&raid_event.adds.exists
-                                        Spell.BuffSelfAndWait("Recklessness", req => Target.HealthPercent < 20 && scenario.MobCount > 1, gcd:HasGcd.No),
-                                        // actions.single_target+=/wild_strike,if=rage>110&target.health.pct>20
-                                        Spell.Cast("Wild Strike", req => RagePercent > 91 && Target.HealthPercent > 20),
+                                        Spell.BuffSelfAndWait("Battle Cry", req => Target.HealthPercent < 20 && scenario.MobCount > 1, gcd:HasGcd.No),
                                         // actions.single_target+=/bloodthirst,if=(!talent.unquenchable_thirst.enabled&rage<80)|buff.enrage.down
                                         Spell.Cast("Bloodthirst", req => Common.HasTalent(WarriorTalents.UnquenchableThirst) && Rage < 80 || !EnrageUp),
                                         // actions.single_target+=/ravager,if=buff.bloodbath.up|(!talent.bloodbath.enabled&(!raid_event.adds.exists|raid_event.adds.cooldown>60|target.time_to_die<40))
@@ -388,26 +376,16 @@ namespace Singular.ClassSpecific.Warrior
                                             ),
                                         // actions.single_target+=/execute,if=buff.sudden_death.react
                                         Common.CreateExecuteOnSuddenDeath(),
-                                        // actions.single_target+=/siegebreaker
-                                        Spell.Cast("Siegebreaker"),
                                         // actions.single_target+=/storm_bolt
                                         Spell.Cast("Storm Bolt"),
-                                        // actions.single_target+=/wild_strike,if=buff.bloodsurge.up
-                                        Spell.Cast("Wild Strike", req => BloodsurgeUp),
                                         // actions.single_target+=/execute,if=buff.enrage.up|target.time_to_die<12
                                         Spell.Cast("Execute", req => EnrageUp || Target.TimeToDeath() < 12),
-                                        // actions.single_target+=/dragon_roar,if=buff.bloodbath.up|!talent.bloodbath.enabled
-                                        Spell.Cast("Dragon Roar", req => BloodbathUp || !Common.HasTalent(WarriorTalents.Bloodbath)),
                                         // actions.single_target+=/raging_blow
                                         Spell.Cast("Raging Blow"),
-                                        // actions.single_target+=/wild_strike,if=buff.enrage.up&target.health.pct>20
-                                        Spell.Cast("Wild Strike", req => EnrageUp && Target.HealthPercent > 20),
                                         // actions.single_target+=/bladestorm,if=!raid_event.adds.exists
                                         Spell.Cast("Bladestorm"),
                                         // actions.single_target+=/shockwave,if=!talent.unquenchable_thirst.enabled
                                         Spell.Cast("Shockwave", req => !Common.HasTalent(WarriorTalents.UnquenchableThirst)),
-                                        // actions.single_target+=/impending_victory,if=!talent.unquenchable_thirst.enabled&target.health.pct>20
-                                        Spell.Cast("Impending Victory", req => !Common.HasTalent(WarriorTalents.UnquenchableThirst) && Target.HealthPercent > 20),
                                         // actions.single_target+=/bloodthirst
                                         Spell.Cast("Bloodthirst")
                                         )
@@ -424,12 +402,6 @@ namespace Singular.ClassSpecific.Warrior
                                                 on => Target, 
                                                 req => BloodbathUp || !Common.HasTalent(WarriorTalents.Bloodbath) 
                                                 ),
-                                        // actions.two_targets+=/dragon_roar,if=buff.bloodbath.up|!talent.bloodbath.enabled
-                                        Spell.Cast(
-                                            "Dragon Roar",
-                                            on => Target, 
-                                            req => BloodbathUp || !Common.HasTalent(WarriorTalents.Bloodbath) 
-                                            ),
                                         // actions.two_targets+=/bladestorm,if=buff.enrage.up
                                         Spell.Cast("Bladestorm", req => EnrageUp),
                                         // actions.two_targets+=/bloodthirst,if=buff.enrage.down|rage<50|buff.raging_blow.down
@@ -442,14 +414,10 @@ namespace Singular.ClassSpecific.Warrior
                                         Spell.Cast("Raging Blow", req => MeatCleaverUp ),
                                         // actions.two_targets+=/whirlwind,if=!buff.meat_cleaver.up
                                         Spell.Cast("Whirlwind", req => !MeatCleaverUp),
-                                        // actions.two_targets+=/wild_strike,if=buff.bloodsurge.up&rage>75
-                                        Spell.Cast("Wild Strike", req => BloodsurgeUp && Rage > 75),
                                         // actions.two_targets+=/bloodthirst
                                         Spell.Cast("Bloodthirst"),
                                         // actions.two_targets+=/whirlwind,if=rage>rage.max-20
-                                        Spell.Cast("Whirlwind", req => Rage > RageMax - 20),
-                                        // actions.two_targets+=/wild_strike,if=buff.bloodsurge.up
-                                        Spell.Cast("Wild Strike", req => BloodsurgeUp)
+                                        Spell.Cast("Whirlwind", req => Rage > RageMax - 20)
                                         )
                                     ),
 
@@ -476,18 +444,10 @@ namespace Singular.ClassSpecific.Warrior
                                         // ... combined with next
                                         // actions.three_targets+=/execute,target=3
                                         Spell.Cast("Execute", on => scenario.Mobs.FirstOrDefault(u => u != Target && Spell.CanCastHack("Execute", u) && u.InLineOfSight && Me.IsSafelyFacing(u))),
-                                        // actions.three_targets+=/dragon_roar,if=buff.bloodbath.up|!talent.bloodbath.enabled
-                                        Spell.Cast(
-                                            "Dragon Roar",
-                                            on => Target, 
-                                            req => BloodbathUp || !Common.HasTalent(WarriorTalents.Bloodbath) 
-                                            ),
                                         // actions.three_targets+=/whirlwind
                                         Spell.Cast("Whirlwind"),
                                         // actions.three_targets+=/bloodthirst
-                                        Spell.Cast("Bloodthirst"),
-                                        // actions.three_targets+=/wild_strike,if=buff.bloodsurge.up
-                                        Spell.Cast("Wild Strike", req => BloodsurgeUp)
+                                        Spell.Cast("Bloodthirst")
                                         )
                                     ),
 
@@ -509,19 +469,15 @@ namespace Singular.ClassSpecific.Warrior
                                         // actions.aoe+=/raging_blow,if=buff.meat_cleaver.stack>=3
                                         Spell.Cast("Raging Blow", req => Me.GetAuraStacks("Meat Cleaver") >= 3),
                                         // actions.aoe+=/recklessness,sync=bladestorm
-                                        Spell.Cast("Recklessness"),
+                                        Spell.Cast("Battle Cry"),
                                         // actions.aoe+=/bladestorm,if=buff.enrage.remains>6
                                         Spell.Cast("Bladestorm", req => Me.GetAuraTimeLeft("Enrage").TotalSeconds > 6),
                                         // actions.aoe+=/whirlwind
                                         Spell.Cast("Whirlwind"),
                                         // actions.aoe+=/execute,if=buff.sudden_death.react
                                         Common.CreateExecuteOnSuddenDeath(),
-                                        // actions.aoe+=/dragon_roar,if=buff.bloodbath.up|!talent.bloodbath.enabled
-                                        Spell.Cast("Dragon Roar", req => BloodbathUp || !Common.HasTalent(WarriorTalents.Bloodbath)),
                                         // actions.aoe+=/bloodthirst
-                                        Spell.Cast("Bloodthirst"),
-                                        // actions.aoe+=/wild_strike,if=buff.bloodsurge.up
-                                        Spell.Cast("Wild Strike", req => BloodsurgeUp)
+                                        Spell.Cast("Bloodthirst")
                                         )
                                     )
                                 )
@@ -539,17 +495,12 @@ namespace Singular.ClassSpecific.Warrior
                     req => Me.CurrentTarget.HealthPercent > 20,
                     new PrioritySelector(
 
-                        //Wild Strike to prevent capping your Rage.
-                        Spell.Cast("Wild Strike", ret => Me.RagePercent > 80),
-
-                        //Bloodthirst on cooldown when not Enraged. Procs Bloodsurge.
+                        Spell.Cast("Rampage", ret => !Common.IsEnraged || Me.RagePercent >= 100),
                         Spell.Cast("Bloodthirst", ret => !Common.IsEnraged),
-
-                        //Raging Blow when available.
+                        Spell.Cast("Whirlwind", ret => Me.HasAura("Wrecking Ball") /* || Me.Name == "Miley Cyrus"*/),
                         Spell.Cast("Raging Blow"),
-
-                        //Wild Strike when Enraged or with Bloodsurge procs.
-                        Spell.Cast("Wild Strike", ret => Common.IsEnraged || StyxWoW.Me.HasAura("Bloodsurge"))
+                        Spell.Cast("Bloodthirst"),
+                        Spell.Cast("Furious Slash")
                         )
                     ),
 
@@ -564,10 +515,7 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Bloodthirst", ret => !Common.IsEnraged),
 
                         //Execute while Enraged or with >= 60 Rage.
-                        Spell.Cast("Execute", req => Me.RagePercent >= 60),
-
-                        //Wild Strike when Enraged or with Bloodsurge procs.
-                        Spell.Cast("Wild Strike", ret => Common.IsEnraged || StyxWoW.Me.HasAura("Bloodsurge"))
+                        Spell.Cast("Execute", req => Me.RagePercent >= 60)
                         )
                     ),
 
@@ -576,7 +524,6 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
                         Spell.Cast("Execute"),
                         Spell.Cast("Bloodthirst"),
-                        Spell.Cast("Wild Strike"),
                         Spell.Cast("Thunder Clap", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8))
                         )
                     ),
@@ -590,8 +537,7 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Shockwave")
                         )
                     ),
-
-                Spell.Cast("Dragon Roar", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8),
+                
                 Spell.Cast("Storm Bolt"),
 
                 Spell.BuffSelf("Berserker Rage", ret => !Common.IsEnraged && StyxWoW.Me.CurrentTarget.IsWithinMeleeRange)
@@ -599,60 +545,7 @@ namespace Singular.ClassSpecific.Warrior
         }
 
         #endregion
-
-
-        #region Utils
-        private static readonly WaitTimer InterceptTimer = new WaitTimer(TimeSpan.FromMilliseconds(2000));
-
-        private static bool PreventDoubleIntercept
-        {
-            get
-            {
-                var tmp = InterceptTimer.IsFinished;
-                if (tmp)
-                    InterceptTimer.Reset();
-                return tmp;
-            }
-        }
-
-
-        #endregion
-
-        #region Calculations - These are for the super-high DPS rotations for raiding as SMF. (TG isn't quite as good as SMF anymore!)
-
-        static TimeSpan BTCD { get { return Spell.GetSpellCooldown("Bloodthirst"); } }
-        static TimeSpan CSCD { get { return Spell.GetSpellCooldown("Colossus Smash"); } }
-
-        static bool WithinExecuteRange { get { return StyxWoW.Me.CurrentTarget.HealthPercent <= 20; } }
-        private static bool TargetSmashed { get { return StyxWoW.Me.CurrentTarget.HasAura("Colossus Smash"); } }
-
-
-        static bool NeedHeroicStrike
-        {
-            get
-            {
-                if (StyxWoW.Me.CurrentTarget.HealthPercent >= 20)
-                {
-                    // Go based off % since we have the new glyph to add 20% rage.
-                    var myRage = StyxWoW.Me.RagePercent;
-
-                    // Basically, here's how this works.
-                    // If the target is CS'd, and we have > 40 rage, then pop HS.
-                    // If we *ever* have more than 90% rage, then pop HS
-                    // If we popped DC and have more than 30 rage, pop HS (it's more DPR than basically anything else at 15 rage cost)
-                    if (myRage >= 40 && TargetSmashed)
-                        return true;
-                    if (myRage >= 90)
-                        return true;
-//                    if (myRage >= 30 && StyxWoW.Me.HasAura("Deadly Calm"))
-//                        return true;
-                }
-                return false;
-            }
-        }
-
-        #endregion
-
+        
         private static Composite _checkWeapons = null;
 
         public static Composite CheckThatWeaponsAreEquipped()

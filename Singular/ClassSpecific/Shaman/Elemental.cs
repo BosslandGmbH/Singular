@@ -100,7 +100,7 @@ namespace Singular.ClassSpecific.Shaman
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.All)]
         public static Composite CreateElementalNormalPull()
         {
             return new PrioritySelector(
@@ -230,12 +230,13 @@ namespace Singular.ClassSpecific.Shaman
 
                         Common.CastElementalBlast(),
 
-                        Spell.Buff("Flame Shock", true, req => SpellManager.HasSpell("Lava Burst") || Me.CurrentTarget.TimeToDeath(-1) > 30),
-
-                        Spell.Cast("Lava Burst", on => Me.CurrentTarget, req => true, cancel => false),
+                        Spell.Buff("Flame Shock", true, req => !Me.CurrentTarget.HasAura("Flame Shock") && Me.CurrentTarget.TimeToDeath(-1) > 6),
+                        Spell.Cast("Fire Elemental"),
                         Spell.Cast("Earth Shock",
                             ret => StyxWoW.Me.HasAura("Lightning Shield", 5) &&
                                    StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),
+                        Spell.Cast("Ascendance"),
+                        Spell.Cast("Lava Burst", on => Me.CurrentTarget, req => true, cancel => false),
                         Spell.Cast("Earth Shock", req => !SpellManager.HasSpell("Lava Burst")),
 
                         Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
@@ -245,170 +246,6 @@ namespace Singular.ClassSpecific.Shaman
 
                 // Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
                 // Movement.CreateMoveToRangeAndStopBehavior(ret => Me.CurrentTarget, ret => NormalPullDistance)
-                );
-        }
-
-        #endregion
-
-        #region Battleground Rotation
-
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Battlegrounds)]
-        public static Composite CreateElementalPvPPullAndCombat()
-        {
-            return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromLongRange(),
-
-                Spell.WaitForCastOrChannel(),
-
-                new Decorator( 
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-
-                        Helpers.Common.CreateInterruptBehavior(),
-
-                        Totems.CreateTotemsPvPBehavior(),
-
-                        Movement.WaitForFacing(),
-                        Movement.WaitForLineOfSpellSight(),
-
-                        Dispelling.CreatePurgeEnemyBehavior("Purge"),
-
-                        Common.CreateShamanDpsShieldBehavior(),
-
-                        // Burst if 7 Stacks
-                        new Decorator(
-                            ret => Me.GotTarget() && Me.CurrentTarget.SpellDistance() < 40 && Me.HasAura("Lightning Shield", 7) && Spell.GetSpellCooldown("Earth Shock") == TimeSpan.Zero,
-                            new PrioritySelector(
-                                new Action( r => { Logger.Write( LogColor.Hilite, "Burst Rotation"); return RunStatus.Failure;} ),
-                                Common.CastElementalBlast(),
-                                Spell.Cast( "Lava Burst"),
-                                Spell.BuffSelf("Ascendance", req => ShamanSettings.UseAscendance),       // this is more to buff following sequence since we leave burst after Earth Shock
-                                Spell.Cast( "Earth Shock")
-                                // Spell.Cast( "Lightning Bolt")       // filler in case Shocks on cooldown
-                                )
-                            ),
-
-                        // If targeted, cast as many instants as possible
-                        new Decorator(
-                            ret => !Unit.NearbyUnfriendlyUnits.Any( u => u.CurrentTargetGuid == Me.Guid ),
-                            new PrioritySelector(
-                                new Decorator(
-                                    ret => !Me.HasAura("Lightning Shield",  7),
-                                    new PrioritySelector(
-                                        Spell.Buff("Flame Shock", 9, on => Me.CurrentTarget, req => true),
-                                        Spell.Buff(
-                                            "Flame Shock", 
-                                            0, 
-                                            on => Unit.NearbyUnfriendlyUnits
-                                                .Where(u => !u.HasMyAura("Flame Shock") && !u.IsCrowdControlled() && Me.IsSafelyFacing(u) && u.InLineOfSpellSight)
-                                                .OrderByDescending( u => (int) u.HealthPercent )
-                                                .FirstOrDefault(), 
-                                            req => Spell.GetSpellCastTime("Lava Burst") != TimeSpan.Zero
-                                            )
-                                        )
-                                    ),
-                                Spell.Cast("Lava Burst", ret => Spell.GetSpellCastTime("Lava Burst") == TimeSpan.Zero),
-                                Spell.Cast("Lava Beam"),
-                                Spell.BuffSelf("Searing Totem", ret => Me.GotTarget() && Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) && !Totems.Exist( WoWTotemType.Fire)),
-                                Spell.BuffSelf("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Any( u => u.IsWithinMeleeRange )),
-                                Spell.Cast("Primal Strike") // might as well
-                                )
-                            ),
-
-                        // Else cast freely
-
-                        Common.CastElementalBlast( on => Me.CurrentTarget, req => !Me.HasAura("Lightning Shield", 5)),
-                        Spell.Buff("Flame Shock", 9, on => Me.CurrentTarget, req => true),
-                        Spell.Buff("Flame Shock", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => Me.IsSafelyFacing(u) && u.InLineOfSpellSight), req => Spell.GetSpellCastTime("Lava Burst") != TimeSpan.Zero),
-                        Spell.Cast("Lava Burst"),
-                        Spell.BuffSelf("Searing Totem", ret => Me.GotTarget() && Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) && !Totems.Exist(WoWTotemType.Fire)),
-                        Spell.Cast("Lightning Bolt")
-                        )
-                    )
-                );
-        }
-
-        #endregion
-
-        #region Instance Rotation
-
-        // private static bool _doWeWantAcendance;
-
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Instances)]
-        public static Composite CreateElementalInstancePullAndCombat()
-        {
-            return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromLongRange(),
-
-                Movement.CreateEnsureMovementStoppedBehavior(33f),
-
-                Spell.WaitForCastOrChannel(),
-
-                new PrioritySelector(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-                        Helpers.Common.CreateInterruptBehavior(),
-
-                        Totems.CreateTotemsInstanceBehavior(),
-
-                        Movement.WaitForFacing(),
-                        Movement.WaitForLineOfSpellSight(),
-
-                        Dispelling.CreatePurgeEnemyBehavior("Purge"),
-
-                        Common.CreateShamanDpsShieldBehavior(),
-
-                        new Decorator(
-                            ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled()),
-                            new PrioritySelector(
-                                new Action(act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
-                                new Sequence(
-                                    Spell.CastOnGround(
-                                        "Earthquake", 
-                                        on => Me.CurrentTarget,
-                                        req => Me.CurrentTarget.SpellDistance() < 35
-                                        ),
-                                    new Wait(TimeSpan.FromMilliseconds(500), until => Me.CurrentTarget.HasMyAura("Earthquake"), new ActionAlwaysSucceed())
-                                    ),
-                                Spell.Cast(
-                                    "Earth Shock", 
-                                    on => Unit.NearbyUnitsInCombatWithUsOrOurStuff
-                                        .Where(u => Me.IsSafelyFacing(u) && u.InLineOfSpellSight)
-                                        .OrderByDescending(u => (int) u.HealthPercent )
-                                        .FirstOrDefault()
-                                    ),
-                                new Decorator(
-                                    req => TalentManager.HasGlyph("Thunderstorm"),
-                                    new PrioritySelector(                                   
-                                        ctx => Clusters.GetBestUnitForCluster(Unit.NearbyUnitsInCombatWithUsOrOurStuff, ClusterType.Cone, 10),
-                                        Spell.Cast(
-                                            "Thunderstorm",
-                                            on => (WoWUnit) on,
-                                            req => 8 <= Clusters.GetClusterCount( (WoWUnit)req, Unit.NearbyUnitsInCombatWithUsOrOurStuff, ClusterType.Cone, 10)
-                                            )
-                                        )
-                                    ),
-                                Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
-                                )
-                            ),
-
-                        Spell.Buff("Flame Shock", 3, on => Me.CurrentTarget, req => true),
-
-                        Spell.HandleOffGCD(Spell.Cast("Ascendance", req => ShamanSettings.UseAscendance && Me.CurrentTarget.IsBoss() && Me.CurrentTarget.SpellDistance() < 40 && !Me.IsMoving)),
-
-                        Spell.Cast("Lava Burst", on => Me.CurrentTarget, req => true, cancel => false),
-
-                        Spell.Cast(
-                            "Earth Shock",
-                            ret => Me.HasAura("Lightning Shield", 12) 
-                                && Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),
-
-                        Common.CastElementalBlast(),
-
-                        Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
-                        Spell.Cast("Lightning Bolt")
-                        )
-                    )
                 );
         }
 

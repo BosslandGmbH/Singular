@@ -22,6 +22,8 @@ namespace Singular.ClassSpecific.DeathKnight
     {
         private static LocalPlayer Me => StyxWoW.Me;
 	    private static DeathKnightSettings Settings => SingularSettings.Instance.DeathKnight();
+	    public static long RunicPowerDeficit => Me.MaxRunicPower - Me.CurrentRunicPower;
+	    public static bool HasTalent(DeathKnightTalents talent) => TalentManager.IsSelected((int)talent);
 		
 		#region Pull
 
@@ -127,5 +129,92 @@ namespace Singular.ClassSpecific.DeathKnight
                     )
                 );
         }
+	}
+
+	public enum DeathKnightTalents
+	{
+		Bloodworms = 1,
+		Hearthbreaker,
+		Blooddrinker,
+
+		ShatteringStrike = Bloodworms,
+		IcyTalons = Hearthbreaker,
+		MurderousEfficiency = Blooddrinker,
+
+		AllWillServer = Bloodworms,
+		BurstingSores = Hearthbreaker,
+		EbonFever = Blooddrinker,
+
+		RapidDecomposition = 4,
+		Soulgorge,
+		SpectralDeflection,
+
+		FreezingFog = RapidDecomposition,
+		FrozenPulse = Soulgorge,
+		HornOfWinter = SpectralDeflection,
+
+		Epidemic = RapidDecomposition,
+		PestilentPustules = Soulgorge,
+		BlightedRuneWeapon = SpectralDeflection,
+
+		Ossuary = 7,
+		BloodTap,
+		AntiMagicBarrier,
+
+		Icecap = Ossuary,
+		HungeringRuneWeapon = BloodTap,
+		Avalanche = AntiMagicBarrier,
+
+		UnholyFrenzy = Ossuary,
+		Castigator = BloodTap,
+		ClawingShadows = AntiMagicBarrier,
+
+		MarkOfBlood = 10,
+		RedThirst,
+		Tombstone,
+
+		AbominationsMight = MarkOfBlood,
+		BlindingSleet = RedThirst,
+		WinterIsComing = Tombstone,
+
+		SludgeBelcher = MarkOfBlood,
+		Asphyxiate = RedThirst,
+		DebilitatingInfestation = Tombstone,
+
+		TighteningGrasp = 13,
+		TrembleBeforeMe,
+		MarchOfTheDamned,
+
+		VolatileShielding = TighteningGrasp,
+		Permafrost = TrembleBeforeMe,
+		WhiteWalker = MarchOfTheDamned,
+
+		SpellEater = TighteningGrasp,
+		CorpseShield = TrembleBeforeMe,
+		LingeringApparition = MarchOfTheDamned,
+
+		WillOfTheNecropolis = 16,
+		RuneTap,
+		FoulBulwark,
+
+		Frostscythe = WillOfTheNecropolis,
+		RunicAttenuation = RuneTap,
+		GatheringStorm = FoulBulwark,
+
+		ShadowInfusion = WillOfTheNecropolis,
+		Necrosis = RuneTap,
+		InfectedClaws = FoulBulwark,
+
+		Bonestorm = 19,
+		BloodMirror,
+		Purgatory,
+
+		Obliteration = Bonestorm,
+		BreathOfSindragosa = BloodMirror,
+		GlacialAdvance = Purgatory,
+
+		DarkArbiter = Bonestorm,
+		Defile = BloodMirror,
+		SoulReaper = Purgatory
 	}
 }

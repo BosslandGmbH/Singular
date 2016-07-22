@@ -27,8 +27,8 @@ namespace Singular.ClassSpecific.Druid
     {
         # region Properties & Fields
         private static DruidSettings DruidSettings => SingularSettings.Instance.Druid();
-
-	    private static LocalPlayer Me => StyxWoW.Me;
+		private static LocalPlayer Me => StyxWoW.Me;
+	    private static long AstralPowerDeficit => Me.MaxAstralPower - Me.CurrentAstralPower;
 
         #endregion
 		
@@ -96,8 +96,10 @@ namespace Singular.ClassSpecific.Druid
 						
                         Helpers.Common.CreateInterruptBehavior(),
 
-						// TODO Check for AstralPower cap
-						Spell.Cast("Astral Communion", ret => !TalentManager.IsSelected(19) || Me.HasAura("Fury of Elune")),
+						Common.CastForm(ShapeshiftForm.Moonkin, req => Me.Shapeshift != ShapeshiftForm.Moonkin && !Utilities.EventHandlers.IsShapeshiftSuppressed),
+
+						// Avoid getting capped
+						Spell.Cast("Astral Communion", ret => AstralPowerDeficit >= 75 + 5 && (!Common.HasTalent(DruidTalents.FuryOfElune) || Me.HasAura("Fury of Elune"))),
 						Spell.Cast("Blessing of Elune"),
 						Spell.CastOnGround("Force of Nature", on => Me.CurrentTarget.Location),
 						Spell.BuffSelf("Celestial Alignment", ret => Me.CurrentTarget.IsStressful()),

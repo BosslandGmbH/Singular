@@ -30,12 +30,14 @@ namespace Singular.ClassSpecific.Hunter
     {
         #region Common
 
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static WoWUnit Pet { get { return StyxWoW.Me.Pet; } }
-        private static WoWUnit Target { get { return StyxWoW.Me.CurrentTarget; } }
-        private static WoWGuid TargetGuid { get { return StyxWoW.Me.CurrentTargetGuid; } }
-        private static HunterSettings HunterSettings { get { return SingularSettings.Instance.Hunter(); } }
-        private static bool HasTalent(HunterTalents tal) { return TalentManager.IsSelected((int)tal); }
+        private static LocalPlayer Me => StyxWoW.Me;
+	    private static WoWUnit Pet => StyxWoW.Me.Pet;
+	    private static WoWUnit Target => StyxWoW.Me.CurrentTarget;
+	    private static WoWGuid TargetGuid => StyxWoW.Me.CurrentTargetGuid;
+	    private static HunterSettings HunterSettings => SingularSettings.Instance.Hunter();
+	    public static bool HasTalent(HunterTalents tal) => TalentManager.IsSelected((int)tal);
+
+	    public static double FocusDeficit => Me.MaxFocus - Me.CurrentFocus;
 
         private static uint _lastUnknownPetSpell = 0xffff;
 
@@ -1008,10 +1010,7 @@ namespace Singular.ClassSpecific.Hunter
 
         private static Composite CreateSlowMeleeBehaviorForDisengage()
         {
-            return new Decorator(
-                ret => !HasTalent(HunterTalents.NarrowEscape),
-                CreateSlowMeleeBehavior()
-                );
+            return CreateSlowMeleeBehavior();
         }
 
         private static Composite CreateSlowMeleeBehavior()
@@ -1238,60 +1237,74 @@ namespace Singular.ClassSpecific.Hunter
 
     }
 
-    enum HunterTalents
+    public enum HunterTalents
     {
-#if PRE_WOD
-        None = 0,
-        Posthaste,
-        NarrowEscape,
-        CrouchingTiger,
-        BindingShot,
-        WyvernSting,
-        Intimidation,
-        Exhiliration,
-        AspectOfTheIronHawk,
-        SpiritBond,
-        Fervor,
-        DireBeast,
-        ThrillOfTheHunt,
-        MurderOfCrows,
+        BigGameHunter = 1,
+        WayOfTheCobra,
+        DireStable,
+
+		LoneWolf = BigGameHunter,
+		SteadyFocus = WayOfTheCobra,
+		CarefulAim = DireStable,
+
+		AnimalInstincts = BigGameHunter,
+		ThrowingAxes = WayOfTheCobra,
+		WayOfTheMokNathal = DireStable,
+
+        Stomp = 4,
+        DireFrenzy,
+        ChimaeraShot,
+
+		LockAndLoad = Stomp,
+		BlackArrow = DireFrenzy,
+		TrueAim = ChimaeraShot,
+
+		AMurderOfCrowsSurvial = Stomp,
+		MortalWound = DireFrenzy,
+		SnakeHunter = ChimaeraShot,
+
+        Posthaste = 7,
+        Farstrider,
+        Dash,
+
+		OneWithThePack = 10,
+        BestialFury,
         BlinkStrikes,
-        LynxRush,
-        GlaiveToss,
-        Powershot,
-        Barrage
-#else
 
-        Posthaste = 1,
-        NarrowEscape,
-        CrouchingTigerHiddenChimaera,
+		ExplosiveShot = OneWithThePack,
+		Sentinel = BestialFury,
+		PatientSniper = BlinkStrikes,
 
-        BindingShot,
-        WyvernSting,
+		Caltrops = OneWithThePack,
+		ImprovedTraps = BestialFury,
+		SteelTrap = BlinkStrikes,
+
+        BindingShot = 14,
+        WyvernString,
         Intimidation,
 
-        Exhilaration,
-        IronHawk,
-        SpiritBond,
+		Camouflage = Intimidation,
 
-        SteadyFocus,
-        DireBeast,
-        ThrillOfTheHunt,
-
-        MurderOfCrows,
-        BlinkStrikes,
-        Stampede,
-
-        GlaiveToss,
-        Powershot,
+		StickyBomb = BindingShot,
+		RangersNet = WyvernString,
+		
+        AMurderOfCrowsBeastMastery = 17,
         Barrage,
+        Volley,
 
-        ExoticMunitions,
-        FocusingShot,
-        Adaptation,
-        LoneWolf = Adaptation
+		Butchery = AMurderOfCrowsBeastMastery,
+		DragonsFireGrenade = Barrage,
+		SerpentString = Volley,
 
-#endif
-    }
+        Stampede = 20,
+        KillerCobra,
+        AspectOfTheBeast,
 
+		Sidewinders = Stampede,
+		PiercingShot = KillerCobra,
+		TrickShot = AspectOfTheBeast,
+
+		SpittingCobra = Stampede,
+		ExpertTrapper = KillerCobra,
+	}
 }

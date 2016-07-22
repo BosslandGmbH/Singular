@@ -18,23 +18,14 @@ namespace Singular.ClassSpecific.Druid
 {
     class Guardian
     {
-        private static DruidSettings Settings
-        {
-            get { return SingularSettings.Instance.Druid(); }
-        }
+        private static DruidSettings Settings => SingularSettings.Instance.Druid();
+		private static LocalPlayer Me => StyxWoW.Me;
+	    private static long RageDeficit => Me.MaxRage - Me.CurrentRage;
 
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-
-        #region Common
-
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidGuardian, WoWContext.All)]
-        public static Composite CreateGuardianNormalPreCombatBuffs()
-        {
-            return new PrioritySelector();
-        }
-
-        [Behavior(BehaviorType.Pull, WoWClass.Druid, WoWSpec.DruidGuardian, WoWContext.All)]
-        public static Composite CreateGuardianNormalPull()
+	    #region Common
+		
+        [Behavior(BehaviorType.Pull, WoWClass.Druid, WoWSpec.DruidGuardian)]
+        public static Composite CreateGuardianPull()
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
@@ -77,10 +68,9 @@ namespace Singular.ClassSpecific.Druid
                 CreateGuardianDiagnosticOutputBehavior( "Combat"),
 
                 // defensive
-                Spell.BuffSelf("Savage Defense", ret => Me.HealthPercent <= Settings.TankSavageDefense),
                 Spell.BuffSelf("Survival Instincts", ret => Me.HealthPercent <= Settings.TankSurvivalInstinctsHealth),
                 Spell.BuffSelf("Barkskin", ret => Me.HealthPercent <= Settings.TankFeralBarkskin),
-                Spell.BuffSelf("Bristling Fur", req => Spell.IsSpellOnCooldown("Barkskin") && Spell.IsSpellOnCooldown("Savage Defense")),
+				Spell.BuffSelf("Bristling Fur", req => Spell.IsSpellOnCooldown("Barkskin") && Spell.IsSpellOnCooldown("Savage Defense")),
 
                 // self-heal
                 Spell.BuffSelf(
@@ -97,7 +87,7 @@ namespace Singular.ClassSpecific.Druid
         }
 
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidGuardian, WoWContext.All, 999)]
-        public static Composite CreateGuardianNormalCombatBuffs()
+        public static Composite CreateGuardianCombatBuffs()
         {
             return new PrioritySelector(
 
@@ -106,8 +96,8 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidGuardian, WoWContext.All)]
-        public static Composite CreateGuardianNormalCombat()
+        [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidGuardian)]
+        public static Composite CreateGuardianCombat()
         {
             TankManager.NeedTankTargeting = (SingularRoutine.CurrentWoWContext == WoWContext.Instances);
 
@@ -120,8 +110,8 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+						ctx => TankManager.Instance.TargetList.FirstOrDefault(u => u.IsWithinMeleeRange),
+						SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         Helpers.Common.CreateInterruptBehavior(),
@@ -130,69 +120,14 @@ namespace Singular.ClassSpecific.Druid
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
-
-                        new Decorator(
-                            req => true,    // Noxxic
-                            new PrioritySelector(
-
-                                new Decorator(
-                                    ret => Unit.UnfriendlyUnits(8).Count() >= 2,
-                                    new PrioritySelector(
-                                        Spell.Cast("Berserk"),
-                                        Spell.Cast(
-                                            "Mangle", 
-                                            on => Unit.UnfriendlyUnits()
-                                                .Where( 
-                                                    u => u.IsWithinMeleeRange 
-                                                        && Me.IsSafelyFacing(u, 140)
-                                                        && u.InLineOfSpellSight
-                                                    )
-                                                .OrderBy( u => u.HealthPercent)
-                                                .FirstOrDefault()
-                                            ),
-                                        Spell.Cast("Thrash"),
-                                        Spell.Cast("Maul", ret => StyxWoW.Me.HasAura("Tooth and Claw"))
-                                        )
-                                    ),
-
-                                Common.CreateFaerieFireBehavior(on => Me.CurrentTarget, req => true),
-
-                                Spell.Cast("Mangle"),
-                                Spell.Cast("Thrash", req => Me.CurrentTarget.HasAuraExpired("Thrash", 1)),
-                                Spell.Cast("Maul", ret => StyxWoW.Me.HasAura("Tooth and Claw")),
-                                Spell.Cast("Pulverize", req => Me.GetAuraTimeLeft("Pulverize").TotalSeconds < 3.6),
-                                Spell.Cast("Lacerate", req => Me.CurrentTarget.HasAuraExpired("Lacerate", "Lacerate", 3, TimeSpan.FromSeconds(3), true)),
-
-                                Spell.Cast("Maul", ret => Me.CurrentTarget.CurrentTargetGuid != Me.Guid || SingularRoutine.CurrentWoWContext != WoWContext.Instances)
-                                )
-                            ),
-
-                        new Decorator(
-                            req => false,
-                            new PrioritySelector(
-                                Spell.Cast("Maul", ret => Me.CurrentRage >= 90 && StyxWoW.Me.HasAura("Tooth and Claw")),
-
-                                Spell.Cast("Mangle"),
-                                Spell.Cast("Thrash", req => Me.CurrentTarget.HasAuraExpired("Thrash", 1) || Me.CurrentTarget.HasAuraExpired("Weakened Blows", 1)),
-
-                                Spell.Cast("Bear Hug",
-                                    ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances
-                                        && !Me.HasAura("Berserk")
-                                        && !Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Me.CurrentTargetGuid && u.CurrentTargetGuid == Me.Guid)),
-
-                                new Decorator(
-                                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 8) >= 2,
-                                    new PrioritySelector(
-                                        Spell.Cast("Berserk"),
-                                        Spell.Cast("Thrash")
-                                        )
-                                    ),
-                                Spell.Cast("Lacerate"),
-                                Common.CreateFaerieFireBehavior(on => Me.CurrentTarget, req => true),
-
-                                Spell.Cast("Maul", ret => Me.CurrentTarget.CurrentTargetGuid != Me.Guid || SingularRoutine.CurrentWoWContext != WoWContext.Instances)
-                                )
-                            ),
+						
+						Spell.BuffSelf("Incarnation: Guardian of Ursoc", ret => Me.CurrentRage <= 20),
+						Spell.Cast("Moonfire", on => (WoWUnit)on, ret => Me.HasAura("Galactic Guardian")),
+						Spell.Cast("Mangle", on => (WoWUnit)on),
+						Spell.Cast("Thrash", on => (WoWUnit)on),
+						Spell.Cast("Moonfire", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.GetAuraTimeLeft("Moonfire").TotalSeconds < 4.2)),
+						Spell.Cast("Swipe", on => (WoWUnit)on),
+						Spell.Cast("Maul", on => (WoWUnit)on, ret => !Me.HasAura("Ironfur") && !Me.HasAura("Mark of Ursol") || RageDeficit < 10),
 
                         CreateGuardianWildChargeBehavior()
                         )
@@ -239,8 +174,6 @@ namespace Singular.ClassSpecific.Druid
                     )
                 );
         }
-
-
 
         #region Diagnostics
 

@@ -21,13 +21,11 @@ namespace Singular.ClassSpecific.Hunter
 {
     public class BeastMaster
     {
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static WoWUnit Pet { get { return StyxWoW.Me.Pet; } }
-        private static HunterSettings HunterSettings { get { return SingularSettings.Instance.Hunter(); } }
+        private static LocalPlayer Me => StyxWoW.Me;
 
-        #region Normal Rotation
+	    #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull|BehaviorType.Combat,WoWClass.Hunter,WoWSpec.HunterBeastMastery,WoWContext.Normal | WoWContext.Instances )]
+        [Behavior(BehaviorType.Pull|BehaviorType.Combat,WoWClass.Hunter,WoWSpec.HunterBeastMastery)]
         public static Composite CreateBeastMasterHunterNormalPullAndCombat()
         {
             return new PrioritySelector(
@@ -58,105 +56,50 @@ namespace Singular.ClassSpecific.Hunter
 
                         Common.CreateHunterNormalCrowdControl(),
 
-                        Spell.Cast("Tranquilizing Shot", req => Me.GetAllAuras().Any(a => a.Spell.DispelType == WoWDispelType.Enrage)),
-
                         Spell.Buff("Concussive Shot",
                             ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid 
                                 && Me.CurrentTarget.Distance > Spell.MeleeRange),
 
                         // Defensive Stuff
-                        Spell.Cast( "Intimidation", 
+                        Spell.Cast("Intimidation", 
                             ret => Me.GotTarget() 
                                 && Me.CurrentTarget.IsAlive 
                                 && Me.GotAlivePet 
                                 && (!Me.CurrentTarget.GotTarget() || Me.CurrentTarget.CurrentTarget == Me)),
+						
+						new Decorator(
+							ret => Me.CurrentTarget.IsStressful() || PartyBuff.WeHaveBloodlust,
+							new PrioritySelector(
+								Spell.Cast("Aspect of the Wild", ret => Me.HasAura("Bestial Wrath")),
+								Spell.Cast("Bestial Wrath", ret => Me.CurrentFocus > 90 && Spell.GetSpellCooldown("Kill Command").TotalSeconds < 3),
+								Spell.Cast("A Murder of Crows"),
+								Spell.Cast("Stampede"))),
+						
+						new Decorator(
+							ret => Unit.NearbyUnfriendlyUnits.Count() > 1,
+							new PrioritySelector(
+								new Throttle(1, Spell.BuffSelf("Volley")),
+								Spell.Cast("Multi Shot", ret => Me.GotAlivePet && Me.Pet.GetAuraTimeLeft("Beast Cleave", false).TotalSeconds < 1.5),
+								Spell.Cast("Barrage"),
+								Spell.Cast("Kill Command"),
+								Spell.Cast("Dire Beast", 
+									on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f), 
+									ret => Spell.GetSpellCooldown("Bestial Wrath").TotalSeconds > 15),
+								Spell.Cast("Cobra Shot", ret => Me.CurrentFocus > 90 && Me.GotAlivePet && Me.Pet.GetAuraTimeLeft("Beast Cleave", false).TotalSeconds > 1.5),
+								Spell.Cast("Multi Shot")
+								)),
+							
+						new Decorator(
+							ret => Me.HasAura("Volley"), 
+							new Throttle(1, new Action(ret => Me.CancelAura("Volley")))),
 
-                        // AoE Rotation
-                        new Decorator(
-                            ret => Spell.UseAOE && Me.GotTarget() && !(Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer) && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
-                            new PrioritySelector(
-                                ctx => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Where(u => u.InLineOfSpellSight).OrderByDescending(u => (uint)u.HealthPercent).FirstOrDefault(),
-                                Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
-                                Common.CreateHunterTrapBehavior("Explosive Trap", true, on => Me.CurrentTarget, req => Spell.UseAOE && !TalentManager.HasGlyph("Explosive Trap")),
-                                Spell.Cast("Multi-Shot", ctx => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f), req => Me.CurrentFocus > 60 || Me.HasAura("Thrill of the Hunt")),
-                                Spell.Cast( "Cobra Shot", on => (WoWUnit) on),
-                                Common.CastSteadyShot(on => (WoWUnit)on, ret => !SpellManager.HasSpell("Cobra Shot"))
-                                )
-                            ),
-
-                        // Single Target Rotation
-                        Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
-                        Spell.CastHack("Kill Command", on => Me.Pet == null ? null : Me.Pet.CurrentTarget, req => Me.GotAlivePet && Me.Pet.SpellDistance(Pet.CurrentTarget) < 25f),
-                        Spell.BuffSelf("Focus Fire", ctx => Me.HasAura("Frenzy", 5)),
-                        Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 60 || Me.HasAura("Thrill of the Hunt")),
-                        Spell.Cast("Cobra Shot"),
-
-                        Common.CastSteadyShot( on => Me.CurrentTarget, ret => !SpellManager.HasSpell("Cobra Shot"))
+						Spell.Cast("Kill Command"),
+						Spell.Cast("Chimaera Shot"),
+						Spell.Cast("Dire Beast", ret => Spell.GetSpellCooldown("Bestial Wrath").TotalSeconds > 15),
+						Spell.Cast("Barrage"),
+						Spell.Cast("Cobra Shot", ret => Me.CurrentFocus > 90)
                         )
                     )
-                );
-        }
-
-        #endregion
-
-        #region Battleground Rotation
-
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterBeastMastery, WoWContext.Battlegrounds)]
-        public static Composite CreateBeastMasterHunterPvPPullAndCombat()
-        {
-            return new PrioritySelector(
-
-                Common.CreateHunterEnsureReadyToAttackFromLongRange(),
-
-                Spell.WaitForCastOrChannel(),
-
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-
-                        CreateBeastMasteryDiagnosticOutputBehavior(),
-
-                        Common.CreateHunterAvoidanceBehavior(null, null),
-
-                        // Helpers.Common.CreateInterruptBehavior(),
-                        Helpers.Common.CreateInterruptBehavior(),
-
-                        Movement.WaitForFacing(),
-                        Movement.WaitForLineOfSpellSight(),
-
-                        Common.CreateHunterPvpCrowdControl(),
-
-                        Spell.Cast("Tranquilizing Shot", req => Me.GetAllAuras().Any(a => a.Spell.DispelType == WoWDispelType.Enrage)),
-
-                        Spell.Buff("Concussive Shot",
-                            ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
-                                && Me.CurrentTarget.Distance > Spell.MeleeRange),
-
-                        // Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
-
-                        // Defensive Stuff
-                        Spell.Cast("Intimidation",
-                            ret => Me.GotTarget()
-                                && Me.CurrentTarget.IsAlive
-                                && Me.GotAlivePet
-                                && (!Me.CurrentTarget.GotTarget() || Me.CurrentTarget.CurrentTarget == Me)),
-
-                        // snipe kills if possible
-                        Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 5 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
-
-                        Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
-
-                        // Single Target Rotation (no AoE in PVP)
-                        Spell.CastHack("Kill Command", ctx => Me.Pet == null ? null : Me.Pet.CurrentTarget, ret => Me.GotAlivePet && Pet.GotTarget() && Pet.Location.Distance(Pet.CurrentTarget.Location) < (Pet.MeleeDistance(Pet.CurrentTarget) + 20f)),
-                        Spell.BuffSelf("Focus Fire", ctx => Me.HasAura("Frenzy", 5) && !Me.HasAura("The Beast Within")),
-
-                        Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 60 || Me.HasAnyAura("Thrill of the Hunt", "The Beast Within")),
-                        Spell.Cast("Cobra Shot"),
-                        Common.CastSteadyShot(on => Me.CurrentTarget, ret => !SpellManager.HasSpell("Cobra Shot"))
-                        )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
                 );
         }
 
@@ -170,28 +113,18 @@ namespace Singular.ClassSpecific.Hunter
             return new ThrottlePasses( 1,
                 new Action(ret =>
                 {
-                    string sMsg;
-                    sMsg = string.Format(".... h={0:F1}%, focus={1:F1}, moving={2}",
-                        Me.HealthPercent,
-                        Me.CurrentFocus,
-                        Me.IsMoving
-                        );
+	                string sMsg = $".... h={Me.HealthPercent:F1}%, focus={Me.CurrentFocus:F1}, moving={Me.IsMoving}";
 
                     if (!Me.GotAlivePet)
                         sMsg += ", no pet";
                     else
-                        sMsg += string.Format(", peth={0:F1}%", Me.Pet.HealthPercent);
+                        sMsg += $", peth={Me.Pet.HealthPercent:F1}%";
 
                     WoWUnit target = Me.CurrentTarget;
                     if (target != null)
                     {
-                        sMsg += string.Format(
-                            ", {0}, {1:F1}%, {2:F1} yds, loss={3}",
-                            target.SafeName(),
-                            target.HealthPercent,
-                            target.Distance,
-                            target.InLineOfSpellSight
-                            );
+                        sMsg +=
+	                        $", {target.SafeName()}, {target.HealthPercent:F1}%, {target.Distance:F1} yds, loss={target.InLineOfSpellSight}";
                     }
 
                     Logger.WriteDebug(Color.LightYellow, sMsg);

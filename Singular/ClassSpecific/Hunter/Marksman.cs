@@ -22,16 +22,17 @@ namespace Singular.ClassSpecific.Hunter
 {
     public class Marksman
     {
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static WoWUnit Pet { get { return StyxWoW.Me.Pet; } }
-        private static HunterSettings HunterSettings { get { return SingularSettings.Instance.Hunter(); } }
+        private static LocalPlayer Me => StyxWoW.Me;
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterMarksmanship, WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterMarksmanship)]
         public static Composite CreateMarksmanHunterNormalPullAndCombat()
-        {
-            return new PrioritySelector(
+		{
+			SpellFindResults sfr;
+			SpellManager.FindSpell("Sidewinders", out sfr);
+			SpellChargeInfo sidewindersChargeInfo = (sfr.Override ?? sfr.Original)?.GetChargeInfo();
+			return new PrioritySelector(
                 Common.CreateHunterEnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCastOrChannel(),
@@ -55,36 +56,48 @@ namespace Singular.ClassSpecific.Hunter
 
                         Common.CreateHunterNormalCrowdControl(),
 
-                        Spell.Cast("Tranquilizing Shot", req => Me.GetAllAuras().Any(a => a.Spell.DispelType == WoWDispelType.Enrage)),
-
-                        Spell.Buff("Concussive Shot",
+						Spell.Buff("Concussive Shot",
                             ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
                                 && Me.CurrentTarget.Distance > Spell.MeleeRange),
 
-                        // Defensive Stuff
-                        Spell.Cast("Intimidation",
-                            ret => Me.GotTarget()
-                                && Me.CurrentTarget.IsAlive
-                                && Me.GotAlivePet
-                                && (!Me.CurrentTarget.GotTarget() || Me.CurrentTarget.CurrentTarget == Me)),
+						Spell.BuffSelf("Trueshot", ret => Me.CurrentTarget.IsStressful() || PartyBuff.WeHaveBloodlust),
 
-                        // AoE Rotation
-                        new Decorator(
-                            ret => Spell.UseAOE && Me.GotTarget() && !(Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer) && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
-                            new PrioritySelector(
-                                ctx => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Where(u => u.InLineOfSpellSight).OrderByDescending(u => (uint) u.HealthPercent).FirstOrDefault(),
-                                Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), req => Me.HealthPercent < 85),
-                                Spell.Cast("Multi-Shot", ctx => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f)),
-                                Common.CreateHunterTrapBehavior("Explosive Trap", true, on => Me.CurrentTarget, req => Spell.UseAOE ),
-                                Common.CastSteadyShot(on => Me.CurrentTarget)
-                                )
-                            ),
-
-                        // Single Target Rotation
-                        Spell.Cast("Kill Shot", ctx => Me.GotTarget() && Me.CurrentTarget.HealthPercent < 20),
-                        Spell.Cast("Chimaera Shot"),
-                        Spell.Cast("Aimed Shot", ret => Me.CurrentFocus > 60),
-                        Common.CastSteadyShot(on => Me.CurrentTarget)
+						Spell.Cast("Sentinel", ret => !Me.HasAura("Marking Targets") && Unit.NearbyUnfriendlyUnits.All(u => !u.HasMyAura("Hunter's Mark"))),
+						// Detonate the missile
+						Spell.Cast("Explosive Shot", 
+							ret => WoWMissile.InFlightMissiles.Any(m => m.Caster.IsMe && m.Spell.Name == "Explosive Shot" && m.Position.Distance(Me.CurrentTarget.Location) < 8f)),
+						
+						Spell.Cast("Arcane Shot", 
+							ret => Common.HasTalent(HunterTalents.SteadyFocus) && !Common.HasTalent(HunterTalents.Sidewinders) && 
+									Me.GetAuraTimeLeft("Steady Focus").TotalSeconds < 4.2d),
+						Spell.Cast("Marked Shot", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HasMyAura("Vulnerable") && u.TimeToDeath(int.MaxValue) < 2)),
+						Spell.Cast("Marked Shot", ret => !Me.CurrentTarget.HasMyAura("Vulnerable")),
+						// Cast Marked Shot if Vulnerable buff will expire until we can get a Aimed Shot out
+						Spell.Cast("Marked Shot", ret => Me.CurrentTarget.GetAuraTimeLeft("Vulnerable") < Spell.GetSpellCastTime("Aimed Shot")),
+						// Also cover focus needed to cast Aimed shot
+						Spell.Cast("Marked Shot", 
+							ret => Me.CurrentFocus + (Me.GetPowerRegenInterrupted(WoWPowerType.Focus) * (Me.CurrentTarget.GetAuraTimeLeft("Vulnerable").TotalSeconds)) < 50),
+						Spell.Cast("Piercing Shot", ret => Me.CurrentFocus >= 100),
+						Spell.Cast("Barrage"),
+						// Fire the missile
+						Spell.Cast("Explosive Shot", ret => !WoWMissile.InFlightMissiles.Any(m => m.Caster.IsMe && m.Spell.Name == "Explosive Shot")),
+						Spell.Cast("Aimed Shot", ret => Me.CurrentTarget.GetAuraTimeLeft("Vulnerable").TotalSeconds > 2d),
+						Spell.Cast("Black Arrow"),
+						new Decorator(ret => Common.HasTalent(HunterTalents.Sidewinders),
+							new PrioritySelector(
+								Spell.Cast("Sidewinders", ret => Common.HasTalent(HunterTalents.SteadyFocus) && !Me.HasAura("Steady Focus")),
+								Spell.Cast("Sidewinders", ret => Me.HasAura("Marking Targets")),
+								Spell.Cast("Sidewinders", 
+									ret => sidewindersChargeInfo != null && (sidewindersChargeInfo.ChargesLeft >= 2 || 
+											sidewindersChargeInfo.ChargesLeft == 1 && sidewindersChargeInfo.TimeUntilNextCharge.TotalSeconds < 1.8))
+								)
+							),
+						new Decorator(ret => !Common.HasTalent(HunterTalents.Sidewinders),
+							new PrioritySelector(
+								Spell.Cast("Multi-Shot", ret => Unit.NearbyUnfriendlyUnits.Count() >= 2),
+								Spell.Cast("Arcane Shot", ret => Unit.NearbyUnfriendlyUnits.Count() < 2)
+								)
+							)
                         )
                     ),
 
@@ -93,216 +106,6 @@ namespace Singular.ClassSpecific.Hunter
         }
 
         #endregion
-
-		#region Instance Rotation
-
-        // place holder for Raph
-	    public static Composite CreateMarksmanHunterInstancePull()
-	    {
-		    return new PrioritySelector();
-	    }
-
-        [Behavior(BehaviorType.Pull, WoWClass.Hunter, WoWSpec.HunterMarksmanship, WoWContext.Instances)]
-        [Behavior(BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterMarksmanship, WoWContext.Instances)]
-		public static Composite CreateMarksmanHunterInstanceCombat()
-		{
-			return new PrioritySelector(
-				Common.CreateHunterEnsureReadyToAttackFromLongRange(),
-
-				Spell.WaitForCastOrChannel(),
-
-				Helpers.Common.CreateInterruptBehavior(),
-				
-				CreateMarksmanDiagnosticOutputBehavior(),
-								
-				// We don't really want to do any of those below in raids
-				new Decorator(ret => !Me.CurrentMap.IsRaid,
-					new PrioritySelector(
-						Common.CreateMisdirectionBehavior(),
-
-						Common.CreateHunterAvoidanceBehavior(null, null),
-
-						Common.CreateHunterNormalCrowdControl(),
-
-						Spell.Cast("Tranquilizing Shot", req => Me.GetAllAuras().Any(a => a.Spell.DispelType == WoWDispelType.Enrage)),
-
-						Spell.Buff("Concussive Shot",
-							ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
-								&& Me.CurrentTarget.Distance > Spell.MeleeRange),
-
-						// Defensive Stuff
-						Spell.Cast("Intimidation",
-							ret => Me.GotTarget()
-								&& Me.CurrentTarget.IsAlive
-								&& Me.GotAlivePet
-								&& (!Me.CurrentTarget.GotTarget() || Me.CurrentTarget.CurrentTarget == Me))
-								)
-							),
-							
-				Spell.Cast("Chimaera Shot"),
-				Spell.Cast("Kill Shot", ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < KillShotPercentage && u.DistanceSqr < 40 * 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
-				Spell.Cast("Rapid Fire"),
-				Spell.Cast("Aimed Shot", ret => Me.HasAura("Rapid Fire") || Me.CurrentTarget.HealthPercent > 80),
-				Spell.Cast("A Murder of Crows"),
-				Spell.Cast("Stampede"),
-				Spell.Cast("Glaive Toss"),
-				Spell.Cast("Multi-Shot", req => Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 6),
-				Spell.Cast("Aimed Shot", ret => Me.HasAura("Thrill of the Hunt")),
-
-                Spell.Cast(
-                    "Barrage",
-                    on =>
-                    {
-                        if (!Spell.UseAOE)
-                            return null;
-
-                        // Does not require CurrentTarget to be non=null
-                        WoWPoint loc = WoWPoint.RayCast(Me.Location, Me.RenderFacing, 30f);
-                        IEnumerable<WoWUnit> ienum = Clusters.GetConeCluster(60f, 42f, Unit.UnfriendlyUnits(50));
-                        int cntCC = 0;
-                        int cntTarget = 0;
-                        int cntNeutral = 0;
-                        WoWUnit target = null;
-
-                        foreach (WoWUnit u in ienum)
-                        {
-                            cntTarget++;
-                            if (u.IsCrowdControlled())
-                                cntCC++;
-                            if (!u.Combat && !u.IsTrivial() && !u.Aggro && !u.PetAggro && !(u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))
-                                cntNeutral++;
-                            if (target == null)
-                                target = u;
-                            if (Me.CurrentTargetGuid == u.Guid)
-                                target = u;
-                        }
-
-                        if (cntNeutral > 0)
-                        {
-                            Logger.WriteDebug("Barrage: skipping, {0} additional targets would be pulled", cntNeutral);
-                            return null;
-                        }
-
-                        if (cntCC > 0)
-                        {
-                            Logger.WriteDebug("Barrage: skipping, {0} crowd controlled targets", cntCC);
-                            return null;
-                        }
-
-                        if (cntTarget == 0)
-                        {
-                            Logger.WriteDebug("Barrage: skipping, no targets would be hit");
-                            return null;
-                        }
-
-                        return target;
-                    }
-                    ),
-
-                Spell.Cast("Steady Shot", req => TalentManager.IsSelected(10) && Me.HasKnownAuraExpired("Steady Focus", 2)),
-                Common.CreateHunterTrapBehavior("Explosive Trap", true, onUnit => Me.CurrentTarget, req => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Any()),
-				Spell.Cast("Aimed Shot"),
-				Spell.Cast("Focusing Shot"),
-				Spell.Cast("Steady Shot"),
-
-				Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget, 35f, 30f)
-				);
-		}
-
-		private static double KillShotPercentage { get { return SpellManager.HasSpell("Enhanced Kill Shot") ? 35d : 20d; } }
-
-		#endregion
-
-		#region Battleground Rotation
-		[Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterMarksmanship, WoWContext.Battlegrounds)]
-        public static Composite CreateMarksmanHunterPvPPullAndCombat()
-        {
-            return new PrioritySelector(
-                Common.CreateHunterEnsureReadyToAttackFromLongRange(),
-
-                Spell.WaitForCastOrChannel(),
-
-                new Decorator(
-
-                    ret => !Spell.IsGlobalCooldown(),
-
-                    new PrioritySelector(
-
-                        CreateMarksmanDiagnosticOutputBehavior(),
-
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
-
-                        Common.CreateHunterAvoidancePvpBehavior(null, null),
-
-                        Helpers.Common.CreateInterruptBehavior(),
-                // Helpers.Common.CreateInterruptBehavior(),
-
-                        Common.CreateHunterPvpCrowdControl(),
-
-                        Movement.WaitForFacing(),
-                        Movement.WaitForLineOfSpellSight(),
-
-                        Spell.Cast("Tranquilizing Shot", req => Me.GetAllAuras().Any(a => a.Spell.DispelType == WoWDispelType.Enrage)),
-
-                        Spell.Buff("Concussive Shot",
-                            ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
-                                && !Me.CurrentTarget.IsWithinMeleeRange),
-
-                        // Defensive Stuff
-                        Spell.Cast("Intimidation",
-                            ret => Me.GotTarget()
-                                && Me.CurrentTarget.IsAlive
-                                && Me.GotAlivePet
-                                && (!Me.CurrentTarget.GotTarget() || Me.CurrentTarget.CurrentTarget == Me)),
-
-                        // Single Target Rotation
-                        Spell.Cast("A Murder of Crows"),
-                        Spell.Cast("Stampede"),
-                        Spell.Cast("Chimaera Shot"),
-                        Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
-                        Spell.Cast("Glaive Toss"),
-                        
-                        Spell.Cast("Aimed Shot", ret => Me.HasAura("Fire!") || Me.CurrentFocus >= 60),
-
-                        Common.CastSteadyShot(on => Me.CurrentTarget)
-                        )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget, 35f, 30f)
-                );
-        }
-
-        #endregion
-
-
-        private static uint _castId;
-        private static int _steadyCount;
-        private static bool _doubleSteadyCast;
-        private static bool DoubleSteadyCast
-        {
-            get
-            {
-                if (_steadyCount > 1)
-                {
-                    _castId = 0;
-                    _steadyCount = 0;
-                    _doubleSteadyCast = false;
-                    return _doubleSteadyCast;
-                }
-                
-                return _doubleSteadyCast;
-            }
-            set 
-            {
-                if (_doubleSteadyCast && StyxWoW.Me.CurrentCastId == _castId)
-                    return;
-
-                _castId = StyxWoW.Me.CurrentCastId;
-                _steadyCount++;
-                _doubleSteadyCast = value;
-            }
-        }
 
         private static Composite CreateMarksmanDiagnosticOutputBehavior()
         {
@@ -315,29 +118,19 @@ namespace Singular.ClassSpecific.Hunter
                 RunStatus.Failure,
                 new Action(ret =>
                 {
-                    string sMsg;
-                    sMsg = string.Format(".... h={0:F1}%, focus={1:F1}, moving={2}, sfbuff={3}",
-                        Me.HealthPercent,
-                        Me.CurrentFocus,
-                        Me.IsMoving,
-                        Me.GetAuraTimeLeft(53224, false).TotalSeconds
-                        );
+	                var sMsg =
+		                $".... h={Me.HealthPercent:F1}%, focus={Me.CurrentFocus:F1}, moving={Me.IsMoving}, sfbuff={Me.GetAuraTimeLeft(53224, false).TotalSeconds}";
 
                     if (!Me.GotAlivePet)
                         sMsg += ", no pet";
                     else
-                        sMsg += string.Format(", peth={0:F1}%", Me.Pet.HealthPercent);
+                        sMsg += $", peth={Me.Pet.HealthPercent:F1}%";
 
                     WoWUnit target = Me.CurrentTarget;
                     if (target != null)
                     {
-                        sMsg += string.Format(
-                            ", {0}, {1:F1}%, {2:F1} yds, loss={3}",
-                            target.SafeName(),
-                            target.HealthPercent,
-                            target.Distance,
-                            target.InLineOfSpellSight
-                            );
+                        sMsg +=
+	                        $", {target.SafeName()}, {target.HealthPercent:F1}%, {target.Distance:F1} yds, loss={target.InLineOfSpellSight}";
                     }
 
                     Logger.WriteDebug(Color.LightYellow, sMsg);

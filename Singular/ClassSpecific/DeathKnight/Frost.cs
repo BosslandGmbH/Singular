@@ -51,21 +51,21 @@ namespace Singular.ClassSpecific.DeathKnight
                         // Cooldowns
                         Spell.BuffSelf("Pillar of Frost", req => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.IsStressful()),
 						Spell.Cast("Empower Rune Weapon", 
-							ret =>  Me.CurrentRunes <= 0 && Me.MaxRunicPower - Me.CurrentRunicPower > 35 && 
-									(!TalentManager.IsSelected(20) || Me.HasAura("Breath of Sindragosa"))),
+							ret =>  Me.CurrentRunes <= 0 && Common.RunicPowerDeficit >= 35 && 
+									(!Common.HasTalent(DeathKnightTalents.BreathOfSindragosa) || Me.HasAura("Breath of Sindragosa"))),
 
 						new Decorator(
-							ret => TalentManager.IsSelected(19),
+							ret => Common.HasTalent(DeathKnightTalents.Obliteration),
 							CreateObliterationRotation()
 							),
 
 						new Decorator(
-							ret => TalentManager.IsSelected(20),
+							ret => Common.HasTalent(DeathKnightTalents.BreathOfSindragosa),
 							CreateBreathOfSindragosaRotation()
 							),
 
 						new Decorator(
-							ret => TalentManager.IsSelected(21),
+							ret => Common.HasTalent(DeathKnightTalents.GlacialAdvance),
 							CreateGlacialAdvanceRotation()
 							)
 						)
@@ -83,12 +83,12 @@ namespace Singular.ClassSpecific.DeathKnight
 					new PrioritySelector(
 						Spell.Cast("Remorseless Winter"),
 						Spell.Cast("Frostscythe", 
-							ret => (Me.MaxRunicPower - Me.CurrentRunicPower > 10 || Me.HasAura("Killing Machine") && Me.HasAura("Obliteration"))))),
-				Spell.Cast("Obliterate", ret => Me.MaxRunicPower - Me.CurrentRunicPower > 10 || Me.HasAura("Killing Machine") && Me.HasAura("Obliteration")),
+							ret => (Common.RunicPowerDeficit >= 10 || Me.HasAura("Killing Machine") && Me.HasAura("Obliteration"))))),
+				Spell.Cast("Obliterate", ret => Common.RunicPowerDeficit >= 10 || Me.HasAura("Killing Machine") && Me.HasAura("Obliteration")),
 				Spell.Cast("Howling Blast", ret => Me.HasAura("Rime")),
 				Spell.BuffSelf("Obliteration", ret => Me.CurrentRunicPower > 50 && !Me.HasAura("Killing Machine")),
-				Spell.Cast("Frost Strike", ret => Me.MaxRunicPower - Me.CurrentRunicPower < 35 || Me.HasAura("Obliteration")),
-				Spell.Cast("Horn of Winter", ret => Me.CurrentRunes < 4 && Me.MaxRunicPower - Me.CurrentRunicPower > 20)
+				Spell.Cast("Frost Strike", ret => Common.RunicPowerDeficit < 35 || Me.HasAura("Obliteration")),
+				Spell.Cast("Horn of Winter", ret => Me.CurrentRunes < 4 && Common.RunicPowerDeficit >= 20)
 				);
 	    }
 
@@ -100,11 +100,11 @@ namespace Singular.ClassSpecific.DeathKnight
 				Spell.Cast("Remorseless Winter", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= 2),
 				Spell.Cast("Howling Blast", ret => Me.HasAura("Rime")),
 				Spell.Cast("Frostscythe", ret => Me.HasAura("Killing Machine")),
-				Spell.Cast("Obliterate", ret => Me.MaxRunicPower - Me.CurrentRunicPower > 10),
+				Spell.Cast("Obliterate", ret => Common.RunicPowerDeficit >= 10),
 				Spell.Cast("Frost Strike", 
-					ret => Me.MaxRunicPower - Me.CurrentRunicPower < 35 && !Me.HasAura("Breath of Sindragosa") &&
+					ret => Common.RunicPowerDeficit < 35 && !Me.HasAura("Breath of Sindragosa") &&
 							(Spell.GetSpellCooldown("Breath of Sindragosa").TotalSeconds > 10 || Me.RunicPowerPercent >= 100)),
-				Spell.Cast("Horn of Winter", ret => Me.CurrentRunes < 4 && Me.MaxRunicPower - Me.CurrentRunicPower > 20 || Me.HasAura("Breath of Sindragosa"))
+				Spell.Cast("Horn of Winter", ret => Me.CurrentRunes < 4 && Common.RunicPowerDeficit >= 20 || Me.HasAura("Breath of Sindragosa"))
 				);
 		}
 
@@ -116,8 +116,8 @@ namespace Singular.ClassSpecific.DeathKnight
 				Spell.CastOnGround("Glacial Advance", ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location, ret => Spell.UseAOE),
 				Spell.Cast("Frostscythe", ret => Spell.UseAOE && Clusters.GetClusterCount(Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8) >= 3),
 				Spell.Cast("Howling Blast", ret => Me.HasAura("Rime")),
-				Spell.Cast("Frost Strike", ret => Me.MaxRunicPower - Me.CurrentRunicPower < 35),
-				Spell.Cast("Horn of Winter", ret => Me.CurrentRunes < 4 && Me.MaxRunicPower - Me.CurrentRunicPower > 20)
+				Spell.Cast("Frost Strike", ret => Common.RunicPowerDeficit < 35),
+				Spell.Cast("Horn of Winter", ret => Me.CurrentRunes < 4 && Common.RunicPowerDeficit >= 20)
 				);
 		}
 

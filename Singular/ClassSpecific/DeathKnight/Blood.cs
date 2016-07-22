@@ -61,7 +61,6 @@ namespace Singular.ClassSpecific.DeathKnight
 			TankManager.NeedTankTargeting = (SingularRoutine.CurrentWoWContext == WoWContext.Instances);
 
 			return new PrioritySelector(
-
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                 Spell.WaitForCast(),

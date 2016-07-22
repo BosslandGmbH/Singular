@@ -26,10 +26,9 @@ namespace Singular.ClassSpecific.Druid
 	public class Common
 	{
 		public static ShapeshiftForm WantedDruidForm { get; set; }
-
 		private static DruidSettings DruidSettings => SingularSettings.Instance.Druid();
-
 		private static LocalPlayer Me => StyxWoW.Me;
+		public static bool HasTalent(DruidTalents talent) => TalentManager.IsSelected((int)talent);
 
 		public const WoWSpec DruidAllSpecs = (WoWSpec) int.MaxValue;
 
@@ -89,7 +88,7 @@ namespace Singular.ClassSpecific.Druid
 		{
 			return new PrioritySelector(
 				new Decorator(
-					req => !Unit.IsTrivial(Me.CurrentTarget),
+					req => !Me.CurrentTarget.IsTrivial(),
 					new PrioritySelector(
 						Spell.Cast("Barkskin", ctx => Me,
 							ret => Me.HealthPercent < DruidSettings.Barkskin || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3),
@@ -1285,7 +1284,7 @@ namespace Singular.ClassSpecific.Druid
 						new PrioritySelector(
 							Spell.Cast("Growl"),
 							Spell.Buff("Moonfire",
-								req => Me.Specialization == WoWSpec.DruidFeral && TalentManager.IsSelected(3)),
+								req => Me.Specialization == WoWSpec.DruidFeral && HasTalent(DruidTalents.LunarInspiration)),
 							CreateFaerieFireBehavior(),
 							Spell.Buff("Moonfire"),
 							new Sequence(
@@ -1309,5 +1308,87 @@ namespace Singular.ClassSpecific.Druid
 					)
 				);
 		}
+	}
+
+	public enum DruidTalents
+	{
+		ForceOfNature = 1,
+		WarriorOfElune,
+		Starlord,
+
+		Predator = ForceOfNature,
+		BloodScent = WarriorOfElune,
+		LunarInspiration = Starlord,
+
+		Brambles = ForceOfNature,
+		BristlingFur = WarriorOfElune,
+		BloodFrenzy = Starlord,
+
+		Prosperity = ForceOfNature,
+		CenarionWard = WarriorOfElune,
+		Abundance = Starlord,
+
+		Renewal = 4,
+		DisplacerBeast,
+		WildCharge,
+
+		GutturalRoars = Renewal,
+
+		FeralAffinityBalance = 7,
+		GuardianAffinity,
+		RestorationAffinity,
+
+		BalanceAffinity = FeralAffinityBalance,
+		FeralAffinityGuardian = GuardianAffinity,
+		FeralAffinityRestoration = GuardianAffinity,
+
+		MightyBash = 10,
+		MassEntanglement,
+		Typhoon,
+
+		SoulOfTheForest = 13,
+		IncarnationChosenOfElune,
+		StellarFlare,
+		
+		IncarnationKingOfTheJungle = IncarnationChosenOfElune,
+		SavageRoar = StellarFlare,
+		
+		IncarnationGuardianOfUrsoc = IncarnationChosenOfElune,
+		GalacticGuardian = StellarFlare,
+
+		IncarnationTreeOfLife = IncarnationChosenOfElune,
+		Cultivation = StellarFlare,
+
+		ShootingStars = 16,
+		AstralCommunion,
+		BlessingOfTheAncients,
+
+		SaberTooth = ShootingStars,
+		JaggedWounds = AstralCommunion,
+		ElunesGuidance = BlessingOfTheAncients,
+
+		Earthwarden = ShootingStars,
+		GuardianOfElune = AstralCommunion,
+		SurvivalOfTheFittest = BlessingOfTheAncients,
+
+		SpringBlossoms = ShootingStars,
+		InnerPeace = AstralCommunion,
+		Germination = BlessingOfTheAncients,
+
+		FuryOfElune = 19,
+		StellarDrift,
+		NaturesBalance,
+
+		BrutalSlash = FuryOfElune,
+		Bloodtalons = StellarDrift,
+		MomentOfClarityFeral = NaturesBalance,
+
+		RendAndTear = FuryOfElune,
+		LunarBeam = StellarDrift,
+		Pulverize = NaturesBalance,
+
+		MomentOfClarityRestoration = FuryOfElune,
+		Stonebark = StellarDrift,
+		Flourish = NaturesBalance,
 	}
 }

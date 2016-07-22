@@ -92,7 +92,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
 						new Decorator(
 							ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= DeathKnightSettings.DeathAndDecayCount || 
-									TalentManager.IsSelected(4) && Unit.NearbyUnfriendlyUnits.Count() >= DeathKnightSettings.EpidemicCount,
+									Common.HasTalent(DeathKnightTalents.Epidemic) && Unit.NearbyUnfriendlyUnits.Count() >= DeathKnightSettings.EpidemicCount,
 							new PrioritySelector(
 								Spell.Cast("Summon Gargoyle", ret => Me.CurrentTarget.IsStressful() && DeathKnightSettings.UseSummonGargoyle),
 								Spell.Cast("Outbreak", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange && u.GetAuraTimeLeft("Virulent Plague").TotalSeconds < 1.8)),
@@ -108,17 +108,17 @@ namespace Singular.ClassSpecific.DeathKnight
 							),
 
 						new Decorator(
-							ret => TalentManager.IsSelected(19),
+							ret => Common.HasTalent(DeathKnightTalents.DarkArbiter),
 							CreateDarkArbiterRotation()
 							),
 
 						new Decorator(
-							ret => TalentManager.IsSelected(20),
+							ret => Common.HasTalent(DeathKnightTalents.Defile),
 							CreateDefileRotation()
 							),
 
 						new Decorator(
-							ret => TalentManager.IsSelected(21),
+							ret => Common.HasTalent(DeathKnightTalents.SoulReaper),
 							CreateSoulReaperRotation()
 							)
 						)

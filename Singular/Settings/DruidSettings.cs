@@ -753,9 +753,9 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(91)]
         [Category("Restoration")]
-        [DisplayName("% Wild Mushroom")]
+        [DisplayName("% Efflorescence")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int WildMushroom { get; set; }
+        public int Efflorescence { get; set; }
 
         [Setting]
         [DefaultValue(91)]

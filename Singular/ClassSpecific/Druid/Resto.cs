@@ -22,10 +22,10 @@ namespace Singular.ClassSpecific.Druid
 {
     public class Resto
     {
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static DruidSettings DruidSettings { get { return SingularSettings.Instance.Druid(); } }
+        private static LocalPlayer Me => StyxWoW.Me;
+	    private static DruidSettings DruidSettings => SingularSettings.Instance.Druid();
 
-        const int PriEmergencyBase = 500;
+	    const int PriEmergencyBase = 500;
         const int PriHighBase = 400;
         const int PriAoeBase = 300;
         const int PriHighAtone = 200;
@@ -41,26 +41,17 @@ namespace Singular.ClassSpecific.Druid
         public static bool talentGermination { get; set; }
         public static uint MaxRejuvStacks { get; set; }
 
-        static IEnumerable<WoWUnit> Mushrooms
-        {
-            get
-            {
-                return ObjectManager.GetObjectsOfType<WoWUnit>().Where(o => o.Entry == MUSHROOM_ID && o.CreatedByUnitGuid == StyxWoW.Me.Guid && o.Distance <= 40 ); 
-            }
-        }
-
-        static int MushroomCount
-        {
-            get { return Mushrooms.Count(); }
-        }
-
+	    private static WoWUnit Mushroom
+		    =>
+			    ObjectManager.GetObjectsOfType<WoWUnit>()
+				    .FirstOrDefault(o => o.Entry == MUSHROOM_ID && o.CreatedByUnitGuid == StyxWoW.Me.Guid && o.Distance <= 40);
 
         [Behavior(BehaviorType.Initialize, WoWClass.Druid, WoWSpec.DruidRestoration)]
         public static Composite CreateRestoDruidInitialize()
         {
             glyphRegrowth = TalentManager.HasGlyph("Regrowth");
             glyphRejuv = TalentManager.HasGlyph("Rejuvenation");
-            talentGermination = TalentManager.IsSelected(18);
+            talentGermination = Common.HasTalent(DruidTalents.Germination);
 
             MaxRejuvStacks = talentGermination ? 2u : 1u;
             return null;
@@ -148,31 +139,7 @@ namespace Singular.ClassSpecific.Druid
                         )
                     );
             }
-
-            if (DruidSettings.Heal.NaturesSwiftness != 0)
-            {
-                behavs.AddBehavior(797, "Nature's Swiftness Heal @ " + DruidSettings.Heal.NaturesSwiftness + "%", "Nature's Swiftness",
-                    new Decorator(
-                        req => ((WoWUnit)req).HealthPercent < DruidSettings.Heal.NaturesSwiftness
-                            && !Spell.IsSpellOnCooldown("Nature's Swiftness")
-                            && Spell.CanCastHack("Rejuvenation", (WoWUnit)req, skipWowCheck: true),
-                        new Sequence(
-                            Spell.BuffSelfAndWait("Nature's Swiftness", gcd: HasGcd.No),
-                            new PrioritySelector(
-                                Spell.Cast("Healing Touch", on => (WoWUnit)on, req => true, cancel => false),
-                                new Sequence(
-                                    Spell.Cast("Regrowth", on => (WoWUnit)on, req => true, cancel => false),
-                                    new DecoratorContinue(
-                                        req => !glyphRegrowth,
-                                        new Action(ret => Spell.UpdateDoubleCast("Regrowth", (WoWUnit) ret))
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    );
-            }
-
+			
             if (DruidSettings.Heal.Tranquility != 0)
                 behavs.AddBehavior(798, "Tranquility @ " + DruidSettings.Heal.Tranquility + "% MinCount: " + DruidSettings.Heal.CountTranquility, "Tranquility",
                     new Decorator(
@@ -213,21 +180,7 @@ namespace Singular.ClassSpecific.Druid
                         )
                     );
             }
-
-            if (DruidSettings.Heal.Genesis != 0)
-                behavs.AddBehavior(798, "Genesis @ " + DruidSettings.Heal.Genesis + "% MinCount: " + DruidSettings.Heal.CountGenesis, "Genesis",
-                    new Decorator(
-                        ret => Me.IsInGroup(),
-                        Spell.Buff(
-                            "Genesis",
-                            on => HealerManager.Instance.TargetList
-                                .FirstOrDefault( h => h.IsAlive && h.HasAura("Rejuvenation")),
-                            req => HealerManager.Instance.TargetList
-                                .Count(h => h.IsAlive && h.HealthPercent < DruidSettings.Heal.Genesis && h.Distance < 60) >= DruidSettings.Heal.CountGenesis
-                            )
-                        )
-                    );
-
+			
             #endregion
 
             #region Tank Buffing
@@ -335,8 +288,8 @@ namespace Singular.ClassSpecific.Druid
 			
             #region AoE Heals
 
-            if (DruidSettings.Heal.WildMushroom != 0)
-                behavs.AddBehavior(HealerManager.HealthToPriority(DruidSettings.Heal.WildMushroom) + PriAoeBase, "Wild Mushroom @ " + DruidSettings.Heal.WildMushroom + "% MinCount: " + DruidSettings.Heal.CountWildMushroom, "Wild Mushroom",
+            if (DruidSettings.Heal.Efflorescence != 0)
+                behavs.AddBehavior(HealerManager.HealthToPriority(DruidSettings.Heal.Efflorescence) + PriAoeBase, "Efflorescence @ " + DruidSettings.Heal.Efflorescence, "Efflorescence",
                     new Decorator(
                         ret => Me.IsInGroup(),
                         CreateMushroomSetBehavior()
@@ -358,21 +311,7 @@ namespace Singular.ClassSpecific.Druid
                             )
                         )
                     );
-
-            /*
-                                    if (Settings.Heal.SwiftmendAOE != 0)
-                                        behavs.AddBehavior(HealerManager.HealthToPriority(Settings.Heal.SwiftmendAOE) + PriAoeBase, "Swiftmend @ " + Settings.Heal.SwiftmendAOE + "% MinCount: " + Settings.Heal.CountSwiftmendAOE, "Swiftmend",
-                                            new Decorator(
-                                                ret => Me.IsInGroup(),
-                                                new PrioritySelector(
-                                                    ctx => HealerManager.GetBestCoverageTarget("Swiftmend", Settings.Heal.SwiftmendAOE, 40, 10, Settings.Heal.CountSwiftmendAOE
-                                                        , mainTarget: Unit.NearbyGroupMembersAndPets.Where(p => p.HealthPercent < Settings.Heal.SwiftmendAOE && p.SpellDistance() <= 40 && p.IsAlive && p.HasAnyOfMyAuras("Rejuvenation", "Regrowth"))),
-                                                    Spell.Cast("Force of Nature", on => (WoWUnit)on, req => Spell.GetCharges("Force of Nature") > 1),
-                                                    Spell.Cast(spell => "Swiftmend", mov => false, on => (WoWUnit)on, req => true, skipWowCheck: true)
-                                                    )
-                                                )
-                                            );
-                        */
+			
             #endregion
 
             #region Direct Heals
@@ -394,20 +333,7 @@ namespace Singular.ClassSpecific.Druid
 
                             WoWUnit target = (WoWUnit)on;
                             double healthPercent = target == null ? 0.0 : target.HealthPercent;
-
-                            if (clearLeft < 3000)
-                            {
-                                if (target == null || healthPercent > 92 || !Spell.CanCastHack("Regrowth", target))
-                                {
-                                    WoWUnit lbTarget = HealerManager.Instance.TargetList.FirstOrDefault(u => u.GetAuraTimeLeft("Lifebloom").TotalMilliseconds.Between(1500, 10000));
-                                    if (lbTarget != null && Spell.CanCastHack("Regrowth", lbTarget))
-                                    {
-                                        Logger.Write(LogColor.Hilite, "^Clearcasting: Regrowth refresh of Lifebloom @ {0:F1} seconds", lbTarget.GetAuraTimeLeft("Lifebloom").TotalSeconds);
-                                        return lbTarget;
-                                    }
-                                }
-                            }
-
+							
                             // clearLeft > 3000, so clear target if not needed now and try again next pass
                             if (target != null)
                             {
@@ -499,12 +425,7 @@ namespace Singular.ClassSpecific.Druid
                     {
                         regrowthInstead = Math.Max(DruidSettings.Heal.Regrowth, DruidSettings.Heal.HealingTouch);
                         whyRegrowth = "Regrowth (since Healing Touch unknown) @ ";
-                    }                        
-                    //else if (TalentManager.HasGlyph("Regrowth"))
-                    //{
-                    //    regrowthInstead = Math.Max(DruidSettings.Heal.Regrowth, DruidSettings.Heal.HealingTouch);
-                    //    whyRegrowth = "Glyphed Regrowth (instead of Healing Touch) @ ";
-                    //}
+                    }
                 }
 
                 if (regrowthInstead != 0)
@@ -561,31 +482,7 @@ namespace Singular.ClassSpecific.Druid
                         )
                     )
                 );
-
-/*
-            // Atonement
-            if (AddAtonementBehavior() && (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || SingularRoutine.CurrentWoWContext == WoWContext.Instances) && DruidSettings.Heal.DreamOfCenariusWhenIdle)
-            {
-                // check less than # below DreamOfCenarius Health
-                behavs.AddBehavior(1, "DreamOfCenarius when Idle = " + DruidSettings.Heal.DreamOfCenariusWhenIdle.ToString(), "Wrath",
-                    new Decorator(
-                        req => (Me.Combat || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds),
-                        new PrioritySelector(
-                            HealerManager.CreateAttackEnsureTarget(),
-                            Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                            new Decorator(
-                                req => Unit.ValidUnit(Me.CurrentTarget),
-                                new PrioritySelector(
-                                    new Action(r => { Logger.WriteDebug("--- DreamOfCenarius when idle ---"); return RunStatus.Failure; }),
-                                    Movement.CreateFaceTargetBehavior(),
-                                    Spell.Cast("Wrath", mov => true, on => Me.CurrentTarget, req => true, cancel => false)
-                                    )
-                                )
-                            )
-                        )
-                    );
-            }
-*/
+			
             #endregion
 
             behavs.OrderBehaviors();
@@ -624,22 +521,6 @@ namespace Singular.ClassSpecific.Druid
                     req => !glyphRegrowth,
                     new Action(ret => Spell.UpdateDoubleCast("Regrowth", (WoWUnit)ret))
                     )
-                );
-        }
-
-        private static uint RejuvStacksFound { get; set; }
-
-        private static Composite CastRejuvenation(UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
-        {
-            SimpleBooleanDelegate require = r => RejuvStacksFound < MaxRejuvStacks && requirements(r);
-            return new Sequence(
-                ctx => {
-                    WoWUnit unit = onUnit(ctx);
-                    RejuvStacksFound = (unit == null) ? 0 : unit.GetAuraStacks("Rejuvenation");
-                    return unit;
-                    },
-                Spell.Cast("Rejuvenation", on => (WoWUnit)on, req => require(req)),
-                new WaitContinue( TimeSpan.FromMilliseconds(500), until => ((WoWUnit)until).GetAuraStacks("Rejuvenation") != RejuvStacksFound, new ActionAlwaysSucceed())
                 );
         }
 		
@@ -803,20 +684,7 @@ namespace Singular.ClassSpecific.Druid
 
         public static WoWUnit GetBestTankTargetFor(string hotName, int stacks = 1, float health = 100f)
         {
-/*
-            // fast test unless RaFHelper.Leader is whacked
-            try
-            {
-                if (RaFHelper.Leader != null && RaFHelper.Leader.SpellDistance() < 40 && RaFHelper.Leader.IsAlive)
-                {
-                    if (SingularSettings.Debug)
-                        Logger.WriteDebug("GetBestTankTargetFor('{0}'): found Leader {1} @ {2:F1}%, hasmyaura={3}", hotName, RaFHelper.Leader.SafeName(), RaFHelper.Leader.HealthPercent, RaFHelper.Leader.HasMyAura(hotName));
-                    return RaFHelper.Leader;
-                }
-            }
-            catch { }
-*/
-            WoWUnit hotTarget = null;
+            WoWUnit hotTarget;
             hotTarget = Group.Tanks
                 .Where(u => u.IsAlive 
                     && u.Combat 
@@ -869,9 +737,7 @@ namespace Singular.ClassSpecific.Druid
                 .Select(p => new
                 {
                     Unit = p,
-                    Count = Unit.UnfriendlyUnits()
-                        .Where(u => u.CurrentTargetGuid == p.Guid)
-                        .Count(),
+                    Count = Unit.UnfriendlyUnits().Count(u => u.CurrentTargetGuid == p.Guid),
                     Health = (int)p.GetPredictedHealthPercent(true)
                 })
                 .OrderByDescending(v => v.Count)
@@ -892,12 +758,7 @@ namespace Singular.ClassSpecific.Druid
 
         private static Composite CreateMushroomSetBehavior()
         {
-            Composite castShroom;
-
-            if (!TalentManager.HasGlyph("the Sprouting Mushroom"))
-                castShroom = Spell.Cast("Wild Mushroom", on => (WoWUnit) on, req => true);
-            else
-                castShroom = Spell.CastOnGround("Wild Mushroom", on => (WoWUnit) on, req => true, false);
+            Composite castShroom = Spell.CastOnGround("Efflorescence", on => (WoWUnit) on, req => true);
 
             return new ThrottlePasses(
                 1, TimeSpan.FromSeconds(3), RunStatus.Failure,
@@ -909,8 +770,7 @@ namespace Singular.ClassSpecific.Druid
                         new Action( r =>
                         {
                             // if current mushroom still good, fail for now
-                            WoWUnit mushroom = Mushrooms.FirstOrDefault();
-                            if (mushroom != null && HealerManager.Instance.TargetList.Count( u => u.IsAlive && u.HealthPercent <= DruidSettings.Heal.WildMushroom && mushroom.SpellDistance(u) < 10) >= DruidSettings.Heal.CountWildMushroom)
+                            if (Mushroom != null && HealerManager.Instance.TargetList.Count( u => u.IsAlive && u.HealthPercent <= DruidSettings.Heal.Efflorescence && Mushroom.SpellDistance(u) < 10) >= 3)
                                 return RunStatus.Failure;
 
                             // if no target given, fail for now
@@ -922,7 +782,7 @@ namespace Singular.ClassSpecific.Druid
                                 return RunStatus.Failure;
 
                             // if we don't have enough heal targets close and not moving, fail for now
-                            if (HealerManager.Instance.TargetList.Count(u => u.IsAlive && !u.IsMoving && u.HealthPercent <= DruidSettings.Heal.WildMushroom && (r as WoWUnit).SpellDistance(u) < 10) < DruidSettings.Heal.CountWildMushroom)
+                            if (HealerManager.Instance.TargetList.Count(u => u.IsAlive && !u.IsMoving && u.HealthPercent <= DruidSettings.Heal.Efflorescence && (r as WoWUnit).SpellDistance(u) < 10) < 3)
                                 return RunStatus.Failure;
 
                             // continue, as group appears to be staying in spot for awhile
@@ -939,45 +799,6 @@ namespace Singular.ClassSpecific.Druid
 
         }
 
-        public static bool CancelDreamOfCenariusDPS()
-        {
-            // always let DPS casts while solo complete
-            WoWContext ctx = SingularRoutine.CurrentWoWContext;
-            if (ctx == WoWContext.Normal)
-                return false;
-
-            bool castInProgress = Spell.IsCastingOrChannelling();
-            if (!castInProgress)
-            {
-                return false;
-            }
-
-            // allow casts that are close to finishing to finish regardless
-            if (castInProgress && Me.CurrentCastTimeLeft.TotalMilliseconds < 333 && Me.CurrentChannelTimeLeft.TotalMilliseconds < 333)
-            {
-                Logger.WriteDebug("CancelDreamOfCenariusDPS: suppressing /cancel since less than 333 ms remaining");
-                return false;
-            }
-/*
-            // use a window less than actual to avoid cast/cancel/cast/cancel due to mana hovering at setting level
-            if (Me.ManaPercent < (DruidSettings.Heal.DreamOfCenariusCancelBelowManaPercent - 3))
-            {
-                Logger.Write(LogColor.Hilite, "^DreamOfCenarius: cancel since mana={0:F1}% below min={1}%", Me.ManaPercent, DruidSettings.Heal.DreamOfCenariusCancelBelowManaPercent);
-                return true;
-            }
-*/
-            // check if group health has dropped below setting
-            WoWUnit low = HealerManager.FindLowestHealthTarget();
-            if (low != null && low.HealthPercent < DruidSettings.Heal.DreamOfCenariusCancelBelowHealthPercent)
-            {
-                Logger.Write(LogColor.Hilite, "^DreamOfCenarius: cancel since {0} @ {1:F1}% fell below minimum {2}%", low.SafeName(), low.HealthPercent, SingularSettings.Instance.HealerCombatMinHealth);
-                return true;
-            }
-
-            return false;
-        }
-
-
         #region Diagnostics
 
         private static Composite CreateRestoDiagnosticOutputBehavior()
@@ -988,26 +809,15 @@ namespace Singular.ClassSpecific.Druid
             return new ThrottlePasses(1, 1,
                 new Action(ret =>
                 {
-                    string log;
-                    log = string.Format(".... h={0:F1}%/m={1:F1}%, form:{2}, mushcnt={3}",
-                        Me.HealthPercent,
-                        Me.ManaPercent,
-                        Me.Shapeshift.ToString(),
-                        MushroomCount
-                        );
+	                string log = $".... h={Me.HealthPercent:F1}%/m={Me.ManaPercent:F1}%, form:{Me.Shapeshift.ToString()}";
 
                     WoWUnit target = Me.CurrentTarget;
                     if (target != null)
                     {
-                        log += string.Format(", th={0:F1}%/tm={1:F1}%, dist={2:F1}, face={3}, loss={4}, sfire={5}, mfire={6}",
-                            target.HealthPercent,
-                            target.ManaPercent,
-                            target.Distance,
-                            Me.IsSafelyFacing(target),
-                            target.InLineOfSpellSight,
-                            (long)target.GetAuraTimeLeft("Sunfire", true).TotalMilliseconds,
-                            (long)target.GetAuraTimeLeft("Moonfire", true).TotalMilliseconds
-                            );
+                        log +=
+	                        $", th={target.HealthPercent:F1}%/tm={target.ManaPercent:F1}%, dist={target.Distance:F1}, face={Me.IsSafelyFacing(target)}, " +
+	                        $"loss={target.InLineOfSpellSight}, sfire={(long) target.GetAuraTimeLeft("Sunfire").TotalMilliseconds}, " +
+	                        $"mfire={(long) target.GetAuraTimeLeft("Moonfire").TotalMilliseconds}";
                     }
 
                     Logger.WriteDebug(Color.AntiqueWhite, log);

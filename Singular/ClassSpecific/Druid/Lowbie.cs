@@ -16,49 +16,27 @@ namespace Singular.ClassSpecific.Druid
 {
     public class Lowbie
     {
-        private static DruidSettings DruidSettings { get { return SingularSettings.Instance.Druid(); } }
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static DruidSettings DruidSettings => SingularSettings.Instance.Druid();
+	    private static LocalPlayer Me => StyxWoW.Me;
 
-        #region Rest
 
-        [Behavior(BehaviorType.Rest, WoWClass.Druid, 0)]
-        public static Composite CreateLowbieDruidRest()
-        {
-            return new PrioritySelector(
-                new Decorator(
-                    ret => !Rest.IsEatingOrDrinking
-                        && (Me.PredictedHealthPercent(includeMyHeals: true) < SingularSettings.Instance.MinHealth || (Me.Shapeshift == ShapeshiftForm.Normal && Me.PredictedHealthPercent(includeMyHeals: true) < 85))
-                        && ((Me.HasAuraExpired("Rejuvenation", 1) && Spell.CanCastHack("Rejuvenation", Me))),
-                    new PrioritySelector(
-                        new Action(r => { Logger.WriteDebug("Lowbie Druid Rest Heal @ {0:F1}% and moving:{1} in form:{2}", Me.HealthPercent, Me.IsMoving, Me.Shapeshift); return RunStatus.Failure; }),
-                        Spell.Cast("Rejuvenation", on => StyxWoW.Me, ret => StyxWoW.Me.HasAuraExpired("Rejuvenation", 1))
-                        )
-                    ),
-
-                Rest.CreateDefaultRestBehaviour(null, null),
-                Common.CreateDruidMovementBuff()
-                );
-        }
-
-        #endregion
-
-        [Behavior(BehaviorType.Pull, WoWClass.Druid, 0)]
+	    [Behavior(BehaviorType.Pull, WoWClass.Druid, 0)]
         public static Composite CreateLowbieDruidPull()
         {
             return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromMediumRange(),
+				Common.CreateProwlBehavior(),
+				Common.CreateMoveBehindTargetWhileProwling(),
+				Helpers.Common.EnsureReadyToAttackFromMelee(ret => false),
                 Spell.WaitForCast(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
-
-                        new Action(r => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
-
-                        Spell.Buff("Entangling Roots", ret => !SpellManager.HasSpell("Cat Form")),
-                        Spell.Buff("Moonfire", ret => SpellManager.HasSpell("Cat Form")),
-                        Spell.Cast("Wrath")
+						
+						Spell.Cast("Rake"),
+						Helpers.Common.EnsureReadyToAttackFromMelee(),
+						Spell.Cast("Shred")
                         )
                     )
                 );
@@ -70,71 +48,24 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
 
                 new Action(r => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
-
-                new Decorator(
-                    req => !SpellManager.HasSpell("Cat Form"),
-                    new PrioritySelector(
-                        Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                        Spell.WaitForCast(),
-                        new Decorator(
-                            req => !Spell.IsGlobalCooldown(),
-                            new PrioritySelector(
-                                Helpers.Common.CreateInterruptBehavior(),
-
-                                Movement.WaitForFacing(),
-                                Movement.WaitForLineOfSpellSight(),
-
-                                Spell.Cast("Rejuvenation", on => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= DruidSettings.SelfRejuvenationHealth && StyxWoW.Me.HasAuraExpired("Rejuvenation", 1)),
-                                Spell.Buff("Moonfire"),
-
-                                //Pre Cat spells
-                                Spell.Cast("Wrath")
-                                )
-                            ),
-                        new ActionAlwaysSucceed()
-                        )
-                    ),
-
-
+				
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCast(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-
-                        Helpers.Common.EnsureReadyToAttackFromMelee(),
-
-                        // rejuv will take us out of form if needed
-                        Spell.Cast("Rejuvenation", on => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= DruidSettings.SelfRejuvenationHealth && StyxWoW.Me.HasAuraExpired("Rejuvenation", 1)),
-
-                        // moonfire if already out of form
-                        Spell.Buff("Moonfire", req => StyxWoW.Me.Shapeshift != ShapeshiftForm.Cat || StyxWoW.Me.CurrentTarget.Distance > 8),
-
                         Common.CastForm( ShapeshiftForm.Cat, req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
-
-                        new Decorator(
-                            ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat,
-                            new PrioritySelector(
-
-                                Spell.Buff("Rake", true),
-                /*
-                Spell.Cast("Ferocious Bite", 
-                    ret => StyxWoW.Me.ComboPoints > 4 || 
-                           StyxWoW.Me.ComboPoints > 1 && StyxWoW.Me.CurrentTarget.HealthPercent < 40),
-                */
-                                Spell.Cast("Ferocious Bite", ret => StyxWoW.Me.ComboPoints >= 5 || Me.ComboPoints >= Me.CurrentTarget.TimeToDeath(99)),
-
-                                Spell.Cast("Shred"),
-                                Movement.CreateMoveToMeleeBehavior(true)
-                                )
-                            )
+						
+                        Spell.Buff("Rake", true),
+                        Spell.Cast("Ferocious Bite", ret => StyxWoW.Me.ComboPoints >= 5 || Me.ComboPoints >= Me.CurrentTarget.TimeToDeath(99)),
+                        Spell.Cast("Shred")
                         )
                     )
-                );
+				);
         }
     }
 }

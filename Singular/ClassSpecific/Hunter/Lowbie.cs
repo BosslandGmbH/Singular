@@ -33,8 +33,8 @@ namespace Singular.ClassSpecific.Hunter
                         Spell.Cast(
                             "Concussive Shot",
                             ret => StyxWoW.Me.CurrentTarget.CurrentTarget == null || StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me),
-                        Spell.Cast("Arcane Shot"),
-                        Spell.Cast("Steady Shot")
+                        Spell.Cast("Kill Command"),
+                        Spell.Cast("Cobra Shot")
                         )
                     )
                 );

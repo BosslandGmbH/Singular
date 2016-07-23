@@ -182,7 +182,8 @@ namespace Singular.Managers
         {
             using (StyxWoW.Memory.AcquireFrame())
             {
-                CurrentSpec = StyxWoW.Me.Specialization;
+				// With Legion, Low levels are an auto selected spec now. We want to keep using Lowbie behaviors pre level 10
+				CurrentSpec = StyxWoW.Me.Level < 10 ? WoWSpec.None : StyxWoW.Me.Specialization;
 
                 Talents.Clear();
                 TalentId = new int[7];
@@ -211,7 +212,7 @@ namespace Singular.Managers
         {
             if (SpecChangeTestTimer.IsFinished)
             {
-                if (StyxWoW.Me.Specialization != CurrentSpec)
+                if (StyxWoW.Me.Level >= 10 && StyxWoW.Me.Specialization != CurrentSpec)
                 {
                     CurrentSpec = StyxWoW.Me.Specialization;
                     RebuildNeeded = true;

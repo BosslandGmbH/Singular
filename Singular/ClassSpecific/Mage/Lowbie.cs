@@ -15,36 +15,6 @@ namespace Singular.ClassSpecific.Mage
 {
     public class Lowbie
     {
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static MageSettings MageSettings { get { return SingularSettings.Instance.Mage(); } }
-
-        [Behavior(BehaviorType.Pull, WoWClass.Mage, 0)]
-        public static Composite CreateLowbieMagePull()
-        {
-            return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCastOrChannel(),
-
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-                         CreateLowbieDiagnosticOutputBehavior("Pull"),
-                         Helpers.Common.CreateInterruptBehavior(),
-                         Common.CreateMagePolymorphOnAddBehavior(),
-
-                        Movement.WaitForFacing(),
-                        Movement.WaitForLineOfSpellSight(),
-
-                         Spell.BuffSelf("Frost Nova", ret => LowbieNeedsFrostNova),
-                         // only Fire Blast if already in Combat
-                         Spell.Cast("Fire Blast", ret => Me.CurrentTarget.Combat && Me.CurrentTarget.IsTargetingMeOrPet),
-                         // otherwise take advantage of casting without incoming damage
-                         Spell.Cast("Frostfire Bolt")
-                         )
-                     )
-                 );
-        }
-
         private static bool LowbieNeedsFrostNova
         {
             get {
@@ -53,13 +23,7 @@ namespace Singular.ClassSpecific.Mage
             }
         }
 
-        [Behavior(BehaviorType.Heal, WoWClass.Mage, 0)]
-        public static Composite CreateLowbieMageHeal()
-        {
-            return CreateLowbieDiagnosticOutputBehavior("Combat");
-        }
-
-        [Behavior(BehaviorType.Combat, WoWClass.Mage, 0)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Mage, 0)]
         public static Composite CreateLowbieMageCombat()
         {
             return new PrioritySelector(
@@ -69,71 +33,19 @@ namespace Singular.ClassSpecific.Mage
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-                         Helpers.Common.CreateInterruptBehavior(),
-                         Common.CreateMageAvoidanceBehavior(),
-                         Common.CreateMagePolymorphOnAddBehavior(),
+					new PrioritySelector(
+                        Helpers.Common.CreateInterruptBehavior(),
+                        Common.CreateMageAvoidanceBehavior(),
 
-                        Movement.WaitForFacing(),
-                        Movement.WaitForLineOfSpellSight(),
+						Movement.WaitForFacing(),
+						Movement.WaitForLineOfSpellSight(),
 
-                         Spell.BuffSelf("Frost Nova", ret => LowbieNeedsFrostNova),
-                         Spell.Cast("Fire Blast"),
-                         Spell.Cast("Frostfire Bolt")
-                         )
-                     )
-                 );
-        }
-
-        #region Diagnostics
-
-        private static Composite CreateLowbieDiagnosticOutputBehavior(string s)
-        {
-            return new Decorator(
-                ret => SingularSettings.Debug,
-                new Throttle(1,
-                    new Action(ret =>
-                    {
-                        string log;
-
-                        log = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%",
-                            s,
-                            Me.HealthPercent,
-                            Me.ManaPercent
-                            );
-
-                        WoWUnit target = Me.CurrentTarget;
-                        if (target != null)
-                        {
-                            log += string.Format(", ttd={0}, th={1:F1}%, dist={2:F1}, face={3}, loss={4}, ffire={5}, slowed={6}, frozen={7}",
-                                target.TimeToDeath(),
-                                target.HealthPercent,
-                                target.Distance,
-                                Me.IsSafelyFacing(target),
-                                target.InLineOfSpellSight,
-                                (long)target.GetAuraTimeLeft("Frostfire Bolt", true).TotalMilliseconds,
-                                target.IsSlowed().ToYN(),
-                                target.TreatAsFrozen().ToYN()
-                                );
-
-                            if (target.HasAura("Frost Nova"))
-                                log += string.Format(", frostnova={0}", (long)target.GetAuraTimeLeft("Frost Nova", true).TotalMilliseconds);
-
-                            foreach (WoWAura aura in target.GetAllAuras())
-                            {
-                                foreach (var se in aura.Spell.SpellEffects)
-                                {
-                                    Logger.WriteDebug("Diag: {0} #{1}, auratype={2} effectype={3}", aura.Name, aura.SpellId, se.AuraType.ToString(), se.EffectType.ToString());
-                                }
-                            }
-                        }
-
-                        Logger.WriteDebug(Color.AntiqueWhite, log);
-                    })
+                        Spell.BuffSelf("Frost Nova", ret => LowbieNeedsFrostNova),
+                        Spell.Cast("Ice Lance", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsFrozen())),
+                        Spell.Cast("Frostbolt")
+                        )
                     )
                 );
         }
-
-        #endregion
     }
 }

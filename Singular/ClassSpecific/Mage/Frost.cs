@@ -46,10 +46,7 @@ namespace Singular.ClassSpecific.Mage
                     new PrioritySelector(
                         new Decorator(
                             ret => !Helpers.Rest.IsEatingOrDrinking,
-                            new PrioritySelector(
-                                CreateSummonWaterElemental(),
-                                Common.CreateHealWaterElemental()
-                                )
+                            CreateSummonWaterElemental()
                             ),
 
                         Singular.Helpers.Rest.CreateDefaultRestBehaviour(),

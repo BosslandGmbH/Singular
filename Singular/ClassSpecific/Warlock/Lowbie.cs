@@ -25,12 +25,13 @@ namespace Singular.ClassSpecific.Warlock
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
+                        Spell.WaitForCastOrChannel(),
 
                         // Spell.PreventDoubleCast("Immolate"),
                         Spell.Cast("Life Tap", ret => StyxWoW.Me.ManaPercent < 50 && StyxWoW.Me.HealthPercent > 70),
-                        Spell.Cast("Drain Life", ret => StyxWoW.Me.HealthPercent < 70),
                         Spell.Buff("Immolate"),
                         Spell.Buff("Corruption"),
+                        Spell.Cast("Drain Life"),
                         Spell.Cast("Shadow Bolt")
                         )
                     )

@@ -38,13 +38,12 @@ namespace Singular.ClassSpecific.Warrior
                         new Decorator(
                             ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f) >= 2,
                             new PrioritySelector(
-                                Spell.Cast("Thunder Clap", req => Spell.UseAOE),
-                                Spell.Cast("Heroic Strike")
+                                Spell.Cast("Thunder Clap", req => Spell.UseAOE)
                                 )
                             ),
                         // DPS
+                        Spell.Cast("Slam"),
                         Spell.Cast("Execute"),
-                        Spell.Cast("Heroic Strike"),
                         Spell.Cast("Thunder Clap", ret => Spell.UseAOE && StyxWoW.Me.RagePercent > 50 && StyxWoW.Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8))
 
                         )

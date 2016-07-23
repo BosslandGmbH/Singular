@@ -48,7 +48,7 @@ namespace Singular.ClassSpecific.Rogue
                     new PrioritySelector(
                         Common.CreateStealthBehavior(),
                         Common.CreateRogueOpenerBehavior(),
-                        Spell.Cast("Sinister Strike")                        )
+                        Spell.Cast("Sinister Strike"))
                     )
                 );
         }

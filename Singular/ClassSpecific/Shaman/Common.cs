@@ -150,23 +150,6 @@ namespace Singular.ClassSpecific.Shaman
             return new Decorator(
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
-                    new Decorator(
-                        ret => Me.Fleeing && !Spell.IsSpellOnCooldown(WoWTotem.Tremor.ToSpellId()),
-                        new PrioritySelector(
-                            new Action( r => {
-                                Logger.Write( LogColor.Hilite, "/use Tremor Totem (I am fleeing...)");
-                                return RunStatus.Failure;
-                            }),
-                            Spell.Cast(WoWTotem.Tremor.ToSpellId(), on => Me),
-                            Spell.CastHack("Tremor Totem", on => Me, 
-                                req => {
-                                    if (!Spell.CanCastHack("Tremor Totem", Me))
-                                        return false;
-                                    Logger.WriteDebug( Color.Pink, "Hack Casting Tremor"); 
-                                    return true; 
-                                })
-                            )
-                        ),
                     Spell.Cast("Thunderstorm", on => Me, ret => Me.Stunned && Unit.NearbyUnfriendlyUnits.Any( u => u.IsWithinMeleeRange )),
                     Spell.BuffSelf("Shamanistic Rage", ret => Me.Stunned && Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange))
                     )

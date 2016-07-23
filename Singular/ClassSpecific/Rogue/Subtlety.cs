@@ -26,7 +26,7 @@ namespace Singular.ClassSpecific.Rogue
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueSubtlety, WoWContext.Normal | WoWContext.Battlegrounds | WoWContext.Instances)]
+        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueSubtlety, WoWContext.All)]
         public static Composite CreateRogueSubtletyNormalPull()
         {
             return new PrioritySelector(
@@ -52,8 +52,7 @@ namespace Singular.ClassSpecific.Rogue
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
                         // ok, everything else failed so just hit him!!!!
-                        Spell.HandleOffGCD(Spell.Buff("Premeditation", req => Common.AreStealthAbilitiesAvailable && Me.ComboPoints < 4 && Me.CurrentTarget.IsWithinMeleeRange)),
-                        Spell.Cast("Hemorrhage")
+                        Spell.HandleOffGCD(Spell.Buff("Premeditation", req => Common.AreStealthAbilitiesAvailable && Me.ComboPoints < 4 && Me.CurrentTarget.IsWithinMeleeRange))
                         )
                     )
                 );
@@ -82,58 +81,26 @@ namespace Singular.ClassSpecific.Rogue
 
                         Common.CreateRogueOpenerBehavior(),
 
-                        Spell.Buff("Premeditation", req => Common.AreStealthAbilitiesAvailable && Me.ComboPoints <= 3),
+                        Spell.Cast("Shadowstrike"),
+                        Spell.Buff("Symbols of Death", on => Me.CurrentTarget),
+                        Spell.Cast("Shadow Blades"),
+                        Spell.Buff("Nightblade", on => Me.CurrentTarget, req => Me.ComboPoints >= 5),
 
-                        new Decorator(
-                            ret => Common.AoeCount > 1,
-                            new PrioritySelector(
-                                Spell.BuffSelf("Shadow Dance", ret => Common.AoeCount >= 3),
-                                Spell.Cast("Eviscerate", ret => Me.ComboPoints >= 5 && Common.AoeCount < 7 && !Me.CurrentTarget.HasAuraExpired("Crimson Tempest", 7)),
-                                Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
-                                Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount )
-                                )
-                            ),
-                        new Decorator(
-                            ret => Common.AoeCount >= 3 && !Me.CurrentTarget.IsPlayer,
-                            new PrioritySelector(
-                                Spell.Buff("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
-                                Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
-                                Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
-                                Spell.Cast("Hemorrhage", ret => !SpellManager.HasSpell("Fan of Knives")),
-                                Movement.CreateMoveToMeleeBehavior(true)
-                                )
-                            ),
-
-                        Spell.BuffSelf("Shadow Dance",
+                        Spell.Cast("Eviscerate", req => Me.ComboPoints >= 5),
+                        
+                        Spell.Cast("Shadow Dance",
+                            on => Me,
                             ret => Me.GotTarget()
                                 && !Common.AreStealthAbilitiesAvailable
-                                && !Me.HasAuraExpired("Slice and Dice", 3)
-                                && Me.ComboPoints < 2),
+                                && Me.ComboPoints < 2
+                                && Me.GetAuraStacks("Shadow Dance") > 2),
 
-                        Spell.Buff("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
-                        new Decorator(
-                            req => Me.ComboPoints >= 5,
-                            new PrioritySelector(                                
-                                Spell.Buff("Rupture", true, ret => Me.CurrentTarget.TimeToDeath() > 20),
-                                Spell.Cast("Eviscerate")
-                                )
-                            ),
+                        Spell.Cast("Shuriken Storm", req => Common.AoeCount >= 2),
+                        Spell.Cast("Backstab"),
 
                         // lets try a big hit if stealthed and behind before anything
                         Spell.Cast(sp => "Ambush", chkMov => false, on => Me.CurrentTarget, req => Common.IsAmbushNeeded(), canCast: Common.RogueCanCastOpener),
-
-                        new Decorator(
-                            req => Me.ComboPoints < 5,
-                            new PrioritySelector(                                
-                                Spell.Buff("Hemorrhage"),
-                                Spell.Cast("Backstab", ret => Me.IsBehindOrSide(Me.CurrentTarget) && Common.HasDaggerInMainHand),
-                                Spell.BuffSelf("Fan of Knives", ret => !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount),
-
-                        // following cast is as a Combo Point builder if we can't cast Backstab
-                                Spell.Cast("Hemorrhage", ret => !SpellManager.HasSpell("Backstab") || !Me.IsBehindOrSide(Me.CurrentTarget))
-                                )
-                            ),
-
+                        
                         Common.CheckThatDaggersAreEquippedIfNeeded()
                         )
                     )
@@ -141,64 +108,7 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         #endregion
-
-        #region Instance Rotation
-
-        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueSubtlety, WoWContext.Instances)]
-        public static Composite CreateRogueSubtletyInstanceCombat()
-        {
-            return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Common.CreateRogueMoveBehindTarget(),
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
-                
-                Spell.WaitForCastOrChannel(),
-                new Decorator(
-                    ret => Me.GotTarget() && !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
-
-                        // updated time to death tracking values before we need them
-                        new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
-                        Helpers.Common.CreateInterruptBehavior(),
-                        Common.CreateDismantleBehavior(),
-
-                        Spell.Buff("Premeditation", req => Common.AreStealthAbilitiesAvailable && Me.ComboPoints <= 3),
-
-                        new Decorator(
-                            ret => Common.AoeCount >= 3 && Spell.UseAOE,
-                            new PrioritySelector(
-                                Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
-                                Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
-                                Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount)
-                                )
-                            ),
-
-                        Spell.BuffSelf("Shadow Dance", ret => Me.CurrentTarget.MeIsBehind && !Me.HasAura("Stealth")),
-                        Spell.BuffSelf("Vanish", ret => Me.CurrentTarget.IsBoss() && Me.CurrentTarget.MeIsBehind),
-
-                        Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints >= (Me.CurrentTarget.IsBoss() ? 5 : 1) && Me.HasAuraExpired("Slice and Dice", 2)),
-                        Spell.Buff("Rupture", 7, require: req => Me.ComboPoints == 5),
-                        Spell.Cast("Eviscerate", req => Me.ComboPoints == 5),
-
-                        Spell.Cast(sp => "Ambush", chkMov => false, on => Me.CurrentTarget, req => Common.IsAmbushNeeded(), canCast: Common.RogueCanCastOpener),
-                        Spell.Buff("Hemorrhage", 7, on => Me.CurrentTarget),
-
-                        new PrioritySelector(
-                            ctx => Me.IsBehindOrSide(Me.CurrentTarget),
-                            Spell.Cast("Backstab", req => (bool) req && Common.HasDaggerInMainHand ),
-                            Spell.Cast("Hemorrhage", req => !(bool) req || !Common.HasDaggerInMainHand)
-                            ),
-
-                        Common.CheckThatDaggersAreEquippedIfNeeded()
-                        )
-                    )
-                );
-        }
-
-        #endregion
+        
 
         [Behavior(BehaviorType.Heal, WoWClass.Rogue, WoWSpec.RogueSubtlety, priority: 99)]
         public static Composite CreateRogueHeal()

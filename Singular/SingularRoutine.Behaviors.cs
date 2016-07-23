@@ -205,7 +205,7 @@ namespace Singular
         { 
             get
             {
-                return Me.Fleeing || Me.Stunned || Me.IsSilenced();
+                return Me.Fleeing || Me.Stunned;
             } 
         }
 

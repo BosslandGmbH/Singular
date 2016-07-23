@@ -21,14 +21,14 @@ using Styx.WoWInternals;
 
 namespace Singular.ClassSpecific.Rogue
 {
-    public class Combat
+    public class Outlaw
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
         private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); } 
 
         #region Normal Rotation
-        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueCombat, WoWContext.Normal | WoWContext.Battlegrounds | WoWContext.Instances )]
+        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueCombat, WoWContext.All)]
         public static Composite CreateRogueCombatPull()
         {
             return new PrioritySelector(
@@ -61,7 +61,7 @@ namespace Singular.ClassSpecific.Rogue
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueCombat, WoWContext.Normal | WoWContext.Battlegrounds )]
+        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueCombat, WoWContext.All)]
         public static Composite CreateRogueCombatNormalCombat()
         {
             return new PrioritySelector(
@@ -81,7 +81,11 @@ namespace Singular.ClassSpecific.Rogue
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         // updated time to death tracking values before we need them
-                        new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
+                        new Action(ret =>
+                        {
+                            Me.CurrentTarget.TimeToDeath();
+                            return RunStatus.Failure;
+                        }),
 
                         CreateBladeFlurryBehavior(),
 
@@ -90,100 +94,22 @@ namespace Singular.ClassSpecific.Rogue
 
                         Common.CreateRogueOpenerBehavior(),
 
-                        Spell.BuffSelf("Adrenaline Rush", ret => Me.CurrentEnergy < 20 && !Me.HasAura("Killing Spree")),
+                        Spell.Cast("Vanish", when => Me.TimeToDeath() < 2 && Me.TimeToDeath() < Me.CurrentTarget.TimeToDeath()),
 
-                        // Killing Spree if we are at highest level of Bandit's Guise ( Shallow Insight / Moderate Insight / Deep Insight )
-                        Spell.Cast("Killing Spree",
-                            ret => Me.CurrentEnergy < 30 && Me.HasAura("Deep Insight") && !Me.HasAura("Adrenaline Rush")),
+                        Spell.BuffSelf("Adrenaline Rush", ret => Me.CurrentEnergy < 20),
+                        
+                        Spell.Cast("Death from Above", req => !Me.HasAura("Adrenaline Rush") && Me.ComboPoints >= 6),
 
+                        // If talented, should keep it up.
                         Spell.Buff("Slice and Dice", on => Me, ret => Me.ComboPoints > 0),
 
-                        new Decorator(
-                            ret => Common.AoeCount >= RogueSettings.AoeSpellPriorityCount && Spell.UseAOE,
-                            new PrioritySelector(
-                                Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
-                                Spell.Cast("Eviscerate", ret => Me.ComboPoints >= 5 && !SpellManager.HasSpell("Crimson Tempest")),
-                                Spell.BuffSelf("Fan of Knives", req => Me.ComboPoints < 5),
-                                Spell.Cast("Sinister Strike", req => Me.ComboPoints < 5),
-                                Movement.CreateMoveToMeleeBehavior(true)
-                                )
-                            ),
+                        Spell.Buff("Roll the Bones"),
 
-                        Spell.Buff("Revealing Strike", true, ret => Me.CurrentTarget.IsWithinMeleeRange ),
-                        Spell.Cast("Eviscerate", ret => Me.ComboPoints >= 5 || Me.CurrentTarget.TimeToDeath(99) <= Me.ComboPoints ),
-                        new Decorator(
-                            req => Me.ComboPoints < 5,
-                            new PrioritySelector(
-                                Spell.Cast("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount),
-                                Spell.Cast("Sinister Strike")
-                                )
-                            )
-                        )
-                    )
-                );
-        }
+                        Spell.Cast("Run Through", req => Me.ComboPoints >= 6),
 
-        #endregion
+                        Spell.Cast("Pistol Shot", req => Me.HasAura("Opportunity")),
 
-
-        #region Instance Rotation
-
-        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueCombat, WoWContext.Instances)]
-        public static Composite CreateRogueCombatInstanceCombat()
-        {
-            return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Common.CreateRogueMoveBehindTarget(),
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
-
-                Spell.WaitForCastOrChannel(),
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
-
-                        new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
-
-                        Helpers.Common.CreateInterruptBehavior(),
-                        Common.CreateDismantleBehavior(),
-
-                        // Instance Specific Behavior
-                        Spell.Cast("Tricks of the Trade", ret => Common.BestTricksTarget, ret => RogueSettings.UseTricksOfTheTrade),
-                        // Spell.Cast("Feint", ret => Me.CurrentTarget.ThreatInfo.RawPercent > 80),
-
-                        // Resume standard priorities
-                        Common.CreateRogueMoveBehindTarget(),
-
-                        Spell.BuffSelf("Adrenaline Rush", 
-                            ret => Me.CurrentEnergy < 20 && !Me.HasAura("Killing Spree")),
-
-                        // Killing Spree if we are at highest level of Bandit's Guise ( Shallow Insight / Moderate Insight / Deep Insight )
-                        Spell.Cast("Killing Spree",
-                            ret => Me.CurrentEnergy < 30 && Me.HasAura("Deep Insight") && !Me.HasAura("Adrenaline Rush")),
-
-                        CreateBladeFlurryBehavior(),
-
-                        new Decorator(
-                            ret => Common.AoeCount >= RogueSettings.AoeSpellPriorityCount,
-                            new PrioritySelector(
-                                Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
-                                Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
-                                Spell.Cast("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount),
-                                Spell.Cast("Sinister Strike"),
-                                Movement.CreateMoveToMeleeBehavior(true)
-                                )
-                            ),
-
-                        Spell.Buff("Revealing Strike"),
-
-                        Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
-                        Spell.Cast("Eviscerate", ret => Me.ComboPoints == 5),
-
-                        Spell.Cast("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount),
-                        Spell.Cast("Sinister Strike")
-                        )
+                        Spell.Cast("Saber Slash"))
                     )
                 );
         }

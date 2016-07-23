@@ -25,8 +25,6 @@ namespace Singular.Managers
         {
             Talents = new List<Talent>();
             TalentId = new int[6];
-            Glyphs = new HashSet<string>();
-            GlyphId = new int[6];
 
             using (StyxWoW.Memory.AcquireFrame())
             {
@@ -50,11 +48,7 @@ namespace Singular.Managers
         public static List<Talent> Talents { get; private set; }
 
         private static int[] TalentId { get; set; }
-
-        public static HashSet<string> Glyphs { get; private set; }
-
-        private static int[] GlyphId { get; set; }
-
+        
         private static uint SpellCount = 0;
         private static uint SpellBookSignature = 0;
 
@@ -109,7 +103,8 @@ namespace Singular.Managers
         /// <returns></returns>
         public static bool HasGlyph(string glyphName)
         {
-            return Glyphs.Any() && Glyphs.Contains(glyphName);
+            // TODO: REMOVE AND REMOVE ALL REFERENCES TO THIS!
+            return false;
         }
 
         /// <summary>
@@ -125,7 +120,6 @@ namespace Singular.Managers
 
             var oldSpec = CurrentSpec;
             int[] oldTalent = TalentId;
-            int[] oldGlyph = GlyphId;
             uint oldSig = SpellBookSignature;
             uint oldSpellCount = SpellCount;
 
@@ -158,16 +152,6 @@ namespace Singular.Managers
                 {
                     RebuildNeeded = true;
                     Logger.Write( LogColor.Hilite, "TalentManager: Your talents have changed.");
-                    break;
-                }
-            }
-
-            for (i = 0; i < 6; i++)
-            {
-                if (oldGlyph[i] != GlyphId[i])
-                {
-                    RebuildNeeded = true;
-                    Logger.Write( LogColor.Hilite, "TalentManager: Your glyphs have changed.");
                     break;
                 }
             }
@@ -215,23 +199,6 @@ namespace Singular.Managers
 
                         if (selected)
                             TalentId[row] = index;
-                    }
-                }
-
-                Glyphs.Clear();
-                GlyphId = new int[7];
-
-                // 6 glyphs all the time. Plain and simple!
-                for (int i = 1; i <= 6; i++)
-                {
-                    List<string> glyphInfo = Lua.GetReturnValues(String.Format("return GetGlyphSocketInfo({0})", i));
-
-                    // add check for 4 members before access because empty sockets weren't returning 'nil' as documented
-                    if (glyphInfo != null && glyphInfo.Count >= 4 && glyphInfo[3] != "nil" &&
-                        !string.IsNullOrEmpty(glyphInfo[3]))
-                    {
-                        GlyphId[i-1] = int.Parse(glyphInfo[3]);
-                        Glyphs.Add(WoWSpell.FromId(GlyphId[i-1]).Name.Replace("Glyph of ", ""));
                     }
                 }
 

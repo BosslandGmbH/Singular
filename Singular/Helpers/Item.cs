@@ -519,13 +519,6 @@ namespace Singular.Helpers
                 Logger.WriteFile("--- #{0}", t.Index);
             }
 
-            Logger.WriteFile(" ");
-            Logger.WriteFile("Glyphs Equipped: {0}", Singular.Managers.TalentManager.Glyphs.Count());
-            foreach (string glyphName in Singular.Managers.TalentManager.Glyphs.OrderBy(g => g).Select(g => g).ToList())
-            {
-                Logger.WriteFile("--- {0}", glyphName );
-            }
-
             Logger.WriteFile("");
 
             Regex pat = new Regex( "Item \\-" + Me.Class.ToString().CamelToSpaced() + " .*P Bonus");

@@ -164,27 +164,6 @@ namespace Singular.ClassSpecific.Rogue
                             new WaitContinue(TimeSpan.FromMilliseconds(1500), ret => !Spell.IsGlobalCooldown(), new ActionAlwaysSucceed()),
                             Item.CreateUseBandageBehavior()
                             )
-                        ),
-
-                    new Decorator(
-                        ret => Me.Combat && RogueSettings.RecuperateHealth > 0 && Me.ComboPoints > 0,
-                        new PrioritySelector(
-                            // cast regardless of combo points if we are below health level
-                            Spell.BuffSelf("Recuperate", ret => Me.HealthPercent < RogueSettings.RecuperateHealth),
-
-                            // cast at higher health level based upon number of attackers
-                            Spell.BuffSelf("Recuperate",
-                                ret => AoeCount > 0
-                                    && Me.ComboPoints >= Math.Min(AoeCount, 3)
-                                    && Me.HealthPercent < (100 * (AoeCount - 1) + RogueSettings.RecuperateHealth) / AoeCount)
-
-                            // cast if partially need healing and mob about to die
-                            //Spell.BuffSelf("Recuperate",
-                            //    ret => Me.GotTarget()
-                            //        && AoeCount == 1
-                            //        && Me.CurrentTarget.TimeToDeath() < 2
-                            //        && Me.HealthPercent < (100 + RogueSettings.RecuperateHealth) / 2)
-                            )
                         )
                     )
                 );
@@ -204,20 +183,7 @@ namespace Singular.ClassSpecific.Rogue
                         ),
 
                 // new Action(r => { Logger.WriteDebug("PreCombatBuffs -- stealthed={0}", Stealthed); return RunStatus.Failure; }),
-                CreateApplyPoisons(),
-
-                // don't waste the combo points if we have them. try one cast and wait
-                new Throttle(
-                    TimeSpan.FromSeconds(3),
-                    Spell.Cast("Recuperate", 
-                        on => Me,
-                        ret => StyxWoW.Me.ComboPoints > 0 
-                            && Me.HealthPercent < 90
-                            && Spell.IsSpellOnCooldown("Redirect")
-                            && Me.HasAuraExpired("Recuperate", 3 + Me.ComboPoints * 6)
-                        )
-                    )
-                );
+                CreateApplyPoisons());
         }
 
         [Behavior(BehaviorType.PullBuffs, WoWClass.Rogue, (WoWSpec)int.MaxValue, WoWContext.All)]
@@ -252,23 +218,7 @@ namespace Singular.ClassSpecific.Rogue
 
                             return false;
                         })
-                    ),
-
-                Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.ComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !Spell.CanCastHack("Redirect"))),
-                new Throttle( 1,
-                    new Decorator(
-                        req => MovementManager.IsClassMovementAllowed && StyxWoW.Me.IsMoving && StyxWoW.Me.GotTarget(),
-                        new PrioritySelector(
-                            // Throttle Shadowstep because cast can fail with no message
-                            new Throttle(2, Spell.Cast("Shadowstep", ret => StyxWoW.Me.CurrentTarget.Distance > 12)),
-                            // save 60 energy for opener if possible
-                            Spell.BuffSelf("Burst of Speed", req => !Me.HasAura("Sprint") && StyxWoW.Me.CurrentTarget.Distance > 10 && Me.CurrentEnergy >= 90),
-                            // last resort
-                            Spell.BuffSelf("Sprint", ret => RogueSettings.UseSprint && StyxWoW.Me.CurrentTarget.Distance > 15)
-                            )
-                        )
-                    )
-                );
+                    ));
 
         }
 
@@ -1134,7 +1084,7 @@ namespace Singular.ClassSpecific.Rogue
                 return null;
 
             return Me.CarriedItems
-                .Where(b => b != null && b.IsValid && b.ItemInfo != null
+                .FirstOrDefault(b => b != null && b.IsValid && b.ItemInfo != null
                     && b.ItemInfo.ItemClass == WoWItemClass.Miscellaneous
                     // && b.ItemInfo.ContainerClass == WoWItemContainerClass.Container
                     && b.ItemInfo.MiscClass == WoWItemMiscClass.Junk
@@ -1144,8 +1094,7 @@ namespace Singular.ClassSpecific.Rogue
                     && b.Cooldown <= 0
                     && !Blacklist.Contains(b.Guid, BlacklistFlags.Node)
                     && _boxes.ContainsKey(b.Entry)
-                    && (_boxes[b.Entry] <= 0 || _boxes[b.Entry] <= (Me.Level * 5)))
-                .FirstOrDefault();
+                    && (_boxes[b.Entry] <= 0 || _boxes[b.Entry] <= (Me.Level * 5)));
         }
 
         public static WoWItem FindUnlockedBox()
@@ -1154,7 +1103,7 @@ namespace Singular.ClassSpecific.Rogue
                 return null;
 
             return Me.CarriedItems
-                .Where(b => b != null && b.IsValid && b.ItemInfo != null
+                .FirstOrDefault(b => b != null && b.IsValid && b.ItemInfo != null
                     && b.ItemInfo.ItemClass == WoWItemClass.Miscellaneous
                     // && b.ItemInfo.ContainerClass == WoWItemContainerClass.Container
                     && b.ItemInfo.MiscClass == WoWItemMiscClass.Junk
@@ -1162,8 +1111,7 @@ namespace Singular.ClassSpecific.Rogue
                     && b.Usable
                     && b.Cooldown <= 0
                     && !Blacklist.Contains(b.Guid, BlacklistFlags.Loot)
-                    && _boxes.ContainsKey(b.Entry))
-                .FirstOrDefault();
+                    && _boxes.ContainsKey(b.Entry));
         }
 
         /// <summary>

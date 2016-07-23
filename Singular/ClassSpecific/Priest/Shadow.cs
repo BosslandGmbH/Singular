@@ -39,7 +39,7 @@ namespace Singular.ClassSpecific.Priest
         {
             if (SpellManager.HasSpell("Flash Heal"))
             {
-                Logger.Write(LogColor.Init, "Flash Heal: if all enemies cc'd and health below {0}%", PriestSettings.ShadowFlashHeal);
+                Logger.Write(LogColor.Init, "Flash Heal: if all enemies cc'd and health below {0}%", PriestSettings.ShadowPlea);
             }
 
             if (SpellManager.HasSpell("Prayer of Mending"))
@@ -127,7 +127,7 @@ namespace Singular.ClassSpecific.Priest
                             "Flash Heal",
                             ctx => Me,
                             ret => {
-                                if (Me.HealthPercent > PriestSettings.ShadowFlashHeal)
+                                if (Me.HealthPercent > PriestSettings.ShadowPlea)
                                     return false;
 
                                 if (Unit.UnitsInCombatWithMeOrMyStuff(40).Any(u => !u.IsCrowdControlled()))
@@ -276,7 +276,7 @@ namespace Singular.ClassSpecific.Priest
                                         Logger.Write(LogColor.Hilite, "^Trivial Farming: all trivial mobs within 12 yds of {0}", unit.SafeName());
                                         return unit;
                                     },
-                                    cancel => Me.HealthPercent < PriestSettings.ShadowFlashHeal
+                                    cancel => Me.HealthPercent < PriestSettings.ShadowPlea
                                     ),
 
                                 Spell.Buff(
@@ -367,7 +367,7 @@ namespace Singular.ClassSpecific.Priest
                                             return null;
                                         return unit;
                                         },
-                                    cancel => Me.HealthPercent < PriestSettings.ShadowFlashHeal
+                                    cancel => Me.HealthPercent < PriestSettings.ShadowPlea
                                     ),
                                 CastMindFlay(on => (WoWUnit)on, req => cntAoeTargets < 4)
                                 )
@@ -613,7 +613,7 @@ namespace Singular.ClassSpecific.Priest
                                             mov => true, 
                                             ctx => BestMindSearTarget, 
                                             ret => true, 
-                                            cancel => Me.HealthPercent < PriestSettings.ShadowFlashHeal ),
+                                            cancel => Me.HealthPercent < PriestSettings.ShadowPlea ),
 
                                         new PrioritySelector(
                                             ctx => AoeTargets.FirstOrDefault(u => !u.HasAllMyAuras("Shadow Word: Pain", "Vampiric Touch")),

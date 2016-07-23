@@ -448,7 +448,7 @@ VoidShift               Void Shift
 
                     Spell.Cast("Flash Heal",
                         ctx => Me,
-                        ret => Me.HealthPercent <= PriestSettings.ShadowFlashHeal),
+                        ret => Me.HealthPercent <= PriestSettings.ShadowPlea),
 
                     Spell.Cast("Flash Heal",
                         ctx => Me,

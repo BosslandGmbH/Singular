@@ -1,23 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-using CommonBehaviors.Actions;
-
+﻿using System.Linq;
 using Singular.Dynamics;
 using Singular.Helpers;
-using Singular.Managers;
 using Singular.Settings;
 
 using Styx;
 
 using Styx.CommonBot;
-using Styx.Helpers;
-
-
-using Styx.WoWInternals;
-
 using Styx.TreeSharp;
 
 using Action = Styx.TreeSharp.Action;
@@ -30,13 +18,10 @@ namespace Singular.ClassSpecific.Rogue
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
-        private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); }
-
-        const int BLINDSIDE = 121153;
-
+        
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueAssassination, WoWContext.Normal | WoWContext.Battlegrounds | WoWContext.Instances)]
+        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueAssassination, WoWContext.All)]
         public static Composite CreateAssaRoguePull()
         {
             return new PrioritySelector(
@@ -103,17 +88,18 @@ namespace Singular.ClassSpecific.Rogue
                         Helpers.Common.CreateInterruptBehavior(),
                         Common.CreateDismantleBehavior(),
 
+                        Spell.Buff("Rupture", onUnit => Me.CurrentTarget, req => Me.ComboPoints >= 5),
                         Spell.Buff("Vendetta", ret => Me.CurrentTarget.IsPlayer || Me.CurrentTarget.Elite || Me.CurrentTarget.IsBoss() || Common.AoeCount > 1),
-
-                        Spell.Cast("Garrote", ret => Common.AreStealthAbilitiesAvailable && Me.CurrentTarget.MeIsBehind),
+                        Spell.Buff("Hemorrhage", on => Me.CurrentTarget),
+                        Spell.Buff("Garrote", on => Me.CurrentTarget),
+                        Spell.Cast("Exsanguinate"),
+                        Spell.Cast("Envenom", req => Me.ComboPoints >= 5),
+                        Spell.Cast("Mutilate"),
 
                         new Decorator(
                             ret => Spell.UseAOE && Common.AoeCount > 1,
                             new PrioritySelector(
                                 ctx => Common.AoeCount >= RogueSettings.AoeSpellPriorityCount,
-
-                                Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 6)),
-                                Spell.Cast("Crimson Tempest", req => (bool)req  && Me.ComboPoints >= 5),
                                 Spell.Buff(
                                     "Rupture", 
                                     3, 
@@ -131,93 +117,9 @@ namespace Singular.ClassSpecific.Rogue
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
                             ),
-
-                        Spell.Cast("Envenom", on => Me.CurrentTarget, req => Me.ComboPoints > 0 && Me.GetAuraTimeLeft("Slice and Dice").TotalMilliseconds.Between(50, 6000)),
-                        Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && !Me.HasAuraExpired("Slice and Dice", 1)),
-                        Spell.Buff("Rupture", true, ret => Me.ComboPoints >= 5 && (Me.CurrentTarget.IsPlayer || Me.TimeToDeath() > 20) && Me.CurrentTarget.HasAuraExpired("Rupture", 7)),
-
-                        // catch all to make sure we finish at 5 pts
-                        new Decorator(
-                            ret => Me.ComboPoints >= 5 || !SpellManager.HasSpell("Slice and Dice"),
-                            new PrioritySelector(
-                                Spell.Cast("Envenom", ret => true),
-                                Spell.Cast("Eviscerate", ret => !SpellManager.HasSpell("Envenom"))
-                                )
-                            ),
-
-                        Spell.Cast("Dispatch", req => Common.HasDaggerInMainHand && (Me.CurrentTarget.HealthPercent < 35 || Me.HasAura(BLINDSIDE))), // daggers
-
-                        Spell.BuffSelf("Fan of Knives", ret => Spell.UseAOE && !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount),
-                        Spell.Cast("Mutilate", req => Common.HasTwoDaggers && Me.CurrentTarget.HealthPercent >= 35),  // daggers
-
+                        
                         Common.CheckThatDaggersAreEquippedIfNeeded(),
 
-                        AssaCastSinisterStrike()
-                        )
-                    )
-                );
-        }
-
-        #endregion
-
-        #region Instance Rotation
-        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueAssassination, WoWContext.Instances)]
-        public static Composite CreateAssaRogueInstanceCombat()
-        {
-            return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Common.CreateRogueMoveBehindTarget(),
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
-
-                Spell.WaitForCastOrChannel(),
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget(),
-                    new PrioritySelector(
-
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
-
-                        // updated time to death tracking values before we need them
-                        new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
-
-                        Helpers.Common.CreateInterruptBehavior(),
-                        Common.CreateDismantleBehavior(),
-
-                        // Agro management
-                        Spell.Cast(
-                            "Tricks of the Trade", 
-                            ret => Common.BestTricksTarget,
-                            ret => RogueSettings.UseTricksOfTheTrade),
-
-                        // Common.CreateRogueFeintBehavior(),
-
-                        new Decorator(
-                            ret => Common.AoeCount >= 3 && Spell.UseAOE,
-                            new PrioritySelector(
-                                Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
-                                Spell.Buff("Rupture", true, ret => (Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 3)),
-                                Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
-                                Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
-                                Spell.Cast("Mutilate", ret => !SpellManager.HasSpell("Fan of Knives") && Common.HasTwoDaggers ),
-                                AssaCastSinisterStrike(),
-                                Movement.CreateMoveToMeleeBehavior(true)
-                                )
-                            ),
-
-                        Spell.Cast("Garrote", ret => Common.AreStealthAbilitiesAvailable && Me.CurrentTarget.MeIsBehind),
-                        Spell.Buff("Vendetta",  ret => Me.CurrentTarget.IsBoss() &&  (Me.CurrentTarget.HealthPercent < 35 || TalentManager.IsSelected(13))),
-
-                        // Spend Combo Points
-                        Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 3)),
-                        Spell.Cast("Rupture", req => Me.CurrentTarget.HasAuraExpired("Rupture", 7)),
-                        Spell.Buff("Envenom", true, ret => Me.ComboPoints == 5),
-
-                        // Build Combo Points
-                        Spell.Cast("Dispatch", req => Common.HasDaggerInMainHand && (Me.CurrentTarget.HealthPercent < 35 || Me.GetAuraTimeLeft("Blindside").TotalSeconds > 0)),
-                        Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
-                        Spell.Cast("Mutilate", req => Common.HasTwoDaggers),
-
-                        Common.CheckThatDaggersAreEquippedIfNeeded(),
                         AssaCastSinisterStrike()
                         )
                     )

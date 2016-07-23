@@ -1853,7 +1853,7 @@ namespace Singular.Helpers
 
             if (StyxWoW.Me.CurrentTarget.IsTrainingDummy())
             {
-                return 111;     // pick a magic number since training dummies dont die
+                return long.MaxValue;     // pick a magic number since training dummies dont die
             }
 
             //Fill variables on new target or on target switch, this will loose all calculations from last target

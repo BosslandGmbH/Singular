@@ -41,7 +41,6 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateRestoShamanInitialize()
         {
             ChainHealCastTime = (int)Spell.GetSpellCastTime("Chain Heal").TotalMilliseconds;
-            ChainHealHopDistance = TalentManager.Glyphs.Contains("Chaining") ? 25f : 12.5f;
 
             return null;
         }

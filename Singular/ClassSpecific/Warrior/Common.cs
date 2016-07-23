@@ -285,29 +285,7 @@ namespace Singular.ClassSpecific.Warrior
                     )
                 );
         }
-
-        public static Composite CreateShieldChargeCloser()
-        {
-            const float SCHARGE_MIN = 5.1f;
-            const float SCHARGE_MAX = 10.0f;
-
-            if (!Common.HasTalent(WarriorTalents.GladiatorsResolve))
-                return new ActionAlwaysFail();
-
-            return new PrioritySelector(
-                ctx => Me.CurrentTarget,
-                new Decorator(
-                    req => (req as WoWUnit).IsGapCloserAllowed(),
-                    Spell.Cast(
-                        "Shield Charge", 
-                        req => (req as WoWUnit).SpellDistance().Between(SCHARGE_MIN, SCHARGE_MAX) 
-                            && Me.IsSafelyFacing(req as WoWUnit)
-                            && (req as WoWUnit).InLineOfSight
-                        )
-                    )
-                );
-        }
-
+        
         public static Composite CreateHeroicLeapCloser()
         {
             const float JUMP_MIN = 8.4f;
@@ -445,36 +423,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             return (VictoryRushDistance <= 5f ? unit.IsWithinMeleeRange : unit.SpellDistance() < VictoryRushDistance);
         }
-
-        /// <summary>
-        /// checks if in a relatively balanced fight where atleast 3 of your
-        /// teammates will benefti from long cooldowns.  fight must be atleast 3 v 3
-        /// and size difference between factions nearby in fight cannot be greater
-        /// than size / 3 + 1.  For example:
-        /// 
-        /// Yes:  3 v 3, 3 v 4, 3 v 5, 6 v 9, 9 v 13
-        /// No :  2 v 3, 3 v 6, 4 v 7, 6 v 10, 9 v 14
-        /// </summary>
-        public static bool IsPvpFightWorthBanner
-        {
-            get 
-            {
-                /*
-                int friends = Unit.NearbyFriendlyPlayers.Count(f => f.IsAlive);
-                if (friends < 3)
-                    return false;
-
-                int enemies = Unit.NearbyUnfriendlyUnits.Count();
-                if (enemies < 3)
-                    return false;
-
-                int diff = Math.Abs(friends - enemies);
-                return diff <= ((friends / 3) + 1);
-                 */
-                return false;
-            }
-        }
-
+        
         public static bool IsEnraged 
         { 
             get 
@@ -567,27 +516,6 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateDieByTheSwordBehavior()
         {
             return Spell.HandleOffGCD(Spell.BuffSelf("Die by the Sword", req => Me.Combat && Me.HealthPercent <= WarriorSettings.DieByTheSwordHealth, 0, HasGcd.No));
-        }
-
-        public static Composite CreateVigilanceBehavior()
-        {
-            UnitSelectionDelegate onUnit;
-
-            if (WarriorSettings.VigilanceHealth <= 0)
-                return new ActionAlwaysFail();
-
-            if ( SingularRoutine.CurrentWoWContext != WoWContext.Instances)
-                onUnit = on => Unit.GroupMembers
-                    .Where( m => m.PredictedHealthPercent() <= WarriorSettings.VigilanceHealth)
-                    .OrderBy( m => m.HealthPercent)
-                    .FirstOrDefault();
-            else 
-                onUnit = on => (Group.MeIsTank || !Group.AnyTankNearby ? Group.Healers : Group.Tanks)
-                    .Where( m => m.PredictedHealthPercent() <= WarriorSettings.VigilanceHealth)
-                    .OrderBy( m => m.HealthPercent)
-                    .FirstOrDefault();
-
-            return Spell.Buff( "Vigilance",  onUnit);
         }
 
         public static bool IsSlowNeeded(WoWUnit unit)

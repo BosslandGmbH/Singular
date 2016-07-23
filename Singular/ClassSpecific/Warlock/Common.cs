@@ -240,11 +240,8 @@ namespace Singular.ClassSpecific.Warlock
                 new Decorator(
                     req => !Unit.IsTrivial(Me.CurrentTarget),
                     new PrioritySelector(
-                // 
-                        Spell.BuffSelf("Ember Tap", ret => Me.HealthPercent < 80),
-
                         // need combat healing?  check here since mix of buffs and abilities
-                // heal / shield self as needed
+                        // heal / shield self as needed
                         Spell.BuffSelf("Dark Regeneration", ret => Me.HealthPercent < 45),
 
                         new ThrottlePasses(
@@ -940,41 +937,7 @@ namespace Singular.ClassSpecific.Warlock
                 _secondsBeforeBattle = value;
             }
         }
-
-        public static Composite CreatePriestMovementBuff()
-        {
-            const string BURNING_RUSH = "Burning Rush";
-
-            if (!SpellManager.HasSpell(BURNING_RUSH))
-                return new ActionAlwaysFail();
-
-            return new Decorator(
-                ret => MovementManager.IsClassMovementAllowed
-                    && Me.IsAlive
-                    && Me.IsMoving
-                    && Me.HealthPercent >= SingularSettings.Instance.Warlock().BurningRushHealthCast
-                    && !Me.Mounted
-                    && !Me.IsSwimming
-                    && !Me.IsOnTransport
-                    && !Me.OnTaxi
-                    && !Me.HasAnyAura(BURNING_RUSH)
-                    && !Me.IsAboveTheGround(),
-
-                new PrioritySelector(
-                    Spell.WaitForCast(),
-                    new ThrottlePasses(3,
-                        new Decorator(
-                            ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                            new Sequence(
-                                new Action(r => Logger.Write(LogColor.Hilite, "^Burning Rush: life is short, move faster!")),
-                                Spell.BuffSelfAndWait("Burning Rush")
-                                )
-                            )
-                        )
-                    )
-                );
-        }
-
+        
         const string BURNING_RUSH = "Burning Rush";
         private static DateTime timeNextBurningRush = DateTime.MinValue;
         private static DateTime lastCancelBurningRush = DateTime.MinValue;
@@ -1145,28 +1108,6 @@ namespace Singular.ClassSpecific.Warlock
 
                 return false;
             }
-        }
-
-        public static Composite Cataclysm(int count, SimpleBooleanDelegate requirements = null)
-        {
-            if (requirements == null)
-                requirements = r => !Me.CurrentTarget.IsMoving
-                        && !Common.scenario.AvoidAOE
-                        && count <= Common.scenario.Mobs.Count(u => u.Location.Distance(Me.CurrentTarget.Location) <= 8);
-
-            if (!Common.HasTalent(WarlockTalents.Cataclysm))
-                return new ActionAlwaysFail();
-
-            return new Sequence(
-                Spell.CastOnGround(
-                    "Cataclysm",
-                    on => Me.CurrentTarget,
-                    req => Me.GotTarget()
-                        && requirements(req),
-                    true
-                    ),
-                Spell.WaitForCastOrChannel()
-                );
         }
     }
 

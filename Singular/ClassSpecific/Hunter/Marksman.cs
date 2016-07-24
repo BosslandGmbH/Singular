@@ -62,7 +62,7 @@ namespace Singular.ClassSpecific.Hunter
 
 						Spell.BuffSelf("Trueshot", ret => Me.CurrentTarget.IsStressful() || PartyBuff.WeHaveBloodlust),
 
-						Spell.Cast("Sentinel", ret => !Me.HasAura("Marking Targets") && Unit.NearbyUnfriendlyUnits.All(u => !u.HasMyAura("Hunter's Mark"))),
+						Spell.Cast("Sentinel", ret => !Me.HasActiveAura("Marking Targets") && Unit.NearbyUnfriendlyUnits.All(u => !u.HasMyAura("Hunter's Mark"))),
 						// Detonate the missile
 						Spell.Cast("Explosive Shot", 
 							ret => WoWMissile.InFlightMissiles.Any(m => m.Caster.IsMe && m.Spell.Name == "Explosive Shot" && m.Position.Distance(Me.CurrentTarget.Location) < 8f)),
@@ -85,8 +85,8 @@ namespace Singular.ClassSpecific.Hunter
 						Spell.Cast("Black Arrow"),
 						new Decorator(ret => Common.HasTalent(HunterTalents.Sidewinders),
 							new PrioritySelector(
-								Spell.Cast("Sidewinders", ret => Common.HasTalent(HunterTalents.SteadyFocus) && !Me.HasAura("Steady Focus")),
-								Spell.Cast("Sidewinders", ret => Me.HasAura("Marking Targets")),
+								Spell.Cast("Sidewinders", ret => Common.HasTalent(HunterTalents.SteadyFocus) && !Me.HasActiveAura("Steady Focus")),
+								Spell.Cast("Sidewinders", ret => Me.HasActiveAura("Marking Targets")),
 								Spell.Cast("Sidewinders", 
 									ret => sidewindersChargeInfo != null && (sidewindersChargeInfo.ChargesLeft >= 2 || 
 											sidewindersChargeInfo.ChargesLeft == 1 && sidewindersChargeInfo.TimeUntilNextCharge.TotalSeconds < 1.8))

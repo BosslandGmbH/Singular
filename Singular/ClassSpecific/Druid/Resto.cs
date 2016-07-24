@@ -247,7 +247,7 @@ namespace Singular.ClassSpecific.Druid
                         );
                 else
                     behavs.AddBehavior(HealerManager.HealthToPriority(DruidSettings.Heal.Ironbark) + PriHighBase, "Ironbark - Tank @ " + DruidSettings.Heal.Ironbark + "%", "Ironbark",
-                        Spell.Buff("Ironbark", on => Group.Tanks.FirstOrDefault(u => u.IsAlive && u.HealthPercent < DruidSettings.Heal.Ironbark && !u.HasAura("Ironbark")))
+                        Spell.Buff("Ironbark", on => Group.Tanks.FirstOrDefault(u => u.IsAlive && u.HealthPercent < DruidSettings.Heal.Ironbark && !u.HasActiveAura("Ironbark")))
                         );
             }
 
@@ -271,7 +271,7 @@ namespace Singular.ClassSpecific.Druid
                         );
                 else
                     behavs.AddBehavior(HealerManager.HealthToPriority(DruidSettings.Heal.NaturesVigil) + PriHighBase, "Nature's Vigil - Tank @ " + DruidSettings.Heal.NaturesVigil + "%", "Nature's Vigil",
-                        Spell.Buff("Nature's Vigil", on => Group.Tanks.FirstOrDefault(u => u.IsAlive && u.HealthPercent < DruidSettings.Heal.NaturesVigil && !u.HasAura("Nature's Vigil")))
+                        Spell.Buff("Nature's Vigil", on => Group.Tanks.FirstOrDefault(u => u.IsAlive && u.HealthPercent < DruidSettings.Heal.NaturesVigil && !u.HasActiveAura("Nature's Vigil")))
                         );
             }
 

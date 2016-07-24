@@ -124,13 +124,6 @@ namespace Singular.Settings
         [DisplayName("Expel Harm Health")]
         public int ExpelHarmHealth { get; set; }
 
-        [Setting]
-        [DefaultValue(30)]
-        [Category("Windwalker")]
-        [DisplayName("Tigereye Brew Health")]
-        [Description("Health % to cast this ability at. Set to 100 to cast on cooldown, Set to 0 to disable.")]
-        public int TigereyeBrewHealth { get; set; }
-
         #endregion
 
         #region Mistweaver
@@ -154,9 +147,9 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(40)]
         [Category("Self-Heal")]
-        [DisplayName("Surging Mist %")]
+        [DisplayName("Effuse %")]
         [Description("Health % to cast this ability at. Set to 100 to cast on cooldown, Set to 0 to disable.")]
-        public int SurgingMist { get; set; }
+        public int Effuse { get; set; }
 
         #endregion
 
@@ -282,9 +275,9 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(60)]
         [Category("Health %")]
-        [DisplayName("% Surging Mist")]
+        [DisplayName("% Effuse")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int SurgingMist { get; set; }
+        public int Effuse { get; set; }
 
         [Setting]
         [DefaultValue(50)]
@@ -435,9 +428,9 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(60)]
         [Category("Health %")]
-        [DisplayName("% Surging Mist")]
+        [DisplayName("% Effuse")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int SurgingMist { get; set; }
+        public int Effuse { get; set; }
 
         [Setting]
         [DefaultValue(60)]

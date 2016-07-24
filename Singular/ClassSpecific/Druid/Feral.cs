@@ -40,7 +40,7 @@ namespace Singular.ClassSpecific.Druid
 				
                 new Decorator(
                     ret => !Rest.IsEatingOrDrinking
-                        && Me.HasAura("Predatory Swiftness")
+                        && Me.HasActiveAura("Predatory Swiftness")
                         && (Me.PredictedHealthPercent(includeMyHeals: true) < 95),
                     new PrioritySelector(
                         new Action(r => { Logger.WriteDebug("Druid Rest Swift Heal @ {0:F1}% and moving:{1} in form:{2}", Me.HealthPercent, Me.IsMoving, Me.Shapeshift); return RunStatus.Failure; }),
@@ -141,7 +141,7 @@ namespace Singular.ClassSpecific.Druid
             // save WC for later if Dash is active. also throttle to deal with possible pathing issues
             return new Throttle(7,
                 new Sequence(
-                    Spell.CastHack("Wild Charge", ret => MovementManager.IsClassMovementAllowed && !Me.HasAura("Dash") && (Me.CurrentTarget.Distance + Me.CurrentTarget.CombatReach).Between(10, 25)),
+                    Spell.CastHack("Wild Charge", ret => MovementManager.IsClassMovementAllowed && !Me.HasActiveAura("Dash") && (Me.CurrentTarget.Distance + Me.CurrentTarget.CombatReach).Between(10, 25)),
                     new Wait(1, until => !Me.GotTarget() || Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
                     )
                 );
@@ -284,7 +284,7 @@ namespace Singular.ClassSpecific.Druid
                         CreateFeralFaerieFireBehavior(),
 						
 						Spell.Cast("Elune's Guidance", ret => Me.ComboPoints <= 0 && Me.CurrentEnergy >= 50),
-						Spell.BuffSelf("Healing Touch", ret => Me.HasAura("Predatory Swiftness") && Me.ComboPoints >= 4),
+						Spell.BuffSelf("Healing Touch", ret => Me.HasActiveAura("Predatory Swiftness") && Me.ComboPoints >= 4),
 						new Decorator(ret => Me.ComboPoints >= 5,
 							new PrioritySelector(
 								Spell.Cast("Ferocious Bite", 
@@ -299,12 +299,12 @@ namespace Singular.ClassSpecific.Druid
 
 						Spell.Cast("Moonfire", on => Unit.UnfriendlyUnits().FirstOrDefault(u => u.GetAuraTimeLeft("Moonfire").TotalSeconds < 4.2), ret => Common.HasTalent(DruidTalents.LunarInspiration)),
 						Spell.Cast("Tiger's Fury", ret => EnergyDecifit > 65),
-						Spell.Cast("Berserk", ret => Me.HasAura("Tiger's Fury") && Me.CurrentTarget.IsStressful()),
+						Spell.Cast("Berserk", ret => Me.HasActiveAura("Tiger's Fury") && Me.CurrentTarget.IsStressful()),
 
 						Spell.Cast("Rake", 
 							on => Unit.UnfriendlyUnits(8).OrderBy(u => u.GetAuraTimeLeft("Rake")).
 										FirstOrDefault(
-											u => Me.HasAura("Bloodtalons") || u.GetAuraTimeLeft("Rake").TotalSeconds < RakeAndThrashRefresh)),
+											u => Me.HasActiveAura("Bloodtalons") || u.GetAuraTimeLeft("Rake").TotalSeconds < RakeAndThrashRefresh)),
 						Spell.Cast("Thrash", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => u.GetAuraTimeLeft("Thrash").TotalSeconds < RakeAndThrashRefresh)),
 						Spell.Cast("Brutal Slash"),
 						Spell.Cast("Shred", ret => Unit.UnfriendlyUnitsNearTarget(8).Count() <= 1),

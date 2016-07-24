@@ -103,7 +103,8 @@ namespace Singular.ClassSpecific.DeathKnight
 									ret => Spell.IsSpellOnCooldown("Death and Decay") || Spell.IsSpellOnCooldown("Defile") ||
 											Unit.NearbyUnfriendlyUnits.Count() >= DeathKnightSettings.EpidemicCount && 
 											Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) < DeathKnightSettings.DeathAndDecayCount),
-								Spell.Cast("Festering Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") < 5)
+								Spell.Cast("Festering Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") < 5),
+								Spell.Cast("Death Coil", ret => Me.RunicPowerPercent > 90)
 								)
 							),
 
@@ -147,23 +148,24 @@ namespace Singular.ClassSpecific.DeathKnight
 				Spell.Cast("Outbreak", ret => Me.CurrentTarget.GetAuraTimeLeft("Virulent Plague").TotalSeconds < 1.8),
 				Spell.BuffSelf("Dark Transformation", ret => Me.GotAlivePet),
 				Spell.Cast("Dark Arbiter", ret => Me.RunicPowerPercent > 90),
-				Spell.Cast("Death Coil", ret => Me.HasAura("Dark Arbiter")),
+				Spell.Cast("Death Coil", ret => Me.HasActiveAura("Dark Arbiter")),
 				Spell.Cast("Festering Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") < 5),
-				Spell.Cast("Scourge Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") >= 1)
+				Spell.Cast("Scourge Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") >= 1),
+				Spell.Cast("Death Coil", req => Common.RunicPowerDeficit < 10)
 				);
 		}
 
 		private static Composite CreateSoulReaperRotation()
 		{
 			return new PrioritySelector(
-				Spell.Cast("Scourge Strike", ret => Me.HasAura("Soul Reaper") && Me.GetAuraStacks("Soul Reaper") < 3),
+				Spell.Cast("Scourge Strike", ret => Me.HasActiveAura("Soul Reaper") && Me.GetAuraStacks("Soul Reaper") < 3),
 				Spell.Cast("Summon Gargoyle", ret => Me.CurrentTarget.IsStressful() && DeathKnightSettings.UseSummonGargoyle),
 				Spell.Cast("Outbreak", ret => Me.CurrentTarget.GetAuraTimeLeft("Virulent Plague").TotalSeconds < 1.8),
 				Spell.BuffSelf("Dark Transformation", ret => Me.GotAlivePet),
 				Spell.Cast("Festering Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") < 5),
 				Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") >= 3),
 				Spell.Cast("Scourge Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") >= 1),
-				Spell.Cast("Death Coil", ret => Me.RunicPowerPercent > 90)
+				Spell.Cast("Death Coil", ret => Common.RunicPowerDeficit < 10)
 				);
 		}
 

@@ -122,12 +122,12 @@ namespace Singular.ClassSpecific.Druid
                         Movement.WaitForLineOfSpellSight(),
 						
 						Spell.BuffSelf("Incarnation: Guardian of Ursoc", ret => Me.CurrentRage <= 20),
-						Spell.Cast("Moonfire", on => (WoWUnit)on, ret => Me.HasAura("Galactic Guardian")),
+						Spell.Cast("Moonfire", on => (WoWUnit)on, ret => Me.HasActiveAura("Galactic Guardian")),
 						Spell.Cast("Mangle", on => (WoWUnit)on),
 						Spell.Cast("Thrash", on => (WoWUnit)on),
 						Spell.Cast("Moonfire", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.GetAuraTimeLeft("Moonfire").TotalSeconds < 4.2)),
 						Spell.Cast("Swipe", on => (WoWUnit)on),
-						Spell.Cast("Maul", on => (WoWUnit)on, ret => !Me.HasAura("Ironfur") && !Me.HasAura("Mark of Ursol") || RageDeficit < 10),
+						Spell.Cast("Maul", on => (WoWUnit)on, ret => !Me.HasActiveAura("Ironfur") && !Me.HasActiveAura("Mark of Ursol") || RageDeficit < 10),
 
                         CreateGuardianWildChargeBehavior()
                         )

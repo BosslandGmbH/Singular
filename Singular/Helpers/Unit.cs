@@ -593,6 +593,17 @@ namespace Singular.Helpers
             return Unit.UnfriendlyUnits(distFromMe).Where(p => p.Location.DistanceSqr(curTarLocation) <= distFromTargetSqr).ToList();
         }
 
+		/// <summary>
+		/// Checks the active aura by the name on unit.
+		/// </summary>
+		/// <param name="unit"> The unit to check the active auras for. </param>
+		/// <param name="aura"> The name of the aura in English. </param>
+		/// <returns></returns>
+		public static bool HasActiveAura(this WoWUnit unit, string aura)
+	    {
+		    return unit.ActiveAuras.ContainsKey(aura);
+	    }
+
         /// <summary>
         ///  Checks the aura by the name on specified unit.
         /// </summary>

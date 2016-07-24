@@ -73,7 +73,7 @@ namespace Singular.ClassSpecific.Mage
                             return RunStatus.Failure;
                         }),
 
-                        Spell.Cast("Arcane Missiles", ret => useArcaneNow && Me.HasAura("Arcane Missiles!")),
+                        Spell.Cast("Arcane Missiles", ret => useArcaneNow && Me.HasActiveAura("Arcane Missiles!")),
                         Spell.Cast("Arcane Barrage", ret => useArcaneNow),
 
                         // grinding or questing, if target meets these cast Flame Shock if possible
@@ -107,10 +107,6 @@ namespace Singular.ClassSpecific.Mage
         public static Composite CreateMageArcaneNormalCombat()
         {
             return new PrioritySelector(
-				new Decorator(
-					ret => Me.ChanneledSpell?.Name == "Evocation", 
-					Spell.WaitForChannel()),
-
                 Safers.EnsureTarget(),
                 Common.CreateStayAwayFromFrozenTargetsBehavior(),
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),

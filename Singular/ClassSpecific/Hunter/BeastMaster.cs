@@ -90,7 +90,7 @@ namespace Singular.ClassSpecific.Hunter
 								)),
 							
 						new Decorator(
-							ret => Me.HasAura("Volley"), 
+							ret => Me.HasActiveAura("Volley"), 
 							new Throttle(1, new Action(ret => Me.CancelAura("Volley")))),
 
 						Spell.Cast("Kill Command"),

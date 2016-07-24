@@ -100,7 +100,7 @@ namespace Singular.ClassSpecific.Druid
 							ctx => Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(
 								u =>
 									(Me.Shapeshift == ShapeshiftForm.Normal || Me.Shapeshift == ShapeshiftForm.Moonkin ||
-									 Me.HasAura("Predatory Swiftness"))
+									 Me.HasActiveAura("Predatory Swiftness"))
 									&& Me.CurrentTargetGuid != u.Guid
 									&& u.SpellDistance() > 15
 									&& u.IsMelee()
@@ -606,7 +606,7 @@ namespace Singular.ClassSpecific.Druid
 				ret => onUnit != null && onUnit(ret) != null && requirements != null && requirements(ret),
 				new Sequence(
 					Spell.BuffSelf("Nature's Swiftness"),
-					new Wait(TimeSpan.FromMilliseconds(500), ret => Me.HasAura("Nature's Swiftness"), new ActionAlwaysSucceed()),
+					new Wait(TimeSpan.FromMilliseconds(500), ret => Me.HasActiveAura("Nature's Swiftness"), new ActionAlwaysSucceed()),
 					Spell.Cast("Healing Touch", ret => false, onUnit, req => true)
 					)
 				);
@@ -899,21 +899,10 @@ namespace Singular.ClassSpecific.Druid
 								       && !Me.Mounted
 								       && !Me.IsSwimming
 								       && !Me.HasAnyShapeshift(ShapeshiftForm.Travel, ShapeshiftForm.FlightForm, ShapeshiftForm.EpicFlightForm)
-								       && !Me.HasAura("Darkflight")
+								       && !Me.HasActiveAura("Darkflight")
 								       && SpellManager.HasSpell("Cat Form")
 								       && IsBotPoiWithinMovementBuffRange(),
 								new Sequence(
-/*
-                                    new Action(r => 
-                                        Logger.WriteDebug("DruidMoveBuff: poitype={0} poidist={1:F1} indoors={2} canmount={3} riding={4} form={5}",
-                                            BotPoi.Current.Type,
-                                            BotPoi.Current.Location.Distance(Me.Location),
-                                            Me.IsIndoors.ToYN(),
-                                            Mount.CanMount().ToYN(),
-                                            Me.GetSkill(SkillLine.Riding).CurrentValue,
-                                            Me.Shapeshift.ToString()
-                                        )),
- */ 
 									new PrioritySelector(
 										Common.CastForm(ShapeshiftForm.Travel,
 											req =>
@@ -1145,7 +1134,7 @@ namespace Singular.ClassSpecific.Druid
 							.Count(u => u.CurrentTargetGuid == Me.Guid
 							            && u.Combat
 							            && !u.IsCrowdControlled()
-							            && (u.IsMelee() || u.CastingSpellId == 1949 /*Hellfire*/|| u.HasAura("Immolation Aura"))
+							            && (u.IsMelee() || u.CastingSpellId == 1949 /*Hellfire*/|| u.HasActiveAura("Immolation Aura"))
 							            && Me.IsSafelyFacing(u, 90f));
 						if (attackers < 1)
 							return false;

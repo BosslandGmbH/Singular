@@ -342,7 +342,7 @@ namespace Singular.ClassSpecific.Hunter
                             Spell.Buff(
                                 "Bestial Wrath", 
                                 on => Me,
-                                req => Spell.GetSpellCooldown("Kill Command") == TimeSpan.Zero && !Me.HasAura("Rapid Fire"), 
+                                req => Spell.GetSpellCooldown("Kill Command") == TimeSpan.Zero && !Me.HasActiveAura("Rapid Fire"), 
                                 HasGcd.No, 
                                 "The Beast Within"
                                 ),

@@ -105,11 +105,20 @@ namespace Singular.ClassSpecific.Monk
                 Common.CreateMonkDpsHealBehavior(),
 
                 // Rest up! Do this first, so we make sure we're fully rested.
-                Rest.CreateDefaultRestBehaviour( "Surging Mist", "Resuscitate")
+                Rest.CreateDefaultRestBehaviour("Effuse", "Resuscitate")
                 );
         }
 
-        public static Composite CreateMonkDpsHealBehavior()
+		[Behavior(BehaviorType.Heal, WoWClass.Monk, WoWSpec.MonkBrewmaster, WoWContext.Normal | WoWContext.Battlegrounds)]
+		[Behavior(BehaviorType.Heal, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal | WoWContext.Battlegrounds)]
+		public static Composite CreateWindwalkerMonkHeal()
+		{
+			return new PrioritySelector(
+				CreateMonkDpsHealBehavior()
+				);
+		}
+
+		public static Composite CreateMonkDpsHealBehavior()
         {
             Composite offheal;
             if (!SingularSettings.Instance.DpsOffHealAllowed)
@@ -130,23 +139,22 @@ namespace Singular.ClassSpecific.Monk
                         ret => !Me.Combat
                             && !Me.IsMoving
                             && Me.HealthPercent <= 85  // not redundant... this eliminates unnecessary GetPredicted... checks
-                            && SpellManager.HasSpell("Surging Mist")
+                            && SpellManager.HasSpell("Effuse")
                             && Me.PredictedHealthPercent(includeMyHeals: true) < 85,
                         new PrioritySelector(
                             new Sequence(
                                 ctx => (float)Me.HealthPercent,
-                                new Action(r => Logger.WriteDebug("Surging Mist: {0:F1}% Predict:{1:F1}% and moving:{2}, cancast:{3}", (float)r, Me.PredictedHealthPercent(includeMyHeals: true), Me.IsMoving, Spell.CanCastHack("Surging Mist", Me, skipWowCheck: false))),
+                                new Action(r => Logger.WriteDebug("Effuse: {0:F1}% Predict:{1:F1}% and moving:{2}, cancast:{3}", (float)r, Me.PredictedHealthPercent(includeMyHeals: true), Me.IsMoving, Spell.CanCastHack("Effuse", Me, skipWowCheck: false))),
                                 Spell.Cast(
-                                    "Surging Mist",
+									"Effuse",
                                     mov => true,
                                     on => Me,
                                     req => true,
                                     cancel => Me.HealthPercent > 85
                                     ),
                                 new WaitContinue(TimeSpan.FromMilliseconds(500), until => !Me.IsCasting && Me.HealthPercent > (1.1 * ((float)until)), new ActionAlwaysSucceed()),
-                                new Action(r => Logger.WriteDebug("Surging Mist: After Heal Attempted: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true)))
-                                ),
-                            Spell.Buff( "Expel Harm", on => Me, req => Me.HealthPercent < MonkSettings.ExpelHarmHealth)
+                                new Action(r => Logger.WriteDebug("Effuse: After Heal Attempted: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true)))
+                                )
                             )
                         ),
 
@@ -159,7 +167,6 @@ namespace Singular.ClassSpecific.Monk
                             Spell.HandleOffGCD(
                                 new Throttle(
                                     1, 
-                                    Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HealthPercent < MonkSettings.TigereyeBrewHealth && Me.HasAura("Tigereye Brew", 1)),
                                     Spell.BuffSelf("Dampen Harm", req => Me.HealthPercent < MonkSettings.DampenHarmPct || MonkSettings.DampenHarmCount <= Unit.UnfriendlyUnits(40).Count( u => u.IsAlive && u.CurrentTargetGuid == Me.Guid && !u.IsTrivial()))
                                     )
                                 ),
@@ -168,23 +175,23 @@ namespace Singular.ClassSpecific.Monk
                             new Decorator(
                                 ret => (!Me.IsInGroup() || Battlegrounds.IsInsideBattleground)
                                     && !Me.IsMoving 
-                                    && Me.HealthPercent < MonkSettings.SurgingMist
-                                    && Me.PredictedHealthPercent(includeMyHeals: true) < MonkSettings.SurgingMist,
+                                    && Me.HealthPercent < MonkSettings.Effuse
+                                    && Me.PredictedHealthPercent(includeMyHeals: true) < MonkSettings.Effuse,
                                 new PrioritySelector(
                                     new Sequence(
                                         ctx => (float)Me.HealthPercent,
-                                        new Action(r => Logger.WriteDebug("Surging Mist: {0:F1}% Predict:{1:F1}% and moving:{2}, cancast:{3}", (float)r, Me.PredictedHealthPercent(includeMyHeals: true), Me.IsMoving, Spell.CanCastHack("Surging Mist", Me, skipWowCheck: false))),
+                                        new Action(r => Logger.WriteDebug("Effuse: {0:F1}% Predict:{1:F1}% and moving:{2}, cancast:{3}", (float)r, Me.PredictedHealthPercent(includeMyHeals: true), Me.IsMoving, Spell.CanCastHack("Effuse", Me, skipWowCheck: false))),
                                         Spell.Cast(
-                                            "Surging Mist",
+											"Effuse",
                                             mov => true,
                                             on => Me,
                                             req => true,
                                             cancel => Me.HealthPercent > 85
                                             ),
                                         new WaitContinue(TimeSpan.FromMilliseconds(500), until => !Me.IsCasting && Me.HealthPercent > (1.1 * ((float)until)), new ActionAlwaysSucceed()),
-                                        new Action(r => Logger.WriteDebug("Surging Mist: After Heal Attempted: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true)))
+                                        new Action(r => Logger.WriteDebug("Effuse: After Heal Attempted: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true)))
                                         ),
-                                    new Action(r => Logger.WriteDebug("Surging Mist: After Heal Skipped: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true)))
+                                    new Action(r => Logger.WriteDebug("Effuse: After Heal Skipped: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true)))
                                     )
                                 )
                             )
@@ -203,7 +210,7 @@ namespace Singular.ClassSpecific.Monk
         {
             HealerManager.NeedHealTargeting = SingularSettings.Instance.DpsOffHealAllowed;
             PrioritizedBehaviorList behavs = new PrioritizedBehaviorList();
-            int cancelHeal = (int)Math.Max(SingularSettings.Instance.IgnoreHealTargetsAboveHealth, MonkSettings.OffHealSettings.SurgingMist);
+            int cancelHeal = (int)Math.Max(SingularSettings.Instance.IgnoreHealTargetsAboveHealth, MonkSettings.OffHealSettings.Effuse);
 
             bool moveInRange = (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds);
 
@@ -239,13 +246,13 @@ namespace Singular.ClassSpecific.Monk
 
             #region Single Target Heals
 
-            behavs.AddBehavior(Mistweaver.HealthToPriority(MonkSettings.OffHealSettings.SurgingMist),
-                string.Format("Surging Mist @ {0}%", MonkSettings.OffHealSettings.SurgingMist),
-                "Surging Mist",
-                Spell.Cast("Surging Mist",
+            behavs.AddBehavior(Mistweaver.HealthToPriority(MonkSettings.OffHealSettings.Effuse),
+                string.Format("Effuse @ {0}%", MonkSettings.OffHealSettings.Effuse),
+				"Effuse",
+                Spell.Cast("Effuse",
                     mov => true,
                     on => (WoWUnit)on,
-                    req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < MonkSettings.OffHealSettings.SurgingMist,
+                    req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < MonkSettings.OffHealSettings.Effuse,
                     cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal
                     )
                 );
@@ -286,8 +293,79 @@ namespace Singular.ClassSpecific.Monk
                     )
                 );
         }
+		
+		public static Composite CreateAttackFlyingOrUnreachableMobs()
+		{
+			return new Decorator(
+				// changed to only do on non-player targets
+				ret => {
+					if (!Me.GotTarget())
+						return false;
 
-        public static Composite CreateClusterHeal( string spell, ClusterType ct, int health, int range, int minCount)
+					if (Me.CurrentTarget.IsPlayer)
+						return false;
+
+					if (Me.CurrentTarget.IsFlying)
+					{
+						Logger.Write(LogColor.Hilite, "{0} is Flying! using Ranged attack....", Me.CurrentTarget.SafeName());
+						return true;
+					}
+
+					if (Me.CurrentTarget.IsAboveTheGround())
+					{
+						Logger.Write(LogColor.Hilite, "{0} is {1:F1} yds above the ground! using Ranged attack....", Me.CurrentTarget.SafeName(), Me.CurrentTarget.HeightOffTheGround());
+						return true;
+					}
+
+					if (Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(Me.Z - Me.CurrentTarget.Z) >= 5)
+					{
+						Logger.Write(LogColor.Hilite, "{0} appears to be off the ground! using Ranged attack....", Me.CurrentTarget.SafeName());
+						return true;
+					}
+
+					WoWPoint dest = Me.CurrentTarget.Location;
+					if (!Me.CurrentTarget.IsWithinMeleeRange && !Styx.Pathing.Navigator.CanNavigateFully(Me.Location, dest))
+					{
+						Logger.Write(LogColor.Hilite, "{0} is not Fully Pathable! trying ranged attack....", Me.CurrentTarget.SafeName());
+						return true;
+					}
+
+					return false;
+				},
+				new PrioritySelector(
+					Movement.CreateMoveToLosBehavior(),
+					Movement.CreateFaceTargetBehavior(180, false),
+					new Decorator(ctx => !Me.CurrentTarget.IsWithinMeleeRange,
+						new PrioritySelector(
+							Spell.Cast(sp => "Provoke", mov => true, on => Me.CurrentTarget, req => Me.CurrentTarget.SpellDistance() < 30 && !Me.IsInMyParty,
+								cancel => false),
+							Spell.Cast(sp => "Crackling Jade Lightning", mov => true, on => Me.CurrentTarget,
+								req => Me.CurrentTarget.SpellDistance() < 40, cancel => false))),
+					Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget, 27f, 22f)));
+		}
+
+		public static Composite CreateCloseDistanceBehavior()
+		{
+			return new Throttle(TimeSpan.FromMilliseconds(1500),
+				new Decorator(
+					ret => MovementManager.IsClassMovementAllowed && Me.GotTarget(),
+					new PrioritySelector(
+						ctx => Me.CurrentTarget,
+						new Decorator(
+							req => !((WoWUnit)req).IsAboveTheGround() && ((WoWUnit)req).SpellDistance() > 10 && Me.IsSafelyFacing(((WoWUnit)req), 10f),
+							new Sequence(
+								new PrioritySelector(
+									Spell.Cast("Roll", on => (WoWUnit)on, req => !MonkSettings.DisableRoll && MovementManager.IsClassMovementAllowed)
+									)
+								)
+							)
+						)
+					)
+				);
+
+		}
+
+		public static Composite CreateClusterHeal( string spell, ClusterType ct, int health, int range, int minCount)
         {
             return new Decorator(
                 req => (req as WoWUnit).HealthPercent < health,
@@ -637,27 +715,32 @@ namespace Singular.ClassSpecific.Monk
                 );
         }
 
+	    public static IEnumerable<WoWObject> FindSpheres(SphereType typ, float range)
+	    {
+			range *= range;
+		    return ObjectManager.ObjectList
+			    .Where(
+				    o =>
+					    o.Type == WoWObjectType.AreaTrigger && o.Entry == (uint) typ && o.DistanceSqr < range &&
+					    !Blacklist.Contains(o.Guid, BlacklistFlags.Combat))
+			    .OrderBy(o => o.DistanceSqr);
+	    }
+
         public static WoWObject FindClosestSphere(SphereType typ, float range)
         {
-            range *= range;
-            return ObjectManager.ObjectList
-                .Where(o => o.Type == WoWObjectType.AreaTrigger && o.Entry == (uint)typ && o.DistanceSqr < range && !Blacklist.Contains(o.Guid, BlacklistFlags.Combat))
-                .OrderBy( o => o.DistanceSqr )
-                .FirstOrDefault();
+	        return FindSpheres(typ, range).FirstOrDefault();
         }
+
+	    public static int SphereCount(SphereType typ, float range)
+	    {
+		    return FindSpheres(typ, range).Count();
+	    }
 
         public static bool AnySpheres(SphereType typ, float range)
         {
-            WoWObject sphere = FindClosestSphere(typ, range);
-            return sphere != null && sphere.Distance < 20;
+	        return FindSpheres(typ, range).Any();
         }
-
-        public static WoWPoint FindSphereLocation(SphereType typ, float range)
-        {
-            WoWObject sphere = FindClosestSphere(typ, range);
-            return sphere != null ? sphere.Location : WoWPoint.Empty;
-        }
-
+		
         private static WoWGuid guidSphere = WoWGuid.Empty;
         private static WoWPoint locSphere = WoWPoint.Empty;
         private static DateTime timeAbortSphere = DateTime.UtcNow;
@@ -821,68 +904,66 @@ namespace Singular.ClassSpecific.Monk
 
             return Unit.NearbyGroupMembers.FirstOrDefault(t => t.SpellDistance() < 40 && t.InLineOfSpellSight) ?? Me;
         }
-
-        public static Composite CastTouchOfDeath()
-        {
-            return Spell.Cast("Touch of Death", ret => Me.HasAura("Death Note") || Me.CurrentTarget.HealthPercent < 10);
-        }
     }
 
     public enum MonkTalents
     {
-#if PRE_WOD
-        Celerity = 1,
-        TigersLust,
-        Momumentum,
-        ChiWave,
-        ZenSphere,
-        ChiBurst,
-        PowerStrikes,
-        Ascension,
-        ChiBrew,
-        RingOfPeace,
-        ChargingOxWave,
-        LegSweep,
-        HealingElixirs,
-        DampenHarm,
-        DiffuseMagic,
-        RushingJadeWind,
-        InvokeXuenTheWhiteTiger,
-        ChiTorpedo
-#else
+		ChiBurst = 1,
+		EyeOfTheTiger,
+		ChiWave,
 
-        Celerity = 1,
-        TigersLust,
-        Momentum,
+		ZenPulse = EyeOfTheTiger,
+		MistWalk = ChiWave,
+		
+		ChiTorpedo = 4,
+		TigersLust,
+		Celerity,
 
-        ChiWave,
-        ZenSphere,
-        ChiBurst,
+		LightBrewing = 7,
+		BlackOxBrew,
+		GiftOfTheMists,
 
-        PowerStrikes,
-        Ascension,
-        ChiBrew,
+		Lifecycles = LightBrewing,
+		SpiritOfTheCrane = BlackOxBrew,
+		MistWrap = GiftOfTheMists,
 
-        RingOfPeace,
-        ChargingOxWave,
-        LegSweep,
+		EnergizingElixir = LightBrewing,
+		Ascension = BlackOxBrew,
+		PowerStrikes = GiftOfTheMists,
 
-        HealingElixirs,
-        DampenHarm,
-        DiffuseMagic,
+		RingOfPeace = 10,
+		SummonBlackOxStatue,
+		LegSweep,
 
-        RushingJadeWind,
-        InvokeXuenTheWhiteTiger,
-        ChiTorpedo,
+		SongOfChiJi = SummonBlackOxStatue,
 
-        SoulDance,
-        BreathOfTheSerpent = SoulDance,
-        HurricaneStrike = SoulDance,
-        ChiExplosion,
-        Serenity,
-        PoolOfMists = Serenity
+		DizzyingKicks = SummonBlackOxStatue,
+		
+		HealingElixir = 14,
+		DiffuseMagic,
+		DampenHarm,
 
-#endif
+		RushingJadeWind = 17,
+		InvokeNiuzaoTheBlackOx,
+		SpecialDelivery,
+
+		RefreshingJadeWind = RushingJadeWind,
+		InvokeChiJiTheRedCrane = InvokeNiuzaoTheBlackOx,
+		SummonJadeSerpentStatue = SpecialDelivery,
+
+		InvokeXuenTheWhiteTiger = InvokeNiuzaoTheBlackOx,
+		HitCombo = SpecialDelivery,
+
+		ElusiveDance = 20,
+		BlackoutCombo,
+		HighTolerance,
+
+		ManaTea = ElusiveDance,
+		FocusedThunder = BlackoutCombo,
+		RisingThunder = HighTolerance,
+
+		ChiOrbit = ElusiveDance,
+		WhirlingDragonPunch = BlackoutCombo,
+		Serenity = HighTolerance
     }
-
 }

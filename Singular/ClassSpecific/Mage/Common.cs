@@ -522,7 +522,11 @@ namespace Singular.ClassSpecific.Mage
                     1,
                     TimeSpan.FromSeconds(6),
                     RunStatus.Failure,
-                    Spell.CastOnGround("Rune of Power", on => Me, req => !Me.IsMoving && !Me.InVehicle && !Me.HasAura("Rune of Power") && Singular.Utilities.EventHandlers.LastNoPathFailure.AddSeconds(15) < DateTime.UtcNow, false)
+                    Spell.CastOnGround("Rune of Power", 
+						on => Me, 
+						req => !Me.IsMoving && !Me.InVehicle && 
+								!Me.HasAura("Rune of Power") && Spell.IsSpellOnCooldown("Combustion") && 
+								EventHandlers.LastNoPathFailure.AddSeconds(15) < DateTime.UtcNow, false)
                     );
             }
 

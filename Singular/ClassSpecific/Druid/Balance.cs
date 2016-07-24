@@ -99,7 +99,7 @@ namespace Singular.ClassSpecific.Druid
 						Common.CastForm(ShapeshiftForm.Moonkin, req => Me.Shapeshift != ShapeshiftForm.Moonkin && !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
 						// Avoid getting capped
-						Spell.Cast("Astral Communion", ret => AstralPowerDeficit >= 75 + 5 && (!Common.HasTalent(DruidTalents.FuryOfElune) || Me.HasAura("Fury of Elune"))),
+						Spell.Cast("Astral Communion", ret => AstralPowerDeficit >= 75 + 5 && (!Common.HasTalent(DruidTalents.FuryOfElune) || Me.HasActiveAura("Fury of Elune"))),
 						Spell.Cast("Blessing of Elune"),
 						Spell.CastOnGround("Force of Nature", on => Me.CurrentTarget.Location),
 						Spell.BuffSelf("Celestial Alignment", ret => Me.CurrentTarget.IsStressful()),

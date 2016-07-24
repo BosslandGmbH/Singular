@@ -100,7 +100,7 @@ namespace Singular.ClassSpecific.Druid
 
 						// Avoid getting capped
 						Spell.Cast("Astral Communion", ret => AstralPowerDeficit >= 75 + 5 && (!Common.HasTalent(DruidTalents.FuryOfElune) || Me.HasActiveAura("Fury of Elune"))),
-						Spell.Cast("Blessing of Elune"),
+						Spell.Cast("Blessing of the Ancients", ret => !Me.HasAura("Blessing of Elune")),
 						Spell.CastOnGround("Force of Nature", on => Me.CurrentTarget.Location),
 						Spell.BuffSelf("Celestial Alignment", ret => Me.CurrentTarget.IsStressful()),
 						Spell.Cast("Moonfire", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.GetAuraTimeLeft("Moonfire").TotalSeconds < 1.8 && u.TimeToDeath(int.MaxValue) > 4)),

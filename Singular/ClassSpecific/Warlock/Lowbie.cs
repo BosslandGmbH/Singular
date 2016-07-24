@@ -29,7 +29,7 @@ namespace Singular.ClassSpecific.Warlock
 
                         // Spell.PreventDoubleCast("Immolate"),
                         Spell.Cast("Life Tap", ret => StyxWoW.Me.ManaPercent < 50 && StyxWoW.Me.HealthPercent > 70),
-                        Spell.Buff("Immolate"),
+                        Spell.Buff("Agony"),
                         Spell.Buff("Corruption"),
                         Spell.Cast("Drain Life"),
                         Spell.Cast("Shadow Bolt")

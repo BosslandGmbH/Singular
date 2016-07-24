@@ -62,10 +62,8 @@ namespace Singular.ClassSpecific.Paladin
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.Normal)]
-        [Behavior(BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.Normal)]
-        [Behavior(BehaviorType.Pull, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.Battlegrounds)]
-        [Behavior(BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Pull, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.All)]
+        [Behavior(BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.All)]
         public static Composite CreatePaladinRetributionNormalPullAndCombat()
         {
             return new PrioritySelector(
@@ -159,7 +157,6 @@ namespace Singular.ClassSpecific.Paladin
                                 // now EJ: Inq > 5HP DS > LH > HoW (> T16 Free DS) > HotR > Judge > Exo > 3-4HP DS (> SS)
                                 Spell.Cast(Spell.UseAOE && SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower == 5),
                                 Spell.CastOnGround("Light's Hammer", on => Me.CurrentTarget, ret => 2 <= Clusters.GetClusterCount(Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 10f)),
-                                Spell.Cast("Hammer of Wrath"),
                                 Spell.Cast("Divine Storm", req => Spell.UseAOE && Me.HasAura("Divine Crusader")),   // T16 buff
                                 Spell.Cast(SpellManager.HasSpell("Hammer of the Righteous") ? "Hammer of the Righteous" : "Crusader Strike"),
                                 Spell.Cast("Judgment"),
@@ -171,19 +168,12 @@ namespace Singular.ClassSpecific.Paladin
                                 )
                             ),
 
-                        // was EJ: Inq > 5HP TV > ES > HoW > Exo > CS > Judge > 3-4HP TV (> SS)
-                        // was EJ: Inq > 5HP TV > ES > HoW > CS > Judge > Exo > 3-4HP TV (> SS)
-                        // now EJ: Inq > ES (> 5HP T16 Free DS) > 5HP TV > HoW (> T16 Free DS) > CS > Judge > Exo > 3-4HP TV (> SS)
-                        Spell.Cast("Execution Sentence"),
-                        Spell.Cast("Divine Storm", req => Spell.UseAOE && Me.CurrentHolyPower == 5 && Me.HasAura("Divine Crusader")),   // T16 buff
-                        Spell.Cast("Templar's Verdict", req => Me.CurrentHolyPower == 5),
-                        Spell.Cast("Hammer of Wrath"),
-                        Spell.Cast("Divine Storm", req => Spell.UseAOE && Me.HasAura("Divine Crusader")),   // T16 buff
                         Spell.Cast("Crusader Strike"),
+                        Spell.Cast("Blade of Wrath"),
                         Spell.Cast("Judgment"),
-                        Spell.Cast("Exorcism"),
-                        Spell.Cast("Templar's Verdict", req => Me.CurrentHolyPower >= 3),
-                        Spell.BuffSelf("Sacred Shield")
+                        Spell.Cast("Execution Sentence", when => Me.CurrentTarget.TimeToDeath() > 8),
+                        Spell.Cast("Justicar's Vengeance", when => Me.HasAura("Divine Purpose")),
+                        Spell.Cast("Templar's Verdict", when => Me.CurrentTarget.HasAura("Judgment"))
                         )
                     ),
 
@@ -199,179 +189,6 @@ namespace Singular.ClassSpecific.Paladin
                 _mobCount = Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() < 8);
                 return RunStatus.Failure;
             });
-        }
-
-        #endregion
-
-
-        #region Instance Rotation
-
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.Instances)]
-        public static Composite CreatePaladinRetributionInstancePullAndCombat()
-        {
-            return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
-
-                Spell.WaitForCastOrChannel(),
-
-                new Decorator( 
-                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget(),
-                    new PrioritySelector(
-
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
-
-                        // aoe count
-                        ActionAoeCount(),
-
-                        CreateRetDiagnosticOutputBehavior(),
-
-                        Helpers.Common.CreateInterruptBehavior(),
-
-                        // Defensive
-                        Spell.BuffSelf("Hand of Freedom",
-                                       ret =>
-                                       !Me.Auras.Values.Any(
-                                           a => a.Name.Contains("Hand of") && a.CreatorGuid == Me.Guid) &&
-                                       Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
-                                                                      WoWSpellMechanic.Disoriented,
-                                                                      WoWSpellMechanic.Frozen,
-                                                                      WoWSpellMechanic.Incapacitated,
-                                                                      WoWSpellMechanic.Rooted,
-                                                                      WoWSpellMechanic.Slowed,
-                                                                      WoWSpellMechanic.Snared)),
-
-                        Spell.BuffSelf("Divine Shield", 
-                            ret => Me.HealthPercent <= 20  && !Me.HasAura("Forbearance")),
-                        Spell.BuffSelf("Divine Protection",
-                            ret => Me.HealthPercent <= PaladinSettings.DivineProtectionHealthProt),
-
-                        Common.CreatePaladinSealBehavior(),
-
-                        Movement.WaitForFacing(),
-                        Movement.WaitForLineOfSpellSight(),
-
-                        new Throttle(40,
-                            new Decorator(
-                                ret => PartyBuff.WeHaveBloodlust,
-                                new ThrottlePasses(
-                                    TimeSpan.FromMilliseconds( 250),
-                                    new PrioritySelector(
-                                        ctx => Item.FindFirstUsableItemBySpell("Golem's Strength", "Potion of Mogu Power"),
-                                        new Decorator(
-                                            ret => ret != null,
-                                            new Action(item => ((WoWItem)item).Use() )
-                                            )
-                                        )
-                                    )
-                                )
-                            ),
-
-                        new Decorator(
-                            ret => Me.CurrentTarget.IsWithinMeleeRange && PaladinSettings.RetAvengAndGoatK,
-                            new PrioritySelector(
-                                Spell.Cast("Guardian of Ancient Kings", ret => Me.CurrentTarget.IsBoss()),
-                                Spell.BuffSelf("Avenging Wrath", 
-                                    ret => (Common.HasTalent(PaladinTalents.SanctifiedWrath) || Spell.GetSpellCooldown("Guardian of Ancient Kings").TotalSeconds <= 290)),
-                                Spell.Cast("Holy Avenger", ret => Me.HasAura("Avenging Wrath"))
-                                )
-                            ),
-
-                        // react to Divine Purpose proc
-                        new Decorator(
-                            ret => Me.GetAuraTimeLeft("Divine Purpose", true).TotalSeconds > 0,
-                            new PrioritySelector(
-                                Spell.Cast("Templar's Verdict", req => _mobCount <= 3),
-                                Spell.Cast("Divine Storm", req => Spell.UseAOE )
-                                )
-                            ),
-
-                        Spell.Cast( "Execution Sentence", ret => Me.CurrentTarget.TimeToDeath() > 12 ),
-                        Spell.Cast( "Holy Prism", on => Group.Tanks.FirstOrDefault( t => t.IsAlive && t.Distance < 40)),
-
-                        Common.CreatePaladinBlindingLightBehavior(),
-
-                        new Decorator(
-                            ret => _mobCount >= 2 && Spell.UseAOE,
-                            new PrioritySelector(
-                                Spell.Cast(Spell.UseAOE && SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower == 5),
-                                Spell.CastOnGround("Light's Hammer", on => Me.CurrentTarget, ret => 2 <= Clusters.GetClusterCount(Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 10f)),
-                                Spell.Cast("Hammer of Wrath"),
-                                Spell.Cast("Divine Storm", req => Spell.UseAOE && Me.HasAura("Divine Crusader")),   // T16 buff
-                                Spell.Cast(SpellManager.HasSpell("Hammer of the Righteous") ? "Hammer of the Righteous" : "Crusader Strike"),
-                                Spell.Cast("Judgment"),
-                                Spell.Cast("Exorcism"),
-                                Spell.Cast(Spell.UseAOE && SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower >= 3),
-                                Spell.BuffSelf("Sacred Shield"),
-                                Movement.CreateMoveToMeleeBehavior(true),
-                                new ActionAlwaysSucceed()
-                                )
-                            ),
-
-                        //Use Synapse Springs Engineering thingy if inquisition is up
-
-                        new Decorator(
-                            req => true,       // old EJ priority basically unchanged for WoD
-                            new PrioritySelector(
-                                // Single Target Priority ==================
-                                //  ES
-                                Spell.Cast("Execution Sentence"),
-
-                                //  DS with 5 HP, T16 4proc
-                                Spell.Cast("Divine Storm", req => Spell.UseAOE && Me.CurrentHolyPower == 5 && Me.HasAura("Divine Crusader")),
-
-                                //  TV/FV with Divine Purpose wearing off in 4 or less seconds
-                                Spell.Cast("Templar's Verdict", req => Me.GetAuraTimeLeft("Divine Purpose").TotalMilliseconds.Between(200, 4000)),
-
-                                //  DS with 5 HP and FV buff
-                                Spell.Cast("Divine Storm", req => Spell.UseAOE && Me.CurrentHolyPower == 5 && Me.HasAura("Final Verdict")),
-
-                                //  TV/FV with 5 HP
-                                Spell.Cast("Templar's Verdict", req => Me.CurrentHolyPower == 5),
-
-                                //  DS with 5 HP, no buff/proc
-                                Spell.Cast("Divine Storm", req => Spell.UseAOE && Me.CurrentHolyPower == 5),
-
-                                //  DS with T16 procced and wearing off in 4 or less seconds
-                                Spell.Cast("Divine Storm", req => Spell.UseAOE && Me.GetAuraTimeLeft("Divine Crusader").TotalMilliseconds.Between(200, 4000)),
-
-                                //  HoW
-                                Spell.Cast("Hammer of Wrath"),
-
-                                //  Exo with T16 4p HoW buff and less than 3HP
-                                Spell.Cast("Exorcism", req => Me.CurrentHolyPower < 3 && Me.HasAura("Divine Crusader")),
-
-                                //  CS
-                                Spell.Cast("Crusader Strike"),
-
-                                //  EmpSeal: Seal Swap if buff < 5 seconds
-
-                                //  Judge
-                                Spell.Cast("Judgment"),
-
-                                //  Exo with no T16 4p HoW buff
-                                Spell.Cast("Exorcism"),
-
-                                //  EmpSeal: SoT if on SoR and have that buff 3-4HP TV/FV
-
-
-                                Spell.Cast("Divine Storm", req => Spell.UseAOE && Me.HasAura("Divine Crusader")),   // T16 buff
-                                Spell.Cast("Templar's Verdict", req => Me.CurrentHolyPower >= 3),
-
-                                //  SS
-                                Spell.BuffSelf("Sacred Shield")
-
-
-                                )
-                            )
-
-                        )
-                    ),
-
-
-                    // Move to melee is LAST. Period.
-                    Movement.CreateMoveToMeleeBehavior(true)
-                );
         }
 
         #endregion

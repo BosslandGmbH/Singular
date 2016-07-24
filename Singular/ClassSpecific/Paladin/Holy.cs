@@ -98,8 +98,7 @@ namespace Singular.ClassSpecific.Paladin
                                 Spell.Buff("Judgment"),
                                 Spell.Cast("Hammer of Wrath"),
                                 Spell.Cast("Holy Shock"),
-                                Spell.Cast("Crusader Strike"),
-                                Spell.Cast("Denounce")
+                                Spell.Cast("Crusader Strike")
                                 )
                             )
                         )
@@ -192,7 +191,6 @@ namespace Singular.ClassSpecific.Paladin
                                     Spell.Cast("Hammer of Wrath"),
                                     Spell.Cast("Holy Shock"),
                                     Spell.Cast("Crusader Strike"),
-                                    Spell.Cast("Denounce"),
                                     Movement.CreateMoveToMeleeBehavior(true)
                                     )
                                 ),

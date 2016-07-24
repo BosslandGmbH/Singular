@@ -133,7 +133,7 @@ namespace Singular.ClassSpecific.Priest
 
             // instant, so cast this first ALWAYS
             if (PriestSettings.HolyHeal.HolyWordSanctuary  != 0 )
-            behavs.AddBehavior(398, "Holy Word: Sanctuary @ " + PriestSettings.HolyHeal.HolyWordSanctuary + "% MinCount: " + PriestSettings.HolyHeal.CountHolyWordSanctuary, "Chakra: Sanctuary",
+            behavs.AddBehavior(398, "Holy Word: Sanctuary @ " + PriestSettings.HolyHeal.HolyWordSanctuary + "% MinCount: " + PriestSettings.HolyHeal.CountHolyWordSanctuary, "Holy Word: Sanctuary",
                 new Decorator(
                     ret => Me.HasAura("Chakra: Sanctuary"),
                     new PrioritySelector(
@@ -278,10 +278,10 @@ VoidShift               Void Shift
             #region Direct Heals
 
             if (PriestSettings.HolyHeal.HolyWordSerenity != 0)
-            behavs.AddBehavior(HealthToPriority(1) + 4, "Holy Word: Serenity @ " + PriestSettings.HolyHeal.HolyWordSerenity + "%", "Chakra: Serenity",
+            behavs.AddBehavior(HealthToPriority(1) + 4, "Holy Word: Serenity @ " + PriestSettings.HolyHeal.HolyWordSerenity + "%", "Holy Word: Serenity",
                 Spell.CastHack("Holy Word: Serenity",
                     on => (WoWUnit)on,
-                    req => Me.HasAura("Chakra: Serenity") && ((WoWUnit)req).HealthPercent < PriestSettings.HolyHeal.HolyWordSerenity
+                    req => ((WoWUnit)req).HealthPercent < PriestSettings.HolyHeal.HolyWordSerenity
                     )
                 );
 
@@ -448,7 +448,7 @@ VoidShift               Void Shift
 
                     Spell.Cast("Flash Heal",
                         ctx => Me,
-                        ret => Me.HealthPercent <= PriestSettings.ShadowPlea),
+                        ret => Me.HealthPercent <= PriestSettings.ShadowHeal),
 
                     Spell.Cast("Flash Heal",
                         ctx => Me,
@@ -461,29 +461,8 @@ VoidShift               Void Shift
         public static Composite CreateHolyCombatBuffs()
         {
             return new PrioritySelector(
-                new PrioritySelector(
-                    ctx => {
-                        if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
-                            return "Chakra: Chastise";
-
-                        if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-                            return "Chakra: Serenity";
-
-                        int groupSize = Unit.NearbyGroupMembers.Count(m => m.IsAlive);
-                        if (groupSize <= 6)
-                            return "Chakra: Serenity";
-
-                        if (groupSize >= 8)
-                            return "Chakra: Sanctuary";
-
-                        return Me.HasAura("Chakra: Serenity") ? "Chakra: Serenity" : "Chakra: Sanctuary";
-                    },
-
-                    Spell.Cast( spell=>(string)spell, on => Me, req => !Me.HasAura((string) req))
-                    ),
-
                 new Decorator(
-                    req => !Unit.IsTrivial(Me.CurrentTarget),
+                    req => !Me.CurrentTarget.IsTrivial(),
                     new PrioritySelector(
                         Common.CreateFadeBehavior(),
 
@@ -533,7 +512,7 @@ VoidShift               Void Shift
 
                                 Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
                                 Spell.Buff("Shadow Word: Pain", true),
-                                Spell.Buff("Holy Word: Chastise", ret => StyxWoW.Me.HasAura( "Chakra: Chastise")),
+                                Spell.Buff("Holy Word: Chastise"),
                                 Spell.Buff("Shadow Word: Pain", true, on =>
                                 {
                                     WoWUnit unit = Unit.NearbyUnfriendlyUnits

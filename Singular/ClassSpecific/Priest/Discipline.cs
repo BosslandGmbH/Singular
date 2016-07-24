@@ -539,7 +539,7 @@ namespace Singular.ClassSpecific.Priest
 
                     Spell.Cast("Plea",
                         ctx => Me,
-                        ret => Me.HealthPercent <= PriestSettings.ShadowPlea && !SkipForSpiritShell(Me)),
+                        ret => Me.HealthPercent <= PriestSettings.ShadowHeal && !SkipForSpiritShell(Me)),
 
                     Spell.Cast("Plea",
                         ctx => Me,

@@ -286,39 +286,7 @@ namespace Singular.ClassSpecific.Warrior
                     ret => SingularSettings.Instance.EnableTaunting && SingularRoutine.CurrentWoWContext == WoWContext.Instances,
                     CreateProtectionTauntBehavior()
                     ),
-
-                // Dump Rage
-                Spell.Cast("Execute", req => Me.CurrentRage >= RageDump && Me.CurrentTarget.HealthPercent <= 20),
-
-                Spell.HandleOffGCD(
-                    Spell.Cast(
-                        "Heroic Strike",
-                        on => Me.CurrentTarget,
-                        req =>
-                        {
-                            if (scenario.AvoidAOE && glyphCleave)
-                                return false;
-                            if (!Spell.CanCastHack("Heroic Strike", Me.CurrentTarget))
-                                return false;
-
-                            if (HasUltimatum)
-                            {
-                                Logger.Write(LogColor.Hilite, "^Ultimatum: free Heroic Strike @ {0:F1}% rage", Me.RagePercent);
-                                return true;
-                            }
-
-                            if (Me.CurrentRage >= RageDump && (Me.CurrentTarget.HealthPercent > 20 || !SpellManager.HasSpell("Execute")))
-                            {
-                                Logger.Write(LogColor.Hilite, "^Rage Dump: Heroic Strike @ {0:F1}% rage", Me.RagePercent );
-                                return true;
-                            }
-
-                            return false;
-                        },
-                        gcd: HasGcd.No
-                        )
-                    ),
-
+                
                 new Sequence(
                     new Decorator(
                         ret => Common.IsSlowNeeded(Me.CurrentTarget),
@@ -339,33 +307,16 @@ namespace Singular.ClassSpecific.Warrior
                     ret => scenario.MobCount > 1,
                     new PrioritySelector(
                         Spell.Cast("Thunder Clap", on => Unit.UnfriendlyUnits(Common.DistanceWindAndThunder(8)).FirstOrDefault()),
-                        Spell.Cast("Bladestorm", on => Unit.UnfriendlyUnits(8).FirstOrDefault(), ret => scenario.MobCount >= 4),
                         Spell.Cast("Shockwave", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => Me.IsSafelyFacing(u)), ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 10f) >= 3))
                     ),
 
-                Common.CreateExecuteOnSuddenDeath(),
+                Spell.Cast("Ignore Pain", when => Me.RagePercent > 70 && !Me.HasAura("Ignore Pain")),
+                Spell.Cast("Shield Block"),
 
                 // Generate Rage
                 Spell.Cast("Shield Slam", ret => Me.CurrentRage < RageBuild && HasShieldInOffHand),
                 Spell.Cast("Revenge"),
-
-                // Dump Rage
-                new Throttle(
-                    Spell.Cast(
-                        "Heroic Strike", 
-                        on => Me.CurrentTarget,
-                        req => 
-                        {
-                            if (scenario.AvoidAOE && glyphCleave) 
-                                return false;
-                            if (!SpellManager.HasSpell("Devastate") || !HasShieldInOffHand)
-                                return true;
-                            return false;
-                        },
-                        gcd: HasGcd.No
-                        )
-                    ),
-
+               
                 // Filler
                 Spell.Cast("Devastate"),
 

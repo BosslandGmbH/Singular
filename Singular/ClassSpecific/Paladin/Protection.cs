@@ -34,7 +34,7 @@ namespace Singular.ClassSpecific.Paladin
         {
             return new PrioritySelector(
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
-                Rest.CreateDefaultRestBehaviour( "Flash of Light", "Redemption")
+                Rest.CreateDefaultRestBehaviour( "Light of the Protector", "Redemption")
                 );
         }
 
@@ -90,11 +90,7 @@ namespace Singular.ClassSpecific.Paladin
 
                         Spell.BuffSelf("Divine Shield",
                             ret => Me.CurrentMap.IsBattleground && Me.HealthPercent <= 20 && !Me.HasAura("Forbearance")),
-
-                        Spell.BuffSelf(
-                            "Divine Protection",
-                            ret => Me.HealthPercent <= PaladinSettings.DivineProtectionHealthProt),
-
+                        
                         Spell.BuffSelf(
                             "Guardian of Ancient Kings",
                             ret => Me.GotTarget()
@@ -191,42 +187,21 @@ namespace Singular.ClassSpecific.Paladin
                         new Decorator(
                             ret => _aoeCount >= 4 && Spell.UseAOE,
                             new PrioritySelector(
-                                Spell.Cast("Shield of the Righteous", ret => Me.CurrentHolyPower >= 3 || Me.ActiveAuras.ContainsKey("Divine Purpose")),
-                                Spell.Cast("Judgment", ret => Common.HasTalent(PaladinTalents.SanctifiedWrath) && Me.HasAura("Avenging Wrath")),
-                                Spell.Cast("Hammer of the Righteous"),
-                                Spell.Cast("Judgment"),
                                 Spell.Cast("Avenger's Shield"),
-                                Spell.Cast("Consecration", ret => !Me.IsMoving),
-                        /// level 90 talents
-                                Spell.Cast("Holy Prism", on => Me),           // target enemy for Single target
-                                Spell.CastOnGround("Light's Hammer", on => Me.CurrentTarget, ret => Me.GotTarget(), false),       // no mana cost
-                                Spell.Cast("Execution Sentence", 
-                                    on => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => u.HealthPercent < 20 && Me.IsSafelyFacing(u) && u.InLineOfSpellSight )),               // no mana cost
-                        /// end of talents
-                                Spell.Cast("Holy Wrath"),
+                                Spell.Cast("Consecration"),
+                                Spell.Cast("Blessed Hammer"),
+                                Spell.Cast("Judgment"),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
                             ),
 
+                        Spell.Cast("Blessed Hammer"),
+
                         //Single target
                         Spell.HandleOffGCD( Spell.Cast("Shield of the Righteous", ret => Me.CurrentHolyPower >= 3 || Me.ActiveAuras.ContainsKey("Divine Purpose"))),
-
-                        Spell.Cast("Crusader Strike", req => !Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
-                        Spell.Cast("Judgment", ret => Common.HasTalent(PaladinTalents.SanctifiedWrath) && Me.HasAura("Avenging Wrath")),
-
-                        Spell.Cast("Crusader Strike"),
                         Spell.Cast("Judgment"),
-                        Spell.Cast("Avenger's Shield", ret => Spell.UseAOE),
-
-                        /// level 90 talent if avail
-                        Spell.Cast("Holy Prism", ret => Spell.UseAOE),           // target enemy for Single target
-                        Spell.CastOnGround("Light's Hammer", on => Me.CurrentTarget, ret => Spell.UseAOE && Me.GotTarget(), false),       // no mana cost
-                        Spell.Cast("Execution Sentence", ret => Me.CurrentTarget.HealthPercent < 20),               // no mana cost
-
-                        Spell.Cast("Holy Wrath"),
-                        Spell.Cast("Hammer of Wrath", ret => Me.CurrentTarget.HealthPercent < 20),
-                        Spell.Cast("Consecration", ret => Spell.UseAOE && !Me.IsMoving)
-                        /// back to normal
+                        Spell.Cast("Consecration"),
+                        Spell.Cast("Avenger's Shield", ret => Spell.UseAOE)
                         )
                     ),
 

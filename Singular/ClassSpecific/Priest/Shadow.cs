@@ -28,18 +28,14 @@ namespace Singular.ClassSpecific.Priest
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static PriestSettings PriestSettings { get { return SingularSettings.Instance.Priest(); } }
 
-        #region Orbs
-        private static uint OrbCount        { get { return 0; } }
-        private static uint MaxOrbs         { get; set; }
-        private static bool NeedMoreOrbs    { get { return OrbCount < MaxOrbs; } }
-        #endregion 
-
+        private static bool InVoidform => Me.HasAura("Voidform");
+        
         [Behavior(BehaviorType.Initialize, WoWClass.Priest, WoWSpec.PriestShadow)]
         public static Composite CreateShadowInitialize()
         {
             if (SpellManager.HasSpell("Flash Heal"))
             {
-                Logger.Write(LogColor.Init, "Flash Heal: if all enemies cc'd and health below {0}%", PriestSettings.ShadowPlea);
+                Logger.Write(LogColor.Init, "Flash Heal: if all enemies cc'd and health below {0}%", PriestSettings.ShadowHeal);
             }
 
             if (SpellManager.HasSpell("Prayer of Mending"))
@@ -127,7 +123,7 @@ namespace Singular.ClassSpecific.Priest
                             "Flash Heal",
                             ctx => Me,
                             ret => {
-                                if (Me.HealthPercent > PriestSettings.ShadowPlea)
+                                if (Me.HealthPercent > PriestSettings.ShadowHeal)
                                     return false;
 
                                 if (Unit.UnitsInCombatWithMeOrMyStuff(40).Any(u => !u.IsCrowdControlled()))
@@ -143,7 +139,7 @@ namespace Singular.ClassSpecific.Priest
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.All)]
         public static Composite CreatePriestShadowNormalPull()
         {
             return new PrioritySelector(
@@ -174,20 +170,15 @@ namespace Singular.ClassSpecific.Priest
                             },
 
                             new PrioritySelector(
-                                Spell.Buff("Devouring Plague", req => OrbCount >= 3),
                                 Spell.Buff("Shadow Word: Pain", true)
                                 )
                             ),
 
                         Spell.BuffSelf("Power Word: Shield", ret => PriestSettings.UseShieldPrePull && !Me.HasAura("Weakened Soul")),
-
-                        Spell.BuffSelfAndWait("Shadowform"),
-
+                        
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
-
-                        Spell.Buff("Devouring Plague", req => OrbCount >= 3),
-                        CastMindBlast(),
+                        
                         Spell.Buff("Vampiric Touch", true),
                         Spell.Buff("Shadow Word: Pain", true)
 
@@ -197,7 +188,28 @@ namespace Singular.ClassSpecific.Priest
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Normal)]
+        /**
+         *  The single target rotation relies on the following priority system of abilities, depending on which phase you are in.
+
+            Build Phase (not in Voidform Icon Voidform)
+            Cast Void Eruption Icon Void Eruption (to enter Voidform).
+            Cast Mind Blast Icon Mind Blast.
+            Apply and maintain Shadow Word: Pain Icon Shadow Word: Pain and Vampiric Touch Icon Vampiric Touch.
+            Cast Mind Flay Icon Mind Flay as your filler spell.
+            Spend/Maintain Phase (in Voidform Icon Voidform)
+            Cast Void Bolt Icon Void Bolt.
+            Cast Shadowfiend Icon Shadowfiend if available at low Voidform stacks.
+            Cast Shadow Word: Death Icon Shadow Word: Death
+            Always cast Shadow Word: Death once when you have 2 stacks.
+            Do not cast Shadow Word: Death if you have 1 stack and are not in danger of falling out of Voidform AND if Mind Blast Icon Mind Blast is off cooldown.
+            Cast Mind Blast Icon Mind Blast.
+            Cast Shadowfiend Icon Shadowfiend if available at higher Voidform stacks.
+            Re-apply Shadow Word: Pain Icon Shadow Word: Pain and Vampiric Touch Icon Vampiric Touch if they fall off of your target.
+            Cast Mind Flay Icon Mind Flay as your filler spell.
+         * 
+         **/
+
+        [Behavior(BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.All)]
         public static Composite CreatePriestShadowNormalCombat()
         {
             return new PrioritySelector(
@@ -210,16 +222,14 @@ namespace Singular.ClassSpecific.Priest
 
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
-
-                        Spell.BuffSelfAndWait("Shadowform"),
-
+                        
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
 
                         new Decorator(
-                            req => !Unit.IsTrivial(Me.CurrentTarget),
+                            req => !Me.CurrentTarget.IsTrivial(),
                             new PrioritySelector(
 
                                 Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
@@ -257,15 +267,17 @@ namespace Singular.ClassSpecific.Priest
                         new Decorator(
                             ret => Spell.UseAOE && cntAoeTargets > 1,
                             new PrioritySelector(
-                                ctx => AoeTargets.Where( u=> Me.IsSafelyFacing(u) && u.InLineOfSpellSight).FirstOrDefault(),
+                                ctx => AoeTargets.FirstOrDefault(u => Me.IsSafelyFacing(u) && u.InLineOfSpellSight),
+
+                                Spell.Cast("Void Eruption", when => !InVoidform),
 
                                 Spell.Cast(
                                     "Mind Sear",
                                     mov => true,
                                     on =>
                                     {
-                                        IEnumerable<WoWUnit> AoeTargetsFacing = AoeTargets.Where(u => Me.IsSafelyFacing(u) && u.InLineOfSpellSight && u.IsTrivial());
-                                        WoWUnit unit = Clusters.GetBestUnitForCluster(AoeTargetsFacing, ClusterType.Radius, 10);
+                                        IEnumerable<WoWUnit> aoeTargetsFacing = AoeTargets.Where(u => Me.IsSafelyFacing(u) && u.InLineOfSpellSight && u.IsTrivial());
+                                        WoWUnit unit = Clusters.GetBestUnitForCluster(aoeTargetsFacing, ClusterType.Radius, 10);
                                         if (unit == null)
                                             return null;
                                         if (3 > Clusters.GetClusterCount(unit, AoeTargets, ClusterType.Radius, 10))
@@ -276,16 +288,9 @@ namespace Singular.ClassSpecific.Priest
                                         Logger.Write(LogColor.Hilite, "^Trivial Farming: all trivial mobs within 12 yds of {0}", unit.SafeName());
                                         return unit;
                                     },
-                                    cancel => Me.HealthPercent < PriestSettings.ShadowPlea
+                                    cancel => Me.HealthPercent < PriestSettings.ShadowHeal
                                     ),
-
-                                Spell.Buff(
-                                    "Void Entropy", 
-                                    true, 
-                                    on => AoeTargets.FirstOrDefault( u => (u != Me.CurrentTarget && u.HealthPercent > 90) || (u == Me.CurrentTarget && Me.CurrentTarget.TimeToDeath() > 30)), 
-                                    ret => OrbCount >= 3 && Me.CurrentTarget.TimeToDeath() > 30
-                                    ),
-
+                                
                                 Spell.Buff("Shadow Word: Pain", true),      // no multi message for current target
                                 Spell.Buff(                                 // multi-dot others w/ message
                                     "Shadow Word: Pain", 
@@ -302,48 +307,7 @@ namespace Singular.ClassSpecific.Priest
                                     }, 
                                     req => true
                                     ),
-
-                                // cast on highest health mob (for greatest heal)
-                                Spell.Buff(
-                                    "Devouring Plague",
-                                    true,
-                                    on => AoeTargets
-                                        .Where(u => u != null && u.IsValid && u.IsAlive && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && !u.HasMyAura("Devouring Plague"))
-                                        .OrderByDescending(u => (int)u.HealthPercent)
-                                        .FirstOrDefault(),
-                                    ret => OrbCount >= 3
-                                    ),
-
-                                // cast on the lowest health mob (to reduce numbers with kill if possible)
-                                new Decorator(
-                                    req => OrbCount < MaxOrbs,
-                                    new PrioritySelector(
-                                        ctx => AoeTargets
-                                            .Where(u => u.IsAlive && Me.IsSafelyFacing(u) && u.InLineOfSpellSight)
-                                            .OrderBy(u => (int)u.HealthPercent)
-                                            .FirstOrDefault(),
-                                        CastMindBlast(on => (WoWUnit)on),
-                                        Spell.Cast("Shadow Word: Death", on => (WoWUnit)on, req => ((WoWUnit)req).HealthPercent < 20)
-                                        )
-                                    ),
-
-                                Spell.Buff("Vampiric Touch", true),     // no multi message for current target
-                                Spell.Buff(                             // multi-dot others with message
-                                    "Vampiric Touch",
-                                    true,
-                                    on =>
-                                    {
-                                        WoWUnit dotTarget = AoeTargets.FirstOrDefault(u => u != Me.CurrentTarget && !u.HasMyAura("Vampiric Touch") && u.InLineOfSpellSight && !Spell.DoubleCastContains(u, "Vampiric Touch"));
-                                        if (dotTarget != null && dotTarget != Me.CurrentTarget && Spell.CanCastHack("Vampiric Touch", dotTarget))
-                                        {
-                                            Logger.Write(LogColor.Hilite, "^Multi-DoT: cast Vampiric Touch on {0}", dotTarget.SafeName());
-                                            return dotTarget;
-                                        }
-                                        return null;
-                                    },
-                                    req => true
-                                    ),
-
+                                
                                 new Decorator(
                                     req => cntAoeTargets >= PriestSettings.TalentTier6Count,
                                     new PrioritySelector(
@@ -353,6 +317,10 @@ namespace Singular.ClassSpecific.Priest
                                         Spell.Cast("Divine Star", req => UseDivineStar())
                                         )
                                     ),
+                                
+                                // When we enter void form, even if AOE, we use our single target rotation after maintaining debuffs.
+                                new Decorator(ret => Me.HasAura("Voidform"),
+                                    CreateMaintainVoidformBehaviour()),
 
                                 // filler spell
                                 Spell.Cast(
@@ -367,283 +335,47 @@ namespace Singular.ClassSpecific.Priest
                                             return null;
                                         return unit;
                                         },
-                                    cancel => Me.HealthPercent < PriestSettings.ShadowPlea
+                                    cancel => Me.HealthPercent < PriestSettings.ShadowHeal
                                     ),
                                 CastMindFlay(on => (WoWUnit)on, req => cntAoeTargets < 4)
                                 )
                             ),
-
-                        Spell.Buff("Void Entropy", true, ret => OrbCount >= 3 && Me.CurrentTarget.TimeToDeath() > 30),
-                        Spell.Buff("Devouring Plague", true, ret => OrbCount >= 3),
-
-                        Spell.Buff("Shadow Word: Pain", true),
-                        Spell.Buff("Vampiric Touch", true),
-                        CastMindBlast(),
-                        Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20 && OrbCount < MaxOrbs),
-                        CastInsanity(),
-                        Spell.Cast("Mind Spike", ret => Me.HasAura(SURGE_OF_DARKNESS)),
-                        Spell.Cast("Halo",
-                            ret => Unit.NearbyUnfriendlyUnits
-                                .All(u => Me.SpellDistance(u) < 35
-                                    && !u.IsCrowdControlled()
-                                    && u.Combat
-                                    && (u.Aggro || u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember)
-                                    )
-                            ),
-
-                        new Decorator(
-                            req => Common.HasTalent(PriestTalents.VoidEntropy),
-                            Spell.Buff("Devouring Plague", true, ret => OrbCount >= 3)
-                            ),
-
-                        CastMindFlay()
-                        )
-                    )
-                );
-        }
-
-        private static Composite CastMindBlast(UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate requirements = null)
-        {
-            UnitSelectionDelegate on = onUnit ?? (o => Me.CurrentTarget); 
-            SimpleBooleanDelegate req;
-
-            if (requirements == null)
-                req = r => OrbCount < MaxOrbs;
-            else
-                req = r => OrbCount < MaxOrbs && requirements(r);
-
-            return new Throttle( 
-                TimeSpan.FromMilliseconds(1500),
-                Spell.Cast("Mind Blast", on, req, cancel => false)
-                );
-        }
-
-        #endregion
-
-        #region Battleground Rotation
-
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Battlegrounds)]
-        public static Composite CreatePriestShadowPvPPullAndCombat()
-        {
-            Kite.CreateKitingBehavior(Common.CreateSlowMeleeBehavior(), Common.CreatePriestMovementBuff(), null);
-
-            return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCastOrChannel(),
-
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-
-                        CreateFightAssessment(),
-
-                        Spell.BuffSelfAndWait("Shadowform"),
-
-                        // blow-up target (or snipe a kill) when possible 
-                        Spell.Cast("Shadow Word: Death", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && Me.IsSafelyFacing(u) && u.InLineOfSpellSight)),
-
-                        // don't attempt to heal unless below a certain percentage health
-                        Spell.Cast(
-                            "Vampiric Embrace",
-                            ret => Me,
-                            ret => Me.CurrentTarget.TimeToDeath(-1) > 12
-                                && Unit.NearbyGroupMembers.Any(u => u.HealthPercent < PriestSettings.VampiricEmbracePct)
-                            ),
-
-                        Helpers.Common.CreateInterruptBehavior(),
-
-                        Movement.WaitForFacing(),
-                        Movement.WaitForLineOfSpellSight(),
-
-                        Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
-
-                        // Defensive stuff
-                        Common.CreateFadeBehavior(),
-                        Spell.BuffSelf("Dispersion", ret => Me.HealthPercent < 40 || Unit.NearbyUnfriendlyUnits.Count(t => t.GotTarget() && t.CurrentTarget.IsTargetingMyStuff()) >= 3),
-
-                        Common.CreatePsychicScreamBehavior(),
-
-                        new Decorator(
-                            ret => !Spell.IsSpellOnCooldown( "Psyfiend"),
-                            new PrioritySelector(
-                                ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => u.CurrentTargetGuid == Me.Guid && !(u.Fleeing || u.Stunned)),
-                                Spell.CastOnGround("Psyfiend",
-                                    loc => ((WoWUnit)loc).Distance <= 20 ? ((WoWUnit)loc).Location : WoWMovement.CalculatePointFrom( ((WoWUnit)loc).Location, (float) ((WoWUnit)loc).Distance - 20),
-                                    req => ((WoWUnit)req) != null,
-                                    false
-                                    ),
-                                Spell.Cast("Psychic Horror", 
-                                    on => (WoWUnit)on, 
-                                    req => OrbCount >= 1
-                                        && ((WoWUnit)req).Distance < 30 
-                                        && (((WoWUnit)req).Class == WoWClass.Hunter || ((WoWUnit)req).Class == WoWClass.Rogue || ((WoWUnit)req).Class == WoWClass.Warrior || ((WoWUnit)req).Class == WoWClass.DeathKnight || ((WoWUnit)req).HasAnyAura("Maelstrom Weapon", "Savage Roar"))
-                                    )
-                                )
-                            ),
-
-                        // Offensive
-
-                        // save Halo for combined damage and healing with no crowd control at risk
-                        Spell.Cast("Halo", 
-                            ret => !Unit.NearbyUnfriendlyUnits.Any(u => Me.SpellDistance(u) < 32 && u.IsCrowdControlled())
-                                && Unit.NearbyUnfriendlyUnits.Count( u => Me.SpellDistance(u) < 32) > 1
-                            ),
-
-                        // snipe kills where possible
-                        Spell.Cast("Shadow Word: Death", 
-                            on => Unit.NearbyUnfriendlyUnits.Where(u => u.HealthPercent < 20 && Me.IsSafelyFacing(u) && u.InLineOfSpellSight ).OrderBy( k => k.HealthPercent).FirstOrDefault(),
-                            ret => Me.CurrentTarget.HealthPercent <= 20),
-
-                        // at 3 orbs, time for some burst
-                        new Decorator(
-                            ret => OrbCount >= 3,
-                            new PrioritySelector(
-                                Spell.Cast("Mindbender"),
-                                Spell.Cast("Power Infusion"),
-                                Spell.Cast("Shadowfiend"),
-                                Spell.Buff("Devouring Plague")
-                                )
-                            ),
-
-                        // only cast Mind Spike if its instant
-                        Spell.Cast("Mind Spike", ret => Me.HasAura(SURGE_OF_DARKNESS)),
-
-                        CastInsanity(),
-
-                        CastMindBlast(),
-                      
-                        Spell.Buff("Vampiric Touch", 3, on => Me.CurrentTarget, req => Me.CurrentTarget.TimeToDeath() > 6),
-                        Spell.Buff("Shadow Word: Pain", 1, on => Me.CurrentTarget, req => Me.CurrentTarget.TimeToDeath() > 6),
-
-                        // multi-dot to supply procs and mana
-                        new PrioritySelector(
-                            ctx => Unit.NearbyUnfriendlyUnits
-                                .FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && (u.HasAuraExpired("Vampiric Touch", 3) || u.HasAuraExpired("Shadow Word: Pain", 1)) && u.InLineOfSpellSight),
-                            Spell.Buff("Vampiric Touch", 3, on => (WoWUnit) on, req => true),
-                            Spell.Buff("Shadow Word: Pain", 1, on => (WoWUnit) on, req => true)
-                            ),
-
-                        CastMindFlay()
-                        )
-                    )
-                );
-        }
-
-        #endregion
-
-        #region PreCombatBuffs
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Priest, WoWSpec.PriestShadow)]
-        public static Composite CreatePriestShadowRest()
-        {
-            return Spell.BuffSelfAndWait("Shadowform");
-        }
-
-        #endregion 
-
-        #region Instance Rotation
-
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Instances)]
-        public static Composite CreatePriestShadowInstancePullAndCombat()
-        {
-            return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCastOrChannel(),
-
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-
-                        CreateFightAssessment(),
-
-                        Helpers.Common.CreateInterruptBehavior(),
-
-                        Movement.WaitForFacing(),
-                        Movement.WaitForLineOfSpellSight(),
-
-                        Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
-
-                        Spell.BuffSelfAndWait("Shadowform"),
-
-                        new Decorator(
-                            req => Me.CurrentTarget != null,
-                            new PrioritySelector(
-                                
-                                // don't attempt to heal unless below a certain percentage health
-                                Spell.Cast(
-                                    "Vampiric Embrace", 
-                                    ret => Me, 
-                                    ret => Me.CurrentTarget.IsBoss()
-                                        && Unit.NearbyGroupMembers.Count( u => u.HealthPercent < PriestSettings.VampiricEmbracePct ) >= PriestSettings.VampiricEmbraceCount
-                                    ),
-
-                                // use fade to drop aggro.
-                                Common.CreateFadeBehavior(),
-
-                                // Shadow immune npcs.
-                                // Spell.Cast("Holy Fire", ctx => Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
-
-                                // AoE Rotation
-                                new Decorator(
-                                    ret => Spell.UseAOE && cntAoeTargets > 1,
-                                    new PrioritySelector(
-                                        ctx => Me.CurrentTarget,
-
-                                        Spell.Cast("Devouring Plague", req => OrbCount >= 3),
-                                        CastMindBlast(),
-
-                                        Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20 && OrbCount < MaxOrbs),
-                
-                                        // halo only if nothing near we aren't already in combat with
-                                        Spell.Cast("Halo", 
-                                            ret => Unit.NearbyUnfriendlyUnits
-                                                .All(u => Me.SpellDistance(u) < 34 && !u.IsCrowdControlled() && u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))),
-                                        Spell.Cast("Divine Star"),
-                                        Spell.Cast("Cascade"),
-
-                                        new Decorator(
-                                            req => cntAoeTargets <= 4,
-                                            new PrioritySelector(
-                                                ctx => AoeTargets.FirstOrDefault(u => !u.HasAllMyAuras("Shadow Word: Pain", "Vampiric Touch")),
-                                                Spell.Buff("Vampiric Touch", on => (WoWUnit) on),
-                                                Spell.Buff("Shadow Word: Pain", on => (WoWUnit) on)
-                                                )
-                                            ),
-
-                                        Spell.Cast("Mind Sear", 
-                                            mov => true, 
-                                            ctx => BestMindSearTarget, 
-                                            ret => true, 
-                                            cancel => Me.HealthPercent < PriestSettings.ShadowPlea ),
-
-                                        new PrioritySelector(
-                                            ctx => AoeTargets.FirstOrDefault(u => !u.HasAllMyAuras("Shadow Word: Pain", "Vampiric Touch")),
-                                            Spell.Buff("Vampiric Touch", on => (WoWUnit) on),
-                                            Spell.Buff("Shadow Word: Pain", on => (WoWUnit) on)
-                                            )
-                                        )
-                                    ),
-
-                                // Single target rotation
-                                Spell.BuffSelf( "Dispersion", req => Me.ManaPercent < PriestSettings.DispersionMana),
-
-                                Spell.BuffSelf("Power Infusion", req => !Me.IsMoving && Spell.CanCastHack("Shadow Word: Pain", Me.CurrentTarget, skipWowCheck: true) && !Me.CurrentTarget.IsMoving),
                         
-                                Spell.Cast("Devouring Plague", req => OrbCount >= 3),
-                                CastMindBlast(),
 
-                                Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20 && OrbCount < MaxOrbs),
-                                Spell.Cast("Mind Spike", ret => Me.HasAura(SURGE_OF_DARKNESS)),
-                                CastInsanity(),
-                                Spell.Buff("Shadow Word: Pain", 5, on => Me.CurrentTarget, req => true),
-                                Spell.Buff("Vampiric Touch", 4, on => Me.CurrentTarget, req => true),
-                                CastMindFlay()
-                                )
-                            )
+                        new Decorator(ret => InVoidform,
+                            CreateMaintainVoidformBehaviour()),
+
+
+                        CreateBuildVoidformBehaviour()
                         )
                     )
                 );
         }
 
+        private static Composite CreateBuildVoidformBehaviour()
+        {
+            return new PrioritySelector(
+                Spell.Cast("Void Eruption"),
+                Spell.Cast("Mind Blast"),
+                Spell.Buff("Shadow Word: Pain", on => Me.CurrentTarget),
+                Spell.Buff("Vampiric Touch", on => Me.CurrentTarget),
+                Spell.Cast("Mind Flay", when => AoeTargets.Count <= 2)
+                );
+        }
+
+        private static Composite CreateMaintainVoidformBehaviour()
+        {
+            return new PrioritySelector(
+                Spell.Cast("Void Bolt"),
+                Spell.Cast("Shadowfiend", when => Me.GetAuraStacks("Voidform") < 20),
+                Spell.Cast("Shadow Word: Death", when => Me.GetAuraStacks("Shadow Word: Death") == 2 || (Me.GetAuraStacks("Voidform") < 10 && !Spell.CanCastHack("Mind Blast"))),
+                Spell.Cast("Mind Blast"),
+                Spell.Cast("Shadowfiend"),
+                Spell.Cast("Mind Flay", when => AoeTargets.Count <= 2)
+                );
+        }
+        
+        #endregion
 
         static int cntAoeTargets { get; set; }
         static int cntCC { get; set; }
@@ -971,8 +703,6 @@ namespace Singular.ClassSpecific.Priest
             return true;
         }
 
-        #endregion
-
         #region Diagnostics
 
         private static Composite CreateShadowDiagnosticOutputBehavior()
@@ -983,15 +713,12 @@ namespace Singular.ClassSpecific.Priest
             return new ThrottlePasses(1, 1,
                 new Action(ret =>
                 {
-                    uint orbs = OrbCount;
-
-                    string line = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, moving={3}, form={4}, orbs={5}, SoD={6}, divins={7}, aoe={8}",
+                    string line = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, moving={3}, form={4}, SoD={5}, divins={6}, aoe={7}",
                         CompositeBuilder.CurrentBehaviorType.ToString(),
                         Me.HealthPercent,
                         Me.ManaPercent,
                         Me.IsMoving,
                         Me.Shapeshift,
-                        orbs,
                         (long)Me.GetAuraTimeLeft(SURGE_OF_DARKNESS, true).TotalMilliseconds,
                         (long)Me.GetAuraTimeLeft("Divine Insight", true).TotalMilliseconds,
                         cntAoeTargets 

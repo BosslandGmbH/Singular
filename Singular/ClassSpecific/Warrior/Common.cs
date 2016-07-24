@@ -281,7 +281,7 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     req => (req as WoWUnit).IsGapCloserAllowed(),
                     // note: use Distance here -- even though to a WoWUnit, hitbox does not come into play for all mobs
-                    Spell.Cast("Charge", req => (req as WoWUnit).Distance.Between(8, DistanceChargeBehavior) && Me.IsSafelyFacing(req as WoWUnit))
+                    Spell.Cast("Intercept", req => (req as WoWUnit).Distance.Between(8, DistanceChargeBehavior) && Me.IsSafelyFacing(req as WoWUnit))
                     )
                 );
         }

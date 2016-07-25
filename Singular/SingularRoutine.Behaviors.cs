@@ -1063,7 +1063,7 @@ namespace Singular
                     PullMoreNeedSpell = "Shadow Word: Pain";    // 3 (effectively 10 since specialization needed)
                     break;
 
-                case WoWSpec.RogueCombat:
+                case WoWSpec.RogueOutlaw:
                     PullMoreNeedSpell = "Blade Flurry"; // 10
                     break;
 
@@ -1820,7 +1820,7 @@ namespace Singular
                     mobCount = 0;
                     minHealth = 75;
                     break;
-                case WoWSpec.RogueCombat:
+                case WoWSpec.RogueOutlaw:
                     mobCount = 0;
                     minHealth = 75;
                     break;

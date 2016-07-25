@@ -23,12 +23,12 @@ namespace Singular.ClassSpecific.Rogue
 {
     public class Outlaw
     {
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
-        private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); } 
+        private static LocalPlayer Me => StyxWoW.Me;
+	    private static RogueSettings RogueSettings => SingularSettings.Instance.Rogue();
+	    private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); } 
 
         #region Normal Rotation
-        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueCombat, WoWContext.All)]
+        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueOutlaw, WoWContext.All)]
         public static Composite CreateRogueCombatPull()
         {
             return new PrioritySelector(
@@ -61,7 +61,7 @@ namespace Singular.ClassSpecific.Rogue
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueCombat, WoWContext.All)]
+        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueOutlaw, WoWContext.All)]
         public static Composite CreateRogueCombatNormalCombat()
         {
             return new PrioritySelector(
@@ -134,7 +134,7 @@ namespace Singular.ClassSpecific.Rogue
                 );
         }
 
-        [Behavior(BehaviorType.Heal, WoWClass.Rogue, WoWSpec.RogueCombat, priority: 99)]
+        [Behavior(BehaviorType.Heal, WoWClass.Rogue, WoWSpec.RogueOutlaw, priority: 99)]
         public static Composite CreateRogueHeal()
         {
             return CreateCombatDiagnosticOutputBehavior("Combat");

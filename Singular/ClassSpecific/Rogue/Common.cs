@@ -328,7 +328,7 @@ namespace Singular.ClassSpecific.Rogue
                                             case WoWSpec.RogueAssassination:
                                                 return Me.ComboPoints <= 2;
 
-                                            case WoWSpec.RogueCombat:
+                                            case WoWSpec.RogueOutlaw:
                                                 return Me.HasAura("Adrenaline Rush");
 
                                             case WoWSpec.RogueSubtlety:

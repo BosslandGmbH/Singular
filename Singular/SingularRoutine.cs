@@ -237,7 +237,11 @@ namespace Singular
                 FileCheckList actual = new FileCheckList();
                 actual.Generate(singularFolder);
 
-                FileCheckList certified = new FileCheckList();
+#if DEBUG
+				actual.Save(Path.Combine(singularFolder, "actual.xml"));
+#endif
+
+				FileCheckList certified = new FileCheckList();
                 certified.Load(Path.Combine(singularFolder, "singular.xml"));
 
                 List<FileCheck> err = certified.Compare(actual);

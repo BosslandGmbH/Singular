@@ -34,7 +34,7 @@ namespace Singular.ClassSpecific.Druid
 		
         #region Heal
 		
-        [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidBalance)]
+        [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidBalance, priority: 1)]
         public static Composite CreateDruidBalanceHeal()
         {
             return new PrioritySelector(

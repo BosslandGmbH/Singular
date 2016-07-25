@@ -44,8 +44,10 @@ namespace Singular.ClassSpecific.Monk
 		
         [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkBrewmaster)]
         public static Composite CreateBrewmasterMonkCombat()
-        {
-            return new PrioritySelector(
+		{
+			TankManager.NeedTankTargeting = (SingularRoutine.CurrentWoWContext == WoWContext.Instances);
+
+			return new PrioritySelector(
 				Common.CreateAttackFlyingOrUnreachableMobs(),
 				Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
@@ -53,8 +55,9 @@ namespace Singular.ClassSpecific.Monk
                 new Decorator(
                     req => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+						ctx => TankManager.Instance.TargetList.FirstOrDefault(u => u.IsWithinMeleeRange) ?? Me.CurrentTarget,
 
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+						SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         Helpers.Common.CreateInterruptBehavior(),
@@ -73,24 +76,24 @@ namespace Singular.ClassSpecific.Monk
                         // taunt if needed
                         Spell.Cast("Provoke", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(), ret => SingularSettings.Instance.EnableTaunting),
 
-						Spell.Cast("Keg Smash"),
-						Spell.Cast("Tiger Palm", req => Common.HasTalent(MonkTalents.EyeOfTheTiger) && Me.GetAuraTimeLeft("Eye of the Tiger").TotalSeconds <= 1.8),
+						Spell.Cast("Keg Smash", on => (WoWUnit)on),
+						Spell.Cast("Tiger Palm", on => (WoWUnit)on, req => Common.HasTalent(MonkTalents.EyeOfTheTiger) && Me.GetAuraTimeLeft("Eye of the Tiger").TotalSeconds <= 1.8),
 						new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >= 2,
 							new PrioritySelector(
-								Spell.Cast("Blackout Strike", req => Common.HasTalent(MonkTalents.BlackoutCombo)),
-								Spell.Cast("Chi Burst"),
-								Spell.Cast("Breath of Fire"),
-								Spell.Cast("Rushing Jade Wind"),
-								Spell.Cast("Tiger Palm", req => Me.CurrentEnergy >= 65),
-								Spell.Cast("Blackout Strike")
+								Spell.Cast("Blackout Strike", on => (WoWUnit)on, req => Common.HasTalent(MonkTalents.BlackoutCombo)),
+								Spell.Cast("Chi Burst", on => (WoWUnit)on),
+								Spell.Cast("Breath of Fire", on => (WoWUnit)on),
+								Spell.Cast("Rushing Jade Wind", on => (WoWUnit)on),
+								Spell.Cast("Tiger Palm", on => (WoWUnit)on, req => Me.CurrentEnergy >= 65),
+								Spell.Cast("Blackout Strike", on => (WoWUnit)on)
 								)),
 						
-						Spell.Cast("Tiger Palm", req => Me.CurrentEnergy >= 65),
-						Spell.Cast("Blackout Strike"),
-						Spell.Cast("Rushing Jade Wind"),
-						Spell.Cast("Chi Wave"),
-						Spell.Cast("Leg Sweep"),
-						Spell.Cast("Breath of Fire", req => Unit.UnfriendlyUnits(8).Any()),
+						Spell.Cast("Tiger Palm", on => (WoWUnit)on, req => Me.CurrentEnergy >= 65),
+						Spell.Cast("Blackout Strike", on => (WoWUnit)on),
+						Spell.Cast("Rushing Jade Wind", on => (WoWUnit)on),
+						Spell.Cast("Chi Wave", on => (WoWUnit)on),
+						Spell.Cast("Leg Sweep", on => (WoWUnit)on),
+						Spell.Cast("Breath of Fire", on => (WoWUnit)on, req => Unit.UnfriendlyUnits(8).Any()),
 
                         Common.CreateCloseDistanceBehavior()
                         )

@@ -68,8 +68,9 @@ namespace Singular.ClassSpecific.DeathKnight
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+						ctx => TankManager.Instance.TargetList.FirstOrDefault(u => u.IsWithinMeleeRange) ?? Me.CurrentTarget,
 
-                        Helpers.Common.CreateInterruptBehavior(),
+						Helpers.Common.CreateInterruptBehavior(),
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
@@ -101,39 +102,39 @@ namespace Singular.ClassSpecific.DeathKnight
 						Common.CreateDeathGripBehavior(),
 
 						// Talents
-						Spell.Cast("Blooddrinker", ret => Me.HealthPercent <= DeathKnightSettings.BloodDrinkerPercent),
-						Spell.Buff("Mark of Blood", ret => Me.HealthPercent <= DeathKnightSettings.MarkOfBloodPercent),
-						Spell.Cast("Tombstone", ret => Me.HealthPercent <= DeathKnightSettings.TombstonePercent && Me.GetAuraStacks("Bone Shield") >= DeathKnightSettings.TombstoneBoneShieldCharges),
-						Spell.Cast("Rune Tap", ret => Me.HealthPercent <= DeathKnightSettings.RuneTapPercent),
-						Spell.Cast("Bonestorm", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() < 8) >= DeathKnightSettings.BonestormCount && Me.RunicPowerPercent >= DeathKnightSettings.BonestormRunicPowerPercent),
+						Spell.Cast("Blooddrinker", on => (WoWUnit)on, ret => Me.HealthPercent <= DeathKnightSettings.BloodDrinkerPercent),
+						Spell.Buff("Mark of Blood", on => (WoWUnit)on, ret => Me.HealthPercent <= DeathKnightSettings.MarkOfBloodPercent),
+						Spell.Cast("Tombstone", on => (WoWUnit)on, ret => Me.HealthPercent <= DeathKnightSettings.TombstonePercent && Me.GetAuraStacks("Bone Shield") >= DeathKnightSettings.TombstoneBoneShieldCharges),
+						Spell.Cast("Rune Tap", on => (WoWUnit)on, ret => Me.HealthPercent <= DeathKnightSettings.RuneTapPercent),
+						Spell.Cast("Bonestorm", on => (WoWUnit)on, ret => Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() < 8) >= DeathKnightSettings.BonestormCount && Me.RunicPowerPercent >= DeathKnightSettings.BonestormRunicPowerPercent),
 
                         // refresh diseases if possible
-                        Spell.Cast("Blood Boil", 
+                        Spell.Cast("Blood Boil", on => (WoWUnit)on,
 							req => Unit.NearbyUnfriendlyUnits.Any(u => !u.HasMyAura("Blood Plague") && u.SpellDistance() < 10)),
 
                         // Start AoE section
                         new Decorator(
                             ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.MeleeDistance() < 10) > 1,
                             new PrioritySelector(
-                                Spell.CastOnGround("Death and Decay", on => StyxWoW.Me.CurrentTarget, ret => Unit.UnfriendlyUnitsNearTarget(15).Count() >= DeathKnightSettings.DeathAndDecayCount, false),
-								Spell.Cast("Marrowrend", ret => Me.GetAuraStacks("Bone Shield") < (Unit.NearbyUnfriendlyUnits.Count(u => u.MeleeDistance() < 10) >= 4 ? 5 : 1)),
-								Spell.Cast("Death Strike"),
-								Spell.Cast("Heart Strike", ret => Me.GetAuraStacks("Bone Shield") >= (Unit.NearbyUnfriendlyUnits.Count(u => u.MeleeDistance() < 10) >= 4 ? 5 : 1) && Me.CurrentRunes > 0),
-								Spell.Cast("Blood Boil", ret => Me.CurrentRunes <= 0 && Spell.UseAOE && Unit.UnfriendlyUnits(10).Count() >= DeathKnightSettings.BloodBoilCount)
+                                Spell.CastOnGround("Death and Decay", on => (WoWUnit)on, ret => Unit.UnfriendlyUnitsNearTarget(15).Count() >= DeathKnightSettings.DeathAndDecayCount, false),
+								Spell.Cast("Marrowrend", on => (WoWUnit)on, ret => Me.GetAuraStacks("Bone Shield") < (Unit.NearbyUnfriendlyUnits.Count(u => u.MeleeDistance() < 10) >= 4 ? 5 : 1)),
+								Spell.Cast("Death Strike", on => (WoWUnit)on),
+								Spell.Cast("Heart Strike", on => (WoWUnit)on, ret => Me.GetAuraStacks("Bone Shield") >= (Unit.NearbyUnfriendlyUnits.Count(u => u.MeleeDistance() < 10) >= 4 ? 5 : 1) && Me.CurrentRunes > 0),
+								Spell.Cast("Blood Boil", on => (WoWUnit)on, ret => Me.CurrentRunes <= 0 && Spell.UseAOE && Unit.UnfriendlyUnits(10).Count() >= DeathKnightSettings.BloodBoilCount)
                                 )
                             ),
 						
 						// Single target rotation
-						Spell.CastOnGround("Death and Decay", ret => Me.CurrentTarget, ret => Me.HasAura(CrimsonScourgeProc)),
-						Spell.Cast("Marrowrend", ret => Me.GetAuraStacks("Bone Shield") < 5),
-						Spell.Cast("Death Strike"),
+						Spell.CastOnGround("Death and Decay", on => (WoWUnit)on, ret => Me.HasAura(CrimsonScourgeProc)),
+						Spell.Cast("Marrowrend", on => (WoWUnit)on, ret => Me.GetAuraStacks("Bone Shield") < 5),
+						Spell.Cast("Death Strike", on => (WoWUnit)on),
 						new Decorator(ret => Me.GetAuraStacks("Bone Shield") >= 5 && Me.CurrentRunes > 0,
 							new PrioritySelector(
-								Spell.CastOnGround("Death and Decay", ret => Me.CurrentTarget.Location),
-								Spell.Cast("Heart Strike")
+								Spell.CastOnGround("Death and Decay", on => (WoWUnit)on, req => true),
+								Spell.Cast("Heart Strike", on => (WoWUnit)on)
 								)
 							),
-						Spell.Cast("Blood Boil", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Any(u => u.MeleeDistance() < 10))
+						Spell.Cast("Blood Boil", on => (WoWUnit)on, ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Any(u => u.MeleeDistance() < 10))
 						)
 					)
                 );

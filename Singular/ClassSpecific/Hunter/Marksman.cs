@@ -102,9 +102,6 @@ namespace Singular.ClassSpecific.Hunter
 							    !WoWMissile.InFlightMissiles.Any(m => m.Caster != null && m.Caster.IsMe && m.Spell?.Name == "Explosive Shot")),
 					    Spell.Cast("Aimed Shot", ret => Me.CurrentTarget.GetAuraTimeLeft("Vulnerable").TotalSeconds > 2d),
 					    Spell.Cast("Black Arrow"),
-					    new Action(del => { Logger.Write(Common.HasTalent(HunterTalents.Sidewinders).ToYN());
-						                     return RunStatus.Failure;
-					    }),
 
 						new Decorator(ret => Common.HasTalent(HunterTalents.Sidewinders),
 							new PrioritySelector(

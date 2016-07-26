@@ -208,7 +208,7 @@ namespace Singular.ClassSpecific.Shaman
 								Spell.Cast("Boulderfist", req => Me.CurrentMaelstrom < 130 && Spell.GetCharges("Boulderfist") >= 2),
                                 Spell.Cast("Flametongue", req => !Me.HasActiveAura("Flametongue")),
                                 Spell.Cast("Feral Spirit"),
-                                Spell.Cast("Crash Lightning", when => Unit.UnfriendlyUnitsNearTarget(10).Count(u => u.TappedByAllThreatLists) >= 2),
+                                Spell.Cast("Crash Lightning", when => Unit.UnfriendlyUnitsNearTarget(10).Count(u => u.TaggedByMe || !u.TaggedByOther) >= 2),
                                 Spell.Cast("Stormstrike"),
 								Spell.Cast("Crash Ligthning", req => Common.HasTalent(ShamanTalents.CrashingStorm)),
                                 Spell.Cast("Lava Lash", req => Me.CurrentMaelstrom > 110),

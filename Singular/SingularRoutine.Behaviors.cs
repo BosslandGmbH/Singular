@@ -1214,15 +1214,13 @@ namespace Singular
                         new PrioritySelector(
 
                             ctx => Unit.UnitsInCombatWithUsOrOurStuff(45)
-                                .FirstOrDefault(u => u.TappedByAllThreatLists || (u.Elite && (u.Level + 8) > Me.Level) || (u.MaxHealth > (Me.MaxHealth * 2))),
+                                .FirstOrDefault(u => (u.Elite && (u.Level + 8) > Me.Level) || (u.MaxHealth > (Me.MaxHealth * 2))),
 
                             new Decorator(
                                 req => req != null,
                                 new Action(r =>
                                 {
-                                    if ((r as WoWUnit).TappedByAllThreatLists)
-                                        Logger.WriteDiagnostic(Color.White, "Pull More: attacked by important quest mob {0} #{1}, disabling pull more until killed", (r as WoWUnit).SafeName(), (r as WoWUnit).Entry);
-                                    else if ((r as WoWUnit).Elite)
+                                    if ((r as WoWUnit).Elite)
                                         Logger.WriteDiagnostic(Color.White, "Pull More: attacking non-trivial Elite {0} #{1}, disabling pull more until killed", (r as WoWUnit).SafeName(), (r as WoWUnit).Entry);
                                     else
                                         Logger.WriteDiagnostic(Color.White, "Pull More: attacking non-trivial Mob {0} #{1} maxhealth {2}, disabling pull more until killed", (r as WoWUnit).SafeName(), (r as WoWUnit).Entry, (r as WoWUnit).MaxHealth);

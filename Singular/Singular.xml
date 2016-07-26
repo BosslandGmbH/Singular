@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>07/26/2016 14:09:27</ScanTime>
+  <ScanTime>07/26/2016 15:19:26</ScanTime>
   <FileList>
     <File Hash="6787" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="7024" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -13,7 +13,7 @@
     <File Hash="10280" Name="ClassSpecific\Druid\Guardian.cs" />
     <File Hash="2467" Name="ClassSpecific\Druid\Lowbie.cs" />
     <File Hash="41552" Name="ClassSpecific\Druid\Resto.cs" />
-    <File Hash="19067" Name="ClassSpecific\Generic.cs" />
+    <File Hash="18931" Name="ClassSpecific\Generic.cs" />
     <File Hash="5139" Name="ClassSpecific\Hunter\BeastMaster.cs" />
     <File Hash="66060" Name="ClassSpecific\Hunter\Common.cs" />
     <File Hash="1495" Name="ClassSpecific\Hunter\Lowbie.cs" />
@@ -48,7 +48,7 @@
     <File Hash="6875" Name="ClassSpecific\Rogue\Subtlety.cs" />
     <File Hash="32546" Name="ClassSpecific\Shaman\Common.cs" />
     <File Hash="12784" Name="ClassSpecific\Shaman\Elemental.cs" />
-    <File Hash="15308" Name="ClassSpecific\Shaman\Enhancement.cs" />
+    <File Hash="15316" Name="ClassSpecific\Shaman\Enhancement.cs" />
     <File Hash="4725" Name="ClassSpecific\Shaman\Lowbie.cs" />
     <File Hash="41296" Name="ClassSpecific\Shaman\Restoration.cs" />
     <File Hash="34339" Name="ClassSpecific\Shaman\Totems.cs" />
@@ -122,10 +122,10 @@
     <File Hash="1727" Name="Settings\SpellList.PurgeWhitelist.cs" />
     <File Hash="6770" Name="Settings\WarlockSettings.cs" />
     <File Hash="4804" Name="Settings\WarriorSettings.cs" />
-    <File Hash="93991" Name="SingularRoutine.Behaviors.cs" />
+    <File Hash="93662" Name="SingularRoutine.Behaviors.cs" />
     <File Hash="1809" Name="SingularRoutine.BotEvents.cs" />
     <File Hash="22483" Name="SingularRoutine.Context.cs" />
-    <File Hash="33571" Name="SingularRoutine.cs" />
+    <File Hash="33494" Name="SingularRoutine.cs" />
     <File Hash="5742" Name="SingularRoutine.Test.cs" />
     <File Hash="2705" Name="SingularRoutine.Version.cs" />
     <File Hash="3033" Name="Utilities\CombatLog.cs" />

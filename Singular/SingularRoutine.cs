@@ -673,11 +673,10 @@ namespace Singular
                     }
                     else
                     {
-                        info += string.Format(", creature={0}, tagme={1}, tagother={2}, tapall={3}",
+                        info += string.Format(", creature={0}, tagme={1}, tagother={2}",
                             unit.CreatureType,
                             unit.TaggedByMe.ToYN(),
-                            unit.TaggedByOther.ToYN(),
-                            unit.TappedByAllThreatLists.ToYN()
+                            unit.TaggedByOther.ToYN()
                             );
                     }
 

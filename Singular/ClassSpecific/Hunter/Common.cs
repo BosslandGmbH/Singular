@@ -828,7 +828,7 @@ namespace Singular.ClassSpecific.Hunter
             return new PrioritySelector(
                 new Decorator(
                     ret =>  PetManager.IsPetSummonAllowed
-						&& !HasTalent(HunterTalents.LoneWolf)
+						&& (Me.Specialization != WoWSpec.HunterMarksmanship || !HasTalent(HunterTalents.LoneWolf))
                         && (!Me.GotAlivePet || (ActivePetNumber != PetWeWant && ActivePetNumber != 0))
                         && PetManager.PetSummonAfterDismountTimer.IsFinished 
                         && !Me.Mounted 

@@ -44,13 +44,14 @@ namespace Singular.ClassSpecific.Hunter
                         Helpers.Common.CreateInterruptBehavior(),
 						
 						Spell.BuffSelf("Aspect of the Eagle", ret => Me.GetAuraTimeLeft("Mongoose Fury", false).TotalSeconds > 10),
+						Spell.Cast("Mongoose Bite", req => SpellManager.HasSpell("Aspect of the Eagle") && Spell.GetSpellCooldown("Aspect of the Eagle").TotalSeconds <= 0 && !Me.HasActiveAura("Mongoose Fury")),
 						Spell.BuffSelf("Snake Hunter", ret => Me.HasAura("Aspect of the Eagle") && mongooseBiteChargeInfo?.ChargesLeft <= 0),
 						Spell.Cast("Butchery", ret => Unit.UnfriendlyUnits(8).Count() >= 2),
 						Spell.Cast("Explosive Trap"),
 						Spell.Cast("Dragonsfire Grenade"),
 						Spell.CastOnGround("Steel Trap", on => Me.CurrentTarget.Location, ret => Me.CurrentTarget.TimeToDeath() > 5),
 						Spell.Cast("Raptor Strike", 
-							ret => Common.HasTalent(HunterTalents.WayOfTheMokNathal) && (Me.GetAuraTimeLeft("Way of the Mok'Nathal").TotalSeconds < 1.8 || Me.GetAuraStacks("Way of the Mok'Nathal") < 4)),
+							ret => Common.HasTalent(HunterTalents.WayOfTheMokNathal) && (Me.GetAuraTimeLeft("Mok'Nathal Tactics").TotalSeconds < 1.8 || Me.GetAuraStacks("Mok'Nathal Tactics") < 4)),
 						Spell.Cast("Lacerate"),
 						Spell.Cast("Mongoose Bite", 
 							ret => mongooseBiteChargeInfo != null && mongooseBiteChargeInfo.ChargesLeft == 2 && mongooseBiteChargeInfo.TimeUntilNextCharge.TotalSeconds < 1.8),
@@ -61,7 +62,7 @@ namespace Singular.ClassSpecific.Hunter
 						Spell.Cast("Flanking Strike", ret => Common.FocusDeficit < 20 && Unit.UnfriendlyUnits(8).Count() <= 3),
 						Spell.Cast("Carve", ret => Common.FocusDeficit < 20 && Unit.UnfriendlyUnits(8).Count() >= 4),
 						Spell.Cast("Carve", ret => Common.HasTalent(HunterTalents.SerpentString) && Unit.UnfriendlyUnits(8).Count(u => u.GetAuraTimeLeft("Serpent String").TotalSeconds < 1.8) >= 3),
-						Spell.Cast("Mongoose Bite", ret => Spell.GetSpellCooldown("Aspect of the Eagle").TotalSeconds > 12)
+						Spell.Cast("Mongoose Bite", ret => !SpellManager.HasSpell("Aspect of the Eagle") || Spell.GetSpellCooldown("Aspect of the Eagle").TotalSeconds > 12)
                         )
                     )
                 );

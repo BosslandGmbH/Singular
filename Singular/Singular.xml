@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>07/25/2016 21:20:01</ScanTime>
+  <ScanTime>07/26/2016 01:44:35</ScanTime>
   <FileList>
-    <File Hash="6452" Name="ClassSpecific\DeathKnight\Blood.cs" />
+    <File Hash="6787" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="7024" Name="ClassSpecific\DeathKnight\Common.cs" />
-    <File Hash="5620" Name="ClassSpecific\DeathKnight\Frost.cs" />
+    <File Hash="6656" Name="ClassSpecific\DeathKnight\Frost.cs" />
     <File Hash="2039" Name="ClassSpecific\DeathKnight\Lowbie.cs" />
-    <File Hash="7544" Name="ClassSpecific\DeathKnight\Unholy.cs" />
+    <File Hash="8319" Name="ClassSpecific\DeathKnight\Unholy.cs" />
     <File Hash="5134" Name="ClassSpecific\Druid\Balance.cs" />
     <File Hash="49261" Name="ClassSpecific\Druid\Common.cs" />
     <File Hash="19231" Name="ClassSpecific\Druid\Feral.cs" />
-    <File Hash="10260" Name="ClassSpecific\Druid\Guardian.cs" />
+    <File Hash="10280" Name="ClassSpecific\Druid\Guardian.cs" />
     <File Hash="2467" Name="ClassSpecific\Druid\Lowbie.cs" />
     <File Hash="41552" Name="ClassSpecific\Druid\Resto.cs" />
     <File Hash="19067" Name="ClassSpecific\Generic.cs" />
@@ -18,13 +18,13 @@
     <File Hash="65925" Name="ClassSpecific\Hunter\Common.cs" />
     <File Hash="1495" Name="ClassSpecific\Hunter\Lowbie.cs" />
     <File Hash="6050" Name="ClassSpecific\Hunter\Marksman.cs" />
-    <File Hash="4275" Name="ClassSpecific\Hunter\Survival.cs" />
+    <File Hash="4512" Name="ClassSpecific\Hunter\Survival.cs" />
     <File Hash="8730" Name="ClassSpecific\Mage\Arcane.cs" />
-    <File Hash="26585" Name="ClassSpecific\Mage\Common.cs" />
+    <File Hash="25671" Name="ClassSpecific\Mage\Common.cs" />
     <File Hash="7853" Name="ClassSpecific\Mage\Fire.cs" />
     <File Hash="26734" Name="ClassSpecific\Mage\Frost.cs" />
     <File Hash="1696" Name="ClassSpecific\Mage\Lowbie.cs" />
-    <File Hash="6650" Name="ClassSpecific\Monk\Brewmaster.cs" />
+    <File Hash="7091" Name="ClassSpecific\Monk\Brewmaster.cs" />
     <File Hash="46229" Name="ClassSpecific\Monk\Common.cs" />
     <File Hash="1059" Name="ClassSpecific\Monk\Lowbie.cs" />
     <File Hash="59611" Name="ClassSpecific\Monk\Mistweaver.cs" />
@@ -49,7 +49,7 @@
     <File Hash="32320" Name="ClassSpecific\Shaman\Common.cs" />
     <File Hash="15663" Name="ClassSpecific\Shaman\Elemental.cs" />
     <File Hash="16219" Name="ClassSpecific\Shaman\Enhancement.cs" />
-    <File Hash="4814" Name="ClassSpecific\Shaman\Lowbie.cs" />
+    <File Hash="4725" Name="ClassSpecific\Shaman\Lowbie.cs" />
     <File Hash="42111" Name="ClassSpecific\Shaman\Restoration.cs" />
     <File Hash="34339" Name="ClassSpecific\Shaman\Totems.cs" />
     <File Hash="21610" Name="ClassSpecific\Warlock\Affliction.cs" />
@@ -61,7 +61,7 @@
     <File Hash="24913" Name="ClassSpecific\Warrior\Common.cs" />
     <File Hash="35005" Name="ClassSpecific\Warrior\Fury.cs" />
     <File Hash="2298" Name="ClassSpecific\Warrior\Lowbie.cs" />
-    <File Hash="27882" Name="ClassSpecific\Warrior\Protection.cs" />
+    <File Hash="27815" Name="ClassSpecific\Warrior\Protection.cs" />
     <File Hash="1275" Name="Dynamics\Attributes.cs" />
     <File Hash="8710" Name="Dynamics\CompositeBuilder.cs" />
     <File Hash="837" Name="Dynamics\SessionState.cs" />
@@ -95,6 +95,15 @@
     <File Hash="816" Name="Managers\SpellImmunityManager.cs" />
     <File Hash="8568" Name="Managers\TalentManager.cs" />
     <File Hash="4748" Name="Managers\TankManager.cs" />
+    <File Hash="0" Name="obj\Bobby53\TemporaryGeneratedFile_036C0B5B-1481-4323-8D20-8F5ADCB23D92.cs" />
+    <File Hash="0" Name="obj\Bobby53\TemporaryGeneratedFile_5937a670-0e60-4077-877b-f7221da3dda1.cs" />
+    <File Hash="0" Name="obj\Bobby53\TemporaryGeneratedFile_E7A71F73-0F8D-4B9B-B56E-8E70B10BC5D3.cs" />
+    <File Hash="0" Name="obj\Debug\TemporaryGeneratedFile_036C0B5B-1481-4323-8D20-8F5ADCB23D92.cs" />
+    <File Hash="0" Name="obj\Debug\TemporaryGeneratedFile_5937a670-0e60-4077-877b-f7221da3dda1.cs" />
+    <File Hash="0" Name="obj\Debug\TemporaryGeneratedFile_E7A71F73-0F8D-4B9B-B56E-8E70B10BC5D3.cs" />
+    <File Hash="0" Name="obj\Raphus\TemporaryGeneratedFile_036C0B5B-1481-4323-8D20-8F5ADCB23D92.cs" />
+    <File Hash="0" Name="obj\Raphus\TemporaryGeneratedFile_5937a670-0e60-4077-877b-f7221da3dda1.cs" />
+    <File Hash="0" Name="obj\Raphus\TemporaryGeneratedFile_E7A71F73-0F8D-4B9B-B56E-8E70B10BC5D3.cs" />
     <File Hash="4102" Name="Settings\DeathKnightSettings.cs" />
     <File Hash="36971" Name="Settings\DruidSettings.cs" />
     <File Hash="1029" Name="Settings\HealerSettings.cs" />

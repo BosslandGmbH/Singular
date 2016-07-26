@@ -54,6 +54,10 @@ namespace Singular.ClassSpecific.DeathKnight
 							ret =>  Me.CurrentRunes <= 0 && Common.RunicPowerDeficit >= 35 && 
 									(!Common.HasTalent(DeathKnightTalents.BreathOfSindragosa) || Me.HasActiveAura("Breath of Sindragosa"))),
 
+						new Decorator(ret => Me.Level < 100,
+							CreateLowLevelRotation()
+							),
+
 						new Decorator(
 							ret => Common.HasTalent(DeathKnightTalents.Obliteration),
 							CreateObliterationRotation()
@@ -74,6 +78,19 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
+
+	    private static Composite CreateLowLevelRotation()
+	    {
+		    return new PrioritySelector(
+				Spell.Cast("Howling Blast", ret => Me.CurrentTarget.GetAuraTimeLeft("Frost Fever").TotalSeconds < 1.8d),
+				Spell.Cast("Remorseless Winter", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= 2),
+				Spell.Cast("Frostscythe", ret => Spell.UseAOE && Clusters.GetClusterCount(Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8) >= 3),
+				Spell.Cast("Howling Blast", ret => Me.HasActiveAura("Rime")),
+				Spell.Cast("Obliterate", ret => Common.RunicPowerDeficit >= 10),
+				Spell.Cast("Frost Strike", ret => Common.RunicPowerDeficit < 35),
+				Spell.Cast("Horn of Winter", ret => Me.CurrentRunes < 4 && Common.RunicPowerDeficit >= 20)
+				);
+	    }
 
 	    private static Composite CreateObliterationRotation()
 	    {
@@ -115,6 +132,7 @@ namespace Singular.ClassSpecific.DeathKnight
 				Spell.Cast("Remorseless Winter", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= 2),
 				Spell.CastOnGround("Glacial Advance", ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location, ret => Spell.UseAOE),
 				Spell.Cast("Frostscythe", ret => Spell.UseAOE && Clusters.GetClusterCount(Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8) >= 3),
+				Spell.Cast("Obliterate", ret => Common.RunicPowerDeficit >= 10 && (!Spell.UseAOE || !Unit.UnfriendlyUnitsNearTarget(8).Any())),
 				Spell.Cast("Howling Blast", ret => Me.HasActiveAura("Rime")),
 				Spell.Cast("Frost Strike", ret => Common.RunicPowerDeficit < 35),
 				Spell.Cast("Horn of Winter", ret => Me.CurrentRunes < 4 && Common.RunicPowerDeficit >= 20)

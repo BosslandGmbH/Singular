@@ -78,8 +78,7 @@ namespace Singular.ClassSpecific.Shaman
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
                         Spell.Cast("Earth Shock", req => Me.CurrentTarget.Distance < 15 || !Me.CurrentTarget.IsMoving),      // always use
-                        Spell.Cast("Primal Strike"),    // always use
-                        Spell.Cast("Lightning Bolt")
+						Spell.Cast("Lightning Bolt")
                         )
                     )
                 );

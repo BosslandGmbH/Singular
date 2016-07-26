@@ -63,21 +63,7 @@ namespace Singular.ClassSpecific.Mage
                         PartyBuff.BuffGroup("Dalaran Brilliance", "Arcane Brilliance"),
                         PartyBuff.BuffGroup("Arcane Brilliance", "Dalaran Brilliance"),
 						
-                        new ThrottlePasses(
-                            1, TimeSpan.FromSeconds(10),
-                            RunStatus.Failure,
-                            new Decorator(
-                                ctx => ShouldSummonTable && NeedTableForBattleground,
-                                new Sequence(
-                                    new Action(ctx => Logger.Write( LogColor.Hilite, "^Conjure Refreshment Table")),
-                                    Spell.Cast("Conjure Refreshment Table", mov => true, on => Me, req => true, cancel => false, LagTolerance.No ),
-                                    // new Action(ctx => Spell.CastPrimative("Conjure Refreshment Table")),
-                                    new WaitContinue(4, ctx => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed())
-                                    )
-                                )
-                            ),
-
-                        Spell.BuffSelf("Conjure Refreshment", ret => !Gotfood && !ShouldSummonTable)
+                        Spell.BuffSelf("Conjure Refreshment", ret => !Gotfood && !StyxWoW.Me.GroupInfo.IsInParty)
                         )
                     )
                 );

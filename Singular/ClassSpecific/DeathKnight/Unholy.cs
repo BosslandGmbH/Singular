@@ -109,6 +109,11 @@ namespace Singular.ClassSpecific.DeathKnight
 							),
 
 						new Decorator(
+							ret => Me.Level < 100,
+							CreateLowLevelRotation()
+							),
+
+						new Decorator(
 							ret => Common.HasTalent(DeathKnightTalents.DarkArbiter),
 							CreateDarkArbiterRotation()
 							),
@@ -128,6 +133,19 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
 		}
+
+	    private static Composite CreateLowLevelRotation()
+	    {
+		    return new PrioritySelector(
+				Spell.Cast("Summon Gargoyle", ret => Me.CurrentTarget.IsStressful() && DeathKnightSettings.UseSummonGargoyle),
+				Spell.Cast("Outbreak", ret => Me.CurrentTarget.GetAuraTimeLeft("Virulent Plague").TotalSeconds < 1.8),
+				Spell.BuffSelf("Dark Transformation", ret => Me.GotAlivePet),
+				Spell.Cast("Festering Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") < 5),
+				Spell.Cast("Scourge Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") >= 1),
+				Spell.Cast("Death Coil", req => Common.RunicPowerDeficit < 10)
+				);
+	    }
+
 		private static Composite CreateDefileRotation()
 		{
 			return new PrioritySelector(

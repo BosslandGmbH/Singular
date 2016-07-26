@@ -256,7 +256,7 @@ namespace Singular.ClassSpecific.Warrior
                         Movement.WaitForLineOfSpellSight(),
 
                         new Decorator(
-                            req => Me.GotTarget() && Me.Shapeshift != (ShapeshiftForm) WarriorStance.GladiatorStance,
+                            req => Me.GotTarget(),
                             CreateProtectionDefensiveCombat()
                             )   
                         )

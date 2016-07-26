@@ -11,10 +11,9 @@ namespace Singular.ClassSpecific.Rogue
 {
     public class Lowbie
     {
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
+        private static LocalPlayer Me => StyxWoW.Me;
 
-        [Behavior(BehaviorType.Combat, WoWClass.Rogue, 0)]
+	    [Behavior(BehaviorType.Combat, WoWClass.Rogue, 0)]
         public static Composite CreateLowbieRogueCombat()
         {
             return new PrioritySelector(
@@ -26,9 +25,10 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+						Spell.BuffSelf("Evasion", req => Me.HealthPercent < 40),
                         Helpers.Common.CreateInterruptBehavior(),
-                        Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5 || StyxWoW.Me.CurrentTarget.HealthPercent <= 40 && StyxWoW.Me.ComboPoints >= 2),
-                        Spell.Cast("Sinister Strike")
+                        Spell.Cast("Envenom", ret => Me.ComboPoints == 5 || Me.CurrentTarget.HealthPercent <= 40 && Me.ComboPoints >= 2),
+                        Spell.Cast("Mutilate")
                         )
                     )
                 );
@@ -48,7 +48,7 @@ namespace Singular.ClassSpecific.Rogue
                     new PrioritySelector(
                         Common.CreateStealthBehavior(),
                         Common.CreateRogueOpenerBehavior(),
-                        Spell.Cast("Sinister Strike"))
+                        Spell.Cast("Mutilate"))
                     )
                 );
         }

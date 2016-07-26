@@ -21,7 +21,7 @@ namespace Singular.ClassSpecific.Rogue
         
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueAssassination, WoWContext.All)]
+        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueAssassination)]
         public static Composite CreateAssaRoguePull()
         {
             return new PrioritySelector(
@@ -66,7 +66,7 @@ namespace Singular.ClassSpecific.Rogue
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueAssassination, WoWContext.Normal | WoWContext.Battlegrounds )]
+        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueAssassination)]
         public static Composite CreateAssaRogueNormalCombat()
         {
             return new PrioritySelector(
@@ -88,10 +88,10 @@ namespace Singular.ClassSpecific.Rogue
                         Helpers.Common.CreateInterruptBehavior(),
                         Common.CreateDismantleBehavior(),
 
-                        Spell.Buff("Rupture", onUnit => Me.CurrentTarget, req => Me.ComboPoints >= 5),
+                        Spell.Buff("Rupture", req => Me.ComboPoints >= 5),
                         Spell.Buff("Vendetta", ret => Me.CurrentTarget.IsPlayer || Me.CurrentTarget.Elite || Me.CurrentTarget.IsBoss() || Common.AoeCount > 1),
-                        Spell.Buff("Hemorrhage", on => Me.CurrentTarget),
-                        Spell.Buff("Garrote", on => Me.CurrentTarget),
+                        Spell.Buff("Hemorrhage"),
+                        Spell.Buff("Garrote"),
                         Spell.Cast("Exsanguinate"),
                         Spell.Cast("Envenom", req => Me.ComboPoints >= 5),
                         Spell.Cast("Mutilate"),

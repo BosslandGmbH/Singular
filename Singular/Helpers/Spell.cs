@@ -378,10 +378,10 @@ namespace Singular.Helpers
         /// <returns>Maximum spell range</returns>
         public static float ActualMaxRange(this WoWSpell spell, WoWUnit unit)
         {
-            if (spell.MaxRange == 0)
-                return 0;
-            // 0.1 margin for error
-            return unit != null ? spell.MaxRange + unit.CombatReach : spell.MaxRange;
+            if (spell.MaxRange <= 0)
+                return unit.MeleeRange;
+
+            return spell.MaxRange + unit?.CombatReach ?? spell.MaxRange;
         }
 
         public static float ActualMaxRange(string name, WoWUnit unit)

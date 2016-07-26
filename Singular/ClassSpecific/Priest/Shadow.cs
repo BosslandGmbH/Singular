@@ -28,9 +28,11 @@ namespace Singular.ClassSpecific.Priest
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static PriestSettings PriestSettings { get { return SingularSettings.Instance.Priest(); } }
 
-        private static bool InVoidform => Me.HasAura("Voidform");
-        
-        [Behavior(BehaviorType.Initialize, WoWClass.Priest, WoWSpec.PriestShadow)]
+        private static bool InVoidform => VoidformStacks > 0;
+
+	    private static uint VoidformStacks => Me.GetAllAuras().Where(a => a.Name == "Voidform").Select(a => a.StackCount).DefaultIfEmpty(0u).Max();
+
+		[Behavior(BehaviorType.Initialize, WoWClass.Priest, WoWSpec.PriestShadow)]
         public static Composite CreateShadowInitialize()
         {
             if (SpellManager.HasSpell("Flash Heal"))
@@ -89,9 +91,6 @@ namespace Singular.ClassSpecific.Priest
         public static Composite CreateShadowHeal()
         {
             return new PrioritySelector(
-
-                CreateFightAssessment(),
-
                 Spell.Cast("Desperate Prayer", ret => Me, ret => Me.HealthPercent < PriestSettings.DesperatePrayerHealth),
 
                 Spell.BuffSelf("Power Word: Shield", ret => (Me.HealthPercent < PriestSettings.PowerWordShield || (!Me.HasAura("Shadowform") && SpellManager.HasSpell("Shadowform"))) && !Me.HasAura("Weakened Soul")),
@@ -139,7 +138,7 @@ namespace Singular.ClassSpecific.Priest
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.All)]
+        [Behavior(BehaviorType.Pull, WoWClass.Priest, WoWSpec.PriestShadow)]
         public static Composite CreatePriestShadowNormalPull()
         {
             return new PrioritySelector(
@@ -209,14 +208,14 @@ namespace Singular.ClassSpecific.Priest
          * 
          **/
 
-        [Behavior(BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.All)]
+        [Behavior(BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestShadow)]
         public static Composite CreatePriestShadowNormalCombat()
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
                 Spell.WaitForCastOrChannel(),
-
-                new Decorator(
+				CreateFightAssessment(),
+				new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
@@ -319,7 +318,7 @@ namespace Singular.ClassSpecific.Priest
                                     ),
                                 
                                 // When we enter void form, even if AOE, we use our single target rotation after maintaining debuffs.
-                                new Decorator(ret => Me.HasAura("Voidform"),
+                                new Decorator(ret => InVoidform,
                                     CreateMaintainVoidformBehaviour()),
 
                                 // filler spell
@@ -366,9 +365,9 @@ namespace Singular.ClassSpecific.Priest
         private static Composite CreateMaintainVoidformBehaviour()
         {
             return new PrioritySelector(
-                Spell.Cast("Void Bolt"),
-                Spell.Cast("Shadowfiend", when => Me.GetAuraStacks("Voidform") < 20),
-                Spell.Cast("Shadow Word: Death", when => Me.GetAuraStacks("Shadow Word: Death") == 2 || (Me.GetAuraStacks("Voidform") < 10 && !Spell.CanCastHack("Mind Blast"))),
+                Spell.Cast("Void Bolt", when => InVoidform),
+                Spell.Cast("Shadowfiend", when => VoidformStacks < 20),
+                Spell.Cast("Shadow Word: Death", when => Me.GetAuraStacks("Shadow Word: Death") == 2 || (VoidformStacks < 10 && !Spell.CanCastHack("Mind Blast"))),
                 Spell.Cast("Mind Blast"),
                 Spell.Cast("Shadowfiend"),
                 Spell.Cast("Mind Flay", when => AoeTargets.Count <= 2)
@@ -438,82 +437,7 @@ namespace Singular.ClassSpecific.Priest
                 return RunStatus.Failure;
             });
         }
-
-
-        static WoWUnit BestMindSearTarget
-        {
-            get 
-            { 
-                return Group.AnyTankNearby
-                    ? Group.Tanks.Where( t => t.IsAlive && t.Distance < 40).OrderByDescending(t => AoeTargets.Count(a => t.Location.Distance(a.Location) < 10f)).FirstOrDefault()
-                    : Clusters.GetBestUnitForCluster( AoeTargets, ClusterType.Radius, 10f); 
-            }
-        }
-
-        private static WoWUnit GetBestMindSearTarget()
-        {
-            const int MindSearCount = 3;
-
-            if (!Me.IsInGroup() || !Me.Combat)
-                return Clusters.GetBestUnitForCluster(AoeTargets, ClusterType.Radius, 10f);
-
-            if (!Spell.CanCastHack("Mind Sear", Me, skipWowCheck: true))
-            {
-                // Logger.WriteDebug("GetBestMindSearTarget: CanCastHack says NO to Healing Rain");
-                return null;
-            }
-
-            List<WoWUnit> targetsCovered = Unit.UnfriendlyUnits(50).ToList();
-            if (targetsCovered.Count() < MindSearCount)
-                return null;
-              
-            List<WoWUnit> targets = targetsCovered
-                .Union( Group.Tanks)
-                .ToList();
-
-            // search all targets to find best one in best location to use as anchor for cast on ground
-            var t = targets
-                .Where( u => u.SpellDistance() < 40 && Me.IsSafelyFacing(u) && u.InLineOfSpellSight )
-                .Select(p => new
-                {
-                    Unit = p,
-                    Count = targetsCovered
-                        .Where(pp => pp.Location.DistanceSqr(p.Location) < 10 * 10)
-                        .Count()
-                })
-                .OrderByDescending(v => v.Count)
-                .ThenByDescending(v => v.Unit.IsPlayer)
-                .DefaultIfEmpty(null)
-                .FirstOrDefault();
-
-            if (t != null && t.Count >= MindSearCount )
-            {
-                Logger.WriteDebug("GetBestMindSearTarget:  found {0} with {1} enemies within 10 yds", t.Unit.SafeName(), t.Count);
-                return t.Unit;
-            }
-
-            return null;
-        }
-
-        static Composite CastInsanity()
-        {
-            const int INSANITY_PROC = 132573;
-            return Spell.Cast(
-                "Mind Flay",
-                mov => true,
-                on => Me.CurrentTarget,
-                req => {
-                    if (!Me.HasAura(INSANITY_PROC))
-                        return false;
-                    if (!Spell.CanCastHack("Mind Flay", Me.CurrentTarget))
-                        return false;
-                    Logger.Write(LogColor.Hilite, "^Insanity: casting a serious Mind Flay");
-                    return true;
-                    },
-                cancel => false
-                );
-        }
-
+		
         static Composite CastMindFlay( UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate requirements = null)
         {
             UnitSelectionDelegate o = onUnit ?? (on => Me.CurrentTarget);

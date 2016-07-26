@@ -26,7 +26,7 @@ namespace Singular.ClassSpecific.Rogue
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueSubtlety, WoWContext.All)]
+        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueSubtlety)]
         public static Composite CreateRogueSubtletyNormalPull()
         {
             return new PrioritySelector(
@@ -57,7 +57,7 @@ namespace Singular.ClassSpecific.Rogue
                     )
                 );
         }
-        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueSubtlety, WoWContext.Normal | WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueSubtlety)]
         public static Composite CreateRogueSubtletyNormalCombat()
         {
             return new PrioritySelector(
@@ -81,21 +81,17 @@ namespace Singular.ClassSpecific.Rogue
 
                         Common.CreateRogueOpenerBehavior(),
 
-                        Spell.Cast("Shadowstrike"),
-                        Spell.Buff("Symbols of Death", on => Me.CurrentTarget),
+						Spell.HandleOffGCD(Spell.Cast("Symbols of Death")),
                         Spell.Cast("Shadow Blades"),
-                        Spell.Buff("Nightblade", on => Me.CurrentTarget, req => Me.ComboPoints >= 5),
-
-                        Spell.Cast("Eviscerate", req => Me.ComboPoints >= 5),
+						Spell.Cast("Shadowstrike"),
+						Spell.Buff("Nightblade", req => Me.ComboPoints >= 5),
                         
                         Spell.Cast("Shadow Dance",
-                            on => Me,
-                            ret => Me.GotTarget()
-                                && !Common.AreStealthAbilitiesAvailable
-                                && Me.ComboPoints < 2
-                                && Me.GetAuraStacks("Shadow Dance") > 2),
-
-                        Spell.Cast("Shuriken Storm", req => Common.AoeCount >= 2),
+                            ret => !Common.AreStealthAbilitiesAvailable
+                                && Spell.GetCharges("Shadow Dance") >= 2),
+						
+						Spell.Cast("Eviscerate", req => Me.ComboPoints >= 5),
+						Spell.Cast("Shuriken Storm", req => Common.AoeCount >= 2),
                         Spell.Cast("Backstab"),
 
                         // lets try a big hit if stealthed and behind before anything

@@ -574,7 +574,7 @@ namespace Singular.ClassSpecific.Priest
                 );
         }
 
-        [Behavior(BehaviorType.Pull, WoWClass.Priest, WoWSpec.PriestDiscipline, WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Priest, WoWSpec.PriestDiscipline)]
         public static Composite CreateDiscCombatNormalPull()
         {
             return new PrioritySelector(
@@ -618,7 +618,7 @@ namespace Singular.ClassSpecific.Priest
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestDiscipline, WoWContext.All)]
+        [Behavior(BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestDiscipline)]
         public static Composite CreateDiscCombatNormalCombat()
         {
             return new PrioritySelector(

@@ -29,7 +29,7 @@ namespace Singular.ClassSpecific.Warlock
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDemonology, WoWContext.All)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDemonology)]
         public static Composite CreateWarlockDemonologyNormalCombat()
         {
             return new PrioritySelector(

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Singular.Dynamics;
 using Singular.Helpers;
@@ -28,7 +29,7 @@ namespace Singular.ClassSpecific.Rogue
 	    private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); } 
 
         #region Normal Rotation
-        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueOutlaw, WoWContext.All)]
+        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueOutlaw)]
         public static Composite CreateRogueCombatPull()
         {
             return new PrioritySelector(
@@ -61,7 +62,17 @@ namespace Singular.ClassSpecific.Rogue
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueOutlaw, WoWContext.All)]
+		private static readonly HashSet<string> RollTheBonesBuffs = new HashSet<string>
+		{
+			"True Bearing",
+			"Shark Infested Waters",
+			"Jolly Roger",
+			"Grand Melee",
+			"Broadsides",
+			"Buried Treasure"
+		};
+
+        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueOutlaw)]
         public static Composite CreateRogueCombatNormalCombat()
         {
             return new PrioritySelector(
@@ -96,18 +107,20 @@ namespace Singular.ClassSpecific.Rogue
 
                         Spell.Cast("Vanish", when => Me.TimeToDeath() < 2 && Me.TimeToDeath() < Me.CurrentTarget.TimeToDeath()),
 
-                        Spell.BuffSelf("Adrenaline Rush", ret => Me.CurrentEnergy < 20),
+                        Spell.BuffSelf("Adrenaline Rush", ret => Me.HasActiveAura("True Bearing") || RollTheBonesBuffs.Count(a => Me.HasActiveAura(a)) >= 3),
                         
-                        Spell.Cast("Death from Above", req => !Me.HasAura("Adrenaline Rush") && Me.ComboPoints >= 6),
+						Spell.Cast("Marked for Death", req => Me.ComboPoints <= 1),
+
+                        Spell.Cast("Death from Above", req => !Me.HasActiveAura("Adrenaline Rush") && Me.ComboPoints >= 6),
 
                         // If talented, should keep it up.
                         Spell.Buff("Slice and Dice", on => Me, ret => Me.ComboPoints > 0),
 
-                        Spell.Buff("Roll the Bones"),
+                        Spell.Cast("Roll the Bones", req => !Me.HasActiveAura("True Bearing") && RollTheBonesBuffs.Count(a => Me.HasActiveAura(a)) < 3),
 
-                        Spell.Cast("Run Through", req => Me.ComboPoints >= 6),
+                        Spell.Cast("Run Through", req => Me.ComboPoints >= 5),
 
-                        Spell.Cast("Pistol Shot", req => Me.HasAura("Opportunity")),
+                        Spell.Cast("Pistol Shot", req => Me.HasActiveAura("Opportunity") && Me.ComboPoints <= 4),
 
                         Spell.Cast("Saber Slash"))
                     )

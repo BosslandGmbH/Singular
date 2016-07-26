@@ -31,7 +31,7 @@ namespace Singular.ClassSpecific.Mage
 
         private static DateTime _lastPyroPull = DateTime.MinValue;
 
-        [Behavior(BehaviorType.Pull, WoWClass.Mage, WoWSpec.MageFire, WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Mage, WoWSpec.MageFire)]
         public static Composite CreateMageFireNormalPull()
         {
             return new PrioritySelector(
@@ -107,8 +107,8 @@ namespace Singular.ClassSpecific.Mage
 						Spell.BuffSelf("Combustion"),
 						Spell.CastOnGround("Flamestrike", 
 							on => Me.CurrentTarget, 
-							ret => Me.HasAura("Hot Streak") && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3),
-						Spell.Cast("Pyroblast", ret => Me.HasActiveAura("Hot Streak")),
+							ret => Me.HasActiveAura("Hot Streak!") && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3),
+						Spell.Cast("Pyroblast", ret => Me.HasActiveAura("Hot Streak!")),
 						Spell.CastOnGround("Meteor", on => Me.CurrentTarget.Location),
 						Spell.Cast("Dragon's Breath", 
 							ret => Me.GetAuraTimeLeft("Combustion") < Spell.GetSpellCastTime("Fireball") && 

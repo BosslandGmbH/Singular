@@ -51,8 +51,6 @@ namespace Singular.ClassSpecific.Shaman
 
         #region Status and Config Helpers
 
-        public static bool talentTotemicPersistance { get; set; }
-
         public static bool talentPrimalElementalist { get; set; }
 
         public static bool HasTalent(ShamanTalents tal)
@@ -105,7 +103,6 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Initialize, WoWClass.Shaman)]
         public static Composite CreateShamanInitialize()
         {
-            talentTotemicPersistance = HasTalent(ShamanTalents.TotemicPersistence);
             talentPrimalElementalist = HasTalent(ShamanTalents.PrimalElementalist);
 
             PetManager.NeedsPetSupport = HasTalent(ShamanTalents.PrimalElementalist);
@@ -619,58 +616,74 @@ namespace Singular.ClassSpecific.Shaman
 
     public enum ShamanTalents
     {
-#if PRE_WOD
-        NaturesGuardian = 1,
-        StoneBulwarkTotem,
-        AstralShift,
-        FrozenPower,
-        EarthgrabTotem,
-        WindwalkTotem,
-        CallOfTheElements,
-        TotemicRestoration,
-        TotemicProjection,
-        ElementalMastery,
-        AncestralSwiftness,
-        EchoOfTheElements,
-        RushingStreams,
-        AncestralGuidance,
-        Conductivity,
-        UnleashedFury,
-        PrimalElementalist,
-        ElementalBlast
-#else
+		PathOfFlame = 1,
+		EarthenRage,
+		TotemMastery,
 
-        NaturesGuardian = 1,
-        StoneBulwarkTotem,
-        AstralShift,
+		Windsong = PathOfFlame,
+		HotHand = EarthenRage,
+		Boulderfist = TotemMastery,
 
-        FrozenPower,
-        EarthgrabTotem,
-        WindwalkTotem,
+		Undulation = PathOfFlame,
+		UnleashLife = EarthenRage,
+		Torrent = TotemMastery,
+		
+		GustOfWind = 4,
+		AncestralGuidanceElemental,
+		WindRushTotem,
 
-        CallOfTheElements,
-        TotemicPersistence,
-        TotemicProjection,
+		Rainfal = GustOfWind,
+		FeralLunge = AncestralGuidanceElemental,
 
-        ElementalMastery,
-        AncestralSwiftness,
-        EchoOfTheElements,
+		GracefulSpirit = AncestralGuidanceElemental,
+		
+		LightningSurgeTotem = 7,
+		EarthgrabTotem,
+		VoodooTotem,
 
-        RushingStreams,
-        AncestralGuidance,
-        Conductivity,
+		ElementalBlast = 10,
+		AncestralSwiftness,
+		EchoOfTheElementsElemental,
 
-        UnleashedFury,
-        ElementalBlast,
-        PrimalElementalist,
+		LightningShield = ElementalBlast,
+		Hailstorm = EchoOfTheElementsElemental,
 
-        ElementalFusion,
-        CloudburstTotem = ElementalFusion,
-        StormElementalTotem,
-        LiquidMagma,
-        HighTide = LiquidMagma
+		CrashingWaves = ElementalBlast,
+		AncestralGuidanceResto = AncestralSwiftness,
+		Deluge = EchoOfTheElementsElemental,
 
-#endif
+		ElementalFusion = 13,
+		PrimalElementalist,
+		Icefury,
+
+		Tempest = ElementalFusion,
+		Overcharge = PrimalElementalist,
+		EmpoweredStormlash = Icefury,
+
+		AncestralProtectionTotem = ElementalFusion,
+		EarthenShieldTotem = PrimalElementalist,
+		AncestralVigor = Icefury,
+
+		ElementalMastery = 16,
+		StormElemental,
+		Aftershock,
+
+		CrashingStorm = ElementalMastery,
+		FuryOfAir = StormElemental,
+		Sundering = Aftershock,
+
+		BottomlessDepths = ElementalMastery,
+		CloudburstTotem = StormElemental,
+		EchoOfTheElementsResto = Aftershock,
+
+		Ascendance = 19,
+		LightningRod,
+		LiquidMagmaTotem,
+
+		Landslide = LightningRod,
+		EarthenSpike = LiquidMagmaTotem,
+
+		Wellspring = LightningRod,
+		HighTide = LiquidMagmaTotem
     }
-
 }

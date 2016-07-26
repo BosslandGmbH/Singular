@@ -33,7 +33,7 @@ namespace Singular.ClassSpecific.Warlock
         private static int DotCountNeeded;
         private static int MaxDotCount;
 
-        [Behavior(BehaviorType.Initialize, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.All)]
+        [Behavior(BehaviorType.Initialize, WoWClass.Warlock, WoWSpec.WarlockAffliction)]
         public static Composite CreateWarlockAfflictionInit()
         {
             MaxDotCount = 0;
@@ -48,7 +48,7 @@ namespace Singular.ClassSpecific.Warlock
         }
 
 
-        [Behavior(BehaviorType.Pull, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.All)]
+        [Behavior(BehaviorType.Pull, WoWClass.Warlock, WoWSpec.WarlockAffliction)]
         public static Composite CreateWarlockAfflictionNormalPull()
         { 
             return new PrioritySelector(
@@ -83,7 +83,7 @@ namespace Singular.ClassSpecific.Warlock
         }
 
 
-        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.All)]
+        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockAffliction)]
         public static Composite CreateWarlockAfflictionNormalCombat()
         {
             return new PrioritySelector(
@@ -204,14 +204,6 @@ namespace Singular.ClassSpecific.Warlock
                     new Decorator(
                         ret => _mobCount >= 4 && SpellManager.HasSpell("Seed of Corruption"),
                         new PrioritySelector(
-                            // if current target doesn't have CotE, then Soulburn+CotE
-                            new Decorator(
-                                req => !Me.CurrentTarget.HasAura("Curse of the Elements"),
-                                new Sequence(
-                                    Common.CreateCastSoulburn(req => true),
-                                    Spell.Buff("Curse of the Elements")
-                                    )
-                                ),
                             // roll SoC on targets in combat that we are facing
                             new PrioritySelector(
                                 ctx => Common.TargetsInCombat.FirstOrDefault(m => !m.HasAura("Seed of Corruption")),

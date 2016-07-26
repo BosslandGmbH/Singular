@@ -26,70 +26,93 @@ namespace Singular.ClassSpecific.Hunter
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterMarksmanship)]
-        public static Composite CreateMarksmanHunterNormalPullAndCombat()
-		{
+	    private static SpellChargeInfo GetSidewindersChargeInfo()
+	    {
 			SpellFindResults sfr;
 			SpellManager.FindSpell("Sidewinders", out sfr);
-			SpellChargeInfo sidewindersChargeInfo = (sfr.Override ?? sfr.Original)?.GetChargeInfo();
-			return new PrioritySelector(
-                Common.CreateHunterEnsureReadyToAttackFromLongRange(),
+			return (sfr.Override ?? sfr.Original)?.GetChargeInfo();
+		}
 
-                Spell.WaitForCastOrChannel(),
+	    [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterMarksmanship)]
+	    public static Composite CreateMarksmanHunterNormalPullAndCombat()
+	    {
+		    return new PrioritySelector(
+			    Common.CreateHunterEnsureReadyToAttackFromLongRange(),
 
-                new Decorator(
+			    Spell.WaitForCastOrChannel(),
 
-                    ret => !Spell.IsGlobalCooldown(),
+			    new Decorator(
 
-                    new PrioritySelector(
+				    ret => !Spell.IsGlobalCooldown(),
 
-                        CreateMarksmanDiagnosticOutputBehavior(),
+				    new PrioritySelector(
 
-                        Common.CreateMisdirectionBehavior(),
+					    CreateMarksmanDiagnosticOutputBehavior(),
 
-                        Common.CreateHunterAvoidanceBehavior(null, null),
+					    Common.CreateMisdirectionBehavior(),
 
-                        Movement.WaitForFacing(),
-                        Movement.WaitForLineOfSpellSight(),
+					    Common.CreateHunterAvoidanceBehavior(null, null),
 
-                        Helpers.Common.CreateInterruptBehavior(),
+					    Movement.WaitForFacing(),
+					    Movement.WaitForLineOfSpellSight(),
 
-                        Common.CreateHunterNormalCrowdControl(),
+					    Helpers.Common.CreateInterruptBehavior(),
 
-						Spell.Buff("Concussive Shot",
-                            ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
-                                && Me.CurrentTarget.Distance > Spell.MeleeRange),
+					    Common.CreateHunterNormalCrowdControl(),
 
-						Spell.BuffSelf("Trueshot", ret => Me.CurrentTarget.IsStressful() || PartyBuff.WeHaveBloodlust),
+					    Spell.Buff("Concussive Shot",
+						    ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
+						           && Me.CurrentTarget.Distance > Spell.MeleeRange),
 
-						Spell.Cast("Sentinel", ret => !Me.HasActiveAura("Marking Targets") && Unit.NearbyUnfriendlyUnits.All(u => !u.HasMyAura("Hunter's Mark"))),
-						// Detonate the missile
-						Spell.Cast("Explosive Shot", 
-							ret => WoWMissile.InFlightMissiles.Any(m => m.Caster.IsMe && m.Spell.Name == "Explosive Shot" && m.Position.Distance(Me.CurrentTarget.Location) < 8f)),
-						
-						Spell.Cast("Arcane Shot", 
-							ret => Common.HasTalent(HunterTalents.SteadyFocus) && !Common.HasTalent(HunterTalents.Sidewinders) && 
-									Me.GetAuraTimeLeft("Steady Focus").TotalSeconds < 4.2d),
-						Spell.Cast("Marked Shot", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HasMyAura("Vulnerable") && u.TimeToDeath(int.MaxValue) < 2)),
-						Spell.Cast("Marked Shot", ret => !Me.CurrentTarget.HasMyAura("Vulnerable")),
-						// Cast Marked Shot if Vulnerable buff will expire until we can get a Aimed Shot out
-						Spell.Cast("Marked Shot", ret => Me.CurrentTarget.GetAuraTimeLeft("Vulnerable") < Spell.GetSpellCastTime("Aimed Shot")),
-						// Also cover focus needed to cast Aimed shot
-						Spell.Cast("Marked Shot", 
-							ret => Me.CurrentFocus + (Me.GetPowerRegenInterrupted(WoWPowerType.Focus) * (Me.CurrentTarget.GetAuraTimeLeft("Vulnerable").TotalSeconds)) < 50),
-						Spell.Cast("Piercing Shot", ret => Me.CurrentFocus >= 100),
-						Spell.Cast("Barrage"),
-						// Fire the missile
-						Spell.Cast("Explosive Shot", ret => !WoWMissile.InFlightMissiles.Any(m => m.Caster.IsMe && m.Spell.Name == "Explosive Shot")),
-						Spell.Cast("Aimed Shot", ret => Me.CurrentTarget.GetAuraTimeLeft("Vulnerable").TotalSeconds > 2d),
-						Spell.Cast("Black Arrow"),
+					    Spell.BuffSelf("Trueshot", ret => Me.CurrentTarget.IsStressful() || PartyBuff.WeHaveBloodlust),
+
+					    Spell.Cast("Sentinel",
+						    ret =>
+							    !Me.HasActiveAura("Marking Targets") && Unit.NearbyUnfriendlyUnits.All(u => !u.HasMyAura("Hunter's Mark"))),
+					    // Detonate the missile
+					    Spell.Cast("Explosive Shot",
+						    ret =>
+							    WoWMissile.InFlightMissiles.Any(
+								    m =>
+									    m.Caster != null && m.Caster.IsMe && m.Spell?.Name == "Explosive Shot" &&
+									    m.Position.Distance(Me.CurrentTarget.Location) < 8f)),
+
+
+					    Spell.Cast("Arcane Shot",
+						    ret => Common.HasTalent(HunterTalents.SteadyFocus) && !Common.HasTalent(HunterTalents.Sidewinders) &&
+						           Me.GetAuraTimeLeft("Steady Focus").TotalSeconds < 4.2d),
+					    Spell.Cast("Marked Shot",
+						    on =>
+							    Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HasMyAura("Vulnerable") && u.TimeToDeath(int.MaxValue) < 2)),
+					    Spell.Cast("Marked Shot", ret => !Me.CurrentTarget.HasMyAura("Vulnerable")),
+					    // Cast Marked Shot if Vulnerable buff will expire until we can get a Aimed Shot out
+					    Spell.Cast("Marked Shot",
+						    ret => Me.CurrentTarget.GetAuraTimeLeft("Vulnerable") < Spell.GetSpellCastTime("Aimed Shot")),
+					    // Also cover focus needed to cast Aimed shot
+					    Spell.Cast("Marked Shot",
+						    ret =>
+							    Me.CurrentFocus +
+							    (Me.GetPowerRegenInterrupted(WoWPowerType.Focus)*
+							     (Me.CurrentTarget.GetAuraTimeLeft("Vulnerable").TotalSeconds)) < 50),
+					    Spell.Cast("Piercing Shot", ret => Me.CurrentFocus >= 100),
+					    Spell.Cast("Barrage"),
+					    // Fire the missile
+					    Spell.Cast("Explosive Shot",
+						    ret =>
+							    !WoWMissile.InFlightMissiles.Any(m => m.Caster != null && m.Caster.IsMe && m.Spell?.Name == "Explosive Shot")),
+					    Spell.Cast("Aimed Shot", ret => Me.CurrentTarget.GetAuraTimeLeft("Vulnerable").TotalSeconds > 2d),
+					    Spell.Cast("Black Arrow"),
+					    new Action(del => { Logger.Write(Common.HasTalent(HunterTalents.Sidewinders).ToYN());
+						                     return RunStatus.Failure;
+					    }),
+
 						new Decorator(ret => Common.HasTalent(HunterTalents.Sidewinders),
 							new PrioritySelector(
 								Spell.Cast("Sidewinders", ret => Common.HasTalent(HunterTalents.SteadyFocus) && !Me.HasActiveAura("Steady Focus")),
 								Spell.Cast("Sidewinders", ret => Me.HasActiveAura("Marking Targets")),
 								Spell.Cast("Sidewinders", 
-									ret => sidewindersChargeInfo != null && (sidewindersChargeInfo.ChargesLeft >= 2 || 
-											sidewindersChargeInfo.ChargesLeft == 1 && sidewindersChargeInfo.TimeUntilNextCharge.TotalSeconds < 1.8))
+									ret => Spell.GetCharges("Sidewinders") >= 2 ||
+											Spell.GetCharges("Sidewinders") == 1 && GetSidewindersChargeInfo().TimeUntilNextCharge.TotalSeconds < 1.8)
 								)
 							),
 						new Decorator(ret => !Common.HasTalent(HunterTalents.Sidewinders),

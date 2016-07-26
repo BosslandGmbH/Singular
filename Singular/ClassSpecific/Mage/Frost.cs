@@ -75,7 +75,7 @@ namespace Singular.ClassSpecific.Mage
         }
 
         #region Normal Rotation
-        [Behavior(BehaviorType.Pull, WoWClass.Mage, WoWSpec.MageFrost, WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Mage, WoWSpec.MageFrost)]
         public static Composite CreateMageFrostNormalPull()
         {
             return new PrioritySelector(
@@ -277,7 +277,7 @@ namespace Singular.ClassSpecific.Mage
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageFrost, WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageFrost)]
         public static Composite CreateMageFrostNormalCombat()
         {
             return new PrioritySelector(

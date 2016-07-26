@@ -124,7 +124,7 @@ namespace Singular.ClassSpecific.Shaman
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.All)]
+        [Behavior(BehaviorType.Pull, WoWClass.Shaman, WoWSpec.ShamanEnhancement)]
         public static Composite CreateShamanEnhancementNormalPull()
         {
             return new PrioritySelector(
@@ -165,7 +165,7 @@ namespace Singular.ClassSpecific.Shaman
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanEnhancement)]
         public static Composite CreateShamanEnhancementNormalCombat()
         {
             return new PrioritySelector(
@@ -201,14 +201,17 @@ namespace Singular.ClassSpecific.Shaman
 
                                 // pull more logic (use instants first, then ranged pulls if possible)
 
-                                Spell.BuffSelf("Boulderfist", req => !Me.HasAura("Boulderfist")),
-                                Spell.BuffSelf("Frostbrand", req => !Me.HasAura("Frostbrand")),
-                                Spell.Buff("Boulderfist", req => Me.GetAuraStacks("Boulderfist") >= 2), // TODO: And 130 maelstrom!
-                                Spell.Buff("Flametongue", req => !Me.HasAura("Flametongue")),
+                                Spell.Cast("Rockbiter", 
+									req => Common.HasTalent(ShamanTalents.Boulderfist) && !Me.HasActiveAura("Boulderfist") || 
+											Common.HasTalent(ShamanTalents.Landslide) && !Me.HasActiveAura("Landslide")),
+                                Spell.Cast("Frostbrand", req => Common.HasTalent(ShamanTalents.Hailstorm) && !Me.HasActiveAura("Frostbrand")),
+								Spell.Cast("Boulderfist", req => Me.CurrentMaelstrom < 130 && Spell.GetCharges("Boulderfist") >= 2),
+                                Spell.Cast("Flametongue", req => !Me.HasActiveAura("Flametongue")),
                                 Spell.Cast("Feral Spirit"),
-                                Spell.Cast("Crash Lightning", mov => false, on => Me.CurrentTarget, when => Unit.UnfriendlyUnitsNearTarget(10).Count(u => u.TappedByAllThreatLists) >= 2),
+                                Spell.Cast("Crash Lightning", when => Unit.UnfriendlyUnitsNearTarget(10).Count(u => u.TappedByAllThreatLists) >= 2),
                                 Spell.Cast("Stormstrike"),
-                                Spell.Cast("Lava Lash"),
+								Spell.Cast("Crash Ligthning", req => Common.HasTalent(ShamanTalents.CrashingStorm)),
+                                Spell.Cast("Lava Lash", req => Me.CurrentMaelstrom > 110),
                                 Spell.Cast("Boulderfist"),
                                 Spell.Cast("Flametongue"),
                                 Spell.Cast("Lightning Bolt", req => !Me.CurrentTarget.IsWithinMeleeRange),
@@ -274,25 +277,7 @@ namespace Singular.ClassSpecific.Shaman
                             && !Me.CurrentTarget.IsRooted()
                             && !Me.CurrentTarget.IsStunned(),
                         new PrioritySelector(
-
-                            // project root totems if needed
-                            new Decorator(
-                                req => Common.HasTalent(ShamanTalents.TotemicProjection) && !Spell.IsSpellOnCooldown("Totemic Projection"),
-                                new PrioritySelector(
-                                    Spell.Cast(
-                                        Totems.ToSpellId(WoWTotem.Earthgrab), 
-                                        req => !Totems.Exist(WoWTotem.Earthbind, WoWTotem.Earthgrab)
-                                        ),
-                                    Spell.CastOnGround(
-                                        "Totemic Projection", 
-                                        on => Me.CurrentTarget, 
-                                        req => Totems.Exist( WoWTotem.Earthbind, WoWTotem.Earthgrab)
-                                            && !Totems.ExistInRange( Me.CurrentTarget.Location, WoWTotem.Earthbind, WoWTotem.Earthgrab)
-                                        )
-                                    )
-                                ),
-
-                            // quick single spell root
+							// quick single spell root
                             Spell.Cast("Frost Shock")
 
                             )

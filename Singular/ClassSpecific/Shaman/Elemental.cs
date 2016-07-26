@@ -26,10 +26,12 @@ namespace Singular.ClassSpecific.Shaman
     {
         #region Common
 
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman(); } }
+        private static LocalPlayer Me => StyxWoW.Me;
+	    private static ShamanSettings ShamanSettings => SingularSettings.Instance.Shaman();
 
-        // private static int NormalPullDistance { get { return Math.Max( 35, CharacterSettings.Instance.PullDistance); } }
+	    private static uint MaelstormDeficit => Me.MaxMaelstrom - Me.CurrentMaelstrom;
+
+	    // private static int NormalPullDistance { get { return Math.Max( 35, CharacterSettings.Instance.PullDistance); } }
 
         [Behavior(BehaviorType.Initialize, WoWClass.Shaman, WoWSpec.ShamanElemental, priority: 9999)]
         public static Composite CreateShamanElementalInitialize()
@@ -100,7 +102,7 @@ namespace Singular.ClassSpecific.Shaman
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.All)]
+        [Behavior(BehaviorType.Pull, WoWClass.Shaman, WoWSpec.ShamanElemental)]
         public static Composite CreateElementalNormalPull()
         {
             return new PrioritySelector(
@@ -164,7 +166,7 @@ namespace Singular.ClassSpecific.Shaman
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanElemental)]
         public static Composite CreateElementalNormalCombat()
         {
             return new PrioritySelector(
@@ -189,57 +191,23 @@ namespace Singular.ClassSpecific.Shaman
                         Common.CreateShamanDpsShieldBehavior(),
 
                         Spell.BuffSelf("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Count( u => u.Distance < 10f ) >= 3),
-
-                        new Decorator(
-                            ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= ShamanSettings.EarthquakeCountInstant && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled()),
-                            new PrioritySelector(
-                                new Action( act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
-
-                                new Decorator(
-                                    req => SpellManager.HasSpell("Enhanced Chain Lightning")
-                                        && Me.GetAuraTimeLeft("Enhanced Chain Lightning") > TimeSpan.Zero
-                                        && Unit.UnfriendlyUnitsNearTarget(12f).Count() >= ShamanSettings.EarthquakeCountInstant,                                        
-                                    new Throttle(
-                                        3,
-                                        new Sequence(
-                                            ctx => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(20f), ClusterType.Chained, 12),
-                                            Spell.Cast(
-                                                "Chain Lightning", 
-                                                on => (WoWUnit) on,
-                                                req => ShamanSettings.EarthquakeCountInstant <= Clusters.GetChainedClusterCount((WoWUnit)req, Unit.UnfriendlyUnitsNearTarget(20f), 12),
-                                                cancel => false
-                                                ),
-                                            new WaitContinue(TimeSpan.FromSeconds(0.5), until => Me.GetAuraTimeLeft("Enhanced Chain Lightning") > TimeSpan.Zero, new ActionAlwaysSucceed())
-                                            )
-                                        )
-                                    ),
-
-                                new Sequence(
-                                    Spell.CastOnGround("Earthquake", 
-                                        on => StyxWoW.Me.CurrentTarget,
-                                        req => StyxWoW.Me.GotTarget() 
-                                            && StyxWoW.Me.CurrentTarget.Distance < 34
-                                            && (StyxWoW.Me.ManaPercent > ShamanSettings.EarthquakeManaPercent || Me.GetAuraTimeLeft("Lucidity") > TimeSpan.Zero)
-                                            && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= ShamanSettings.EarthquakeCount),
-                                    new Wait( TimeSpan.FromMilliseconds(500), until => Me.CurrentTarget.HasMyAura("Earthquake"), new ActionAlwaysSucceed())
-                                    ),
-
-                                Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(20f), ClusterType.Chained, 12))
-                                )
-                            ),
-
+						
                         Common.CastElementalBlast(),
 
-                        Spell.Buff("Flame Shock", true, req => !Me.CurrentTarget.HasAura("Flame Shock") && Me.CurrentTarget.TimeToDeath(-1) > 6),
+                        Spell.Buff("Flame Shock", true, req => !Me.CurrentTarget.HasMyAura("Flame Shock") && Me.CurrentTarget.TimeToDeath(int.MaxValue) > 6),
                         Spell.Cast("Fire Elemental"),
-                        Spell.Cast("Earth Shock",
-                            ret => StyxWoW.Me.HasAura("Lightning Shield", 5) &&
-                                   StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),
+                        Spell.Cast("Earth Shock", req => MaelstormDeficit <= 0),
                         Spell.Cast("Ascendance"),
-                        Spell.Cast("Lava Burst", on => Me.CurrentTarget, req => true, cancel => false),
-                        Spell.Cast("Earth Shock", req => !SpellManager.HasSpell("Lava Burst")),
-
-                        Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
+						Spell.BuffSelf("Elemental Mastery"),
+                        Spell.Cast("Lava Burst"),
+						Spell.CastOnGround("Earthquake",
+							on => Me.CurrentTarget,
+							req => Spell.UseAOE 
+								&& Me.CurrentTarget.Distance < 34
+								&& (Me.ManaPercent > ShamanSettings.EarthquakeManaPercent || Me.GetAuraTimeLeft("Lucidity") > TimeSpan.Zero)
+								&& Unit.UnfriendlyUnitsNearTarget(10f).Count() >= ShamanSettings.EarthquakeCount - 1),
+						Spell.Cast("Earth Shock", req => Me.CurrentMaelstrom >= 90),
+                        Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Any() && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
                         Spell.Cast("Lightning Bolt")
                         )
                     )

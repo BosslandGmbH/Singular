@@ -97,7 +97,7 @@ namespace Singular.ClassSpecific.Warlock
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDestruction, WoWContext.All)]
+        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDestruction)]
         public static Composite CreateWarlockDestructionNormalCombat()
         {
             return new PrioritySelector(
@@ -141,111 +141,7 @@ namespace Singular.ClassSpecific.Warlock
                 );
 
         }
-
-
-        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDestruction, WoWContext.Battlegrounds )]
-        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDestruction, WoWContext.Instances)]
-        public static Composite CreateWarlockDestructionInstanceCombat()
-        {
-            return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromLongRange(),
-
-                Spell.WaitForCast(),
-
-                new Decorator(ret => !Spell.IsGlobalCooldown(),
-
-                    new PrioritySelector(
-
-                        Helpers.Common.CreateInterruptBehavior(),
-
-                        Movement.WaitForFacing(),
-                        Movement.WaitForLineOfSpellSight(),
-
-                        new Action(ret =>
-                        {
-                            _mobCount = TargetsInCombat.Count();
-                            return RunStatus.Failure;
-                        }),
-
-                        CreateAoeBehavior(),
-
-                        new Decorator(
-                            req =>
-                            {
-                                if (Me.HasAnyAura("Dark Soul: Instability", "Toxic Power", "Expanded Mind"))
-                                    return true;
-                                return false;
-                            },
-                            new PrioritySelector(
-                                Spell.Cast("Shadowburn", req => Me.CurrentTarget.HealthPercent < 20),
-                                Spell.Cast("Chaos Bolt", req => Me.CurrentTarget.HealthPercent < 20)
-                                )
-                            ),
-
-                // Noxxic
-                        new Decorator(
-                            req => true, // WarlockSettings.DestructionSpellPriority == Singular.Settings.WarlockSettings.SpellPriority.Noxxic,
-                            new PrioritySelector(
-                                Spell.Cast("Shadowburn", ret => Me.CurrentTarget.HealthPercent < 20),
-                                Spell.Buff("Immolate", 3, on => Me.CurrentTarget, ret => true),
-                                Spell.Cast("Conflagrate"),
-                                Spell.Cast("Summon Doomguard"),
-                                Spell.Cast("Grimoire: Imp"),
-                                Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => Spell.UseAOE && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire") && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => !u.Aggro || u.IsCrowdControlled()), false),
-                                Common.CastCataclysm(),
-                                Spell.Cast("Conflagrate"),
-                                Spell.Cast("Chaos Bolt", ret => Me.CurrentTarget.HealthPercent >= 20 && BackdraftStacks < 3),
-                                Spell.Cast("Incinerate")
-                                )
-                            ),
-
-                        // Icy Veins
-                        new Decorator(
-                            req => false, // WarlockSettings.DestructionSpellPriority == Singular.Settings.WarlockSettings.SpellPriority.IcyVeins,
-                            new PrioritySelector(
-                                Spell.Cast("Shadowburn", ret =>
-                                {
-                                    if (Me.CurrentTarget.HealthPercent < 20)
-                                    {
-                                        if (Me.HasAnyAura("Dark Soul: Instability", "Toxic Power", "Expanded Mind"))
-                                            return true;
-                                        if (Me.CurrentTarget.TimeToDeath(99) < 3)
-                                            return true;
-                                        if (Me.ManaPercent < 5)
-                                            return true;
-                                    }
-                                    return false;
-                                }),
-
-                                Spell.Buff("Immolate", 3, on => Me.CurrentTarget, ret => true),
-                                Spell.Cast("Conflagrate", req => Spell.GetCharges("Conflagrate") >= 2),
-                                Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => Spell.UseAOE && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire") && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => !u.Aggro || u.IsCrowdControlled()), false),
-
-                                Common.CastCataclysm(),
-
-                                Spell.Cast("Chaos Bolt", ret =>
-                                {
-                                    if (BackdraftStacks < 3)
-                                    {
-                                        if (Me.HasAura("Dark Soul: Instability"))
-                                            return true;
-                                    }
-                                    return false;
-                                }),
-
-                                Spell.Cast("Conflagrate", req => Spell.GetCharges("Conflagrate") == 1),
-
-                                Spell.Cast("Incinerate")
-                                )
-                            ),
-
-                        Spell.Cast("Shadow Bolt")
-                        )
-                    )
-                );
-
-        }
-        
+		
         public static Composite CreateAoeBehavior()
         {
             return new Decorator( 

@@ -198,5 +198,12 @@ namespace Singular.Settings
         [DisplayName("Use Dismantle")]
         [Description("True: use Dismantle on cooldown; False: do not cast")]
         public bool UseDimantle { get; set; }
+		
+		[Setting]
+		[DefaultValue(30)]
+		[Category("Common")]
+		[DisplayName("Crimson Vial Health%")]
+		[Description("Health % to Crimson Vial at during Combat, 0 to disable")]
+		public int CrimsonVialHealth { get; set; }
     }
 }

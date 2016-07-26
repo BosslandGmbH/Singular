@@ -20,34 +20,13 @@ namespace Singular.ClassSpecific.Warrior
 {
     public class Fury
     {
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static WoWUnit Target { get { return StyxWoW.Me.CurrentTarget; } }
-        private static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior(); } }
-        private static bool HasTalent(WarriorTalents tal) { return TalentManager.IsSelected((int)tal); }
-
-        private static bool BloodbathUp { get { return StyxWoW.Me.GetAuraTimeLeft("Bloodbath").TotalSeconds > 0; } }
-        private static bool RecklessnessUp { get { return StyxWoW.Me.GetAuraTimeLeft("Recklessness").TotalSeconds > 0; } }
-        private static bool EnrageUp { get { return StyxWoW.Me.GetAuraTimeLeft("Enrage").TotalSeconds > 0; } }
-        private static bool BloodsurgeUp { get { return StyxWoW.Me.GetAuraTimeLeft("Bloodsurge").TotalSeconds > 0; } }
-        private static bool MeatCleaverUp { get { return StyxWoW.Me.GetAuraTimeLeft("Meat Cleaver").TotalSeconds > 0; } }
-        private static bool RagingBlowUp { get { return StyxWoW.Me.GetAuraTimeLeft("Raging Blow").TotalSeconds > 0; } }
-        private static uint Rage { get { return StyxWoW.Me.CurrentRage; } }
-        private static uint RageMax { get { return StyxWoW.Me.MaxRage; } }
-        private static double RagePercent { get { return StyxWoW.Me.RagePercent; } }
-
-
-        private static double CooldownColossusSmash { get { return Spell.GetSpellCooldown("Colossus Smash").TotalSeconds; } }
-        private static double DebuffColossusSmash { get { return Target.GetAuraTimeLeft("Colossus Smash").TotalSeconds; } }
-        private static bool DebuffColossusSmashUp { get { return DebuffColossusSmash > 0; } }
-        private static double DebuffRend { get { return Target.GetAuraTimeLeft("Rend").TotalSeconds; } }
-        private static bool DebuffRendTicking { get { return DebuffRend > 0; } }
-        private static CombatScenario scenario { get; set; }
-
+        private static LocalPlayer Me => StyxWoW.Me;
+        private static CombatScenario Scenario { get; set; }
 
         [Behavior(BehaviorType.Initialize, WoWClass.Warrior, WoWSpec.WarriorFury)]
         public static Composite CreateFuryInitialize()
         {
-            scenario = new CombatScenario(8, 1.5f);
+            Scenario = new CombatScenario(8, 1.5f);
             return null;
         }
 
@@ -151,8 +130,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorFury, WoWContext.Normal)]
-        [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorFury, WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorFury)]
         public static Composite CreateFuryCombatNormal()
         {
             return new PrioritySelector(
@@ -225,7 +203,7 @@ namespace Singular.ClassSpecific.Warrior
                                 Spell.Cast("Whirlwind", ret => !Me.HasAura("Meat Cleaver")),
                                 Spell.Cast("Rampage", ret => !Me.HasAura("Enrage")),
                                 Spell.Cast("Bloodthirst"),
-                                Spell.Cast("Raging Blow", ret => scenario.MobCount < 3 && Me.HasAura("Raging Blow", 1)),
+                                Spell.Cast("Raging Blow", ret => Scenario.MobCount < 3 && Me.HasAura("Raging Blow", 1)),
                                 Spell.Cast("Bloodthirst"),
                                 Spell.Cast("Whirlwind"),
 
@@ -242,246 +220,6 @@ namespace Singular.ClassSpecific.Warrior
 
                         Common.CreateAttackFlyingOrUnreachableMobs()
 
-                        )
-                    )
-                );
-        }
-
-
-        [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorFury, WoWContext.Instances)]
-        public static Composite CreateFuryCombatInstances()
-        {
-            if (Me.Level < 100)
-                return CreateFuryCombatNormal();
-
-            Generic.SuppressGenericRacialBehavior = true;
-
-            return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
-
-                Spell.WaitForCast(),
-
-                Common.CheckIfWeShouldCancelBladestorm(),
-
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-
-                    new PrioritySelector(
-
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
-
-                        new Action(r =>
-                        {
-                            scenario.Update(Target);
-                            return RunStatus.Failure;
-                        }),
-
-                        CreateDiagnosticOutputBehavior("Combat"),
-
-                        Movement.WaitForFacing(),
-                        Movement.WaitForLineOfSpellSight(),
-
-                        Helpers.Common.CreateInterruptBehavior(),
-
-                        new Decorator(
-                            req => Me.GotTarget(),
-                            new PrioritySelector(
-                                Common.CreateVictoryRushBehavior(),
-
-                                // # Executed every time the actor is available.
-                                // 
-                                // actions=charge
-                                Common.CreateChargeCloser(),
-                                // actions+=/auto_attack
-                                //  ... handled by ensure
-                                // # This is mostly to prevent cooldowns from being accidentally used during movement.
-                                // actions+=/call_action_list,name=movement,if=movement.distance>5
-                                // actions+=/berserker_rage,if=buff.enrage.down|(talent.unquenchable_thirst.enabled&buff.raging_blow.down)
-                                // actions+=/heroic_leap,if=(raid_event.movement.distance>25&raid_event.movement.in>45)|!raid_event.movement.exists
-                                // actions+=/use_item,name=bonemaws_big_toe,if=(talent.bladestorm.enabled&cooldown.bladestorm.remains=0)|buff.bloodbath.up|talent.avatar.enabled
-                                // actions+=/use_item,name=turbulent_emblem,if=(talent.bladestorm.enabled&cooldown.bladestorm.remains=0)|buff.bloodbath.up|talent.avatar.enabled
-                                // actions+=/potion,name=draenic_strength,if=(target.health.pct<20&buff.recklessness.up)|target.time_to_die<=25
-                                // # Skip cooldown usage if we can line them up with bladestorm on a large set of adds, or if movement is coming soon.
-                                // actions+=/call_action_list,name=single_target,if=(raid_event.adds.cooldown<60&raid_event.adds.count>2&active_enemies=1)|raid_event.movement.cooldown<5
-
-                                new Decorator( 
-                                    req => Me.IsMoving && !Target.IsWithinMeleeRange,
-                                    new PrioritySelector(
-                                        // actions.movement=heroic_leap
-                                        Common.CreateHeroicLeapCloser(),
-                                        // # May as well throw storm bolt if we can.
-                                        // actions.movement+=/storm_bolt
-                                        Spell.Cast("Storm Bolt"),
-                                        // actions.movement+=/heroic_throw
-                                        Spell.Cast("Heroic Throw"),
-                                        new ActionAlwaysSucceed()
-                                        )
-                                    ),
-
-                                // # This incredibly long line (Due to differing talent choices) says 'Use recklessness on cooldown, unless the boss will die before the ability is usable again, and then use it with execute.'
-                                // actions+=/recklessness,if=((target.time_to_die>190|target.health.pct<20)&(buff.bloodbath.up|!talent.bloodbath.enabled))|target.time_to_die<=12|talent.anger_management.enabled
-                                Spell.BuffSelfAndWait(
-                                    "Battle Cry", 
-                                    req => ((Target.TimeToDeath() > 190 || Target.HealthPercent < 20) && (BloodbathUp || !Common.HasTalent(WarriorTalents.Bloodbath)))
-                                        || Target.TimeToDeath() < 10
-                                        || Common.HasTalent(WarriorTalents.AngerManagement),
-                                        gcd: HasGcd.No
-                                    ),
-                                // actions+=/avatar,if=buff.recklessness.up|target.time_to_die<30
-                                Spell.BuffSelfAndWait(
-                                    "Avatar",
-                                    req => Me.HasAura("Battle Cry")
-                                        || Target.TimeToDeath() < 25,
-                                        gcd: HasGcd.No
-                                    ),
-                                // actions+=/blood_fury,if=buff.bloodbath.up|!talent.bloodbath.enabled|buff.recklessness.up
-                                Spell.BuffSelfAndWait(
-                                    "Blood Fury",
-                                    req => BloodbathUp
-                                        || !Common.HasTalent(WarriorTalents.Bloodbath)
-                                        || RecklessnessUp,
-                                        gcd: HasGcd.No
-                                    ),
-                                // actions+=/berserking,if=buff.bloodbath.up|!talent.bloodbath.enabled|buff.recklessness.up
-                                Spell.BuffSelfAndWait(
-                                    "Berserking",
-                                    req => BloodbathUp
-                                        || !Common.HasTalent(WarriorTalents.Bloodbath)
-                                        || RecklessnessUp,
-                                        gcd: HasGcd.No
-                                    ),
-
-                                // actions+=/arcane_torrent,if=rage<rage.max-40
-                                Spell.BuffSelfAndWait(
-                                    "Arcane Torrent",
-                                    req => Me.CurrentRage < Me.MaxRage - 40,
-                                    gcd: HasGcd.No
-                                    ),
-
-                                new Decorator(
-                                    req => scenario.MobCount <= 1,
-                                    new PrioritySelector(
-                                        // 
-                                        // actions.single_target=bloodbath
-                                        Spell.BuffSelfAndWait("Bloodbath", gcd:HasGcd.No),
-                                        Spell.BuffSelfAndWait("Battle Cry", req => Target.HealthPercent < 20 && scenario.MobCount > 1, gcd:HasGcd.No),
-                                        // actions.single_target+=/bloodthirst,if=(!talent.unquenchable_thirst.enabled&rage<80)|buff.enrage.down
-                                        Spell.Cast("Bloodthirst", req => Common.HasTalent(WarriorTalents.UnquenchableThirst) && Rage < 80 || !EnrageUp),
-                                        // actions.single_target+=/ravager,if=buff.bloodbath.up|(!talent.bloodbath.enabled&(!raid_event.adds.exists|raid_event.adds.cooldown>60|target.time_to_die<40))
-                                        Spell.CastOnGround(
-                                            "Ravager", 
-                                            on => Target, 
-                                            req => Spell.UseAOE && (BloodbathUp || !Common.HasTalent(WarriorTalents.Bloodbath) )
-                                            ),
-                                        // actions.single_target+=/execute,if=buff.sudden_death.react
-                                        Common.CreateExecuteOnSuddenDeath(),
-                                        // actions.single_target+=/storm_bolt
-                                        Spell.Cast("Storm Bolt"),
-                                        // actions.single_target+=/execute,if=buff.enrage.up|target.time_to_die<12
-                                        Spell.Cast("Execute", req => EnrageUp || Target.TimeToDeath() < 12),
-                                        // actions.single_target+=/raging_blow
-                                        Spell.Cast("Raging Blow"),
-                                        // actions.single_target+=/bladestorm,if=!raid_event.adds.exists
-                                        Spell.Cast("Bladestorm"),
-                                        // actions.single_target+=/shockwave,if=!talent.unquenchable_thirst.enabled
-                                        Spell.Cast("Shockwave", req => !Common.HasTalent(WarriorTalents.UnquenchableThirst)),
-                                        // actions.single_target+=/bloodthirst
-                                        Spell.Cast("Bloodthirst")
-                                        )
-                                    ),
-
-                                new Decorator(
-                                    req => scenario.MobCount == 2,
-                                    new PrioritySelector(
-                                        // actions.two_targets=bloodbath
-                                        Spell.BuffSelfAndWait("Bloodbath", gcd: HasGcd.No),
-                                        // actions.two_targets+=/ravager,if=buff.bloodbath.up|!talent.bloodbath.enabled
-                                            Spell.CastOnGround(
-                                                "Ravager", 
-                                                on => Target, 
-                                                req => BloodbathUp || !Common.HasTalent(WarriorTalents.Bloodbath) 
-                                                ),
-                                        // actions.two_targets+=/bladestorm,if=buff.enrage.up
-                                        Spell.Cast("Bladestorm", req => EnrageUp),
-                                        // actions.two_targets+=/bloodthirst,if=buff.enrage.down|rage<50|buff.raging_blow.down
-                                        Spell.Cast("Bloodthirst", req => !EnrageUp || Rage < 50 || !RagingBlowUp),
-                                        // actions.two_targets+=/execute,target=2
-                                        // ... combined with next
-                                        // actions.two_targets+=/execute,if=target.health.pct<20|buff.sudden_death.react
-                                        Spell.Cast("Execute", on => scenario.Mobs.FirstOrDefault(u => u != Target && Spell.CanCastHack("Execute", u) && u.InLineOfSight && Me.IsSafelyFacing(u))),
-                                        // actions.two_targets+=/raging_blow,if=buff.meat_cleaver.up
-                                        Spell.Cast("Raging Blow", req => MeatCleaverUp ),
-                                        // actions.two_targets+=/whirlwind,if=!buff.meat_cleaver.up
-                                        Spell.Cast("Whirlwind", req => !MeatCleaverUp),
-                                        // actions.two_targets+=/bloodthirst
-                                        Spell.Cast("Bloodthirst"),
-                                        // actions.two_targets+=/whirlwind,if=rage>rage.max-20
-                                        Spell.Cast("Whirlwind", req => Rage > RageMax - 20)
-                                        )
-                                    ),
-
-                                new Decorator(
-                                    req => scenario.MobCount == 3,
-                                    new PrioritySelector(
-                                        // actions.three_targets=bloodbath
-                                        Spell.BuffSelfAndWait("Bloodbath", gcd: HasGcd.No),
-                                        // actions.three_targets+=/ravager,if=buff.bloodbath.up|!talent.bloodbath.enabled
-                                        Spell.CastOnGround(
-                                            "Ravager", 
-                                            on => Target, 
-                                            req => BloodbathUp || !Common.HasTalent(WarriorTalents.Bloodbath) 
-                                            ),
-                                        // actions.three_targets+=/bladestorm,if=buff.enrage.up
-                                        Spell.Cast("Bladestorm", req => EnrageUp),
-                                        // actions.three_targets+=/bloodthirst,if=buff.enrage.down|rage<50|buff.raging_blow.down
-                                        Spell.Cast("Bloodthirst", req => !EnrageUp || Rage < 50 || !RagingBlowUp ),
-                                        // actions.three_targets+=/raging_blow,if=buff.meat_cleaver.stack>=2
-                                        Spell.Cast("Raging Blow", req => Me.GetAuraStacks("Meat Cleaver") >= 2),
-                                        // actions.three_targets+=/execute,if=buff.sudden_death.react
-                                        Common.CreateExecuteOnSuddenDeath(),
-                                        // actions.three_targets+=/execute,target=2
-                                        // ... combined with next
-                                        // actions.three_targets+=/execute,target=3
-                                        Spell.Cast("Execute", on => scenario.Mobs.FirstOrDefault(u => u != Target && Spell.CanCastHack("Execute", u) && u.InLineOfSight && Me.IsSafelyFacing(u))),
-                                        // actions.three_targets+=/whirlwind
-                                        Spell.Cast("Whirlwind"),
-                                        // actions.three_targets+=/bloodthirst
-                                        Spell.Cast("Bloodthirst")
-                                        )
-                                    ),
-
-                                new Decorator(
-                                    req => scenario.MobCount > 3,
-                                    new PrioritySelector(
-                                        // actions.aoe=bloodbath
-                                        Spell.BuffSelfAndWait("Bloodbath", gcd: HasGcd.No),
-                                        // actions.aoe+=/ravager,if=buff.bloodbath.up|!talent.bloodbath.enabled
-                                        Spell.CastOnGround(
-                                            "Ravager", 
-                                            on => Target, 
-                                            req => BloodbathUp || !Common.HasTalent(WarriorTalents.Bloodbath) 
-                                            ),
-                                        // actions.aoe+=/raging_blow,if=buff.meat_cleaver.stack>=3&buff.enrage.up
-                                        Spell.Cast("Raging Blow", req => Me.GetAuraStacks("Meat Cleaver") >= 3 && EnrageUp),
-                                        // actions.aoe+=/bloodthirst,if=buff.enrage.down|rage<50|buff.raging_blow.down
-                                        Spell.Cast("Bloodthirst", req => !EnrageUp || Rage < 50 || !RagingBlowUp),
-                                        // actions.aoe+=/raging_blow,if=buff.meat_cleaver.stack>=3
-                                        Spell.Cast("Raging Blow", req => Me.GetAuraStacks("Meat Cleaver") >= 3),
-                                        // actions.aoe+=/recklessness,sync=bladestorm
-                                        Spell.Cast("Battle Cry"),
-                                        // actions.aoe+=/bladestorm,if=buff.enrage.remains>6
-                                        Spell.Cast("Bladestorm", req => Me.GetAuraTimeLeft("Enrage").TotalSeconds > 6),
-                                        // actions.aoe+=/whirlwind
-                                        Spell.Cast("Whirlwind"),
-                                        // actions.aoe+=/execute,if=buff.sudden_death.react
-                                        Common.CreateExecuteOnSuddenDeath(),
-                                        // actions.aoe+=/bloodthirst
-                                        Spell.Cast("Bloodthirst")
-                                        )
-                                    )
-                                )
-                            )
                         )
                     )
                 );

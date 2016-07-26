@@ -1352,7 +1352,7 @@ namespace Singular.ClassSpecific.Druid
 		AstralCommunion,
 		BlessingOfTheAncients,
 
-		SaberTooth = ShootingStars,
+		Sabertooth = ShootingStars,
 		JaggedWounds = AstralCommunion,
 		ElunesGuidance = BlessingOfTheAncients,
 

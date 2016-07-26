@@ -939,11 +939,11 @@ namespace Singular.ClassSpecific.Monk
 
 		DizzyingKicks = SummonBlackOxStatue,
 		
-		HealingElixir = 14,
+		HealingElixir = 13,
 		DiffuseMagic,
 		DampenHarm,
 
-		RushingJadeWind = 17,
+		RushingJadeWind = 16,
 		InvokeNiuzaoTheBlackOx,
 		SpecialDelivery,
 
@@ -954,7 +954,7 @@ namespace Singular.ClassSpecific.Monk
 		InvokeXuenTheWhiteTiger = InvokeNiuzaoTheBlackOx,
 		HitCombo = SpecialDelivery,
 
-		ElusiveDance = 20,
+		ElusiveDance = 19,
 		BlackoutCombo,
 		HighTolerance,
 

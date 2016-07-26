@@ -289,12 +289,12 @@ namespace Singular.ClassSpecific.Druid
 							new PrioritySelector(
 								Spell.Cast("Ferocious Bite", 
 									on => Unit.UnfriendlyUnits(8).FirstOrDefault(
-												u => u.HealthPercent < 25 && u.HasMyAura("Rip") || 
+												u => (u.HealthPercent < 25 || Common.HasTalent(DruidTalents.Sabertooth)) && u.HasMyAura("Rip") || 
 														u.TimeToDeath(int.MaxValue) < 18 || u.GetAuraTimeLeft("Rip").TotalSeconds >= RipRefresh), 
 									ret => (!Common.HasTalent(DruidTalents.SavageRoar) || Me.GetAuraTimeLeft("Savage Roar").TotalSeconds > 12) && Me.CurrentEnergy >= 50),
 								Spell.Cast("Rip", 
 									on => Unit.UnfriendlyUnits(8).FirstOrDefault(
-												u => u.HealthPercent >= 25 && u.TimeToDeath() > 18 && u.GetAuraTimeLeft("Rip").TotalSeconds < RipRefresh)),
+												u => u.HealthPercent >= 25 && u.TimeToDeath(int.MaxValue) > 18 && u.GetAuraTimeLeft("Rip").TotalSeconds < RipRefresh)),
 								Spell.Cast("Savage Roar"))),
 
 						Spell.Cast("Moonfire", on => Unit.UnfriendlyUnits().FirstOrDefault(u => u.GetAuraTimeLeft("Moonfire").TotalSeconds < 4.2), ret => Common.HasTalent(DruidTalents.LunarInspiration)),

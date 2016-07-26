@@ -140,7 +140,7 @@ namespace Singular.ClassSpecific.Hunter
 
                         Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
 
-                        new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && Me.GotAlivePet,
+                        new Decorator(ctx => (SingularSettings.Instance.DisablePetUsage || Me.Specialization == WoWSpec.HunterMarksmanship && HasTalent(HunterTalents.LoneWolf)) && Me.GotAlivePet,
                             new Sequence(
                                 new Action( ctx => Logger.Write( "/dismiss Pet")),
                                 Spell.Cast("Dismiss Pet", on => Me.Pet, req => true, cancel => false),
@@ -828,6 +828,7 @@ namespace Singular.ClassSpecific.Hunter
             return new PrioritySelector(
                 new Decorator(
                     ret =>  PetManager.IsPetSummonAllowed
+						&& !HasTalent(HunterTalents.LoneWolf)
                         && (!Me.GotAlivePet || (ActivePetNumber != PetWeWant && ActivePetNumber != 0))
                         && PetManager.PetSummonAfterDismountTimer.IsFinished 
                         && !Me.Mounted 
@@ -1279,7 +1280,7 @@ namespace Singular.ClassSpecific.Hunter
 		ImprovedTraps = BestialFury,
 		SteelTrap = BlinkStrikes,
 
-        BindingShot = 14,
+        BindingShot = 13,
         WyvernString,
         Intimidation,
 
@@ -1288,7 +1289,7 @@ namespace Singular.ClassSpecific.Hunter
 		StickyBomb = BindingShot,
 		RangersNet = WyvernString,
 		
-        AMurderOfCrowsBeastMastery = 17,
+        AMurderOfCrowsBeastMastery = 16,
         Barrage,
         Volley,
 
@@ -1296,7 +1297,7 @@ namespace Singular.ClassSpecific.Hunter
 		DragonsFireGrenade = Barrage,
 		SerpentString = Volley,
 
-        Stampede = 20,
+        Stampede = 19,
         KillerCobra,
         AspectOfTheBeast,
 

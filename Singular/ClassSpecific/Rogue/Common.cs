@@ -251,7 +251,7 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.BuffSelf("Cloak of Shadows", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet && u.IsCasting) >= 1),
                         Spell.BuffSelf("Smoke Bomb", ret => StyxWoW.Me.HealthPercent < 40 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr > 4 * 4 && u.IsAlive && u.Combat && u.IsTargetingMeOrPet) >= 1),
                         Spell.BuffSelf("Vanish", ret => StyxWoW.Me.HealthPercent < 20 && !SingularRoutine.IsQuestBotActive),
-
+						Spell.BuffSelf("Crimson Vial", ret => Me.HealthPercent < RogueSettings.CrimsonVialHealth),
                         Spell.BuffSelf("Preparation",
                             ret => Spell.GetSpellCooldown("Vanish").TotalSeconds > 10
                                 && Spell.GetSpellCooldown("Evasion").TotalSeconds > 10
@@ -584,9 +584,10 @@ namespace Singular.ClassSpecific.Rogue
                 new PrioritySelector(
                     CreateRoguePickPocket(),
 
-                    /// Cheap Shot logic
-                    /// for Subterfuge, wait up to 2500 secs then cast Ambush (we hope)
-                    /// for non-Subterfuge, melee swings on target building up energy
+					Spell.Cast("Shadowstrike"),
+                    // Cheap Shot logic
+                    // for Subterfuge, wait up to 2500 secs then cast Ambush (we hope)
+                    // for non-Subterfuge, melee swings on target building up energy
                     new Sequence(
                         Spell.Cast("Cheap Shot", 
                             mov => false,

@@ -233,20 +233,7 @@ namespace Singular.ClassSpecific.Shaman
                 moveInRange = (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds);
 
             Logger.WriteDebugInBehaviorCreate("Shaman Healing: will cancel cast of direct heal if health reaches {0:F1}%", cancelHeal);
-
-            /*
-                        if (SpellManager.HasSpell("Earthliving Weapon"))
-                        {
-                            behavs.AddBehavior(HealthToPriority(ShamanSettings.Heal.AncestralSwiftness),
-                                "Unleash Elements",
-                                "Unleash Elements",
-                                Spell.Buff("Unleash Elements",
-                                    ret => (WoWUnit)ret,
-                                    ret => (Me.IsMoving || ((WoWUnit)ret).PredictedHealthPercent() < ShamanSettings.Heal.AncestralSwiftness)
-                                        && Common.IsImbuedForHealing(Me.Inventory.Equipped.MainHand)
-                                        ));
-                        }
-            */
+			
             if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
                 behavs.AddBehavior(9999, "Earth Shield", "Earth Shield", Spell.Buff("Earth Shield", on => GetBestEarthShieldTargetInstance()));
 
@@ -275,7 +262,7 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator(
                     ret => (Me.Combat || ((WoWUnit)ret).Combat)
                         && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid)
-                        && (Common.talentTotemicPersistance || !Totems.Exist(WoWTotem.Cloudburst) || (Totems.GetTotem(WoWTotem.Cloudburst).Expires - DateTime.UtcNow).TotalMilliseconds < 1500),
+                        && (!Totems.Exist(WoWTotem.Cloudburst) || (Totems.GetTotem(WoWTotem.Cloudburst).Expires - DateTime.UtcNow).TotalMilliseconds < 1500),
                     Spell.Cast(
                         "Healing Tide Totem",
                         on => Me,

@@ -16,6 +16,7 @@ using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using Singular.Settings;
 using System.Drawing;
+using Styx.Common;
 
 namespace Singular.ClassSpecific.Mage
 {
@@ -24,13 +25,13 @@ namespace Singular.ClassSpecific.Mage
         private static LocalPlayer Me => StyxWoW.Me;
 	    private static MageSettings MageSettings => SingularSettings.Instance.Mage();
 
-	    private static uint ArcaneCharges => Me.GetAuraStacks("Arcane Charge");
+	    private static uint ArcaneCharges => Me.GetAllAuras().Where(a => a.Name == "Arcane Charge").Select(a => a.StackCount).DefaultIfEmpty(0u).Max();
 
-	    #region Normal Rotation
+		#region Normal Rotation
 
-        private static bool useArcaneNow;
+		private static bool useArcaneNow;
 
-        [Behavior(BehaviorType.Pull, WoWClass.Mage, WoWSpec.MageArcane, WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Mage, WoWSpec.MageArcane)]
         public static Composite CreateMageArcaneNormalPull()
         {
             return new PrioritySelector(
@@ -103,7 +104,7 @@ namespace Singular.ClassSpecific.Mage
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageArcane, WoWContext.Normal )]
+        [Behavior(BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageArcane)]
         public static Composite CreateMageArcaneNormalCombat()
         {
             return new PrioritySelector(

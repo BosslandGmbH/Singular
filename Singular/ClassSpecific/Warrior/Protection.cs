@@ -125,7 +125,7 @@ namespace Singular.ClassSpecific.Warrior
 
         #region Normal
 
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Warrior, WoWSpec.WarriorProtection, WoWContext.All)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Warrior, WoWSpec.WarriorProtection)]
         public static Composite CreateProtectionCombatBuffs()
         {
             return new Decorator(
@@ -212,11 +212,12 @@ namespace Singular.ClassSpecific.Warrior
 
         static WoWUnit intTarget;
 
-        [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorProtection, WoWContext.All)]
+        [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorProtection)]
         public static Composite CreateProtectionCombat()
         {
-            UpdateWhetherWarriorNeedsTankTargeting();
-            scenario.MaxAgeForDamage = 5;
+	        TankManager.NeedTankTargeting = SingularRoutine.CurrentWoWContext == WoWContext.Instances;
+
+			scenario.MaxAgeForDamage = 5;
             EventHandlers.TrackDamage = true;
 
             return new PrioritySelector(
@@ -228,10 +229,7 @@ namespace Singular.ClassSpecific.Warrior
 
                     return Me.CurrentTarget;
                 },
-
-                // establish here whether tank targeting is needed
-                new Action( r => { UpdateWhetherWarriorNeedsTankTargeting(); return RunStatus.Failure; } ),
-
+				
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                 Spell.WaitForCast(),
@@ -263,17 +261,7 @@ namespace Singular.ClassSpecific.Warrior
                     )
                 );
         }
-
-        private static void UpdateWhetherWarriorNeedsTankTargeting()
-        {
-            if (SingularRoutine.CurrentWoWContext != WoWContext.Instances)
-                TankManager.NeedTankTargeting = false;
-            else if (StyxWoW.Me.Shapeshift == (ShapeshiftForm)WarriorStance.GladiatorStance)
-                TankManager.NeedTankTargeting = false;
-            else
-                TankManager.NeedTankTargeting = true;
-        }
-
+		
         private static Composite CreateProtectionDefensiveCombat()
         {
             return new PrioritySelector(

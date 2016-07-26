@@ -604,11 +604,11 @@ namespace Singular.ClassSpecific.Mage
 		FrozenTouch = ChargedUp,
 		SplittingIce = Resonance,
 
-		IceFloes = 14,
+		IceFloes = 13,
 		RingOfFrost,
 		IceWard,
 
-		NetherTempest = 17,
+		NetherTempest = 16,
 		UnstableMagic,
 		Erosion,
 
@@ -618,7 +618,7 @@ namespace Singular.ClassSpecific.Mage
 		FrostBomb = NetherTempest,
 		ArcticGale = Erosion,
 
-		Overpowered = 20,
+		Overpowered = 19,
 		Quickening,
 		ArcaneOrb,
 

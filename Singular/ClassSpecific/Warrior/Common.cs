@@ -275,16 +275,14 @@ namespace Singular.ClassSpecific.Warrior
         }
 
         public static Composite CreateChargeCloser()
-        {
-            return new PrioritySelector(
-                ctx => Me.CurrentTarget,
-                new Decorator(
-                    req => (req as WoWUnit).IsGapCloserAllowed(),
-                    // note: use Distance here -- even though to a WoWUnit, hitbox does not come into play for all mobs
-                    Spell.Cast("Intercept", req => (req as WoWUnit).Distance.Between(8, DistanceChargeBehavior) && Me.IsSafelyFacing(req as WoWUnit))
-                    )
-                );
-        }
+		{
+			// note: use Distance here -- even though to a WoWUnit, hitbox does not come into play for all mobs
+	        return
+		        Spell.Cast("Charge",
+			        req =>
+				        Me.CurrentTarget.IsGapCloserAllowed() && Me.CurrentTarget.Distance.Between(8, DistanceChargeBehavior) &&
+				        Me.CurrentTarget.MeIsSafelyBehind);
+		}
         
         public static Composite CreateHeroicLeapCloser()
         {

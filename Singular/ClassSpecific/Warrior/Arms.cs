@@ -60,7 +60,7 @@ namespace Singular.ClassSpecific.Warrior
         }
 
 
-        [Behavior(BehaviorType.Pull, WoWClass.Warrior, WoWSpec.WarriorArms, WoWContext.All)]
+        [Behavior(BehaviorType.Pull, WoWClass.Warrior, WoWSpec.WarriorArms)]
         public static Composite CreateArmsNormalPull()
         {
             return new PrioritySelector(
@@ -112,7 +112,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Warrior, WoWSpec.WarriorArms, WoWContext.Normal)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Warrior, WoWSpec.WarriorArms)]
         public static Composite CreateArmsCombatBuffsNormal()
         {
             return new Throttle(
@@ -169,7 +169,7 @@ namespace Singular.ClassSpecific.Warrior
         }
 
 
-        [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorArms, WoWContext.All)]
+        [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorArms)]
         public static Composite CreateArmsCombatNormal()
         {
             return new PrioritySelector(
@@ -276,183 +276,7 @@ namespace Singular.ClassSpecific.Warrior
                     )
                 );
         }
-
-        [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorArms, WoWContext.Instances)]
-        public static Composite CreateArmsCombatInstances()
-        {
-            if (Me.Level < 100)
-                return CreateArmsCombatNormal();
-
-            Generic.SuppressGenericRacialBehavior = true;
-
-            return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
-
-                Spell.WaitForCast(),
-
-                Common.CheckIfWeShouldCancelBladestorm(),
-
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-
-                    new PrioritySelector(
-
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
-
-                        new Action(r =>
-                       {
-                           scenario.Update(Target);
-                           return RunStatus.Failure;
-                       }),
-
-                        CreateDiagnosticOutputBehavior("Combat"),
-
-                        Movement.WaitForFacing(),
-                        Movement.WaitForLineOfSpellSight(),
-
-                        Helpers.Common.CreateInterruptBehavior(),
-
-                        new Decorator(
-                            req => Me.GotTarget(),
-                            new PrioritySelector(
-                                Common.CreateVictoryRushBehavior(),
-
-                                // # Executed every time the actor is available.
-                                // 
-                                // actions=charge
-                                // actions+=/auto_attack
-                                // # This is mostly to prevent cooldowns from being accidentally used during movement.
-                                // actions+=/call_action_list,name=movement,if=movement.distance>5
-                                new Decorator(
-                                    req => Me.IsMoving && !Target.IsWithinMeleeRange,
-                                    new PrioritySelector(
-                                        // actions.movement=heroic_leap
-                                        Common.CreateHeroicLeapCloser(),
-                                        // # May as well throw storm bolt if we can.
-                                        // actions.movement+=/storm_bolt
-                                        Spell.Cast("Storm Bolt"),
-                                        // actions.movement+=/heroic_throw
-                                        Spell.Cast("Heroic Throw"),
-                                        new ActionAlwaysSucceed()
-                                        )
-                                    ),
-
-                                // actions+=/use_item,name=bonemaws_big_toe,if=(buff.bloodbath.up|(!talent.bloodbath.enabled&debuff.colossus_smash.up))
-                                // actions+=/use_item,name=turbulent_emblem,if=(buff.bloodbath.up|(!talent.bloodbath.enabled&debuff.colossus_smash.up))
-                                // actions+=/potion,name=draenic_strength,if=(target.health.pct<20&buff.recklessness.up)|target.time_to_die<25
-                                // ... potion and trinket usage not implemented
-
-                                // actions+=/avatar,if=buff.recklessness.up|target.time_to_die<25
-                                Spell.BuffSelfAndWait(
-                                    "Avatar", requirements => Me.HasAura("Battle Cry") || Target.TimeToDeath() < 25),
-                                // actions+=/arcane_torrent,if=rage<rage.max-40
-                                Spell.BuffSelfAndWait(
-                                    "Arcane Torrent",
-                                    req => Me.CurrentRage < Me.MaxRage - 40,
-                                    gcd: HasGcd.No
-                                    ),
-                                // actions+=/heroic_leap,if=(raid_event.movement.distance>25&raid_event.movement.in>45)|!raid_event.movement.exists
-                                Common.CreateHeroicLeapCloser(),
-
-                                // actions+=/call_action_list,name=single,if=active_enemies=1
-                                // actions+=/call_action_list,name=aoe,if=active_enemies>1
-
-                                new Decorator(
-                                    req => scenario.MobCount <= 1, /* single fight */
-                                    new PrioritySelector(
-                                        // actions.single=rend,if=!ticking&target.time_to_die>4
-                                        Spell.Cast("Rend", req => !DebuffRendTicking && Target.TimeToDeath() > 4),
-                                        // actions.single+=/ravager,if=cooldown.colossus_smash.remains<4
-                                        Spell.CastOnGround("Ravager", on => Target, req => Spell.UseAOE && Target.Distance < 40 && CooldownColossusSmash < 4),
-                                        // actions.single+=/colossus_smash
-                                        Spell.Cast("Colossus Smash"),
-                                        // actions.single+=/bladestorm,if=!raid_event.adds.exists&debuff.colossus_smash.up&rage<70
-                                        Spell.Cast("Bladestorm", req => Spell.UseAOE && DebuffColossusSmashUp && Me.CurrentRage < 70),
-                                        // Cast overpower whenever available.
-                                        Spell.Cast("Overpower"),
-                                        // actions.single+=/mortal_strike,if=target.health.pct>20&cooldown.colossus_smash.remains>1
-                                        Spell.Cast("Mortal Strike", req => Target.HealthPercent > 20 && CooldownColossusSmash > 1),
-                                        // actions.single+=/storm_bolt,if=(cooldown.colossus_smash.remains>4|debuff.colossus_smash.up)&rage<90
-                                        Spell.Cast("Storm Bolt", req => (CooldownColossusSmash > 4 || DebuffColossusSmashUp) && Me.CurrentRage < 90),
-                                        // actions.single+=/rend,if=!debuff.colossus_smash.up&target.time_to_die>4&remains<5.4
-                                        Spell.Cast("Rend", req => !DebuffColossusSmashUp && Target.TimeToDeath() > 4 && DebuffRend < 5.4),
-                                        // actions.single+=/execute,if=(rage>=60&cooldown.colossus_smash.remains>execute_time)|debuff.colossus_smash.up|buff.sudden_death.react|target.time_to_die<5
-                                        Spell.Cast(
-                                            "Execute",
-                                            req => (Me.CurrentRage >= 60 && CooldownColossusSmash > scenario.GcdTime)
-                                                || DebuffColossusSmashUp
-                                                || Me.HasAura(Common.SUDDEN_DEATH_PROC)
-                                                || Target.TimeToDeath() < 5
-                                            ),
-                                        // actions.single+=/slam,if=(rage>20|cooldown.colossus_smash.remains>execute_time)&target.health.pct>20&cooldown.colossus_smash.remains>1&cooldown.mortal_strike.remains>1
-                                        Spell.Cast(
-                                            "Slam",
-                                            req => (Me.CurrentRage > 20 || CooldownColossusSmash > scenario.GcdTime)
-                                                && Target.HealthPercent > 20
-                                                && CooldownColossusSmash > 1
-                                                && CooldownMortalStrike > 1
-                                            ),
-                                        // actions.single+=/whirlwind,if=!talent.slam.enabled&target.health.pct>20&(rage>=40|set_bonus.tier17_4pc|debuff.colossus_smash.up)&cooldown.colossus_smash.remains>1&cooldown.mortal_strike.remains>1
-                                        Spell.Cast(
-                                            "Whirlwind",
-                                            req => Spell.UseAOE
-                                                && !Common.HasTalent(WarriorTalents.Slam)
-                                                && Target.HealthPercent > 20
-                                                && (Me.CurrentRage >= 40 || false /*4pcbonus*/ || DebuffColossusSmashUp)
-                                                && CooldownColossusSmash > 1
-                                                && CooldownMortalStrike > 1
-                                            ),
-                                        // actions.single+=/shockwave
-                                        Spell.Cast("Shockwave", req => Spell.UseAOE)
-                                        )
-                                    ),
-
-                                new Decorator(
-                                    req => scenario.MobCount > 1, /* aoe fight */
-                                    new PrioritySelector(
-                                        // actions.aoe+=/rend,if=ticks_remain<2&target.time_to_die>4
-                                        Spell.Buff("Rend", req => DebuffRend < 6 && Target.TimeToDeath() > 4),
-                                        // actions.aoe+=/ravager,if=buff.bloodbath.up|!talent.bloodbath.enabled
-                                        Spell.CastOnGround("Ravager", on => Target, req => Spell.UseAOE),
-                                        Spell.Cast("Cleave"),
-                                        // actions.aoe+=/bladestorm
-                                        Spell.Cast("Bladestorm"),
-                                        // actions.aoe+=/colossus_smash,if=dot.rend.ticking
-                                        Spell.Buff("Colossus Smash", req => DebuffRendTicking),
-                                        // actions.aoe+=/mortal_strike,if=cooldown.colossus_smash.remains>1.5&target.health.pct>20&active_enemies=2
-                                        Spell.Buff("Mortal Strike", req => CooldownColossusSmash > 1.5 && Target.HealthPercent > 20 && scenario.MobCount == 2),
-                                        // actions.aoe+=/execute,target=2,if=active_enemies=2
-                                        Spell.Cast("Execute", req => scenario.MobCount == 2),
-                                        // actions.aoe+=/execute,if=((rage>60|active_enemies=2)&cooldown.colossus_smash.remains>execute_time)|debuff.colossus_smash.up|target.time_to_die<5
-                                        Spell.Cast("Execute",
-                                            req => ((Me.CurrentRage > 60 || scenario.MobCount == 2) && CooldownColossusSmash > scenario.GcdTime)
-                                                || DebuffColossusSmashUp
-                                                || Target.TimeToDeath() < 5
-                                            ),
-                                        // actions.aoe+=/whirlwind,if=cooldown.colossus_smash.remains>1.5&(target.health.pct>20|active_enemies>3)
-                                        Spell.Cast(
-                                            "Whirlwind",
-                                            req => CooldownColossusSmash > 1.5
-                                                && (Target.HealthPercent > 20 || scenario.MobCount > 3)
-                                            ),
-                                        // actions.aoe+=/rend,cycle_targets=1,if=!ticking&target.time_to_die>8
-                                        Spell.Buff("Rend", on => Unit.UnfriendlyUnits().FirstOrDefault(u => !u.HasMyAura("Rend") /* timetodie only for current target */)),
-                                        // actions.aoe+=/storm_bolt,if=cooldown.colossus_smash.remains>4|debuff.colossus_smash.up
-                                        Spell.Cast("Storm Bolt", req => CooldownColossusSmash > 4 || DebuffColossusSmash > 0),
-                                        // actions.aoe+=/shockwave
-                                        Spell.Cast("Shockwave"),
-                                        // actions.aoe+=/execute,if=buff.sudden_death.react
-                                        Common.CreateExecuteOnSuddenDeath()
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    )
-                );
-        }
-
+		
         private static Composite CreateArmsAoeCombat(SimpleIntDelegate aoeCount)
         {
             return new PrioritySelector(

@@ -997,12 +997,17 @@ namespace Singular
             switch (TalentManager.CurrentSpec)
             {
                 case WoWSpec.DeathKnightBlood:
-                case WoWSpec.DeathKnightFrost:
-                case WoWSpec.DeathKnightUnholy:
-                    PullMoreNeedSpell = "Blood Boil";       // 56
-                    break;
+					PullMoreNeedSpell = "Blood Boil";       // 56
+					break;
+				case WoWSpec.DeathKnightFrost:
+					PullMoreNeedSpell = "Howling Blast";       // 55
+					break;
 
-                case WoWSpec.DruidBalance:
+				case WoWSpec.DeathKnightUnholy:
+					PullMoreNeedSpell = "Outbreak";       // 56
+					break;
+
+				case WoWSpec.DruidBalance:
                     PullMoreNeedSpell = "Moonkin Form";     // 16
                     break;
 
@@ -1017,11 +1022,13 @@ namespace Singular
 
                 case WoWSpec.HunterBeastMastery:
                 case WoWSpec.HunterMarksmanship:
-                case WoWSpec.HunterSurvival:
-                    PullMoreNeedSpell = "Multi-Shot";       // 24
-                    break;
+					PullMoreNeedSpell = "Multi-Shot";       // 24
+					break;
+				case WoWSpec.HunterSurvival:
+					PullMoreNeedSpell = "Hatchet Toss";       // 19
+					break;
 
-                case WoWSpec.MageArcane:
+				case WoWSpec.MageArcane:
                 case WoWSpec.MageFire:
                 case WoWSpec.MageFrost:
                     PullMoreNeedSpell = "Frost Nova";
@@ -1085,12 +1092,14 @@ namespace Singular
                     break;
 
                 case WoWSpec.WarlockAffliction:
-                case WoWSpec.WarlockDemonology:
+					PullMoreNeedSpell = "Corruption";   // 3 (10 since specialization needed)
+					break;
+				case WoWSpec.WarlockDemonology:
                 case WoWSpec.WarlockDestruction:
-                    PullMoreNeedSpell = "Corruption";   // 3 (10 since specialization needed)
-                    break;
+					PullMoreNeedSpell = "Shadow Bolt";   // 3 (10 since specialization needed)
+					break;
 
-                case WoWSpec.WarriorArms:
+				case WoWSpec.WarriorArms:
                 case WoWSpec.WarriorProtection:
                     PullMoreNeedSpell = "Thunder Clap"; // 20
                     break;

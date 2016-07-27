@@ -332,9 +332,9 @@ if $(ConfigurationName) == HighVoltz (
 ECHO Copied</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PreBuildEvent>if $(ConfigurationName) == Bobby53 (
+    <PreBuildEvent>if $(ConfigurationName) == Raphus (
 SubWCRev.exe $(ProjectDir) $(ProjectDir)SingularRoutine.Version.tmpl $(ProjectDir)SingularRoutine.Version.cs
-$(ProjectDir)..\..\filegen\bin\debug\filegen $(ProjectDir)
+$(SolutionDir)\FilecheckGenerator\bin\Debug\FilecheckGenerator.exe
 )</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

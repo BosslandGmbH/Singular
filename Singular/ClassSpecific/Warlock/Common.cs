@@ -510,7 +510,7 @@ namespace Singular.ClassSpecific.Warlock
         {
             return new Decorator(
                 ret => PetManager.IsPetSummonAllowed
-                    && !Me.HasAura( "Grimoire of Sacrifice")        // don't summon pet if this buff active
+                    && !Me.HasAura( "Demonic Power")        // don't summon pet if this buff active
                     && GetBestPet() != GetCurrentPet()
                     && Spell.CanCastHack( "Summon " + GetBestPet()), 
 

@@ -61,10 +61,7 @@ namespace Singular.ClassSpecific.Warlock
             else
                 buff.dark_soul_name = (sfr.Override ?? sfr.Original).Name;
 
-            talent.archimondes_darkness_enabled = Common.HasTalent(WarlockTalents.ArchimondesDarkness);
             talent.grimoire_of_service_enabled = Common.HasTalent(WarlockTalents.GrimoireOfService);
-            talent.demonic_servitude_enabled = Common.HasTalent(WarlockTalents.DemonicServitude);
-            talent.charred_remains_enabled = Common.HasTalent(WarlockTalents.CharredRemains);
             talent.cataclysm_enabled = Common.HasTalent(WarlockTalents.Cataclysm);
 
             if (SpellManager.HasSpell("Burning Rush"))
@@ -347,7 +344,7 @@ namespace Singular.ClassSpecific.Warlock
 
                         Spell.Cast(
                             "Summon Doomguard", 
-                            ret => Me.CurrentTarget.IsBoss() && PartyBuff.WeHaveBloodlust && !HasTalent(WarlockTalents.DemonicServitude)
+                            ret => Me.CurrentTarget.IsBoss() && PartyBuff.WeHaveBloodlust && !HasTalent(WarlockTalents.GrimoireOfSupremacy)
                             ),
 
                         // lower threat if tanks nearby to pickup
@@ -439,7 +436,7 @@ namespace Singular.ClassSpecific.Warlock
                     "Meteor Strike", 
                     req => Spell.UseAOE
                         && GetCurrentPet() == WarlockPet.Infernal
-                        && HasTalent(WarlockTalents.DemonicServitude)
+                        && HasTalent(WarlockTalents.GrimoireOfSupremacy)
                         && 3 <= Unit.UnfriendlyUnits(50).Count( u=> Me.Pet.SpellDistance(u) <= 10)
                         && !Unit.UnfriendlyUnits(50).Any(u => u.IsAvoidMob())
                     )
@@ -698,7 +695,7 @@ namespace Singular.ClassSpecific.Warlock
 
                 if (bestPet == WarlockPet.Auto)
                 {
-                    if (HasTalent(WarlockTalents.DemonicServitude))
+                    if (HasTalent(WarlockTalents.GrimoireOfSupremacy))
                         bestPet = WarlockPet.Doomguard;
                     else if (TalentManager.CurrentSpec == WoWSpec.WarlockDemonology)
                         bestPet = WarlockPet.Felguard;
@@ -716,7 +713,7 @@ namespace Singular.ClassSpecific.Warlock
                 SpellFindResults sfr;
                 if (!SpellManager.FindSpell(spellName, out sfr))
                 {
-                    if (HasTalent(WarlockTalents.DemonicServitude))
+                    if (HasTalent(WarlockTalents.GrimoireOfSupremacy))
                         bestPet = WarlockPet.Doomguard;
                     else if (SingularRoutine.CurrentWoWContext != WoWContext.Instances)
                         bestPet = WarlockPet.Voidwalker;
@@ -1197,61 +1194,72 @@ namespace Singular.ClassSpecific.Warlock
 
     public enum WarlockTalents
     {
-#if PRE_WOD
-        None = 0,
-        DarkRegeneration,
-        SoulLeech,
-        HarvestLife,
-        DemonicBreath,
+        Haunt = 1,
+        WritheInAgony,
+        DrainSoul,
+
+        ShadowyInspiration = Haunt,
+        Shadowflame = WritheInAgony,
+        DemonicCalling = DrainSoul,
+
+        Backdraft = Haunt,
+        RoaringBlaze = WritheInAgony,
+        Shadowburn = DrainSoul,
+
+
+        Contagion = 4,
+        AbsoluteCorruption,
+        ManaTap,
+
+        ImpendingDoom = Contagion,
+        ImprovedDreadstalkers = AbsoluteCorruption,
+        Implosion = ManaTap,
+
+        ReverseEntropy = Contagion,
+        Cataclysm = AbsoluteCorruption,
+
+
+
+        DemonSkin = 7,
         MortalCoil,
-        Shadowfury,
-        SoulLink,
-        SacrificialPact,
-        DarkBargain,
-        BloodHorror,
-        BurningRush,
-        UnboundWill,
-        GrimoireOfSupremacy,
-        GrimoireOfService,
-        GrimoireOfSacrifice,
-        ArchimondesDarkness,
-        KiljadensCunning,
-        MannorothsFury
-#else
-
-        DarkRegeneration = 1,
-        SoulLeech,
-        HarvestLife,
-        SearingFlames = HarvestLife,
-
         HowlOfTerror,
-        MortalCoil,
-        Shadowfury,
 
-        SoulLink,
-        SacrificialPact,
-        DarkBargain,
+        Shadowfury = HowlOfTerror,
 
-        BloodHorror,
+
+
+        SiphonLife = 10,
+        SowTheSeeds,
+        SoulHarvest,
+
+        HandOfDoom = SiphonLife,
+        PowerTrip = SowTheSeeds,
+
+
+
+        DemonicCircle = 13,
         BurningRush,
-        UnboundWill,
+        DarkPact,
 
-        GrimoireOfSupremacy,
+
+
+        GrimoireOfSupremacy = 16,
         GrimoireOfService,
         GrimoireOfSacrifice,
+
         GrimoireOfSynergy = GrimoireOfSacrifice,
 
-        ArchimondesDarkness,
-        KiljaedensCunning,
-        MannorothsFury,
 
-        SoulburnHaunt,
-        Demonbolt = SoulburnHaunt,
-        CharredRemains = SoulburnHaunt,
-        Cataclysm,
-        DemonicServitude
 
-#endif
+        SoulEffigy = 20,
+        PhantomSingularity,
+        SoulConduit,
+
+        SummonDarkglare = SoulEffigy,
+        Demonbolt = PhantomSingularity,
+ 
+        WreakHavoc = SoulEffigy,
+        ChannelDemonfire = PhantomSingularity
     }
 
 }

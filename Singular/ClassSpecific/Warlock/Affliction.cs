@@ -118,8 +118,9 @@ namespace Singular.ClassSpecific.Warlock
                         Common.CastCataclysm(),
 
                         CreateApplyDotsBehaviorNormal(on => Me.CurrentTarget),
-                        Spell.Cast("Summon Doomguard"),
-                        Spell.Cast("Grimoire: Fel Hunter"),
+                        Spell.Cast("Summon Doomguard", req => !Common.HasTalent(WarlockTalents.GrimoireOfSupremacy)),
+                        Spell.Cast("Haunt"),
+                        Spell.Cast("Grimoire: Felhunter"),
                         Spell.Buff("Life Tap", when => Me.ManaPercent < 50),
                         Spell.Cast("Drain Life"),
                         Spell.Cast("Drain Soul")      
@@ -250,7 +251,8 @@ namespace Singular.ClassSpecific.Warlock
                             req => GetSoulSwapDotsNeeded((WoWUnit)req) > 0,
                             new PrioritySelector(
                                 Spell.Buff("Agony", 3, on => (WoWUnit)on, ret => true),
-                                Spell.Buff("Corruption", 3, on => (WoWUnit) on, ret => true),
+                                Spell.Buff("Corruption", 3, on => (WoWUnit) on, ret => !Common.HasTalent(WarlockTalents.AbsoluteCorruption)),
+                                Spell.Buff("Corruption", ret => Common.HasTalent(WarlockTalents.AbsoluteCorruption)),
                                 Spell.Buff("Unstable Affliction", 3, on => (WoWUnit) on, req => Me.GetPowerInfo(WoWPowerType.SoulShards).Current >= 5),
                                 Spell.Buff("Siphon Life"),
                                 new Action(r => {
@@ -258,18 +260,6 @@ namespace Singular.ClassSpecific.Warlock
                                     return RunStatus.Failure;
                                     })
                                 )
-                            ),
-
-                        // 
-                        Spell.Buff(
-                            "Haunt", 
-                            1, 
-                            on => (on as WoWUnit),
-                            req => Me.CurrentSoulShards > 2
-                                && !(req as WoWUnit).HasAuraExpired("Corruption", 3)
-                                && !(req as WoWUnit).HasAuraExpired("Agony", 3)
-                                && !(req as WoWUnit).HasAuraExpired("Unstable Affliction", 3)
-                                && (((req as WoWUnit).IsPlayer) || ((req as WoWUnit).Guid == Me.CurrentTargetGuid && (req as WoWUnit).TimeToDeath(99) > 8))                                
                             )
                         )
                     )
@@ -359,31 +349,6 @@ namespace Singular.ClassSpecific.Warlock
                     {
                         Logger.Write(LogColor.SpellNonHeal, string.Format("*Soul Swap on {0} @ {1:F1}% at {2:F1} yds", ((WoWUnit)ret).SafeName(), ((WoWUnit)ret).HealthPercent, ((WoWUnit)ret).SpellDistance()));
                         if (!Spell.CastPrimative("Soul Swap", onUnit(ret)))
-                            return RunStatus.Failure;
-                        return RunStatus.Success;
-                    })
-                    )
-                );
-        }
-
-        public static Composite CreateCastSoulburnHaunt(UnitSelectionDelegate onUnit)
-        {
-            if (!Common.HasTalent(WarlockTalents.SoulburnHaunt))
-                return new ActionAlwaysFail();
-
-            return new Decorator(
-                req => Me.CurrentSoulShards >= 2,
-                new Sequence(
-                    ctx => onUnit(ctx),
-                    new Decorator(
-                        req => NeedSoulburnHauntNormal(req as WoWUnit),
-                        new ActionAlwaysSucceed()
-                        ),
-                    Common.CreateCastSoulburn(req => true),
-                    new Action(ret =>
-                    {
-                        Logger.Write(LogColor.SpellNonHeal, string.Format("*Haunt on {0} @ {1:F1}% at {2:F1} yds", ((WoWUnit)ret).SafeName(), ((WoWUnit)ret).HealthPercent, ((WoWUnit)ret).SpellDistance()));
-                        if (!Spell.CastPrimative("Haunt", onUnit(ret)))
                             return RunStatus.Failure;
                         return RunStatus.Success;
                     })

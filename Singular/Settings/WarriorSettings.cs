@@ -96,13 +96,6 @@ namespace Singular.Settings
         [DisplayName("Slows")]
         [Description("True / False if you would like the cc to use slows ie. Hammstring, Piercing Howl")]
         public bool UseWarriorSlows { get; set; }
-        
-        [Setting]
-        [DefaultValue(WarriorStance.Auto)]
-        [Category("DPS")]
-        [DisplayName("Warrior DPS Stance")]
-        [Description("The stance to use while DPSing. Battle stance if there is little incoming damage. Protection will always use Defensive stance.")]
-        public WarriorStance StanceSelected { get; set; }
 
         #endregion
 
@@ -133,13 +126,6 @@ namespace Singular.Settings
         [DisplayName("Die by the Sword %")]
         [Description("Health % to cast this ability")]
         public int DieByTheSwordHealth { get; set; }
-
-        [Setting]
-        [DefaultValue(50)]
-        [Category("Defensive")]
-        [DisplayName("Vigilance %")]
-        [Description("Health % to cast this ability")]
-        public int VigilanceHealth { get; set; }
 
     }
 }

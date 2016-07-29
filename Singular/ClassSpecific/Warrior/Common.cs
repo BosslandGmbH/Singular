@@ -45,12 +45,6 @@ namespace Singular.ClassSpecific.Warrior
             // removed combatreach because of # of missed Charges
             DistanceChargeBehavior = 25f;
 
-            if (TalentManager.HasGlyph("Long Charge"))
-            {
-                DistanceChargeBehavior = 30f;
-                Logger.Write(LogColor.Init, "glyph of long charge: [Charge] at {0:F1} yds", DistanceChargeBehavior);
-            }
-
             string spellVictory = "Victory Rush";
             VictoryRushHealth = 90;
             if (SpellManager.HasSpell("Impending Victory"))
@@ -100,25 +94,6 @@ namespace Singular.ClassSpecific.Warrior
             DistanceChargeBehavior -= 0.2f;    // should not be needed, but is  -- based on log files and observations we need this adjustment
 
             return null;
-        }
-
-
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warrior, priority: 999)]
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Warrior, priority: 999)]
-        public static Composite CreateWarriorNormalPreCombatBuffs()
-        {
-            return new PrioritySelector(
-                Spell.BuffSelfAndWait(
-                    sp => SelectedStanceAsSpellName, 
-                    req => 
-                    {
-                        if (StyxWoW.Me.Shapeshift == (ShapeshiftForm)SelectedStance)
-                            return false;
-                        return true;
-                    }),
-                PartyBuff.BuffGroup(Common.SelectedShoutAsSpellName),
-                CreateSpellReflectBehavior()
-                );
         }
 
         [Behavior(BehaviorType.LossOfControl, WoWClass.Warrior)]
@@ -188,51 +163,6 @@ namespace Singular.ClassSpecific.Warrior
             get { return WarriorSettings.Shout.ToString().CamelToSpaced().Substring(1); }
         }
 
-        public static WarriorStance SelectedStance
-        {
-            get
-            {
-                var stance = WarriorSettings.StanceSelected;
-                if (stance == WarriorStance.Auto)
-                {
-                    switch (TalentManager.CurrentSpec)
-                    {
-                        case WoWSpec.WarriorArms:
-                            stance = WarriorStance.BattleStance;
-                            break;
-                        case WoWSpec.WarriorFury:
-                            stance = WarriorStance.BattleStance;
-                            break;
-                        default:
-                        case WoWSpec.WarriorProtection:
-                            if (!Protection.HasShieldInOffHand)
-                                stance = Warrior.Protection.talentGladiator ? WarriorStance.GladiatorStance : WarriorStance.BattleStance;
-                            else if (!Warrior.Protection.talentGladiator)
-                                stance = WarriorStance.DefensiveStance;
-                            else if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
-                                stance = WarriorStance.GladiatorStance;
-                            else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-                                stance = WarriorStance.GladiatorStance;
-                            else if (!Group.MeIsTank)
-                                stance = WarriorStance.GladiatorStance;
-                            else 
-                                stance = WarriorStance.DefensiveStance;
-                            break;
-                    }
-                }
-
-                return stance ;
-            }
-        }
-
-        public static string SelectedStanceAsSpellName
-        {
-            get 
-            {
-                return SelectedStance.ToString().CamelToSpaced().Substring(1);
-            }
-        }
-
         /// <summary>
         /// keep a single copy of Charge Behavior so the wrapping Throttle will account for 
         /// uses across multiple behaviors that reference this method
@@ -280,8 +210,7 @@ namespace Singular.ClassSpecific.Warrior
 	        return
 		        Spell.Cast("Charge",
 			        req =>
-				        Me.CurrentTarget.IsGapCloserAllowed() && Me.CurrentTarget.Distance.Between(8, DistanceChargeBehavior) &&
-				        Me.CurrentTarget.MeIsSafelyBehind);
+				        Me.CurrentTarget.IsGapCloserAllowed() && Me.CurrentTarget.Distance.Between(8, DistanceChargeBehavior));
 		}
         
         public static Composite CreateHeroicLeapCloser()

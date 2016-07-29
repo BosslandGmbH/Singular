@@ -126,17 +126,15 @@ namespace Singular.ClassSpecific.Warlock
                         Spell.Cast("Summon Darkglare"),
                         Spell.Cast("Call Dreadstalkers"),
                         Spell.Cast("Summon Doomguard"),
-                        Spell.Cast("Demonic Empowerment"),
                         Spell.Cast("Hand of Gul'dan", movement => false, target => Me.CurrentTarget, req => SoulShardCount >= 4),
-                        Spell.Cast("Demonic Empowerment"),
                         Spell.Cast("Grimoire: Felguard"),
-                        Spell.Cast("Demonic Empowerment"),
+                        Spell.Cast("Demonic Empowerment", req => Me.Minions.Count(min => !min.HasAura(193396)) >= 3 && Spell.LastSpellCast != "Demonic Empowerment"),
                         Spell.Cast("Soul Harvest"),
                         Spell.Cast("Command Demon"),
                         Spell.Cast("Felstorm"),
                         Spell.Buff("Life Tap", req => Me.ManaPercent <= 60),
                         Spell.Cast("Demonbolt"),
-                        Spell.Cast("Shadowbolt"),
+                        Spell.Cast("Shadow Bolt"),
 
             #endregion
 

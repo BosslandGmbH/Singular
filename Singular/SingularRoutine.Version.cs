@@ -10,9 +10,9 @@ using Styx.CommonBot.Routines;
 [assembly: AssemblyTitle("Singular")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("ApocDev & Co")]
+[assembly: AssemblyCompany("Bossland GmbH")]
 [assembly: AssemblyProduct("Singular")]
-[assembly: AssemblyCopyright("Copyright © ApocDev & Co 2011")]
+[assembly: AssemblyCopyright("Copyright © Bossland GmbH 2011-2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -33,8 +33,8 @@ using Styx.CommonBot.Routines;
 //
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("4.0.0.4915")]
-[assembly: AssemblyFileVersion("4.0.0.4915")]
+[assembly: AssemblyVersion("5.0.0.4925")]
+[assembly: AssemblyFileVersion("5.0.0.4925")]
 
 namespace Singular
 {
@@ -51,9 +51,9 @@ namespace Singular
     /// 
     /// Singular SVN Information
     /// -------------------------
-    /// Revision 4915
-    /// Date     2016/07/27 23:08:30
-    /// Range    4913:4915
+    /// Revision 4925
+    /// Date     2016/07/29 06:36:40
+    /// Range    4925
     /// 
     /// </summary>
     public partial class SingularRoutine : CombatRoutine
@@ -65,11 +65,11 @@ namespace Singular
         // return Assembly.GetExecutingAssembly().GetName().Version;
         public static Version GetSingularVersion()
         {
-            return new Version("5.0.0.4915");
+            return new Version("5.0.0.4925");
         }
         public static string GetSingularBuildTime()
         {
-            return "2016/07/27 23:22:00";
+            return "2016/07/29 09:45:46";
         }
     }
 }

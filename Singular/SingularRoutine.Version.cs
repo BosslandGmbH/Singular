@@ -33,8 +33,8 @@ using Styx.CommonBot.Routines;
 //
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("5.0.0.4925")]
-[assembly: AssemblyFileVersion("5.0.0.4925")]
+[assembly: AssemblyVersion("5.0.0.4940")]
+[assembly: AssemblyFileVersion("5.0.0.4940")]
 
 namespace Singular
 {
@@ -51,9 +51,9 @@ namespace Singular
     /// 
     /// Singular SVN Information
     /// -------------------------
-    /// Revision 4925
-    /// Date     2016/07/29 06:36:40
-    /// Range    4925
+    /// Revision 4940
+    /// Date     2016/07/31 15:37:02
+    /// Range    4929:4940
     /// 
     /// </summary>
     public partial class SingularRoutine : CombatRoutine
@@ -65,11 +65,11 @@ namespace Singular
         // return Assembly.GetExecutingAssembly().GetName().Version;
         public static Version GetSingularVersion()
         {
-            return new Version("5.0.0.4925");
+            return new Version("5.0.0.4940");
         }
         public static string GetSingularBuildTime()
         {
-            return "2016/07/29 09:45:46";
+            return "2016/07/31 16:50:19";
         }
     }
 }

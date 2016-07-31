@@ -722,8 +722,10 @@ namespace Singular.Helpers
                 Logger.WriteDiagnostic("IsChannelling: InvalidObjectPointerException exception encountered - returning true", ie);
                 return true;
             }
-            if (StyxWoW.Me.ChanneledCastingSpellId == 193884) // Soothing Mist
+
+            if (StyxWoW.Me.ChanneledCastingSpellId == 115175) // Soothing Mist
                 return false;
+
             uint latency = SingularRoutine.Latency * 2;
             TimeSpan timeLeft = StyxWoW.Me.CurrentChannelTimeLeft;
             if (allow == LagTolerance.Yes && timeLeft.TotalMilliseconds < latency)

@@ -145,7 +145,7 @@ namespace Singular.Settings
         #region Category: Self-Healing
 
         [Setting]
-        [DefaultValue(40)]
+        [DefaultValue(85)]
         [Category("Self-Heal")]
         [DisplayName("Effuse %")]
         [Description("Health % to cast this ability at. Set to 100 to cast on cooldown, Set to 0 to disable.")]
@@ -259,13 +259,6 @@ namespace Singular.Settings
         public int RenewingMist { get; set; }
 
         [Setting]
-        [DefaultValue(93)]
-        [Category("Health %")]
-        [DisplayName("% Soothing Mist")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int SoothingMist { get; set; }
-
-        [Setting]
         [DefaultValue(80)]
         [Category("Health %")]
         [DisplayName("% Enveloping Mist")]
@@ -273,11 +266,18 @@ namespace Singular.Settings
         public int EnvelopingMist { get; set; }
 
         [Setting]
-        [DefaultValue(60)]
+        [DefaultValue(85)]
         [Category("Health %")]
         [DisplayName("% Effuse")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int Effuse { get; set; }
+
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Health %")]
+        [DisplayName("% Vivify")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int Vivify { get; set; }
 
         [Setting]
         [DefaultValue(50)]
@@ -426,7 +426,7 @@ namespace Singular.Settings
         public bool SavedToFile { get; set; }
 
         [Setting]
-        [DefaultValue(60)]
+        [DefaultValue(85)]
         [Category("Health %")]
         [DisplayName("% Effuse")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]

@@ -95,88 +95,20 @@ namespace Singular.ClassSpecific.Priest
 
             #endregion
 
-            #region Tank Buffing
-
-            if (PriestSettings.HolyHeal.PowerWordShield  != 0 )
-            behavs.AddBehavior(HealthToPriority(PriestSettings.HolyHeal.PowerWordShield) + 200, "Tank - Power Word: Shield @ " + PriestSettings.HolyHeal.PowerWordShield + "%", "Power Word: Shield",
-                Spell.Cast("Power Word: Shield", on =>
-                    {
-                        WoWUnit unit = Common.GetBestTankTargetForPWS(PriestSettings.HolyHeal.PowerWordShield);
-                        if (unit != null && Spell.CanCastHack("Power Word: Shield", unit, skipWowCheck: true))
-                        {
-                            Logger.WriteDebug("Buffing Power Word: Shield ON TANK: {0}", unit.SafeName());
-                            return unit;
-                        }
-                        return null;
-                    })
-                );
-
-            #endregion
-
             #region AoE Heals
 
             int maxDirectHeal = Math.Max(PriestSettings.HolyHeal.FlashHeal, PriestSettings.HolyHeal.Heal);
 
-            if (maxDirectHeal  != 0 )
-            behavs.AddBehavior(399, "Divine Insight - Prayer of Mending @ " + maxDirectHeal.ToString() + "%", "Prayer of Mending",
-                new Decorator(
-                    ret => (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid) && Me.HasAura("Divine Insight"),
-                    new PrioritySelector(
-                        context => HealerManager.GetBestCoverageTarget("Prayer of Mending", maxDirectHeal, 40, 20, 2),
-                        new Decorator(
-                            ret => ret != null,
-                            Spell.Cast("Prayer of Mending", on => (WoWUnit)on, req => true)
-                            )
-                        )
-                    )
-                );
-
             // instant, so cast this first ALWAYS
-            if (PriestSettings.HolyHeal.HolyWordSanctuary  != 0 )
-            behavs.AddBehavior(398, "Holy Word: Sanctuary @ " + PriestSettings.HolyHeal.HolyWordSanctuary + "% MinCount: " + PriestSettings.HolyHeal.CountHolyWordSanctuary, "Holy Word: Sanctuary",
+            if (PriestSettings.HolyHeal.HolyWordSanctify != 0 )
+            behavs.AddBehavior(398, "Holy Word: Sanctify @ " + PriestSettings.HolyHeal.HolyWordSanctify + "% MinCount: " + PriestSettings.HolyHeal.CountHolyWordSanctify, "Holy Word: Sanctify",
                 new Decorator(
-                    ret => Me.HasAura("Chakra: Sanctuary"),
+                    ret => true,
                     new PrioritySelector(
-                        context => HealerManager.GetBestCoverageTarget("Holy Word: Sanctuary", PriestSettings.HolyHeal.HolyWordSanctuary, 40, 8, PriestSettings.HolyHeal.CountHolyWordSanctuary),
+                        context => HealerManager.GetBestCoverageTarget("Holy Word: Sanctify", PriestSettings.HolyHeal.HolyWordSanctify, 40, 10, PriestSettings.HolyHeal.CountHolyWordSanctify),
                         new Decorator(
                             ret => ret != null,
-                            Spell.CastOnGround("Holy Word: Sanctuary", on => (WoWUnit)on, req => true, false)
-                            )
-                        )
-                    )
-                );
-/*
-            behavs.AddBehavior(HealthToPriority(PriestSettings.HolyHeal.HolyLevel90Talent) + 200, "Divine Star", "Divine Star",
-                new Decorator(
-                    ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
-                    new Decorator(
-                        ret => Clusters.GetClusterCount( Me, HealerManager.Instance.TargetList.Where(u => u.HealthPercent < PriestSettings.HolyHeal.CountLevel90Talent).ToList(), ClusterType.Path, 4 ) >= PriestSettings.HolyHeal.CountLevel90Talent,
-                        Spell.Cast("Divine Star", on => (WoWUnit)on, req => true)
-                        )
-                    )
-                );
-*/
-            if (PriestSettings.HolyHeal.HolyLevel90Talent  != 0 )
-            behavs.AddBehavior(397, "Halo @ " + PriestSettings.HolyHeal.HolyLevel90Talent + "% MinCount: " + PriestSettings.HolyHeal.CountLevel90Talent, "Halo",
-                new Decorator(
-                    ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
-                    new Decorator(
-                        ret => ret != null
-                            && HealerManager.Instance.TargetList.Count(u => u.IsAlive && u.HealthPercent < PriestSettings.HolyHeal.HolyLevel90Talent && u.Distance < 30) >= PriestSettings.HolyHeal.CountLevel90Talent,
-                        Spell.CastOnGround("Halo", on => (WoWUnit)on, req => true)
-                        )
-                    )
-                );
-
-            if (PriestSettings.HolyHeal.HolyLevel90Talent  != 0 )
-            behavs.AddBehavior(397, "Cascade @ " + PriestSettings.HolyHeal.HolyLevel90Talent + "% MinCount: " + PriestSettings.HolyHeal.CountLevel90Talent, "Cascade",
-                new Decorator(
-                    ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
-                    new PrioritySelector(
-                        context => HealerManager.GetBestCoverageTarget("Cascade", PriestSettings.HolyHeal.HolyLevel90Talent, 40, 30, PriestSettings.HolyHeal.CountLevel90Talent),
-                        new Decorator(
-                            ret => ret != null,
-                            Spell.Cast("Cascade", mov => true, on => (WoWUnit)on, req => true)
+                            Spell.CastOnGround("Holy Word: Sanctify", on => (WoWUnit)on, req => true, false)
                             )
                         )
                     )
@@ -184,61 +116,63 @@ namespace Singular.ClassSpecific.Priest
 
             if (PriestSettings.HolyHeal.PrayerOfMending != 0)
             {
-                if (!TalentManager.HasGlyph("Focused Mending"))
-                {
-                    behavs.AddBehavior(397, "Prayer of Mending @ " + PriestSettings.HolyHeal.PrayerOfMending + "% MinCount: " + PriestSettings.HolyHeal.CountPrayerOfMending, "Prayer of Mending",
+                behavs.AddBehavior(397, "Prayer of Mending @ " + PriestSettings.HolyHeal.PrayerOfMending + "%", "Prayer of Mending",
+                    Spell.Cast("Prayer of Mending",
+                        mov => true,
+                        on => (WoWUnit)on,
+                        req => !((WoWUnit)req).IsMe && ((WoWUnit)req).HealthPercent < PriestSettings.HolyHeal.PrayerOfMending,
+                        cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal
+                    )
+                );
+            }
+
+/*
+            behavs.AddBehavior(HealthToPriority(PriestSettings.HolyHeal.HolyLevel90Talent) + 200, "Divine Star",
+                "Divine Star",
+                new Decorator(
+                    ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
+                    new Decorator(
+                        ret =>
+                            Clusters.GetClusterCount(Me,
+                                HealerManager.Instance.TargetList.Where(
+                                    u => u.HealthPercent < PriestSettings.HolyHeal.CountLevel90Talent).ToList(),
+                                ClusterType.PathToUnit, 4) >= PriestSettings.HolyHeal.CountLevel90Talent,
+                        Spell.Cast("Divine Star", on => (WoWUnit)on, req => true)
+                        )
+                    )
+                );
+*/
+
+            if (PriestSettings.HolyHeal.HolyLevel90Talent != 0)
+            {
+                behavs.AddBehavior(397,
+                    "Halo @ " + PriestSettings.HolyHeal.HolyLevel90Talent + "% MinCount: " +
+                    PriestSettings.HolyHeal.CountLevel90Talent, "Halo",
+                    new Decorator(
+                        ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                         new Decorator(
-                            ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
-                            new PrioritySelector(
-                                context => HealerManager.GetBestCoverageTarget("Prayer of Mending", PriestSettings.HolyHeal.PrayerOfMending, 40, 20, PriestSettings.HolyHeal.CountPrayerOfMending),
-                                new Decorator(
-                                    ret => ret != null,
-                                    Spell.Cast("Prayer of Mending", on => (WoWUnit)on, req => true)
-                                    )
-                                )
+                            ret => ret != null
+                                   &&
+                                   HealerManager.Instance.TargetList.Count(
+                                       u =>
+                                           u.IsAlive && u.HealthPercent < PriestSettings.HolyHeal.HolyLevel90Talent &&
+                                           u.Distance < 30) >= PriestSettings.HolyHeal.CountLevel90Talent,
+                            Spell.CastOnGround("Halo", on => (WoWUnit) on, req => true)
                             )
-                        );
-                }
-                else
-                {
-                    behavs.AddBehavior(397, "Prayer of Mending @ " + PriestSettings.HolyHeal.PrayerOfMending + "% (Glyph of Focused Mending)", "Prayer of Mending",
-                        Spell.Cast("Prayer of Mending",
-                            mov => true,
-                            on => (WoWUnit)on,
-                            req => !((WoWUnit)req).IsMe && ((WoWUnit)req).HealthPercent < PriestSettings.HolyHeal.PrayerOfMending && Me.HealthPercent < PriestSettings.HolyHeal.PrayerOfMending,
-                            cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal
-                            )
-                        );
-                }
+                        )
+                    );
             }
 
             if ( PriestSettings.HolyHeal.BindingHeal != 0 )
             {
-                if (!TalentManager.HasGlyph("Binding Heal"))
-                {
-                    behavs.AddBehavior(396, "Binding Heal @ " + PriestSettings.HolyHeal.BindingHeal + "% MinCount: 2", "Binding Heal",
-                        Spell.Cast("Binding Heal",
-                            mov => true,
-                            on => (WoWUnit)on,
-                            req => !((WoWUnit)req).IsMe && ((WoWUnit)req).HealthPercent < PriestSettings.HolyHeal.BindingHeal && Me.HealthPercent < PriestSettings.HolyHeal.BindingHeal,
-                            cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal
-                            )
-                        );
-                }
-                else
-                {
-                    behavs.AddBehavior(396, "Binding Heal (glyphed) @ " + PriestSettings.HolyHeal.BindingHeal + "% MinCount: 3", "Binding Heal",
-                        Spell.Cast("Binding Heal",
-                            mov => true,
-                            on => (WoWUnit)on,
-                            req => !((WoWUnit)req).IsMe 
-                                && ((WoWUnit)req).HealthPercent < PriestSettings.HolyHeal.BindingHeal 
-                                && Me.HealthPercent < PriestSettings.HolyHeal.BindingHeal
-                                && HealerManager.Instance.TargetList.Any( h => h.IsAlive && !h.IsMe && h.Guid != ((WoWUnit)req).Guid && h.HealthPercent < PriestSettings.HolyHeal.BindingHeal && h.SpellDistance() < 20),
-                            cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal
-                            )
-                        );
-                }
+                behavs.AddBehavior(396, "Binding Heal @ " + PriestSettings.HolyHeal.BindingHeal + "% MinCount: 2", "Binding Heal",
+                    Spell.Cast("Binding Heal",
+                        mov => true,
+                        on => (WoWUnit)on,
+                        req => !((WoWUnit)req).IsMe && ((WoWUnit)req).HealthPercent < PriestSettings.HolyHeal.BindingHeal && Me.HealthPercent < PriestSettings.HolyHeal.BindingHeal,
+                        cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal
+                    )
+                );
             }
 
             if (PriestSettings.HolyHeal.CircleOfHealing  != 0 )
@@ -266,7 +200,7 @@ namespace Singular.ClassSpecific.Priest
             #endregion
 
             /*          
-HolyWordSanctuary       Holy Word: Sanctuary 
+HolyWordSanctify       Holy Word: Sanctify 
 HolyWordSerenity        Holy Word: Serenity 
 CircleOfHealing         Circle of Healing 
 PrayerOfHealing         Prayer of Healing 
@@ -277,20 +211,20 @@ VoidShift               Void Shift
 
             #region Direct Heals
 
+            if (maxDirectHeal != 0) // Nuke a Flash Heal
+                behavs.AddBehavior(400, "Surge of Light @ " + maxDirectHeal + "%", "Flash Heal",
+                Spell.Cast("Flash Heal",
+                    mov => false,
+                    on => (WoWUnit)on,
+                    req => Me.HasActiveAura("Surge of Light") && ((WoWUnit)req).HealthPercent < 85
+                    )
+                );
+
             if (PriestSettings.HolyHeal.HolyWordSerenity != 0)
             behavs.AddBehavior(HealthToPriority(1) + 4, "Holy Word: Serenity @ " + PriestSettings.HolyHeal.HolyWordSerenity + "%", "Holy Word: Serenity",
                 Spell.CastHack("Holy Word: Serenity",
                     on => (WoWUnit)on,
                     req => ((WoWUnit)req).HealthPercent < PriestSettings.HolyHeal.HolyWordSerenity
-                    )
-                );
-
-            if (maxDirectHeal != 0)
-                behavs.AddBehavior(HealthToPriority(1) + 3, "Surge of Light @ " + maxDirectHeal + "%", "Flash Heal",
-                Spell.Cast("Flash Heal",
-                    mov => true,
-                    on => (WoWUnit)on,
-                    req => Me.HasAura("Surge of Light") && ((WoWUnit)req).HealthPercent < maxDirectHeal
                     )
                 );
 
@@ -325,27 +259,6 @@ VoidShift               Void Shift
             #endregion
 
             #region Tank - Low Priority Buffs
-
-            behavs.AddBehavior(HealthToPriority(101), "Tank - Refresh Renew w/ Serenity", "Chakra: Serenity",
-                Spell.CastHack("Holy Word: Serenity", on =>
-                    {
-                        if (Me.HasAura("Chakra: Serenity"))
-                        {
-                            WoWUnit unit = Group.Tanks
-                                .Where(u => u.IsAlive && u.Combat && u.DistanceSqr < 40 * 40 && u.GetAuraTimeLeft("Renew").TotalMilliseconds.Between(350, 2500) && u.InLineOfSpellSight)
-                                .OrderBy(u => u.HealthPercent)
-                                .FirstOrDefault();
-
-                            if (unit != null && Spell.CanCastHack("Renew", unit, skipWowCheck: true))
-                            {
-                                Logger.WriteDebug("Refreshing RENEW ON TANK: {0}", unit.SafeName());
-                                return unit;
-                            }
-                        }
-                        return null;
-                    },
-                    req => true)
-                );
 
             if (PriestSettings.HolyHeal.Renew != 0)
             behavs.AddBehavior(HealthToPriority(102), "Tank - Buff Renew @ " + PriestSettings.HolyHeal.Renew + "%", "Renew",
@@ -438,11 +351,10 @@ VoidShift               Void Shift
                 ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
                 new PrioritySelector(
                     Spell.Cast("Desperate Prayer", ret => Me, ret => Me.Combat && Me.HealthPercent < PriestSettings.DesperatePrayerHealth),
-                    Spell.BuffSelf("Power Word: Shield", ret => Me.Combat && Me.HealthPercent < PriestSettings.PowerWordShield && !Me.HasAura("Weakened Soul")),
 
                     // keep heal buffs on if glyphed
                     Spell.BuffSelf("Prayer of Mending", ret => Me.Combat && Me.HealthPercent <= 90),
-                    Spell.BuffSelf("Renew", ret => Me.Combat && Me.HealthPercent <= 90),
+                    Spell.BuffSelf("Renew", ret => Me.Combat && Me.HealthPercent <= 95),
 
                     Common.CreatePsychicScreamBehavior(),
 
@@ -452,7 +364,7 @@ VoidShift               Void Shift
 
                     Spell.Cast("Flash Heal",
                         ctx => Me,
-                        ret => !Me.Combat && Me.PredictedHealthPercent(includeMyHeals: true) <= 85)
+                        ret => !Me.Combat && Me.PredictedHealthPercent(includeMyHeals: true) <= 90)
                     )
                 );
         }
@@ -504,7 +416,6 @@ VoidShift               Void Shift
                             ret => !Spell.IsGlobalCooldown(),
                             new PrioritySelector(
 
-                                Spell.BuffSelf("Power Word: Shield", ret => Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull && PriestSettings.UseShieldPrePull && !Me.HasAura("Weakened Soul")),
                                 Helpers.Common.CreateInterruptBehavior(),
 
                                 Movement.WaitForFacing(),

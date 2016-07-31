@@ -475,13 +475,13 @@ namespace Singular.Settings
                     FlashHeal = 80;
                     BindingHeal = 55;
                     HolyLevel90Talent = 85;
-                    HolyWordSanctuary = 95;
-                    HolyWordSerenity = 85;
+                    HolyWordSanctify = 95;
+                    HolyWordSerenity = 50;
                     CircleOfHealing = 90;
-                    PrayerOfHealing = 85;
+                    PrayerOfHealing = 70;
                     DivineHymn = 75;
                     GuardianSpirit = 35;
-                    CountHolyWordSanctuary = 3;
+                    CountHolyWordSanctify = 3;
                     CountLevel90Talent = 3;
                     CountCircleOfHealing = 3;
                     CountPrayerOfHealing = 3;
@@ -492,16 +492,16 @@ namespace Singular.Settings
                     Renew = 95;
                     PrayerOfMending = 85;
                     Heal = 65;
-                    FlashHeal = 65;
+                    FlashHeal = 80;
                     BindingHeal = 35;
                     HolyLevel90Talent = 80;
-                    HolyWordSanctuary = 0;
-                    HolyWordSerenity = 85;
+                    HolyWordSanctify = 0;
+                    HolyWordSerenity = 60;
                     CircleOfHealing = 93;
-                    PrayerOfHealing = 85;
+                    PrayerOfHealing = 70;
                     DivineHymn = 75;
                     GuardianSpirit = 20;
-                    CountHolyWordSanctuary = 3;
+                    CountHolyWordSanctify = 3;
                     CountLevel90Talent = 3;
                     CountCircleOfHealing = 3;
                     CountPrayerOfHealing = 3;
@@ -513,16 +513,16 @@ namespace Singular.Settings
                     Renew = 95;
                     PrayerOfMending = 94;
                     Heal = 40;
-                    FlashHeal = 20;
+                    FlashHeal = 70;
                     BindingHeal = 30;
                     HolyLevel90Talent = 80;
-                    HolyWordSanctuary = 92;
-                    HolyWordSerenity = 0;
+                    HolyWordSanctify = 92;
+                    HolyWordSerenity = 50;
                     CircleOfHealing = 93;
                     PrayerOfHealing = 85;
                     DivineHymn = 75;
                     GuardianSpirit = 20;
-                    CountHolyWordSanctuary = 3;
+                    CountHolyWordSanctify = 3;
                     CountLevel90Talent = 4;
                     CountCircleOfHealing = 4;
                     CountPrayerOfHealing = 3;
@@ -573,7 +573,7 @@ namespace Singular.Settings
         public int Renew { get; set; }
 
         [Setting]
-        [DefaultValue(94)]
+        [DefaultValue(90)]
         [Category("Health %")]
         [DisplayName("% Prayer of Mending")]
         [Description("Health % to cast this ability on Tanks. Set to 0 to disable.")]
@@ -587,7 +587,7 @@ namespace Singular.Settings
         public int Heal { get; set; }
 
         [Setting]
-        [DefaultValue(20)]
+        [DefaultValue(80)]
         [Category("Health %")]
         [DisplayName("% Flash Heal")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
@@ -610,12 +610,12 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(92)]
         [Category("Health %")]
-        [DisplayName("% Holy Word: Sanctuary")]
+        [DisplayName("% Holy Word: Sanctify")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int HolyWordSanctuary { get; set; }
+        public int HolyWordSanctify { get; set; }
 
         [Setting]
-        [DefaultValue(00)]
+        [DefaultValue(60)]
         [Category("Health %")]
         [DisplayName("% Holy Word: Serenity")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
@@ -654,9 +654,9 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(3)]
         [Category("Target Minimum")]
-        [DisplayName("Count Holy Word: Sanctuary")]
-        [Description("Min number of players below Holy Word: Sanctuary % in area")]
-        public int CountHolyWordSanctuary { get; set; }
+        [DisplayName("Count Holy Word: Sanctify")]
+        [Description("Min number of players below Holy Word: Sanctify % in area")]
+        public int CountHolyWordSanctify { get; set; }
 
         [Setting]
         [DefaultValue(3)]
@@ -687,7 +687,7 @@ namespace Singular.Settings
         public int CountDivineHymn { get; set; }
 
         [Setting]
-        [DefaultValue(3)]
+        [DefaultValue(2)]
         [Category("Target Minimum")]
         [DisplayName("Count Prayer of Mending")]
         [Description("Min number of players healed")]
@@ -716,7 +716,7 @@ namespace Singular.Settings
                 {
                     Penance = 50;
                     Plea = 80;
-                    PrayerOfMending = 80;
+                    PrayerOfMending = 90;
                     Heal = 0;
                     FlashHeal = 80;
                     PrayerOfHealing = 90;
@@ -725,7 +725,7 @@ namespace Singular.Settings
                     PowerWordBarrier = 40;
                     CountLevel90Talent = 3;
                     CountPrayerOfHealing = 3;
-                    CountPrayerOfMending = 3;
+                    CountPrayerOfMending = 2;
                     CountPowerWordBarrier = 3;
                     AtonementAbovePercent = 90;
                     AtonementAboveCount = 1;
@@ -734,16 +734,16 @@ namespace Singular.Settings
                 {
                     Penance = 50;
                     Plea = 80;
-                    PrayerOfMending = 80;
+                    PrayerOfMending = 90;
                     Heal = 60;
-                    FlashHeal = 30;
+                    FlashHeal = 90;
                     PrayerOfHealing = 90;
                     PainSuppression = 0;
                     DiscLevel90Talent = 85;
                     PowerWordBarrier = 0;
                     CountLevel90Talent = 3;
                     CountPrayerOfHealing = 3;
-                    CountPrayerOfMending = 3;
+                    CountPrayerOfMending = 2;
                     CountPowerWordBarrier = 3;
                     AtonementAbovePercent = 90;
                     AtonementAboveCount = 1;
@@ -754,7 +754,7 @@ namespace Singular.Settings
                     Plea = 80;
                     PrayerOfMending = 90;
                     Heal = 50;
-                    FlashHeal = 30;
+                    FlashHeal = 70;
                     PrayerOfHealing = 89;
                     PainSuppression = 49;
                     DiscLevel90Talent = 89;
@@ -813,7 +813,7 @@ namespace Singular.Settings
         public int Heal { get; set; }
 
         [Setting]
-        [DefaultValue(30)]
+        [DefaultValue(80)]
         [Category("Healing")]
         [DisplayName("% Flash Heal")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]

@@ -76,8 +76,7 @@ namespace Singular.ClassSpecific.Shaman
             if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
             {
                 return new PrioritySelector(
-                    Spell.BuffSelf("Earth Shield", ret => Me.ManaPercent >= ShamanSettings.TwistDamageShield),
-                    Spell.BuffSelf("Water Shield", ret => Me.ManaPercent <= ShamanSettings.TwistWaterShield)
+                    Spell.BuffSelf("Earth Shield", ret => Me.ManaPercent >= ShamanSettings.TwistDamageShield) // Now a PvP talent.
                     );
             }
 
@@ -86,8 +85,7 @@ namespace Singular.ClassSpecific.Shaman
                 return new PrioritySelector(
                     new Throttle(10,
                         new PrioritySelector(
-                            Spell.Buff("Earth Shield", on => GetBestEarthShieldTargetInstance()),
-                            Spell.BuffSelf("Water Shield", ret => !Me.HasAura("Earth Shield"))
+                            Spell.Buff("Earth Shield", on => GetBestEarthShieldTargetInstance())
                             )
                         )
                     );
@@ -97,8 +95,7 @@ namespace Singular.ClassSpecific.Shaman
             return new Decorator(
                 req => !((SingularRoutine.IsBgBotActive || SingularRoutine.IsDungeonBuddyActive) && !Me.Combat && Me.IsInsideSanctuary),
                 new PrioritySelector(
-                    Spell.BuffSelf("Earth Shield", ret => Me.ManaPercent >= ShamanSettings.TwistDamageShield),
-                    Spell.BuffSelf("Water Shield", ret => Me.ManaPercent <= ShamanSettings.TwistWaterShield)
+                    Spell.BuffSelf("Earth Shield", ret => Me.ManaPercent >= ShamanSettings.TwistDamageShield)
                     )
                 );
         }
@@ -166,7 +163,7 @@ namespace Singular.ClassSpecific.Shaman
             if (unit == null || !unit.IsValid || !unit.IsAlive || !Unit.GroupMembers.Any(g => g.Guid == unit.Guid) || unit.Distance > 99)
                 return false;
 
-            return unit.HasMyAura("Earth Shield") || !unit.HasAnyAura("Earth Shield", "Water Shield", "Lightning Shield");
+            return unit.HasMyAura("Earth Shield");
         }
 
         #endregion
@@ -216,6 +213,179 @@ namespace Singular.ClassSpecific.Shaman
                         )
                     )
                 );
+        }
+
+        #endregion
+
+        #region BATTLEGROUNDS
+
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanRestoration, WoWContext.Battlegrounds)]
+        public static Composite CreateRestoShamanCombatBehaviorBattlegrounds()
+        {
+            return new PrioritySelector(
+
+                Spell.WaitForCastOrChannel(),
+
+                CreateRestoDiagnosticOutputBehavior(on => HealerManager.Instance.FirstUnit),
+
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown() && HealerManager.Instance.TargetList.Any(t => !t.IsMe && t.IsAlive),
+                    new PrioritySelector(
+                        HealerManager.CreateStayNearTankBehavior(),
+                        CreateRestoShamanHealingOnlyBehavior(selfOnly: false)
+                        )
+                    ),
+
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown() && HealerManager.AllowHealerDPS(),
+                    new PrioritySelector(
+
+                        Helpers.Common.EnsureReadyToAttackFromMediumRange(),
+
+                        Spell.WaitForCastOrChannel(),
+
+                        new Decorator(
+                            ret => !Spell.IsGlobalCooldown(),
+                            new PrioritySelector(
+
+                                Helpers.Common.CreateInterruptBehavior(),
+                                Totems.CreateTotemsBehavior(),
+
+                                Movement.WaitForFacing(),
+                                Movement.WaitForLineOfSpellSight(),
+
+                                Dispelling.CreatePurgeEnemyBehavior("Purge"),
+
+                                Common.CastElementalBlast(),
+                                Spell.Buff("Flame Shock", 3, on => Me.CurrentTarget, req => true),
+                                Spell.Cast("Lava Burst"),
+                                Spell.Cast("Frost Shock"),
+                                Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(12f).Any(u => u.IsCrowdControlled())),
+                                Spell.Cast("Lightning Bolt")
+                                )
+                            )
+                        )
+                    )
+                );
+        }
+
+        #endregion
+
+        #region INSTANCES
+
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanRestoration, WoWContext.Instances)]
+        public static Composite CreateRestoShamanCombatBehaviorInstances()
+        {
+#if OLD_APPROACH
+            return new PrioritySelector(
+
+                ctx => HealerManager.Instance.TargetList.Any( t => !t.IsMe && t.IsAlive ),
+
+                Safers.EnsureTarget(),
+                Movement.CreateFaceTargetBehavior(),
+
+                Spell.WaitForCastOrChannel(),
+
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+
+                        CreateRestoDiagnosticOutputBehavior(on => Me.CurrentTarget),
+
+                        new Decorator(
+                            ret => (bool) ret,
+                            new PrioritySelector(
+                                HealerManager.CreateStayNearTankBehavior(),
+                                CreateRestoShamanHealingOnlyBehavior( selfOnly:false),
+                                Helpers.Common.CreateInterruptBehavior(),
+                                Dispelling.CreatePurgeEnemyBehavior("Purge"),
+                                Totems.CreateTotemsBehavior(),
+                                Spell.Cast("Lightning Bolt", ret => TalentManager.HasGlyph("Telluric Currents"))
+                                )
+                            ),
+
+                        new Decorator(
+                            ret => !((bool) ret),
+                            new PrioritySelector(
+                                CreateRestoDiagnosticOutputBehavior( on => HealerManager.Instance.FirstUnit),
+                                Spell.Cast("Elemental Blast"),
+                                Spell.Buff("Flame Shock", true, on => Me.CurrentTarget, req => true, 3),
+                                Spell.Cast("Lava Burst"),
+                                Spell.Cast("Frost Shock"),
+                                Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(12f).Any(u => u.IsCrowdControlled())),
+                                Spell.Cast("Lightning Bolt")
+                                )
+                            )
+
+                        )
+                    )
+                );
+#else
+
+            return new PrioritySelector(
+
+                Spell.WaitForCastOrChannel(),
+                CreateRestoDiagnosticOutputBehavior(on => HealerManager.FindLowestHealthTarget()),
+
+                HealerManager.CreateStayNearTankBehavior(),
+
+                new Decorator(
+                    ret => Me.Combat && HealerManager.AllowHealerDPS(),
+                    new PrioritySelector(
+
+                        Helpers.Common.EnsureReadyToAttackFromMediumRange(),
+                        Movement.CreateFaceTargetBehavior(),
+                        Spell.WaitForCastOrChannel(),
+
+                        new Decorator(
+                            ret => !Spell.IsGlobalCooldown(),
+                            new PrioritySelector(
+                                Helpers.Common.CreateInterruptBehavior(),
+
+                                Totems.CreateTotemsBehavior(),
+
+                                Movement.WaitForFacing(),
+                                Movement.WaitForLineOfSpellSight(),
+
+                                Common.CastElementalBlast(cancel: c => HealerManager.CancelHealerDPS()),
+                                Spell.Buff("Flame Shock", 3, on => Me.CurrentTarget, req => true),
+                                Spell.Cast("Lava Burst", on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS()),
+                                Spell.Cast("Frost Shock"),
+                                Spell.Cast("Chain Lightning", on => Me.CurrentTarget, req => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(12f).Any(u => u.IsCrowdControlled()), cancel => HealerManager.CancelHealerDPS()),
+                                Spell.Cast("Lightning Bolt", on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS())
+                                )
+                            )
+                        )
+                    ),
+
+                new Decorator(
+                    ret => Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+                    new PrioritySelector(
+                        CreateRestoShamanHealingOnlyBehavior(selfOnly: false),
+                        Helpers.Common.CreateInterruptBehavior(),
+                        Dispelling.CreatePurgeEnemyBehavior("Purge"),
+                        Totems.CreateTotemsBehavior(),
+                        new Decorator(
+                            req => TalentManager.HasGlyph("Telluric Currents"),
+                            new PrioritySelector(
+                                Safers.EnsureTarget(),
+                                Movement.CreateFaceTargetBehavior(),
+                                Spell.Cast("Lightning Bolt",
+                                    mov => true,
+                                    on => Unit.NearbyUnitsInCombatWithUsOrOurStuff
+                                        .Where(u => u.IsAlive && u.SpellDistance() < 40 && Me.IsSafelyFacing(u))
+                                        .OrderByDescending(u => u.HealthPercent)
+                                        .FirstOrDefault(),
+                                    req => !HealerManager.Instance.TargetList.Any(h => h.IsAlive && h.SpellDistance() < 40 && h.HealthPercent < ShamanSettings.RestoHealSettings.TelluricHealthCast),
+                                    cancel => HealerManager.Instance.TargetList.Any(h => h.IsAlive && h.SpellDistance() < 40 && h.HealthPercent < ShamanSettings.RestoHealSettings.TelluricHealthCancel)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                );
+
+#endif
         }
 
         #endregion

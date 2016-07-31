@@ -714,7 +714,8 @@ namespace Singular.Settings
             {
                 if (ctx == Singular.HealingContext.Battlegrounds)
                 {
-                    Penance = 80;
+                    Penance = 50;
+                    Plea = 80;
                     PrayerOfMending = 80;
                     Heal = 0;
                     FlashHeal = 80;
@@ -731,7 +732,8 @@ namespace Singular.Settings
                 }
                 else if (ctx == Singular.HealingContext.Instances)
                 {
-                    Penance = 80;
+                    Penance = 50;
+                    Plea = 80;
                     PrayerOfMending = 80;
                     Heal = 60;
                     FlashHeal = 30;
@@ -748,7 +750,8 @@ namespace Singular.Settings
                 }
                 else if (ctx == Singular.HealingContext.Raids)
                 {
-                    Penance = 80;
+                    Penance = 50;
+                    Plea = 80;
                     PrayerOfMending = 90;
                     Heal = 50;
                     FlashHeal = 30;
@@ -782,11 +785,18 @@ namespace Singular.Settings
         public int PowerWordShield { get; set; }
 
         [Setting]
-        [DefaultValue(0)]
+        [DefaultValue(50)]
         [Category("Healing")]
         [DisplayName("% Penance")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int Penance { get; set; }
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Healing")]
+        [DisplayName("% Plea")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int Plea { get; set; }
 
         [Setting]
         [DefaultValue(90)]

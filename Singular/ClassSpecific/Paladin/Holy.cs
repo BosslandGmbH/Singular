@@ -52,7 +52,6 @@ namespace Singular.ClassSpecific.Paladin
                             mov => false,
                             on => Me,
                             req => Me.PredictedHealthPercent(includeMyHeals: true) <= PaladinSettings.SelfLayOnHandsHealth),
-                        Common.CreateWordOfGloryBehavior(on => Me),
                         Spell.Cast("Flash of Light",
                             mov => true,
                             on => Me,
@@ -163,9 +162,6 @@ namespace Singular.ClassSpecific.Paladin
                                        Unit.NearbyFriendlyPlayers.Count(p =>
                                            p.HealthPercent <= SingularSettings.Instance.Paladin().LightOfDawnHealth && p != StyxWoW.Me &&
                                            p.DistanceSqr < 30 * 30 && StyxWoW.Me.IsSafelyFacing(p.Location)) >= SingularSettings.Instance.Paladin().LightOfDawnCount),
-
-                            Common.CreateWordOfGloryBehavior( on => (WoWUnit) on ),
-
                             Spell.Cast(
                                 "Holy Shock",
                                 ret => (WoWUnit)ret,

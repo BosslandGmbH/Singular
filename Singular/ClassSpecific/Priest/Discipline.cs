@@ -428,6 +428,22 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast("Penance",
                             mov => true,
                             on => (WoWUnit)on,
+                            req => HasTalent(PriestTalents.ThePenitent),
+                            cancel => false
+                            )
+                        )
+                    )
+                );
+
+            if (PriestSettings.DiscHeal.Plea != 0)
+                behavs.AddBehavior(HealthToPriority(PriestSettings.DiscHeal.Plea) + PriSingleBase, "Plea @ " + PriestSettings.DiscHeal.Plea + "%", "Plea",
+                new Decorator(
+                    req => ((WoWUnit)req).HealthPercent < PriestSettings.DiscHeal.Plea,
+                    new PrioritySelector(
+                        CastBuffsBehavior("Plea"),
+                        Spell.Cast("Plea",
+                            mov => true,
+                            on => (WoWUnit)on,
                             req => true,
                             cancel => false
                             )

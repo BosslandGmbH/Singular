@@ -649,12 +649,7 @@ namespace Singular.ClassSpecific.Druid
                         )
                     ),
 */
-				new Decorator(
-					ret => !Rest.IsEatingOrDrinking,
-					Common.CreateDpsDruidOffHealBehavior()
-					),
-
-				Rest.CreateDefaultRestBehaviour(null, "Revive"),
+				Rest.CreateDefaultRestBehaviour("Healing Touch", "Revive"),
 				CreateDruidMovementBuff()
 				);
 		}

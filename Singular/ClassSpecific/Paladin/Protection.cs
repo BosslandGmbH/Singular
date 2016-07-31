@@ -24,7 +24,7 @@ namespace Singular.ClassSpecific.Paladin
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static PaladinSettings PaladinSettings { get { return SingularSettings.Instance.Paladin(); } }
-
+        private const int ShieldOfTheRighteous = 132403;
         private static int _aoeCount;
 
         #endregion
@@ -47,7 +47,7 @@ namespace Singular.ClassSpecific.Paladin
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Spell.BuffSelf("Sacred Shield"),
+                        Spell.Cast("Divine Steed"),
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
@@ -108,8 +108,6 @@ namespace Singular.ClassSpecific.Paladin
                 Spell.BuffSelf( "Lay on Hands",
                     ret => Me.HealthPercent <= PaladinSettings.SelfLayOnHandsHealth && !Me.HasAura("Forbearance")),
 
-                Common.CreateWordOfGloryBehavior(on => Me),
-
                 Spell.Cast("Flash of Light",
                     mov => false,
                     on => Me,
@@ -150,9 +148,11 @@ namespace Singular.ClassSpecific.Paladin
                         new Action(r =>
                         {
                             // Paladin AOE count should be those near paladin (consecrate, holy wrath) and those near target (avenger's shield)
-                            _aoeCount = TankManager.Instance.TargetList.Count(u => u.SpellDistance() < 10 || u.Location.Distance(Me.CurrentTarget.Location) < 10);
+                            _aoeCount =
+                                TankManager.Instance.TargetList.Count(
+                                    u => u.SpellDistance() < 10 || u.Location.Distance(Me.CurrentTarget.Location) < 10);
                             return RunStatus.Failure;
-                            }),
+                        }),
 
                         CreateProtDiagnosticOutputBehavior(),
 
@@ -168,20 +168,23 @@ namespace Singular.ClassSpecific.Paladin
                         // Taunts - if reckoning on cooldown, throw some damage at them
                         new Decorator(
                             ret => SingularSettings.Instance.EnableTaunting
-                                && TankManager.Instance.NeedToTaunt.Any()
-                                && TankManager.Instance.NeedToTaunt.FirstOrDefault().InLineOfSpellSight,
+                                   && TankManager.Instance.NeedToTaunt.Any()
+                                   && TankManager.Instance.NeedToTaunt.FirstOrDefault().InLineOfSpellSight,
                             new Throttle(TimeSpan.FromMilliseconds(1500),
                                 new PrioritySelector(
                                     ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(e => e.SpellDistance() < 30),
-                                    Spell.Cast("Reckoning", ctx => (WoWUnit) ctx),
-                                    Spell.Cast("Avenger's Shield", ctx => (WoWUnit)ctx, req => Spell.UseAOE),
+                                    Spell.Cast("Reckoning", ctx => (WoWUnit)ctx),
+                                    Spell.Cast("Avenger's Shield", ctx => (WoWUnit) ctx, req => Spell.UseAOE),
                                     Spell.Cast("Judgment", ctx => (WoWUnit)ctx)
                                     )
                                 )
                             ),
 
                         // Soloing move - open with stun to reduce incoming damage (best to take Fist of Justice talent if doing this
-                        Spell.Cast("Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal),
+                        Spell.Cast("Hammer of Justice",
+                            ret =>
+                                PaladinSettings.StunMobsWhileSolo &&
+                                SingularRoutine.CurrentWoWContext == WoWContext.Normal),
 
                         //Multi target
                         new Decorator(
@@ -198,9 +201,15 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.Cast("Blessed Hammer"),
 
                         //Single target
-                        Spell.HandleOffGCD( Spell.Cast("Shield of the Righteous", ret => Me.CurrentHolyPower >= 3 || Me.ActiveAuras.ContainsKey("Divine Purpose"))),
-                        Spell.Cast("Judgment"),
+                            // The buff below gives us a 20% damage reduction if we have KnightTemplar talent.
+                            // However, something is removing the buff as soon as its cast as it believes the player is using a mount.
+                            // Spell.BuffSelf("Divine Steed", req => Common.HasTalent(PaladinTalents.KnightTemplar)), 
+                        Spell.HandleOffGCD(Spell.Cast("Shield of the Righteous", req => !Me.HasAura(ShieldOfTheRighteous))),
+                        Spell.HandleOffGCD(Spell.Cast("Light of the Protector", req => Me.HealthPercent <= 85)),
                         Spell.Cast("Consecration"),
+                        Spell.Cast("Bastion of Light", req => Spell.GetCharges("Shield of the Righteous") == 0 && !Me.HasAura(ShieldOfTheRighteous) && Me.HealthPercent <= 80),
+                        Spell.Cast("Judgment"),
+                        Spell.Cast("Hammer of the Righteous"),
                         Spell.Cast("Avenger's Shield", ret => Spell.UseAOE)
                         )
                     ),

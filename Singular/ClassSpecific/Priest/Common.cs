@@ -347,9 +347,6 @@ namespace Singular.ClassSpecific.Priest
                 if (Targeting.Instance.TargetList.Any(p => p.IsPlayer && p.GotAlivePet && p.Pet.CurrentTargetGuid == Me.Guid))
                     return true;
 
-                if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-                    return Common.HasTalent(PriestTalents.Phantasm) && Me.HasAuraWithMechanic(WoWSpellMechanic.Snared);
-
                 return false;
             });
         }
@@ -504,66 +501,87 @@ namespace Singular.ClassSpecific.Priest
 
     public enum PriestTalents
     {
-#if PRE_WOD
-        VoidTendrils = 1,
-        Psyfiend,
-        DominateMind,
+        ThePenitent = 1,
+        Castigation,
+        Schism,
+
+        TrailOfLight = ThePenitent,
+        EnduringRenewal = Castigation,
+        Enlightenment = Schism,
+
+        TwistOfFateShadow = ThePenitent,
+        FortressOfTheMind = Castigation,
+        ShadowWordVoid = Schism,
+
+
+        AngelicFeather = 4,
         BodyAndSoul,
-        AngelicFeather,
-        Phantasm,
-        FromDarknessComesLight,
-        Mindbender,
-        SolaceAndInsanity,
-        DesperatePrayer,
-        SpectralGuise,
-        AngelicBulwark,
-        TwistOfFate,
-        PowerInfusion,
-        DivineInsight,
-        Cascade,
-        DivineStar,
-        Halo
-#else
+        Masochism,
 
-        DesperatePrayer = 1,
-        SpectralGuise,
-        AngelicBulwark,
+        BodyAndMind = BodyAndSoul,
+        DesperatePrayer = Masochism,
 
-        BodyAndSoul,
-        AngelicFeather,
-        Phantasm,
+        Mania = AngelicFeather,
+        
 
-        SurgeOfLight,
-        SurgeOfDarkness = SurgeOfLight,
-        Mindbender,
-        PowerWordSolace,
-        Insanity = PowerWordSolace,
+        ShiningForce = 7,
+        PsychicVoice,
+        DominantMind,
 
-        VoidTendrils,
-        PsychicScream,
-        DominateMind,
+        Censure = PsychicVoice,
+        Afterlife = DominantMind,
 
-        TwistOfFate,
-        PowerInfusion,
-        SpiritShell,
-        DivineInsight = SpiritShell,
-        ShadowyInsight = SpiritShell,
+        MindBomb = ShiningForce,
+        
 
-        Cascade,
+        PowerWordSolace = 10,
+        ShieldDiscipline,
+        MindbenderDiscipline,
+
+        LightOfTheNaaru = PowerWordSolace,
+        GuardianAngel = ShieldDiscipline,
+        SymbolOfHope = MindbenderDiscipline,
+
+        VoidLord = PowerWordSolace,
+        ReaperOfSouls = ShieldDiscipline,
+        VoidRay = MindbenderDiscipline,
+
+
+        Contrition = 13,
+        PowerInfusionDiscipline,
+        TwistOfFateDiscipline,
+
+        SurgeOfLight = Contrition,
+        BindingHeal = PowerInfusionDiscipline,
+        Piety = TwistOfFateDiscipline,
+
+        Sanlayn = Contrition,
+        AuspiciousSpirits = PowerInfusionDiscipline,
+        ShadowyInsight = TwistOfFateDiscipline,
+
+
+        ClarityOfWill = 16,
         DivineStar,
         Halo,
 
-        ClarityOfWill,
-        ClarityOfPurpose = ClarityOfWill,
-        ClarityOfPower = ClarityOfWill,
-        WordsOfMending,
-        VoidEntropy = WordsOfMending,
-        SavingGrace,
-        AuspiciousSpirits = SavingGrace
+        Divinity = ClarityOfWill,
+        
+        PowerInfusionShadow = ClarityOfWill,
+        ShadowCrash = DivineStar,
+        MindbenderShadow = Halo,
 
 
-#endif
+        PurgeTheWicked = 19,
+        Grace,
+        ShadowCovenant,
 
+        Apotheosis = PurgeTheWicked,
+        Benediction = Grace,
+        CircleOfHealing = ShadowCovenant,
+
+        LegacyOfTheVoid = PurgeTheWicked,
+        MindSpike = Grace,
+        SurrenderToMadness = ShadowCovenant
     }
 
 }

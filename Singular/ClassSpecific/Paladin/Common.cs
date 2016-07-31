@@ -68,8 +68,6 @@ namespace Singular.ClassSpecific.Paladin
                         && !Me.HasAura("Divine Shield") && Spell.CanCastHack("Flash of Light", Me) // save if we have DS and able to cast FoL
                     ),
 
-                Common.CreateWordOfGloryBehavior(on => Me),
-
                 new Decorator(
                     req => Me.Race == WoWRace.Tauren
                         && EventHandlers.TimeSinceAttackedByEnemyPlayer.TotalSeconds < 5
@@ -283,50 +281,6 @@ namespace Singular.ClassSpecific.Paladin
             return bestSeal;
         }
 
-        public static Composite CreateWordOfGloryBehavior(UnitSelectionDelegate onUnit )
-        {
-            if ( HasTalent( PaladinTalents.EternalFlame ))
-            {
-                if (onUnit == null)
-                    return new ActionAlwaysFail();
-
-                return new PrioritySelector(
-                    ctx => onUnit(ctx),
-
-                    Spell.Cast(
-                        "Eternal Flame",
-                        on => (WoWUnit) on,
-                        ret => ret is WoWPlayer && PaladinSettings.KeepEternalFlameUp && Group.Tanks.Contains((WoWPlayer)onUnit(ret)) && !Group.Tanks.Any(t => t.HasMyAura("Eternal Flame"))),
-
-                    Spell.Cast(
-                        "Eternal Flame",
-                        on => (WoWUnit) on,
-                        ret => (Me.CurrentHolyPower >= 3 || Me.GetAuraTimeLeft("Divine Purpose", true).TotalSeconds > 0)
-                            && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().SelfEternalFlameHealth)
-                    );
-            }
-
-            return new PrioritySelector(
-                new Decorator(
-                    req => Me.HealthPercent <= Math.Max( PaladinSettings.SelfWordOfGloryHealth1, Math.Max( PaladinSettings.SelfWordOfGloryHealth2, PaladinSettings.SelfWordOfGloryHealth3))
-                        && Me.ActiveAuras.ContainsKey("Divine Purpose"),
-                    Spell.Cast("Word of Glory", onUnit)
-                    ),
-                new Decorator(
-                    req => Me.CurrentHolyPower >= 1 && Me.HealthPercent <= PaladinSettings.SelfWordOfGloryHealth1,
-                    Spell.Cast("Word of Glory", onUnit)
-                    ),
-                new Decorator(
-                    req => Me.CurrentHolyPower >= 2 && Me.HealthPercent <= PaladinSettings.SelfWordOfGloryHealth2,
-                    Spell.Cast("Word of Glory", onUnit)
-                    ),
-                new Decorator(
-                    req => Me.CurrentHolyPower >= 3 && Me.HealthPercent <= PaladinSettings.SelfWordOfGloryHealth3,
-                    Spell.Cast("Word of Glory", onUnit)
-                    )
-                );
-        }
-
         public static Composite CreatePaladinBlindingLightBehavior()
         {
             if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
@@ -390,59 +344,90 @@ namespace Singular.ClassSpecific.Paladin
 
     public enum PaladinTalents
     {
-#if PRE_WOD
-        SpeedOfLight = 1,
-        LongArmOfTheLaw,
-        PursuitOfJustice,
-        FistOfJustice,
-        Repentance,
-        EvilIsaPointOfView,
-        SelflessHealer,
-        EternalFlame,
-        SacredShield,
-        HandOfPurity,
-        UnbreakableSpirit,
-        Clemency,
-        HolyAvenger,
-        SanctifiedWrath,
-        DivinePurpose,
-        HolyPrism,
+        BestowFaith = 1,
         LightsHammer,
-        ExecutionSentence
-#else
+        CrusadersMight,
 
-        SpeedOfLight = 1,
-        LongArmOfTheLaw,
-        PursuitOfJustice,
+        FirstAvenger = BestowFaith,
+        BastionOfLight = LightsHammer,
+        CrusadersJudgment = CrusadersMight,
 
-        FistOfJustice,
+        FinalVerdict = BestowFaith,
+        ExecutionSentence = LightsHammer,
+        Consecration = CrusadersMight,
+
+
+
+        DivineSteedHoly = 4,
+        UnbreakableSpirit,
+        RuleOfLaw,
+
+        HolyShield = DivineSteedHoly,
+        BlessedHammer = UnbreakableSpirit,
+        ConsecratedHammer = RuleOfLaw,
+
+        TheFiresOfJustice = DivineSteedHoly,
+        Zeal = UnbreakableSpirit,
+        GreaterJudgment = RuleOfLaw,
+
+
+        FistOfJustice = 7,
         Repentance,
         BlindingLight,
 
-        SelflessHealer,
-        EternalFlame,
-        SacredShield,
+        
 
-        HandOfPurity,
-        UnbreakableSpirit,
-        Clemency,
+        DevotionAura = 10,
+        AuraOfSacrifice,
+        AuraOfMercy,
 
+        BlessingOfSpellwarding = DevotionAura,
+        BlesingOfSalvation = AuraOfSacrifice,
+        RetributionAura = AuraOfMercy,
+
+        VirtuesBlade = DevotionAura,
+        BladeOfWrath = AuraOfSacrifice,
+        DivineHammer = AuraOfMercy,
+
+
+        DivinePurposeHoly = 13,
         HolyAvenger,
-        SanctifiedWrath,
-        DivinePurpose,
-
         HolyPrism,
-        LightsHammer,
-        ExecutionSentence,
 
-        BeaconOfFaith,
-        EmpoweredSeals = BeaconOfFaith,
-        BeaconOfInsight,
-        Seraphim = BeaconOfInsight,
-        SavedbyTheLight,
-        HolyShield = SavedbyTheLight,
-        FinalVerdict = SavedbyTheLight
+        HandOfTheProtector = DivinePurposeHoly,
+        KnightTemplar = HolyAvenger,
+        FinalStand = HolyPrism,
 
-#endif
+        JusticarsVengeance = DivinePurposeHoly,
+        EyeForAnEye = HolyAvenger,
+        WordOfGlory = HolyPrism,
+
+
+        FerventMartyr = 16,
+        SanctifiedWrath,
+        JudgmentOfLightHoly,
+
+        AegisOfLight = FerventMartyr,
+        JudgmentOfLightProtection = SanctifiedWrath,
+        ConsecratedGround = JudgmentOfLightHoly,
+
+        DivineIntervention = FerventMartyr,
+        DivineSteedRetribution = SanctifiedWrath,
+        SealOfLight = JudgmentOfLightHoly,
+
+
+        BeaconOfFaith = 19,
+        BeaconOfTheLightbringer,
+        BeaconOfVirtue,
+
+        RighteousProtector = BeaconOfFaith,
+        Seraphim = BeaconOfTheLightbringer,
+        LastDefender = BeaconOfVirtue,
+
+        DivinePurposeRetribution = BeaconOfFaith,
+        Crusade = Seraphim,
+        HolyWrath = BeaconOfVirtue
+
     }
+
 }

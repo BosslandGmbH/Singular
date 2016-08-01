@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>07.31.2016 13:50:19</ScanTime>
+  <ScanTime>08.01.2016 04:39:20</ScanTime>
   <FileList>
     <File Hash="6787" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="7024" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -8,9 +8,9 @@
     <File Hash="2039" Name="ClassSpecific\DeathKnight\Lowbie.cs" />
     <File Hash="8319" Name="ClassSpecific\DeathKnight\Unholy.cs" />
     <File Hash="5134" Name="ClassSpecific\Druid\Balance.cs" />
-    <File Hash="49157" Name="ClassSpecific\Druid\Common.cs" />
-    <File Hash="19290" Name="ClassSpecific\Druid\Feral.cs" />
-    <File Hash="10280" Name="ClassSpecific\Druid\Guardian.cs" />
+    <File Hash="63833" Name="ClassSpecific\Druid\Common.cs" />
+    <File Hash="19962" Name="ClassSpecific\Druid\Feral.cs" />
+    <File Hash="12085" Name="ClassSpecific\Druid\Guardian.cs" />
     <File Hash="2467" Name="ClassSpecific\Druid\Lowbie.cs" />
     <File Hash="41552" Name="ClassSpecific\Druid\Resto.cs" />
     <File Hash="18931" Name="ClassSpecific\Generic.cs" />
@@ -106,7 +106,7 @@
     <File Hash="0" Name="obj\Raphus\TemporaryGeneratedFile_E7A71F73-0F8D-4B9B-B56E-8E70B10BC5D3.cs" />
     <File Hash="1507" Name="Properties\AssemblyInfo.cs" />
     <File Hash="4102" Name="Settings\DeathKnightSettings.cs" />
-    <File Hash="36971" Name="Settings\DruidSettings.cs" />
+    <File Hash="37942" Name="Settings\DruidSettings.cs" />
     <File Hash="1029" Name="Settings\HealerSettings.cs" />
     <File Hash="4568" Name="Settings\HotkeySettings.cs" />
     <File Hash="4121" Name="Settings\HunterSettings.cs" />
@@ -128,7 +128,7 @@
     <File Hash="22483" Name="SingularRoutine.Context.cs" />
     <File Hash="33494" Name="SingularRoutine.cs" />
     <File Hash="5742" Name="SingularRoutine.Test.cs" />
-    <File Hash="2712" Name="SingularRoutine.Version.cs" />
+    <File Hash="2707" Name="SingularRoutine.Version.cs" />
     <File Hash="3033" Name="Utilities\CombatLog.cs" />
     <File Hash="2024" Name="Utilities\Enumeration.cs" />
     <File Hash="40072" Name="Utilities\EventHandlers.cs" />

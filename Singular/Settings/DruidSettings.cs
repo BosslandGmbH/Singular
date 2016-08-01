@@ -210,19 +210,7 @@ namespace Singular.Settings
         [Description("Move behind targets for opener or when target stunned/not targeting Druid in Cat Form")]
         public bool MoveBehindTargets { get; set; }
 
-        [Setting]
-        [DefaultValue(1)]
-        [Category("Common")]
-        [DisplayName("Disorienting Roar Count")]
-        [Description("Number of Mobs required before casting Disorienting Roar when Solo/PVP")]
-        public int DisorientingRoarCount { get; set; }
-
-        [Setting]
-        [DefaultValue(25)]
-        [Category("Common")]
-        [DisplayName("Disorienting Roar Health %")]
-        [Description("Health % to cast Disorienting Roar to peel off mobs prior to healing when Solo/PVP")]
-        public int DisorientingRoarHealth { get; set; } 
+        
 
 
 
@@ -382,18 +370,53 @@ namespace Singular.Settings
 
         #region Guardian
         [Setting]
+        [DefaultValue(1)]
+        [Category("Guardian")]
+        [DisplayName("Incapacitating Roar Count")]
+        [Description("Number of Mobs required before casting Incapacitating Roar when Solo/PVP")]
+        public int TankFeralIncapacitatingRoarCount { get; set; }
+
+        [Setting]
+        [DefaultValue(25)]
+        [Category("Guardian")]
+        [DisplayName("Incapacitating Roar Health %")]
+        [Description("Health % to cast Incapacitating Roar to peel off mobs prior to healing when Solo/PVP")]
+        public int TankFeralIncapacitatingRoarHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Guardian")]
+        [DisplayName("Disable Defensive Mitigation")]
+        [Description("Enable this to manually control all Defensive Mitigation.")]
+        public bool TankFeralDisableDefensiveMitigation { get; set; }
+
+        [Setting]
+        [DefaultValue(85)]
+        [Category("Guardian")]
+        [DisplayName("Ironfur Health %")]
+        [Description("Ironfur will be used at this value. Set this to 100 to enable on cooldown usage.")]
+        public int TankFeralIronfurHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Guardian")]
+        [DisplayName("Ironfur Normal Units")]
+        [Description("Ironfur will be used if nearby units in combat with me are >= this value reguardless of health. Boss and Elite count as max if > 0. 1+ to enable this setting. 0 to disable setting, even for Boss/Elite.")]
+        public int TankFeralIronfurNormalUnits { get; set; }
+
+        [Setting]
+        [DefaultValue(0)]
+        [Category("Guardian")]
+        [DisplayName("Mark of Ursol Health %")]
+        [Description("Health % to cast Mark of Ursol.  100 for always (when normal stuff occurs), 0 for never.")]
+        public int TankFeralMarkOfUrsolHealth { get; set; }
+
+        [Setting]
         [DefaultValue(70)]
         [Category("Guardian")]
         [DisplayName("Frenzied Regeneration Health")]
-        [Description("FR will be used at this value. Set this to 100 to enable on cooldown usage. (Recommended: 30 if glyphed. 15 if not.)")]
+        [Description("FR will be used at this value. Set this to 100 to enable on cooldown usage.")]
         public int TankFrenziedRegenerationHealth { get; set; }
-
-        [Setting]
-        [DefaultValue(100)]
-        [Category("Guardian")]
-        [DisplayName("Savage Defense Health")]
-        [Description("Savage Defense will be used at this value. Set this to 100 to enable on cooldown usage.")]
-        public int TankSavageDefense { get; set; }
 
         [Setting]
         [DefaultValue(55)]
@@ -408,14 +431,12 @@ namespace Singular.Settings
         [DisplayName("Barkskin Health")]
         [Description("Barkskin will be used at this value. Set this to 100 to enable on cooldown usage.")]
         public int TankFeralBarkskin { get; set; }
-
         [Setting]
-        [DefaultValue(80)]
+        [DefaultValue(20)]
         [Category("Guardian")]
-        [DisplayName("Dream of Cenarius Healing Touch")]
-        [Description("Health Percent to cast Healing Touch if Dream of Cenarius has procced")]
-        public int DreamOfCenariusHealingTouchHealth { get; set; }
-
+        [DisplayName("Bristling Fur Rage %")]
+        [Description("Rage must be less than number to use Bristling Fur.")]
+        public int TankFeralBristlingFurRage { get; set; }
 
         #endregion
 

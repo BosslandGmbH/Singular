@@ -26,18 +26,18 @@ namespace Singular.ClassSpecific.Druid
     public class Feral
     {
         private static LocalPlayer Me => StyxWoW.Me;
-	    private static DruidSettings DruidSettings => SingularSettings.Instance.Druid();
-	    private static long EnergyDecifit => Me.MaxEnergy - Me.CurrentEnergy;
-		private static double RakeAndThrashRefresh => Common.HasTalent(DruidTalents.JaggedWounds) ? 3 : 4.2;
-		private static double RipRefresh => Common.HasTalent(DruidTalents.JaggedWounds) ? 4.8 : 7.2;
+        private static DruidSettings DruidSettings => SingularSettings.Instance.Druid();
+        private static long EnergyDecifit => Me.MaxEnergy - Me.CurrentEnergy;
+        private static double RakeAndThrashRefresh => Common.HasTalent(DruidTalents.JaggedWounds) ? 3 : 4.2;
+        private static double RipRefresh => Common.HasTalent(DruidTalents.JaggedWounds) ? 4.8 : 7.2;
 
-		#region Common
+        #region Common
 
-		[Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidFeral, priority: 1)]
+        [Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidFeral, priority: 1)]
         public static Composite CreateFeralDruidRest()
         {
             return new PrioritySelector(
-				
+
                 new Decorator(
                     ret => !Rest.IsEatingOrDrinking
                         && Me.HasActiveAura("Predatory Swiftness")
@@ -54,7 +54,7 @@ namespace Singular.ClassSpecific.Druid
 
                 Common.CreateProwlBehavior(ret => Rest.IsEatingOrDrinking)
 
-                // remainder of rest behavior in common.cs CreateNonRestoDruidRest()                     
+                // remainder of rest behavior in common.cs CreateNonRestoDruidRest()
                 );
         }
 
@@ -69,17 +69,17 @@ namespace Singular.ClassSpecific.Druid
                 Spell.WaitForCast(),
 
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(), 
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
 
-                        Common.CreateAttackFlyingOrUnreachableMobs(),  
+                        Common.CreateAttackFlyingOrUnreachableMobs(),
 
-                        Spell.Buff("Moonfire", 
-							req => Me.GotTarget() && Me.CurrentTarget.IsTrivial() && 
-									(Me.Shapeshift != ShapeshiftForm.Cat || (Common.HasTalent(DruidTalents.LunarInspiration) && !Me.HasAura("Prowl")))),
+                        Spell.Buff("Moonfire",
+                            req => Me.GotTarget() && Me.CurrentTarget.IsTrivial() &&
+                                    (Me.Shapeshift != ShapeshiftForm.Cat || (Common.HasTalent(DruidTalents.LunarInspiration) && !Me.HasAura("Prowl")))),
 
                         Common.CreateProwlBehavior(
                             req =>
@@ -104,11 +104,11 @@ namespace Singular.ClassSpecific.Druid
 
                         // only Dash if we dont have WC or WC was cast more than 2 seconds ago
 
-                        Spell.BuffSelf("Dash", 
-                            ret => MovementManager.IsClassMovementAllowed 
+                        Spell.BuffSelf("Dash",
+                            ret => MovementManager.IsClassMovementAllowed
                                 && Me.IsMoving
                                 && Me.HasAura("Prowl")
-                                && Me.CurrentTarget.Distance > 17 
+                                && Me.CurrentTarget.Distance > 17
                                 && Spell.GetSpellCooldown("Wild Charge", 999).TotalSeconds > 1
                             ),
 
@@ -116,7 +116,7 @@ namespace Singular.ClassSpecific.Druid
                         )
                     ),
 
-                // Move to Melee, going behind target if prowling 
+                // Move to Melee, going behind target if prowling
                 Common.CreateMoveBehindTargetWhileProwling(),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
@@ -146,14 +146,14 @@ namespace Singular.ClassSpecific.Druid
                     )
                 );
         }
-		
+
         #endregion
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral)]
         public static Composite CreateFeralNormalPreCombatBuffs()
         {
             return new Decorator(
-                ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(), 
+                ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(),
                 new PrioritySelector(
 
                     // prowl will cast form if used, so check for it first
@@ -166,20 +166,20 @@ namespace Singular.ClassSpecific.Druid
                             && !ObjectManager.GetObjectsOfType<WoWUnit>().Any(u => u.IsDead && ((CharacterSettings.Instance.LootMobs && u.CanLoot && u.Lootable) || (CharacterSettings.Instance.SkinMobs && u.Skinnable && u.CanSkin)) && u.Distance < CharacterSettings.Instance.LootRadius)
                         ),
 
-                    // cast cat form 
+                    // cast cat form
                     // since this check comes while not in combat (so will be doing other things like Questing) need to add some checks:
                     // - only if Moving
                     // - only if Not Swimming
                     // - only if Not Flying
-                    // - only if Not in one of the various forms for travel 
+                    // - only if Not in one of the various forms for travel
                     // - only if No Recent Shapefhift Error (since form may have resulted from error in picking up Quest, completing Quest objectives, or turning in Quest)
                     new Throttle(
-                        10, 
-                        Common.CastForm( 
-                            ShapeshiftForm.Cat, 
+                        10,
+                        Common.CastForm(
+                            ShapeshiftForm.Cat,
                             req => !Utilities.EventHandlers.IsShapeshiftSuppressed
                                 && Me.IsMoving
-                                && !Me.IsFlying && !Me.IsSwimming 
+                                && !Me.IsFlying && !Me.IsSwimming
                                 && !Me.HasAnyShapeshift( ShapeshiftForm.Cat, ShapeshiftForm.Travel, ShapeshiftForm.Aqua, ShapeshiftForm.FlightForm, ShapeshiftForm.EpicFlightForm)
                             )
                         )
@@ -225,8 +225,8 @@ namespace Singular.ClassSpecific.Druid
                             return null;
 
                         // else: find lowest health unit
-                        unit = HealerManager.NeedHealTargeting 
-                            ? HealerManager.FindHighestPriorityTarget() 
+                        unit = HealerManager.NeedHealTargeting
+                            ? HealerManager.FindHighestPriorityTarget()
                             : Unit.GroupMembers
                                 .Where( u => u.IsAlive && Spell.CanCastHack("Healing Touch", u))
                                 .OrderBy( u => (int) u.HealthPercent )
@@ -267,7 +267,7 @@ namespace Singular.ClassSpecific.Druid
                 Spell.WaitForCast(),
 
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(), 
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
@@ -282,33 +282,35 @@ namespace Singular.ClassSpecific.Druid
                         Movement.WaitForLineOfSpellSight(),
                         //Single target
                         CreateFeralFaerieFireBehavior(),
-						
-						Spell.Cast("Elune's Guidance", ret => Me.ComboPoints <= 0 && Me.CurrentEnergy >= 50),
-						Spell.BuffSelf("Healing Touch", ret => Me.HasActiveAura("Predatory Swiftness") && Me.ComboPoints >= 4),
-						new Decorator(ret => Me.ComboPoints >= 5,
-							new PrioritySelector(
-								Spell.Cast("Ferocious Bite", 
-									on => Unit.UnfriendlyUnits(8).FirstOrDefault(
-												u => (u.HealthPercent < 25 || Common.HasTalent(DruidTalents.Sabertooth)) && u.HasMyAura("Rip") || 
-														u.TimeToDeath(int.MaxValue) < 18 || u.GetAuraTimeLeft("Rip").TotalSeconds >= RipRefresh), 
-									ret => (!Common.HasTalent(DruidTalents.SavageRoar) || Me.GetAuraTimeLeft("Savage Roar").TotalSeconds > 12) && Me.CurrentEnergy >= 50),
-								Spell.Cast("Rip", 
-									on => Unit.UnfriendlyUnits(8).FirstOrDefault(
-												u => u.HealthPercent >= 25 && u.TimeToDeath(int.MaxValue) > 18 && u.GetAuraTimeLeft("Rip").TotalSeconds < RipRefresh)),
-								Spell.Cast("Savage Roar"))),
 
-						Spell.Cast("Moonfire", on => Unit.UnfriendlyUnits().FirstOrDefault(u => u.GetAuraTimeLeft("Moonfire").TotalSeconds < 4.2), ret => Common.HasTalent(DruidTalents.LunarInspiration)),
-						Spell.Cast("Tiger's Fury", ret => EnergyDecifit > 65),
-						Spell.Cast("Berserk", ret => Me.HasActiveAura("Tiger's Fury") && Me.CurrentTarget.IsStressful()),
+                        Spell.Cast("Elune's Guidance", ret => Me.ComboPoints <= 0 && Me.CurrentEnergy >= 50),
+                        Spell.BuffSelf("Healing Touch", ret => Me.HasActiveAura("Predatory Swiftness") && Me.ComboPoints >= 4),
+                        new Decorator(ret => Me.ComboPoints >= 5,
+                            new PrioritySelector(
+                                Spell.Cast("Ferocious Bite",
+                                    on => Unit.UnfriendlyUnits(8).FirstOrDefault(
+                                                u => (u.HealthPercent < 25 || Common.HasTalent(DruidTalents.Sabertooth)) && u.HasMyAura("Rip") ||
+                                                        u.TimeToDeath(int.MaxValue) < 18 || u.GetAuraTimeLeft("Rip").TotalSeconds >= RipRefresh),
+                                    ret => (!Common.HasTalent(DruidTalents.SavageRoar) || Me.GetAuraTimeLeft("Savage Roar").TotalSeconds > 12) && Me.CurrentEnergy >= 50),
+                                Spell.Cast("Rip",
+                                    on => Unit.UnfriendlyUnits(8).FirstOrDefault(
+                                                u => u.HealthPercent >= 25 && u.TimeToDeath(int.MaxValue) > 18 && u.GetAuraTimeLeft("Rip").TotalSeconds < RipRefresh)),
+                                Spell.Cast("Savage Roar"))),
 
-						Spell.Cast("Rake", 
-							on => Unit.UnfriendlyUnits(8).OrderBy(u => u.GetAuraTimeLeft("Rake")).
-										FirstOrDefault(
-											u => Me.HasActiveAura("Bloodtalons") || u.GetAuraTimeLeft("Rake").TotalSeconds < RakeAndThrashRefresh)),
-						Spell.Cast("Thrash", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => u.GetAuraTimeLeft("Thrash").TotalSeconds < RakeAndThrashRefresh)),
-						Spell.Cast("Brutal Slash"),
-						Spell.Cast("Shred", ret => Unit.UnfriendlyUnitsNearTarget(8).Count() <= 1),
-						Spell.Cast("Swipe"),
+                        Spell.Cast("Moonfire",
+                            on => Unit.NearbyUnitsInCombatWithUsOrOurStuff.FirstOrDefault(u => u.GetAuraTimeLeft("Moonfire").TotalSeconds < 4.2),
+                            ret => Common.HasTalent(DruidTalents.LunarInspiration)),
+                        Spell.Cast("Tiger's Fury", ret => EnergyDecifit > 65),
+                        Spell.Cast("Berserk", ret => Me.HasActiveAura("Tiger's Fury") && Me.CurrentTarget.IsStressful()),
+
+                        Spell.Cast("Rake",
+                            on => Unit.UnfriendlyUnits(8).OrderBy(u => u.GetAuraTimeLeft("Rake")).
+                                        FirstOrDefault(
+                                            u => Me.HasActiveAura("Bloodtalons") || u.GetAuraTimeLeft("Rake").TotalSeconds < RakeAndThrashRefresh)),
+                        Spell.Cast("Thrash", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => u.GetAuraTimeLeft("Thrash").TotalSeconds < RakeAndThrashRefresh)),
+                        Spell.Cast("Brutal Slash"),
+                        Spell.Cast("Shred", ret => Unit.UnfriendlyUnitsNearTarget(8).Count() <= 1),
+                        Spell.Cast("Swipe"),
 
                         new Decorator(
                             ret => MovementManager.IsClassMovementAllowed && Me.IsMoving && Me.CurrentTarget.Distance > (Me.CurrentTarget.IsPlayer ? 10 : 15),
@@ -325,7 +327,7 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 
-		#region Diagnostics
+        #region Diagnostics
 
         private static Composite CreateFeralDiagnosticOutputBehavior(string context = null)
         {
@@ -353,7 +355,7 @@ namespace Singular.ClassSpecific.Druid
                         (long)Me.GetAuraTimeLeft("Berserk", true).TotalMilliseconds,
                         (long)Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalMilliseconds,
                         (long)Me.GetAuraTimeLeft("Clearcasting", true).TotalMilliseconds,
-                        Me.ComboPoints 
+                        Me.ComboPoints
                         );
 
                     WoWUnit target = Me.CurrentTarget;

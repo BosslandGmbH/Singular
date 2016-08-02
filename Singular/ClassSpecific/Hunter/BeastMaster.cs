@@ -82,10 +82,12 @@ namespace Singular.ClassSpecific.Hunter
 								Spell.Cast("Multi Shot", ret => Me.GotAlivePet && Me.Pet.GetAuraTimeLeft("Beast Cleave", false).TotalSeconds < 1.5),
 								Spell.Cast("Barrage"),
 								Spell.Cast("Kill Command"),
-								Spell.Cast("Dire Beast", 
-									on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f), 
-									ret => Spell.GetSpellCooldown("Bestial Wrath").TotalSeconds > 15),
-								Spell.Cast("Cobra Shot", ret => Me.CurrentFocus > 90 && Me.GotAlivePet && Me.Pet.GetAuraTimeLeft("Beast Cleave", false).TotalSeconds > 1.5),
+                                new Decorator(ret => Spell.GetSpellCooldown("Bestial Wrath").TotalSeconds > 15, 
+                                    new PrioritySelector(
+								        Spell.Cast("Dire Beast", ret => !Common.HasTalent(HunterTalents.DireFrenzy)),
+                                        Spell.Cast("Dire Frenzy", ret => Me.GotAlivePet)
+                                    )),
+                                Spell.Cast("Cobra Shot", ret => Me.CurrentFocus > 90 && Me.GotAlivePet && Me.Pet.GetAuraTimeLeft("Beast Cleave", false).TotalSeconds > 1.5),
 								Spell.Cast("Multi Shot")
 								)),
 							

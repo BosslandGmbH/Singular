@@ -47,7 +47,7 @@ namespace Singular.ClassSpecific.Paladin
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Spell.Cast("Divine Steed"),
+                        Spell.Cast("Divine Steed", req => Me.CurrentTarget.Distance > 15d),
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
@@ -71,6 +71,7 @@ namespace Singular.ClassSpecific.Paladin
                 // Seal twisting. If our mana gets stupid low, just throw on insight to get some mana back quickly, then put our main seal back on.
                 // This is Seal of Truth once we get it, Righteousness when we dont.
                 Common.CreatePaladinSealBehavior(),
+                Spell.Cast("Divine Steed", req => Me.CurrentTarget.Distance > 15d),
 
                 new Decorator(
                     req => !Unit.IsTrivial(Me.CurrentTarget),
@@ -90,7 +91,7 @@ namespace Singular.ClassSpecific.Paladin
 
                         Spell.BuffSelf("Divine Shield",
                             ret => Me.CurrentMap.IsBattleground && Me.HealthPercent <= 20 && !Me.HasAura("Forbearance")),
-                        
+
                         Spell.BuffSelf(
                             "Guardian of Ancient Kings",
                             ret => Me.GotTarget()
@@ -119,9 +120,9 @@ namespace Singular.ClassSpecific.Paladin
                     req => !Unit.IsTrivial(Me.CurrentTarget),
                     new PrioritySelector(
 
-                        Spell.BuffSelf("Avenging Wrath", 
-                            ret => Me.GotTarget() 
-                                && Me.CurrentTarget.IsWithinMeleeRange 
+                        Spell.BuffSelf("Avenging Wrath",
+                            ret => Me.GotTarget()
+                                && Me.CurrentTarget.IsWithinMeleeRange
                                 && (Me.CurrentTarget.TimeToDeath() > 25 || _aoeCount > 1)
                             )
                         )
@@ -191,7 +192,7 @@ namespace Singular.ClassSpecific.Paladin
                             ret => _aoeCount >= 4 && Spell.UseAOE,
                             new PrioritySelector(
                                 Spell.Cast("Avenger's Shield"),
-                                Spell.Cast("Consecration"),
+                                Spell.Cast("Consecration", req => Unit.UnfriendlyUnits(8).Any()),
                                 Spell.Cast("Blessed Hammer"),
                                 Spell.Cast("Judgment"),
                                 Movement.CreateMoveToMeleeBehavior(true)
@@ -203,10 +204,10 @@ namespace Singular.ClassSpecific.Paladin
                         //Single target
                             // The buff below gives us a 20% damage reduction if we have KnightTemplar talent.
                             // However, something is removing the buff as soon as its cast as it believes the player is using a mount.
-                            // Spell.BuffSelf("Divine Steed", req => Common.HasTalent(PaladinTalents.KnightTemplar)), 
+                            // Spell.BuffSelf("Divine Steed", req => Common.HasTalent(PaladinTalents.KnightTemplar)),
                         Spell.HandleOffGCD(Spell.Cast("Shield of the Righteous", req => !Me.HasAura(ShieldOfTheRighteous))),
                         Spell.HandleOffGCD(Spell.Cast("Light of the Protector", req => Me.HealthPercent <= 85)),
-                        Spell.Cast("Consecration"),
+                        Spell.Cast("Consecration", req => Unit.UnfriendlyUnits(8).Any()),
                         Spell.Cast("Bastion of Light", req => Spell.GetCharges("Shield of the Righteous") == 0 && !Me.HasAura(ShieldOfTheRighteous) && Me.HealthPercent <= 80),
                         Spell.Cast("Judgment"),
                         Spell.Cast("Hammer of the Righteous"),
@@ -234,7 +235,7 @@ namespace Singular.ClassSpecific.Paladin
                             Me.CurrentHolyPower,
                             (long)Me.GetAuraTimeLeft("Grand Crusader").TotalMilliseconds,
                             (long)Me.GetAuraTimeLeft("Divine Purpose").TotalMilliseconds,
-                            (long)Me.GetAuraTimeLeft("Sacred Shield").TotalMilliseconds, 
+                            (long)Me.GetAuraTimeLeft("Sacred Shield").TotalMilliseconds,
 
                             _aoeCount
                             );

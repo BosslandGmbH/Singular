@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>08.01.2016 04:39:20</ScanTime>
+  <ScanTime>08.02.2016 07:13:20</ScanTime>
   <FileList>
     <File Hash="6787" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="7024" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -32,7 +32,7 @@
     <File Hash="17218" Name="ClassSpecific\Paladin\Common.cs" />
     <File Hash="10442" Name="ClassSpecific\Paladin\Holy.cs" />
     <File Hash="2254" Name="ClassSpecific\Paladin\Lowbie.cs" />
-    <File Hash="12394" Name="ClassSpecific\Paladin\Protection.cs" />
+    <File Hash="12566" Name="ClassSpecific\Paladin\Protection.cs" />
     <File Hash="11333" Name="ClassSpecific\Paladin\Retribution.cs" />
     <File Hash="25121" Name="ClassSpecific\Priest\Common.cs" />
     <File Hash="41006" Name="ClassSpecific\Priest\Discipline.cs" />

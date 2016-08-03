@@ -38,14 +38,7 @@ namespace Singular.ClassSpecific.Warrior
         private static CombatScenario scenario { get; set; }
 
 
-        [Behavior(BehaviorType.Initialize, WoWClass.Warrior, WoWSpec.WarriorProtection)]
-        public static Composite CreateProtectionInit()
-        {
-            talentGladiator = Common.HasTalent(WarriorTalents.GladiatorsResolve);
-            glyphCleave = TalentManager.HasGlyph("Cleave");
-            scenario = new CombatScenario(8, 1.5f);
-            return null;
-        }
+        //[Behavior(BehaviorType.Initialize, WoWClass.Warrior, WoWSpec.WarriorProtection)]
 
         [Behavior(BehaviorType.Rest, WoWClass.Warrior, WoWSpec.WarriorProtection)]
         public static Composite CreateProtectionRest()
@@ -485,19 +478,6 @@ namespace Singular.ClassSpecific.Warrior
                         scenario.AllDamage
                         );
 
-                    WarriorTalents tier3 = Common.GetTierTalent(3);
-                    string tier3spell = "";
-                    if (tier3 == WarriorTalents.SuddenDeath)
-                        tier3spell = "Sudden Death";
-                    else if (tier3 == WarriorTalents.UnyieldingStrikes)
-                        tier3spell = "Unyielding Strikes";
-
-                    if (tier3 != WarriorTalents.None)
-                    {
-                        TimeSpan tsbs = Me.GetAuraTimeLeft(tier3spell);
-                        log += string.Format(", {0}={1:F0} ms", tier3spell, tsbs.TotalMilliseconds);
-                    }
-
                     WarriorTalents tier6 = Common.GetTierTalent(6);
                     string tier6spell = "";
                     if (tier6 == WarriorTalents.Avatar)
@@ -553,19 +533,6 @@ namespace Singular.ClassSpecific.Warrior
                         scenario.RecentDamage,
                         scenario.AllDamage
                         );
-
-                    WarriorTalents tier3 = Common.GetTierTalent(3);
-                    string tier3spell = "";
-                    if (tier3 == WarriorTalents.SuddenDeath)
-                        tier3spell = "Sudden Death";
-                    else if (tier3 == WarriorTalents.UnyieldingStrikes)
-                        tier3spell = "Unyielding Strikes";
-
-                    if (tier3 != WarriorTalents.None)
-                    {
-                        TimeSpan tsbs = Me.GetAuraTimeLeft(tier3spell);
-                        log += string.Format(", {0}={1:F0} ms", tier3spell, tsbs.TotalMilliseconds);
-                    }
 
                     WarriorTalents tier6 = Common.GetTierTalent(6);
                     string tier6spell = "";

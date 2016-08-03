@@ -460,63 +460,86 @@ namespace Singular.ClassSpecific.Warrior
 
     enum WarriorTalents
     {
-#if PRE_WOD
-        None = 0,
-        Juggernaut,
-        DoubleTime,
-        Warbringer,
-        EnragedRegeneration,
-        SecondWind,
-        ImpendingVictory,
-        StaggeringShout,
-        PiercingHowl,
-        DisruptingShout,
-        Bladestorm,
-        Shockwave,
-        DragonRoar,
-        MassSpellReflection,
-        Safeguard,
-        Vigilance,
-        Avatar,
-        Bloodbath,
-        StormBolt
-#else
         None = 0,
 
-        Juggernaut = 1,
-        DoubleTime,
-        Warbringer,
+        Dauntless = 1,
+        Overpower,
+        SweepingStrikes,
 
-        EnragedRegeneration,
-        SecondWind,
-        ImpendingVictory,
+        WarMachine = Dauntless,
+        EndlessRage = Overpower,
+        FreshMeat = SweepingStrikes,
 
-        TasteForBlood,
-        FuriousStrikes = TasteForBlood,
-        HeavyRepercussions = TasteForBlood,
-        SuddenDeath,
-        Slam,
-        UnquenchableThirst = Slam,
-        UnyieldingStrikes = Slam,
+        ShockwaveProtection = Dauntless,
+        StormBoltProtection = Overpower,
+        Warbringer = SweepingStrikes,
+        
 
+        Shockwave = 4,
         StormBolt,
-        Shockwave,
-        DragonRoar,
+        DoubleTime,
 
-        MassSpellReflection,
-        Safeguard,
-        Vigilance,
+        ImpendingVictory = Shockwave,
+        InspiringPresence = StormBolt,
+        Safeguard = DoubleTime,
 
+
+        FervorOfBattle = 7,
+        Rend,
         Avatar,
-        Bloodbath,
-        Bladestorm,
 
-        AngerManagement,
+        WreckingBall = FervorOfBattle,
+        Outburst = Rend,
+        
+        RenewedFury = FervorOfBattle,
+        Ultimatum = Rend,
+
+
+        SecondWind = 10,
+        BoundingStride,
+        DefensiveStance,
+
+        FuriousCharge = SecondWind,
+        Warpaint = DefensiveStance,
+
+        WarlordsChallenge = SecondWind,
+        CracklingThunder = DefensiveStance,
+
+
+        InForTheKill = 13,
+        MortalCombo,
+        FocusedRage,
+
+        Massacre = InForTheKill,
+        FrothingBerserker = MortalCombo,
+        Carnage = FocusedRage,
+
+        BestServedCold = InForTheKill,
+        NeverSurrender = MortalCombo,
+        Indomitable = FocusedRage,
+
+
+        DeadlyCalm = 16,
+        Trauma,
+        TitanicMight,
+
+        Bloodbath = DeadlyCalm,
+        Frenzy = Trauma,
+        InnerRage = TitanicMight,
+
+        Vengeance = DeadlyCalm,
+        IntroTheFray = Trauma,
+        BoomingVoice = TitanicMight,
+
+
+        AngerManagement = 19,
+        OpportunityStrikes,
         Ravager,
-        Siegebreaker,
-        GladiatorsResolve = Siegebreaker
 
+        Bladestorm = AngerManagement,
+        RecklessAbandon = OpportunityStrikes,
+        DragonRoar = AngerManagement,
 
-#endif
+        HeavyRepercussions = OpportunityStrikes
     }
 }

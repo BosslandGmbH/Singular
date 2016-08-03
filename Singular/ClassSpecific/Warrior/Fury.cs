@@ -232,10 +232,14 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     req => Me.CurrentTarget.HealthPercent > 20,
                     new PrioritySelector(
-
-                        Spell.Cast("Rampage", ret => !Common.IsEnraged || Me.RagePercent >= 100),
+                        new Decorator(req => (!Common.IsEnraged || Me.RagePercent >= 100) && Spell.CanCastHack("Rampage"),
+                            new PrioritySelector(
+                                Spell.Cast("Dragon Roar"),
+                                Spell.Cast("Rampage")
+                        )),
                         Spell.Cast("Bloodthirst", ret => !Common.IsEnraged),
-                        Spell.Cast("Whirlwind", ret => Me.HasAura("Wrecking Ball") /* || Me.Name == "Miley Cyrus"*/),
+                        Spell.Cast("Raging Blow", ret => Common.HasTalent(WarriorTalents.InnerRage)), // Could || IsEnraged check here, but DPS is higher if we prioritize Whirlwind
+                        Spell.Cast("Whirlwind", ret => Me.HasActiveAura("Wrecking Ball") /* || Me.Name == "Miley Cyrus"*/),
                         Spell.Cast("Raging Blow"),
                         Spell.Cast("Bloodthirst"),
                         Spell.Cast("Furious Slash")
@@ -247,13 +251,13 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
 
                         //Execute to prevent capping your Rage.
-                        Spell.Cast("Execute", req => Me.RagePercent > 80),
+                        Spell.Cast("Execute", req => Me.RagePercent >= 75),
 
                         //Bloodthirst on cooldown when not Enraged. Procs Bloodsurge.
                         Spell.Cast("Bloodthirst", ret => !Common.IsEnraged),
 
-                        //Execute while Enraged or with >= 60 Rage.
-                        Spell.Cast("Execute", req => Me.RagePercent >= 60)
+                        //Execute while Enraged or with >= 25 Rage.
+                        Spell.Cast("Execute", req => Me.RagePercent >= 25)
                         )
                     ),
 

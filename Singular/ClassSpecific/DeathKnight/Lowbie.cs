@@ -41,6 +41,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.BuffSelf("Anti-Magic Shell", ret => Unit.NearbyUnfriendlyUnits.Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == StyxWoW.Me.Guid)),
 
                         Common.CreateDeathGripBehavior(),
+                        Spell.Cast("Death Strike", ret => (Me.HasActiveAura("Dark Succor") && Me.HealthPercent <= 80) || Me.HealthPercent <= 40),
                         Spell.Cast("Death Coil"),
                         Spell.Buff("Icy Touch"),
                         Spell.Buff("Plague Strike")

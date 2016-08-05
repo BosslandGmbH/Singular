@@ -54,7 +54,9 @@ namespace Singular.ClassSpecific.DeathKnight
 							ret =>  Me.CurrentRunes <= 0 && Common.RunicPowerDeficit >= 35 && 
 									(!Common.HasTalent(DeathKnightTalents.BreathOfSindragosa) || Me.HasActiveAura("Breath of Sindragosa"))),
 
-						new Decorator(ret => Me.Level < 100,
+                        Spell.Cast("Death Strike", ret => (Me.HasActiveAura("Dark Succor") && Me.HealthPercent <= 80) || Me.HealthPercent <= 40),
+
+                        new Decorator(ret => Me.Level < 100,
 							CreateLowLevelRotation()
 							),
 
@@ -95,7 +97,7 @@ namespace Singular.ClassSpecific.DeathKnight
 	    private static Composite CreateObliterationRotation()
 	    {
 		    return new PrioritySelector(
-				Spell.Cast("Howling Blast", ret => Me.CurrentTarget.GetAuraTimeLeft("Frost Fever").TotalSeconds < 1.8d),
+                Spell.Cast("Howling Blast", ret => Me.CurrentTarget.GetAuraTimeLeft("Frost Fever").TotalSeconds < 1.8d),
 				new Decorator(ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= 2,
 					new PrioritySelector(
 						Spell.Cast("Remorseless Winter"),
@@ -112,7 +114,7 @@ namespace Singular.ClassSpecific.DeathKnight
 		private static Composite CreateBreathOfSindragosaRotation()
 		{
 			return new PrioritySelector(
-				Spell.Cast("Breath of Sindragosa", ret => Me.RunicPowerPercent > 80),
+                Spell.Cast("Breath of Sindragosa", ret => Me.RunicPowerPercent > 80),
 				Spell.Cast("Howling Blast", ret => Me.CurrentTarget.GetAuraTimeLeft("Frost Fever").TotalSeconds < 1.8d),
 				Spell.Cast("Remorseless Winter", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= 2),
 				Spell.Cast("Howling Blast", ret => Me.HasActiveAura("Rime")),
@@ -128,7 +130,7 @@ namespace Singular.ClassSpecific.DeathKnight
 		private static Composite CreateGlacialAdvanceRotation()
 		{
 			return new PrioritySelector(
-				Spell.Cast("Howling Blast", ret => Me.CurrentTarget.GetAuraTimeLeft("Frost Fever").TotalSeconds < 1.8d),
+                Spell.Cast("Howling Blast", ret => Me.CurrentTarget.GetAuraTimeLeft("Frost Fever").TotalSeconds < 1.8d),
 				Spell.Cast("Remorseless Winter", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= 2),
 				Spell.CastOnGround("Glacial Advance", ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location, ret => Spell.UseAOE),
 				Spell.Cast("Frostscythe", ret => Spell.UseAOE && Clusters.GetClusterCount(Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8) >= 3),

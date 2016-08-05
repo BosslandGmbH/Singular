@@ -89,8 +89,9 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Common.CreateDeathGripBehavior(),
 
+                        Spell.Cast("Death Strike", ret => (Me.HasActiveAura("Dark Succor") && Me.HealthPercent <= 80) || Me.HealthPercent <= 40),
 
-						new Decorator(
+                        new Decorator(
 							ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= DeathKnightSettings.DeathAndDecayCount || 
 									Common.HasTalent(DeathKnightTalents.Epidemic) && Unit.NearbyUnfriendlyUnits.Count() >= DeathKnightSettings.EpidemicCount,
 							new PrioritySelector(
@@ -137,7 +138,7 @@ namespace Singular.ClassSpecific.DeathKnight
 	    private static Composite CreateLowLevelRotation()
 	    {
 		    return new PrioritySelector(
-				Spell.Cast("Summon Gargoyle", ret => Me.CurrentTarget.IsStressful() && DeathKnightSettings.UseSummonGargoyle),
+                Spell.Cast("Summon Gargoyle", ret => Me.CurrentTarget.IsStressful() && DeathKnightSettings.UseSummonGargoyle),
 				Spell.Cast("Outbreak", ret => Me.CurrentTarget.GetAuraTimeLeft("Virulent Plague").TotalSeconds < 1.8),
 				Spell.BuffSelf("Dark Transformation", ret => Me.GotAlivePet),
 				Spell.Cast("Festering Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") < 5),
@@ -149,7 +150,7 @@ namespace Singular.ClassSpecific.DeathKnight
 		private static Composite CreateDefileRotation()
 		{
 			return new PrioritySelector(
-				Spell.Cast("Summon Gargoyle", ret => Me.CurrentTarget.IsStressful() && DeathKnightSettings.UseSummonGargoyle),
+                Spell.Cast("Summon Gargoyle", ret => Me.CurrentTarget.IsStressful() && DeathKnightSettings.UseSummonGargoyle),
 				Spell.Cast("Outbreak", ret => Me.CurrentTarget.GetAuraTimeLeft("Virulent Plague").TotalSeconds < 1.8),
 				Spell.BuffSelf("Dark Transformation", ret => Me.GotAlivePet),
 				Spell.CastOnGround("Defile", on => Me.Location, ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange)),
@@ -162,7 +163,7 @@ namespace Singular.ClassSpecific.DeathKnight
 		private static Composite CreateDarkArbiterRotation()
 		{
 			return new PrioritySelector(
-				Spell.Cast("Summon Gargoyle", ret => Me.CurrentTarget.IsStressful() && DeathKnightSettings.UseSummonGargoyle),
+                Spell.Cast("Summon Gargoyle", ret => Me.CurrentTarget.IsStressful() && DeathKnightSettings.UseSummonGargoyle),
 				Spell.Cast("Outbreak", ret => Me.CurrentTarget.GetAuraTimeLeft("Virulent Plague").TotalSeconds < 1.8),
 				Spell.BuffSelf("Dark Transformation", ret => Me.GotAlivePet),
 				Spell.Cast("Dark Arbiter", ret => Me.RunicPowerPercent > 90),
@@ -176,7 +177,7 @@ namespace Singular.ClassSpecific.DeathKnight
 		private static Composite CreateSoulReaperRotation()
 		{
 			return new PrioritySelector(
-				Spell.Cast("Scourge Strike", ret => Me.HasActiveAura("Soul Reaper") && Me.GetAuraStacks("Soul Reaper") < 3),
+                Spell.Cast("Scourge Strike", ret => Me.HasActiveAura("Soul Reaper") && Me.GetAuraStacks("Soul Reaper") < 3),
 				Spell.Cast("Summon Gargoyle", ret => Me.CurrentTarget.IsStressful() && DeathKnightSettings.UseSummonGargoyle),
 				Spell.Cast("Outbreak", ret => Me.CurrentTarget.GetAuraTimeLeft("Virulent Plague").TotalSeconds < 1.8),
 				Spell.BuffSelf("Dark Transformation", ret => Me.GotAlivePet),

@@ -77,14 +77,7 @@ namespace Singular.ClassSpecific.Rogue
         /// </summary>
         /// <param name="unit"></param>
         /// <returns></returns>
-        public static bool CloakAndDagger( WoWUnit unit)
-        { 
-            if (SingularRoutine.CurrentWoWContext == WoWContext.Normal && RogueSettings.UsePickPocket && unit != null && IsMobPickPocketable(unit))
-                return false;
-
-            return HasTalent(RogueTalents.CloakAndDagger); 
-        }
-
+        /// 
         [Behavior(BehaviorType.Rest, WoWClass.Rogue)]
         public static Composite CreateRogueRest()
         {
@@ -207,8 +200,6 @@ namespace Singular.ClassSpecific.Rogue
                     CreateStealthBehavior( 
                         ret => {
                             float dist = Me.CurrentTarget.SpellDistance();
-                            if (dist < 42 && CloakAndDagger(Me.CurrentTarget))
-                                return true;
 
                             if (dist < 9)
                                 return true;
@@ -357,37 +348,6 @@ namespace Singular.ClassSpecific.Rogue
         /// <returns></returns>
         public static bool RogueCanCastOpener(SpellFindResults sfr, WoWUnit unit, bool skipWoWCheck = false)
         {
-            const int AMBUSH = 8676;
-            const int CHEAPSHOT = 1833;
-            const int GARROTE = 703;
-
-            WoWSpell spell = sfr.Override ?? sfr.Original;
-            if (( spell.Id == AMBUSH || spell.Id == CHEAPSHOT || spell.Id == GARROTE))
-            {
-                if (CloakAndDagger(unit) && !unit.IsWithinMeleeRange)
-                {
-                    // check if in cloak and dagger range
-                    if (unit.SpellDistance() > 40)
-                    {
-                        if (SingularSettings.DebugSpellCasting)
-                            Logger.WriteFile("RogueCanCastOpener[{0}]: target @ {1:F1} yds is more than 40 yds away", spell.Name, unit.SpellDistance());
-                        return false;
-                    }
-
-                    if (Spell.CanCastHackWillOurMovementInterrupt(spell, unit))
-                        return false;
-
-                    if (Spell.CanCastHackIsCastInProgress(spell, unit))
-                        return false;
-
-                    if (!Spell.CanCastHackHaveEnoughPower(spell, unit))
-                        return false;
-
-                    Logger.Write( LogColor.Hilite, "^Cloak and Dagger: attempting a ranged {0} from {1:F1} yds", spell.Name, unit.SpellDistance());
-                    return true;
-                }
-            }
-
             return Spell.CanCastHack(sfr, unit, false);
         }
 
@@ -501,16 +461,6 @@ namespace Singular.ClassSpecific.Rogue
                     {
                         msg = string.Format("^Sap: {0} which is {1:F1} yds from target to avoid aggro while attacking", closestTarget.SafeName(), Me.CurrentTarget.SpellDistance(closestTarget));
                     }
-                }
-            }
-
-            if (closestTarget == null)
-            {
-                // dont Sap moving target if we have ranged Ambush
-                if (!HasTalent(RogueTalents.CloakAndDagger) && RogueSettings.SapMovingTargetsOnPull && Me.CurrentTarget.IsMoving && IsUnitViableForSap(Me.CurrentTarget))
-                {
-                    closestTarget = Me.CurrentTarget;
-                    msg = string.Format( "^Sap: {0} @ {1:F1} yds since moving", Me.CurrentTarget.SafeName(), Me.CurrentTarget.SpellDistance());
                 }
             }
 
@@ -910,18 +860,6 @@ namespace Singular.ClassSpecific.Rogue
             // issue following messagess only for Pull Behavior
             if (Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull)
             {
-                if (HasTalent(RogueTalents.CloakAndDagger) && RogueSettings.UsePickPocket)
-                {
-                    if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
-                    {
-                        Logger.Write( LogColor.Init, "warning:  Cloak and Dagger skipped for Pick Pocketable targets.  Turn off 'Use Pick Pocket' to always use ranged Ambush, Cheap Shot, and Garrote.");
-                    }
-                    else
-                    {
-                        Logger.Write(LogColor.Init, "warning:  Cloak and Dagger casts greatly reduced by Pick Pocket usage.  Turn off 'Use Pick Pocket' to always use ranged Ambush, Cheap Shot, and Garrote.");
-                    }
-                }
-
                 if (!AutoLootIsEnabled())
                 {
                     Logger.Write( LogColor.Init, "warning:  Auto Loot is off, so Pick Pocket disabled - to allow Pick Pocket by Singular, enable your Auto Loot setting");
@@ -1293,58 +1231,70 @@ namespace Singular.ClassSpecific.Rogue
 
     public enum RogueTalents
     {
-#if PRE_WOD
-        None = 0,
-        Nightstalker,
-        Subterfuge,
-        ShadowFocus,
-        DeadlyThrow,
-        NerveStrike,
-        CombatReadiness,
-        CheatDeath,
-        LeechingPoison,
-        Elusivenss,
-        CloakAndDagger,
-        Shadowstep,
-        BurstOfSpeed,
-        PreyOnTheWeak,
-        ParalyticPoison,
-        DirtyTricks,
-        ShurikenToss,
-        MarkedForDeath,
-        Anticipation
-#else
+        MasterPoisoner = 1,
+        ElaboratePlanning,
+        Hemorrhage,
 
-        Nightstalker = 1,
+        GhostlyStrike = MasterPoisoner,
+        Swordmaster = ElaboratePlanning,
+        QuickDraw =  Hemorrhage,
+
+        MasterOfSubtlety = MasterPoisoner,
+        Weaponmaster = ElaboratePlanning,
+        Gloomblade = Hemorrhage,
+
+
+        Nightstalker = 4,
         Subterfuge,
         ShadowFocus,
 
-        DeadlyThrow,
-        NerveStrike,
-        CombatReadiness,
+        GrapplingHook = Nightstalker,
+        AcrobaticStrikes = Subterfuge,
+        HitAndRun = ShadowFocus,
 
-        CheatDeath,
-        LeechingPoison,
-        Elusiveness,
 
-        CloakAndDagger,
-        Shadowstep,
-        BurstOfSpeed,
-
-        PreyonTheWeak,
-        InternalBleeding,
-        DirtyTricks,
-
-        ShurikenToss,
-        MarkedForDeath,
+        DeeperStratagem = 7,
         Anticipation,
-
-        VenomRush,
-        ShadowReflection,
-        DeathFromAbove
+        Vigor,
 
 
-#endif
+        LeechingPoison = 10,
+        Elusiveness,
+        CheatDeath,
 
+        IronStomach = LeechingPoison,
+
+        SoothingDarkness = LeechingPoison,
+
+
+        Thugggee = 13,
+        PreyOnTheWeak,
+        InternalBleeding,
+
+        Parley = Thugggee,
+        DirtyTricks = InternalBleeding,
+
+        StrikeFromTheShadows = Thugggee,
+        TangledShadow = InternalBleeding,
+
+
+        AgonizingPoison = 16,
+        Alacrity,
+        Exsanguinate,
+
+        CannonballBarrage = AgonizingPoison,
+        KillingSpree = Exsanguinate,
+
+        Premeditation = AgonizingPoison,
+        EnvelopingShadows = Exsanguinate,
+
+
+        VenomRush = 19,
+        MarkedForDeath,
+        DeathFromAbove,
+
+        SliceAndDice = VenomRush,
+
+        MasterOfShadows = VenomRush
     }
 }

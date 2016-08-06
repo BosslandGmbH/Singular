@@ -25,8 +25,8 @@ namespace Singular.ClassSpecific.Rogue
     public class Outlaw
     {
         private static LocalPlayer Me => StyxWoW.Me;
-	    private static RogueSettings RogueSettings => SingularSettings.Instance.Rogue();
-	    private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); } 
+        private static RogueSettings RogueSettings => SingularSettings.Instance.Rogue();
+        private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); }
 
         #region Normal Rotation
         [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueOutlaw)]
@@ -62,15 +62,15 @@ namespace Singular.ClassSpecific.Rogue
                 );
         }
 
-		private static readonly HashSet<string> RollTheBonesBuffs = new HashSet<string>
-		{
-			"True Bearing",
-			"Shark Infested Waters",
-			"Jolly Roger",
-			"Grand Melee",
-			"Broadsides",
-			"Buried Treasure"
-		};
+        private static readonly HashSet<string> RollTheBonesBuffs = new HashSet<string>
+        {
+            "True Bearing",
+            "Shark Infested Waters",
+            "Jolly Roger",
+            "Grand Melee",
+            "Broadsides",
+            "Buried Treasure"
+        };
 
         [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueOutlaw)]
         public static Composite CreateRogueCombatNormalCombat()
@@ -103,33 +103,60 @@ namespace Singular.ClassSpecific.Rogue
                         Helpers.Common.CreateInterruptBehavior(),
                         Common.CreateDismantleBehavior(),
 
-                        Common.CreateRogueOpenerBehavior(),
+                        Common.CreateRogueOpenerBehavior()
+                        )
+                    ),
 
-                        Spell.Cast("Vanish", when => Me.TimeToDeath() < 2 && Me.TimeToDeath() < Me.CurrentTarget.TimeToDeath()),
+                Spell.BuffSelf("Crimson Vial", when => Me.HealthPercent <= 65),
+                Spell.Cast("Vanish", when => Me.TimeToDeath() < 2 && Me.TimeToDeath() < Me.CurrentTarget.TimeToDeath()),
 
-                        Spell.BuffSelf("Adrenaline Rush", ret => Me.HasActiveAura("True Bearing") || RollTheBonesBuffs.Count(a => Me.HasActiveAura(a)) >= 3),
-                        
-						Spell.Cast("Marked for Death", req => Me.ComboPoints <= 1),
+                new Decorator(
+                    ret => !Common.HaveTalent(RogueTalents.SliceAndDice),
+                    CreateRollTheBonesRotation()
+                ),
 
-                        Spell.Cast("Death from Above", req => !Me.HasActiveAura("Adrenaline Rush") && Me.ComboPoints >= 6),
+                new Decorator(
+                    ret => Common.HaveTalent(RogueTalents.SliceAndDice),
+                    CreateSliceAndDiceRotation()
+                )
+            );
+        }
 
-                        // If talented, should keep it up.
-                        Spell.Buff("Slice and Dice", on => Me, ret => Me.ComboPoints > 0),
+        private static Composite CreateRollTheBonesRotation()
+        {
+            return new PrioritySelector(
+                    Spell.BuffSelf("Adrenaline Rush", ret =>
+                        Me.HasActiveAura("True Bearing")
+                        || (Me.HasActiveAura("Broadsides") && Me.HasActiveAura("Shark Infested Waters"))
+                        || RollTheBonesBuffs.Count(a => Me.HasActiveAura(a)) >= 3),
+                    Spell.Cast("Marked for Death", req => Me.ComboPoints <= 1),
+                    Spell.Cast("Death from Above", req => !Me.HasActiveAura("Adrenaline Rush") && Me.ComboPoints >= 6),
+                    new Decorator(ret => !Me.HasActiveAura("True Bearing"),
+                        new PrioritySelector(
+                            Spell.Cast("Roll the Bones", req => !Spell.CanCastHack("Adrenaline Rush") && RollTheBonesBuffs.Count(a => Me.HasActiveAura(a)) < 2),
+                            Spell.Cast("Roll the Bones", req => Spell.CanCastHack("Adrenaline Rush") && RollTheBonesBuffs.Count(a => Me.HasActiveAura(a)) < 3)
+                            )
+                        ),
+                    Spell.Cast("Pistol Shot", req => Me.HasActiveAura("Opportunity") && Me.ComboPoints <= 4),
+                    Spell.Cast("Run Through", req => Me.ComboPoints >= 5),
+                    Spell.Cast("Saber Slash")
+                );
+        }
 
-                        Spell.Cast("Roll the Bones", req => !Me.HasActiveAura("True Bearing") && RollTheBonesBuffs.Count(a => Me.HasActiveAura(a)) < 3),
-
-                        Spell.Cast("Run Through", req => Me.ComboPoints >= 5),
-
-                        Spell.Cast("Pistol Shot", req => Me.HasActiveAura("Opportunity") && Me.ComboPoints <= 4),
-
-                        Spell.Cast("Saber Slash"))
-                    )
+        private static Composite CreateSliceAndDiceRotation()
+        {
+            return new PrioritySelector(
+                    Spell.Cast("Slice and Dice", ret => Me.ComboPoints > 0 && Me.GetAuraTimeLeft("Slice and Dice").TotalSeconds < 2),
+                    Spell.BuffSelf("Adrenaline Rush", ret => Me.GetAuraTimeLeft("Slice and Dice").TotalSeconds >= 15),
+                    Spell.Cast("Run Through", req => Me.ComboPoints >= 5),
+                    Spell.Cast("Pistol Shot", req => Me.HasActiveAura("Opportunity") && Me.ComboPoints <= 4),
+                    Spell.Cast("Saber Slash")
                 );
         }
 
         #endregion
 
-        internal static Composite CreateBladeFlurryBehavior()
+        private static Composite CreateBladeFlurryBehavior()
         {
             return new Sequence(
                 new PrioritySelector(
@@ -160,7 +187,7 @@ namespace Singular.ClassSpecific.Rogue
 
             return new ThrottlePasses(1,
                 new Action(ret =>
-                {           
+                {
                     string sMsg;
                     sMsg = string.Format(".... [{0}] h={1:F1}%, e={2:F1}%, mov={3}, stlth={4}, aoe={5}, recup={6}, slic={7}, rawc={8}, combo={9}, aoe={10}, combat={11}",
                         sState,
@@ -169,8 +196,8 @@ namespace Singular.ClassSpecific.Rogue
                         Me.IsMoving.ToYN(),
                         Common.AreStealthAbilitiesAvailable.ToYN(),
                         Common.AoeCount,
-                        (int) Me.GetAuraTimeLeft("Recuperate", true).TotalSeconds,
-                        (int) Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds,
+                        (int)Me.GetAuraTimeLeft("Recuperate", true).TotalSeconds,
+                        (int)Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds,
                         Me.ComboPoints,
                         Me.ComboPoints,
                         Common.AoeCount,
@@ -194,8 +221,8 @@ namespace Singular.ClassSpecific.Rogue
                             Me.IsSafelyBehind(target).ToYN(),
                             target.InLineOfSpellSight.ToYN(),
                             Me.IsSafelyFacing(target).ToYN(),
-                            (int) target.GetAuraTimeLeft("Revealing Strike", true).TotalSeconds,
-                            (int) target.GetAuraTimeLeft("Rupture", true).TotalSeconds
+                            (int)target.GetAuraTimeLeft("Revealing Strike", true).TotalSeconds,
+                            (int)target.GetAuraTimeLeft("Rupture", true).TotalSeconds
                             );
                     }
 

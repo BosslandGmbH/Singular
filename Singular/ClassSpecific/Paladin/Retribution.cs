@@ -60,10 +60,27 @@ namespace Singular.ClassSpecific.Paladin
 
         #endregion
 
+        #region Buffs
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.Normal)]
+        public static Composite CreatePaladinRetributionBuff()
+        {
+            return new PrioritySelector(
+                Spell.WaitForCastOrChannel(),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Spell.BuffSelf("Greater Blessing of Kings"),
+                        Spell.BuffSelf("Greater Blessing of Might"),
+                        Spell.BuffSelf("Greater Blessing of Wisdom")
+                        )
+                    )
+                );
+        }
+        #endregion
+
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.All)]
-        [Behavior(BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.All)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.All)]
         public static Composite CreatePaladinRetributionNormalPullAndCombat()
         {
             return new PrioritySelector(
@@ -91,8 +108,13 @@ namespace Singular.ClassSpecific.Paladin
 
                         Common.CreatePaladinPullMore(),
 
+                        //Survive!
+                        Spell.BuffSelf("Word of Glory", req => Me.HealthPercent <= 85 && (SingularRoutine.CurrentWoWContext != WoWContext.Instances || !Me.GroupInfo.IsInParty)),
+                        Spell.BuffSelf("Eye for an Eye", req => Me.HealthPercent <= 80),
+                        Spell.BuffSelf("Shield of Vengeance", req => Me.HealthPercent <= 65),
+
                         // Defensive
-                        Spell.BuffSelf("Hand of Freedom",
+                        Spell.BuffSelf("Blessing of Freedom",
                             ret => Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
                                                                   WoWSpellMechanic.Disoriented,
                                                                   WoWSpellMechanic.Frozen,
@@ -103,7 +125,7 @@ namespace Singular.ClassSpecific.Paladin
 
                         Common.CreatePaladinSealBehavior(),
 
-                        Spell.Cast( "Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal ),
+                        Spell.Cast("Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal ),
                         Spell.Cast( 
                             "War Stomp", 
                             req => PaladinSettings.StunMobsWhileSolo 
@@ -152,10 +174,11 @@ namespace Singular.ClassSpecific.Paladin
                         new Decorator(
                             ret => _mobCount >= 2 && Spell.UseAOE,
                             new PrioritySelector(
-
                                 // was EJ: Inq > 5HP DS > LH > HoW > Exo > HotR > Judge > 3-4HP DS (> SS)
                                 // now EJ: Inq > 5HP DS > LH > HoW (> T16 Free DS) > HotR > Judge > Exo > 3-4HP DS (> SS)
-                                Spell.Cast(Spell.UseAOE && SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower == 5),
+                                Spell.Cast("Consecration"),
+                                Spell.Cast("Holy Wrath", ret => Me.HealthPercent <= 55),
+                                Spell.Cast(SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower == 5),
                                 Spell.CastOnGround("Light's Hammer", on => Me.CurrentTarget, ret => 2 <= Clusters.GetClusterCount(Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 10f)),
                                 Spell.Cast("Divine Storm", req => Spell.UseAOE && Me.HasAura("Divine Crusader")),   // T16 buff
                                 Spell.Cast(SpellManager.HasSpell("Hammer of the Righteous") ? "Hammer of the Righteous" : "Crusader Strike"),
@@ -168,8 +191,8 @@ namespace Singular.ClassSpecific.Paladin
                                 )
                             ),
 
-                        Spell.Cast("Crusader Strike"),
-                        Spell.Cast("Blade of Wrath"),
+                        Spell.Cast("Crusader Strike"), // Can be replaced by Zeal - casts both ways.
+                        Spell.Cast("Blade of Justice"), //Can be replaced by Blade of Wrath or Divine Hammer - BoJ casts all ways.
                         Spell.Cast("Judgment"),
                         Spell.Cast("Execution Sentence", when => Me.CurrentTarget.TimeToDeath() > 8),
                         Spell.Cast("Justicar's Vengeance", when => Me.HasAura("Divine Purpose")),

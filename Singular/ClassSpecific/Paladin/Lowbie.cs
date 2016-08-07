@@ -29,22 +29,6 @@ namespace Singular.ClassSpecific.Paladin
                 );
         }
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Paladin, 0)]
-        public static Composite CreateLowbiePaladinPreCombatBuffs()
-        {
-            return new PrioritySelector(
-                Common.CreatePaladinSealBehavior()
-                );
-        }
-
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Paladin, 0)]
-        public static Composite CreateLowbiePaladinCombatBuffs()
-        {
-            return new PrioritySelector(
-                Common.CreatePaladinSealBehavior()
-                );
-        }
-
         [Behavior(BehaviorType.Combat, WoWClass.Paladin, 0)]
         public static Composite CreateLowbiePaladinCombat()
         {

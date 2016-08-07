@@ -109,9 +109,9 @@ namespace Singular.ClassSpecific.Paladin
                         Common.CreatePaladinPullMore(),
 
                         //Survive!
-                        Spell.BuffSelf("Word of Glory", req => Me.HealthPercent <= 85 && (SingularRoutine.CurrentWoWContext != WoWContext.Instances || !Me.GroupInfo.IsInParty)),
-                        Spell.BuffSelf("Eye for an Eye", req => Me.HealthPercent <= 80),
-                        Spell.BuffSelf("Shield of Vengeance", req => Me.HealthPercent <= 65),
+                        Spell.BuffSelf("Word of Glory", req => Me.HealthPercent <= PaladinSettings.SelfWordOfGloryHealth && (SingularRoutine.CurrentWoWContext != WoWContext.Instances || !Me.GroupInfo.IsInParty)),
+                        Spell.BuffSelf("Eye for an Eye", req => Me.HealthPercent <= PaladinSettings.EyeForAndEyeHealth),
+                        Spell.BuffSelf("Shield of Vengeance", req => Me.HealthPercent <= PaladinSettings.ShieldOfVengeanceHealth),
 
                         // Defensive
                         Spell.BuffSelf("Blessing of Freedom",
@@ -122,8 +122,6 @@ namespace Singular.ClassSpecific.Paladin
                                                                   WoWSpellMechanic.Rooted,
                                                                   WoWSpellMechanic.Slowed,
                                                                   WoWSpellMechanic.Snared)),
-
-                        Common.CreatePaladinSealBehavior(),
 
                         Spell.Cast("Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal ),
                         Spell.Cast( 

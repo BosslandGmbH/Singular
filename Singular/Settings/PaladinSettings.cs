@@ -57,32 +57,11 @@ namespace Singular.Settings
         public int HolyLightHealth { get; set; }
 
         [Setting]
-        [DefaultValue(PaladinBlessings.Auto)]
-        [Category("Common")]
-        [DisplayName("Blessings")]
-        [Description("Which Blessing to cast (Auto: best choice)")]
-        public PaladinBlessings Blessings { get; set; }
-
-        [Setting]
-        [DefaultValue(PaladinSeal.Auto)]
-        [Category("Common")]
-        [DisplayName("Seal")]
-        [Description("Which Seal to cast (None: user controlled, Auto: best choice)")]
-        public PaladinSeal Seal { get; set; }
-
-        [Setting]
         [DefaultValue(true)]
         [Category("Common")]
-        [DisplayName("Hammer of Justice immediately in Normal Context")]
-        [Description("Stun mobs while Solo immediately to reduce damage taken")]
+        [DisplayName("Hammer of Justice while Solo")]
+        [Description("Stun mobs while Solo. Will use on cooldown to reduce damage taken")]
         public bool StunMobsWhileSolo { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
-        [DisplayName("Use Emancipate")]
-        [Description("Use Emancipate when Rooted, Slowed, or Snared. Applies to Solo contexts only")]
-        public bool UseEmancipate { get; set; }
 
 
 
@@ -104,37 +83,16 @@ namespace Singular.Settings
         [Description("Flash of Light will be used at this value")]
         public int SelfFlashOfLightHealth { get; set; }
 
-        [Setting]
-        [DefaultValue(0)]
-        [Category("Self-Healing")]
-        [DisplayName("Word of Glory Health % (1+ Holy Power)")]
-        [Description("Health % to Cast Word of Glory if only 1+ Holy Power")]
-        public int SelfWordOfGloryHealth1 { get; set; }
-
-        [Setting]
-        [DefaultValue(0)]
-        [Category("Self-Healing")]
-        [DisplayName("Word of Glory Health % (2+ Holy Power)")]
-        [Description("Health % to Cast Word of Glory at 2+ Holy Power")]
-        public int SelfWordOfGloryHealth2 { get; set; }
-
-        [Setting]
-        [DefaultValue(65)]
-        [Category("Self-Healing")]
-        [DisplayName("Word of Glory Health % (3+ Holy Power)")]
-        [Description("Health % to Cast Word of Glory at 3+ Holy Power")]
-        public int SelfWordOfGloryHealth3 { get; set; }
-
-        [Setting]
-        [DefaultValue(65)]
-        [Category("Self-Healing")]
-        [DisplayName("Eternal Flame Health %")]
-        [Description("Health % to cast Eternal Flame at 3+ Holy Power")]
-        public int SelfEternalFlameHealth { get; set; }
-
         #endregion  
 
         #region Holy
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Holy")]
+        [DisplayName("Divine Protection Health")]
+        [Description("Divine Protection will be used at this health %")]
+        public int DivineProtectionHealth { get; set; }
 
         [Setting]
         [DefaultValue(25)]
@@ -151,16 +109,9 @@ namespace Singular.Settings
         public int FlashOfLightHealth { get; set; }
 
         [Setting]
-        [DefaultValue(true)]
-        [Category("Holy")]
-        [DisplayName("Keep Eternal Flame on tank")]
-        [Description("Ensure that Eternal Flame remains on the tank.")]
-        public bool KeepEternalFlameUp { get; set; } 
-
-        [Setting]
         [DefaultValue(80)]
         [Category("Holy")]
-        [DisplayName("Light of Dawn Health")]
+        [DisplayName("Light of Dawn Health %")]
         [Description("Light of Dawn will be used at this value")]
         public int LightOfDawnHealth { get; set; }
 
@@ -174,25 +125,11 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(90)]
         [Category("Holy")]
-        [DisplayName("Holy Shock Health")]
+        [DisplayName("Holy Shock Health %")]
         [Description("Holy Shock will be used at this value")]
         public int HolyShockHealth { get; set; }
 
-        [Setting]
-        [DefaultValue(65)]
-        [Category("Holy")]
-        [DisplayName("Divine Light Health")]
-        [Description("Divine Light will be used at this value")]
-        public int DivineLightHealth { get; set; }
-
-        [Setting]
-        [DefaultValue(50)]
-        [Category("Holy")]
-        [DisplayName("Divine Plea Mana")]
-        [Description("Divine Plea will be used at this value")]
-        public int DivinePleaManaPct { get; set; }
-
-         #endregion
+        #endregion
 
         #region Protection
         [Setting]
@@ -210,49 +147,42 @@ namespace Singular.Settings
         public int ArdentDefenderHealth { get; set; }
 
         [Setting]
-        [DefaultValue(80)]
-        [Category("Protection")]
-        [DisplayName("Divine Protection Health")]
-        [Description("Divine Protection will be used at this health %")]
-        public int DivineProtectionHealthProt { get; set; }
-
-        [Setting]
         [DefaultValue(20)]
         [Category("Protection")]
         [DisplayName("Divine Shield Health")]
         [Description("Divine Shield will be used at this health %")]
         public int DivineShieldHealthProt { get; set; }
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Protection")]
-        [DisplayName("Avengers On Pull Only")]
-        [Description("Only use Avenger's Shield to pull")]
-        public bool AvengersPullOnly { get; set; }
-
-        [Setting]
-        [DefaultValue(3)]
-        [Category("Protection")]
-        [DisplayName("Consecration Count")]
-        [Description("Consecration will be used when you have more then that many mobs attacking you")]
-        public int ProtConsecrationCount { get; set; }
         #endregion
 
         #region Retribution
         [Setting]
-        [DefaultValue(70)]
+        [DefaultValue(85)]
         [Category("Retribution")]
-        [DisplayName("Divine Protection Health")]
-        [Description("Divine Protection will be used at this value")]
-        public int DivineProtectionHealthRet { get; set; }
+        [DisplayName("Word of Glory Health %")]
+        [Description("Health % to use Word of Glory")]
+        public int SelfWordOfGloryHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Retribution")]
+        [DisplayName("Eye for an Eye Health %")]
+        [Description("Health % to use Eye for an Eye")]
+        public int EyeForAndEyeHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(65)]
+        [Category("Retribution")]
+        [DisplayName("Shield of Vengeance Health %")]
+        [Description("Health % to use Shield of Vengeance")]
+        public int ShieldOfVengeanceHealth { get; set; }
 
         [Setting]
         [DefaultValue(true)]
         [Category("Retribution")]
-        [DisplayName("Use Aveng Wrath/Holy Aveng/GotAK")]
-        [Description("True: Automatically use Avenging Wrath, Holy Avenger, and Guardian of the Ancient Kings.  False: you will have to cast manually.")]
+        [DisplayName("Use Avenging Wrath")]
+        [Description("True: Automatically use Avenging Wrath.  False: you will have to cast manually.")]
         public bool RetAvengAndGoatK { get; set; }
 
-       #endregion
+        #endregion
     }
 }

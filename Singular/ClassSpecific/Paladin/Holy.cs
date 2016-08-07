@@ -64,12 +64,9 @@ namespace Singular.ClassSpecific.Paladin
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Paladin, WoWSpec.PaladinHoly)]
         public static Composite CreatePaladinHolyCombatBuffsBehavior()
         {
-            return
-                new PrioritySelector(
-                    Spell.BuffSelf(
-                        "Divine Plea",
-                        ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Paladin().DivinePleaManaPct)
-                    );
+            return new PrioritySelector(
+                Spell.BuffSelf("Divine Protection", ret => Me.HealthPercent <= PaladinSettings.DivineProtectionHealth)
+                );
         }
         [Behavior(BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinHoly)]
         public static Composite CreatePaladinHolyCombatBehavior()
@@ -170,10 +167,6 @@ namespace Singular.ClassSpecific.Paladin
                                 "Flash of Light",
                                 ret => (WoWUnit)ret,
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().FlashOfLightHealth),
-                            Spell.Cast(
-                                "Divine Light",
-                                ret => (WoWUnit)ret,
-                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().DivineLightHealth),
                             Spell.Cast(
                                 "Holy Light",
                                 ret => (WoWUnit)ret,

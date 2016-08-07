@@ -70,7 +70,6 @@ namespace Singular.ClassSpecific.Paladin
 
                 // Seal twisting. If our mana gets stupid low, just throw on insight to get some mana back quickly, then put our main seal back on.
                 // This is Seal of Truth once we get it, Righteousness when we dont.
-                Common.CreatePaladinSealBehavior(),
                 Spell.Cast("Divine Steed", req => Me.CurrentTarget.Distance > 15d),
 
                 new Decorator(

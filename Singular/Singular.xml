@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>08.07.2016 04:52:32</ScanTime>
+  <ScanTime>08.07.2016 15:56:15</ScanTime>
   <FileList>
     <File Hash="6787" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="7024" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -29,11 +29,11 @@
     <File Hash="1059" Name="ClassSpecific\Monk\Lowbie.cs" />
     <File Hash="50353" Name="ClassSpecific\Monk\Mistweaver.cs" />
     <File Hash="4981" Name="ClassSpecific\Monk\Windwalker.cs" />
-    <File Hash="17218" Name="ClassSpecific\Paladin\Common.cs" />
-    <File Hash="10442" Name="ClassSpecific\Paladin\Holy.cs" />
-    <File Hash="2254" Name="ClassSpecific\Paladin\Lowbie.cs" />
-    <File Hash="12566" Name="ClassSpecific\Paladin\Protection.cs" />
-    <File Hash="11333" Name="ClassSpecific\Paladin\Retribution.cs" />
+    <File Hash="12016" Name="ClassSpecific\Paladin\Common.cs" />
+    <File Hash="10079" Name="ClassSpecific\Paladin\Holy.cs" />
+    <File Hash="1706" Name="ClassSpecific\Paladin\Lowbie.cs" />
+    <File Hash="12513" Name="ClassSpecific\Paladin\Protection.cs" />
+    <File Hash="12698" Name="ClassSpecific\Paladin\Retribution.cs" />
     <File Hash="25121" Name="ClassSpecific\Priest\Common.cs" />
     <File Hash="41006" Name="ClassSpecific\Priest\Discipline.cs" />
     <File Hash="25453" Name="ClassSpecific\Priest\Holy.cs" />
@@ -112,7 +112,7 @@
     <File Hash="4121" Name="Settings\HunterSettings.cs" />
     <File Hash="4616" Name="Settings\MageSettings.cs" />
     <File Hash="15613" Name="Settings\MonkSettings.cs" />
-    <File Hash="8506" Name="Settings\PaladinSettings.cs" />
+    <File Hash="5734" Name="Settings\PaladinSettings.cs" />
     <File Hash="34496" Name="Settings\PriestSettings.cs" />
     <File Hash="7428" Name="Settings\RogueSettings.cs" />
     <File Hash="20343" Name="Settings\ShamanSettings.cs" />

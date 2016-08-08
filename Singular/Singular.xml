@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>08.07.2016 15:56:15</ScanTime>
+  <ScanTime>08.08.2016 09:32:11</ScanTime>
   <FileList>
     <File Hash="6787" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="7024" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -61,7 +61,7 @@
     <File Hash="22337" Name="ClassSpecific\Warrior\Common.cs" />
     <File Hash="16312" Name="ClassSpecific\Warrior\Fury.cs" />
     <File Hash="2298" Name="ClassSpecific\Warrior\Lowbie.cs" />
-    <File Hash="25615" Name="ClassSpecific\Warrior\Protection.cs" />
+    <File Hash="20292" Name="ClassSpecific\Warrior\Protection.cs" />
     <File Hash="1275" Name="Dynamics\Attributes.cs" />
     <File Hash="8710" Name="Dynamics\CompositeBuilder.cs" />
     <File Hash="837" Name="Dynamics\SessionState.cs" />
@@ -128,7 +128,7 @@
     <File Hash="22483" Name="SingularRoutine.Context.cs" />
     <File Hash="33494" Name="SingularRoutine.cs" />
     <File Hash="5742" Name="SingularRoutine.Test.cs" />
-    <File Hash="2707" Name="SingularRoutine.Version.cs" />
+    <File Hash="2712" Name="SingularRoutine.Version.cs" />
     <File Hash="3033" Name="Utilities\CombatLog.cs" />
     <File Hash="2024" Name="Utilities\Enumeration.cs" />
     <File Hash="40072" Name="Utilities\EventHandlers.cs" />

@@ -29,13 +29,8 @@ namespace Singular.ClassSpecific.Warrior
 
         #region Common
 
-        static LocalPlayer Me { get { return StyxWoW.Me; } }
-        static WoWUnit Target { get { return StyxWoW.Me.CurrentTarget; } }
-        static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior(); } }
-
-        public static bool talentGladiator { get; set; }
-        public static bool glyphCleave { get; set; }
-        private static CombatScenario scenario { get; set; }
+        static LocalPlayer Me => StyxWoW.Me;
+        static WarriorSettings WarriorSettings => SingularSettings.Instance.Warrior();
 
 
         //[Behavior(BehaviorType.Initialize, WoWClass.Warrior, WoWSpec.WarriorProtection)]
@@ -50,23 +45,6 @@ namespace Singular.ClassSpecific.Warrior
                 Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
 
                 ClassSpecific.Warrior.Protection.CheckThatShieldIsEquippedIfNeeded()
-                );
-        }
-
-
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warrior, WoWSpec.WarriorProtection, WoWContext.All)]
-        public static Composite CreateProtectionNormalPreCombatBuffs()
-        {
-            return new PrioritySelector(
-
-                    // no shield means no shield slam, so use Battle Stance for more Rage generation for 
-                // ... those Prot warriors the owner didnt see fit to give a shield
-                // Spell.BuffSelf( stance => HasShieldInOffHand ? "Defensive Stance" : "Battle Stance", req => true),
-
-                    // PartyBuff.BuffGroup(Common.SelectedShoutAsSpellName)
-                // PartyBuff.BuffGroup( "Battle Shout", ret => WarriorSettings.Shout == WarriorShout.BattleShout ),
-                // PartyBuff.BuffGroup( "Commanding Shout", ret => WarriorSettings.Shout == WarriorShout.CommandingShout )
-                    
                 );
         }
 
@@ -89,8 +67,8 @@ namespace Singular.ClassSpecific.Warrior
 
                         Common.CreateChargeBehavior(),
 
-                        //Buff up 
-                        new Throttle( TimeSpan.FromSeconds(2), 
+                        //Buff up
+                        new Throttle( TimeSpan.FromSeconds(2),
                             new PrioritySelector(
                                 PartyBuff.BuffGroup(Common.SelectedShoutAsSpellName)
                                 // Spell.Cast("Battle Shout", ret => !Me.HasAura("Battle Shout") && !Me.HasMyAura("Commanding Shout") && !Me.HasPartyBuff(PartyBuffType.AttackPower)),
@@ -126,7 +104,7 @@ namespace Singular.ClassSpecific.Warrior
                     && (SingularRoutine.CurrentWoWContext != WoWContext.Instances || Me.Shapeshift != (ShapeshiftForm)WarriorStance.GladiatorStance),
                 new Throttle(    // throttle these because most are off the GCD
                     new PrioritySelector(
-                        
+
                         Spell.Cast(
                             "Intimidating Shout",
                             on => Me.CurrentTarget,
@@ -138,7 +116,7 @@ namespace Singular.ClassSpecific.Warrior
                                     return false;
                                 if (!Spell.IsSpellOnCooldown("Pummel"))
                                     return false;
-                                WoWUnit melee = Unit.UnfriendlyUnits(8).Where(u => u.IsPlayer && u.IsCasting && u.IsTargetingMyStuff() && Spell.CanCastHack("Intimidating Shout", u)).FirstOrDefault();
+                                WoWUnit melee = Unit.UnfriendlyUnits(8).FirstOrDefault(u => u.IsPlayer && u.IsCasting && u.IsTargetingMyStuff() && Spell.CanCastHack("Intimidating Shout", u));
                                 if (melee == null)
                                     return false;
 
@@ -172,13 +150,13 @@ namespace Singular.ClassSpecific.Warrior
                             req => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange,
                             new PrioritySelector(
                                 new Decorator(
-                                    ret => Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (!Me.IsInGroup() && scenario.MobCount >= 3),
+                                    ret => Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (!Me.IsInGroup() && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3),
                                     new PrioritySelector(
                                         Spell.HandleOffGCD(Spell.BuffSelf("Battle Cry", req => true, 0, HasGcd.No)),
                                         Spell.HandleOffGCD(Spell.BuffSelf("Avatar", req => true, 0, HasGcd.No))
                                         )
                                     ),
-                                
+
                                 Spell.BuffSelfAndWait(
                                     "Berserker Rage",
                                     req =>
@@ -209,20 +187,18 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateProtectionCombat()
         {
 	        TankManager.NeedTankTargeting = SingularRoutine.CurrentWoWContext == WoWContext.Instances;
-
-			scenario.MaxAgeForDamage = 5;
             EventHandlers.TrackDamage = true;
 
             return new PrioritySelector(
                 // set context to current target
-                ctx => 
+                ctx =>
                 {
                     if (TankManager.NeedTankTargeting && TankManager.Instance.FirstUnit != null)
                         return TankManager.Instance.FirstUnit;
 
                     return Me.CurrentTarget;
                 },
-				
+
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                 Spell.WaitForCast(),
@@ -233,13 +209,6 @@ namespace Singular.ClassSpecific.Warrior
                     ret => !Spell.IsGlobalCooldown(),
 
                     new PrioritySelector(
-
-                        new Action(r =>
-                        {
-                            scenario.Update(Target);
-                            return RunStatus.Failure;
-                        }),
-
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
@@ -249,12 +218,12 @@ namespace Singular.ClassSpecific.Warrior
                         new Decorator(
                             req => Me.GotTarget(),
                             CreateProtectionDefensiveCombat()
-                            )   
+                            )
                         )
                     )
                 );
         }
-		
+
         private static Composite CreateProtectionDefensiveCombat()
         {
             return new PrioritySelector(
@@ -267,7 +236,7 @@ namespace Singular.ClassSpecific.Warrior
                     ret => SingularSettings.Instance.EnableTaunting && SingularRoutine.CurrentWoWContext == WoWContext.Instances,
                     CreateProtectionTauntBehavior()
                     ),
-                
+
                 new Sequence(
                     new Decorator(
                         ret => Common.IsSlowNeeded(Me.CurrentTarget),
@@ -285,7 +254,7 @@ namespace Singular.ClassSpecific.Warrior
 
                 // Multi-target?  get the debuff on them
                 new Decorator(
-                    ret => scenario.MobCount > 1,
+                    ret => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1,
                     new PrioritySelector(
                         Spell.Cast("Thunder Clap", on => Unit.UnfriendlyUnits(Common.DistanceWindAndThunder(8)).FirstOrDefault()),
                         Spell.Cast("Shockwave", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => Me.IsSafelyFacing(u)), ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 10f) >= 3))
@@ -297,7 +266,7 @@ namespace Singular.ClassSpecific.Warrior
                 // Generate Rage
                 Spell.Cast("Shield Slam", ret => Me.CurrentRage < RageBuild && HasShieldInOffHand),
                 Spell.Cast("Revenge"),
-               
+
                 // Filler
                 Spell.Cast("Devastate"),
 
@@ -334,7 +303,7 @@ namespace Singular.ClassSpecific.Warrior
 
                     Spell.Cast("Storm Bolt", ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(i => i.SpellDistance() < 30 && Me.IsSafelyFacing(i))),
 
-                    Spell.Cast("Intervene", 
+                    Spell.Cast("Intervene",
                         ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(
                             mob => Group.Healers.Any(healer => mob.CurrentTargetGuid == healer.Guid && healer.Distance < 25)),
                         ret => MovementManager.IsClassMovementAllowed && Group.Healers.Count( h => h.IsAlive && h.Distance < 40) == 1
@@ -418,7 +387,7 @@ namespace Singular.ClassSpecific.Warrior
             return _checkShield;
         }
 
-        private static bool _hasShieldInOffHand { get; set; }
+        private static bool _hasShieldInOffHand;
         public static bool HasShieldInOffHand
         {
             get
@@ -438,45 +407,18 @@ namespace Singular.ClassSpecific.Warrior
             return hand != null && hand.ItemInfo.ItemClass == WoWItemClass.Armor && hand.ItemInfo.InventoryType == InventoryType.Shield;
         }
 
-        private static Composite CreateShieldCharge(UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate requirements = null)
-        {
-
-            if (onUnit == null)
-                onUnit = on => Me.CurrentTarget;
-
-            if (requirements == null)
-                requirements = req => true;
-
-            return new Sequence(
-                new Decorator(
-                    req => Spell.DoubleCastContains(Me, "Shield Charge") || !HasShieldInOffHand,
-                    new ActionAlwaysFail()
-                    ),
-                Spell.Cast("Shield Charge", onUnit, req => requirements(req), gcd: HasGcd.No),
-                new Action(ret => Spell.UpdateDoubleCast("Shield Charge", Me))
-                );
-        }
-
 
         private static Composite CreateProtectionDiagnosticOutput()
         {
             if (!SingularSettings.Debug)
                 return new ActionAlwaysFail();
 
-            return new ThrottlePasses( 
+            return new ThrottlePasses(
                 1, TimeSpan.FromMilliseconds(1500), RunStatus.Failure,
                 new Action(ret =>
                     {
-                    string log = string.Format("... [prot] h={0:F1}%/r={1:F1}%, stnc={2}, Ultim={3}, aoe={4}, cc={5}, dmg1500={6}, dmg5000={7}",
-                        Me.HealthPercent,
-                        Me.CurrentRage,
-                        (WarriorStance) Me.Shapeshift,
-                        HasUltimatum,
-                        scenario.MobCount,
-                        scenario.CcCount,
-                        scenario.RecentDamage,
-                        scenario.AllDamage
-                        );
+                    string log =
+                        $"... [prot] h={Me.HealthPercent:F1}%/r={Me.CurrentRage:F1}%, stnc={(WarriorStance) Me.Shapeshift}, Ultim={HasUltimatum}";
 
                     WarriorTalents tier6 = Common.GetTierTalent(6);
                     string tier6spell = "";
@@ -508,62 +450,6 @@ namespace Singular.ClassSpecific.Warrior
                     Logger.WriteDebug(Color.AntiqueWhite, log);
                     return RunStatus.Failure;
                     })
-                );
-        }
-
-
-        private static Composite CreateGladiatorDiagnosticOutput()
-        {
-            if (!SingularSettings.Debug)
-                return new ActionAlwaysFail();
-
-            return new ThrottlePasses(
-                1, TimeSpan.FromMilliseconds(1500), RunStatus.Failure, 
-                new Action(ret =>
-                {
-                    string log = string.Format("... [glad] h={0:F1}%/r={1:F1}%, gstnc={2}, Ultim={3}, SChgStk={4}, SChgBuf={5}, aoe={6}, cc={7}, dmg1500={8}, dmg5000={9}",
-                        Me.HealthPercent,
-                        Me.CurrentRage,
-                        (WarriorStance)Me.Shapeshift,
-                        HasUltimatum,
-                        Spell.GetCharges("Shield Charge"),
-                        (long)Me.GetAuraTimeLeft("Shield Charge").TotalMilliseconds,
-                        scenario.MobCount,
-                        scenario.CcCount,
-                        scenario.RecentDamage,
-                        scenario.AllDamage
-                        );
-
-                    WarriorTalents tier6 = Common.GetTierTalent(6);
-                    string tier6spell = "";
-                    if (tier6 == WarriorTalents.Avatar)
-                        tier6spell = "Avatar";
-                    else if (tier6 == WarriorTalents.Bloodbath)
-                        tier6spell = "Bloodbath";
-                    else if (tier6 == WarriorTalents.Bladestorm)
-                        tier6spell = "Bladestorm";
-
-                    if (tier6 != WarriorTalents.None)
-                    {
-                        TimeSpan tsbs = Me.GetAuraTimeLeft(tier6spell);
-                        log += string.Format(", {0}={1:F0} ms", tier6spell, tsbs.TotalMilliseconds);
-                    }
-
-                    if (!Me.GotTarget())
-                        log += ", Targ=(null)";
-                    else
-                        log += string.Format(", Targ={0} {1:F1}% @ {2:F1} yds, Melee={3}, Facing={4}, LoSS={5}, DeepWounds={6}",
-                            Me.CurrentTarget.SafeName(),
-                            Me.CurrentTarget.HealthPercent,
-                            Me.CurrentTarget.Distance,
-                            Me.CurrentTarget.IsWithinMeleeRange,
-                            Me.IsSafelyFacing(Me.CurrentTarget),
-                            Me.CurrentTarget.InLineOfSpellSight,
-                            (long) Me.CurrentTarget.GetAuraTimeLeft("Deep Wounds").TotalMilliseconds
-                            );
-                    Logger.WriteDebug(Color.AntiqueWhite, log);
-                    return RunStatus.Failure;
-                })
                 );
         }
 

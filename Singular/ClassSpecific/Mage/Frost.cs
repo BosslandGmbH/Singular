@@ -365,7 +365,8 @@ namespace Singular.ClassSpecific.Mage
         public static Composite CreateSummonWaterElemental()
         {
             return new Decorator(
-                ret => PetManager.IsPetSummonAllowed    
+                ret => PetManager.IsPetSummonAllowed
+                    && !Common.HasTalent(MageTalents.LonelyWinter)
                     && (!Me.GotAlivePet || Me.Pet.Distance > 40)
                     && PetManager.PetSummonAfterDismountTimer.IsFinished
                     && Spell.CanCastHack("Summon Water Elemental"),

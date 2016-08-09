@@ -102,7 +102,7 @@ namespace Singular.Settings
         public int LayOnHandsHealth { get; set; }
 
         [Setting]
-        [DefaultValue(50)]
+        [DefaultValue(60)]
         [Category("Holy")]
         [DisplayName("Flash of Light Health %")]
         [Description("Flash of Light will be used at this value")]
@@ -124,6 +124,13 @@ namespace Singular.Settings
 
         [Setting]
         [DefaultValue(90)]
+        [Category("Holy")]
+        [DisplayName("Bestow Faith Health %")]
+        [Description("Bestow Faith will be used at this value")]
+        public int BestowFaithHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(95)]
         [Category("Holy")]
         [DisplayName("Holy Shock Health %")]
         [Description("Holy Shock will be used at this value")]

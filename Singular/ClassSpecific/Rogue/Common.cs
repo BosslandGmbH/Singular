@@ -87,9 +87,7 @@ namespace Singular.ClassSpecific.Rogue
                 CreateStealthBehavior(ret => RogueSettings.StealthIfEating && Helpers.Rest.IsEatingOrDrinking),
                 Rest.CreateDefaultRestBehaviour( ),
 
-                CheckThatDaggersAreEquippedIfNeeded(),
-
-                CreateRogueGeneralMovementBuff("Rest")
+                CheckThatDaggersAreEquippedIfNeeded()
                 );
         }
 
@@ -126,6 +124,7 @@ namespace Singular.ClassSpecific.Rogue
             return new Decorator(
                 ret => !Spell.IsCastingOrChannelling() & !Spell.IsGlobalCooldown() && !AreStealthAbilitiesAvailable && !Group.AnyHealerNearby,
                 new PrioritySelector(
+                    Spell.HandleOffGCD(Spell.Cast("Crimson Vail", ret => Me.HealthPercent <= RogueSettings.CrimsonVialHealth)),
                     Movement.CreateFaceTargetBehavior(),
                     new Decorator(
                         ret => SingularSettings.Instance.UseBandages
@@ -670,34 +669,6 @@ namespace Singular.ClassSpecific.Rogue
                 return null;
             }
         }
-
-        public static Decorator CreateRogueGeneralMovementBuff(string mode, bool checkMoving = true)
-        {
-            return new Decorator(
-                ret => RogueSettings.UseSpeedBuff 
-                    && MovementManager.IsClassMovementAllowed
-                    && StyxWoW.Me.IsAlive
-                    && (!checkMoving || StyxWoW.Me.IsMoving)
-                    && !StyxWoW.Me.Mounted
-                    && !StyxWoW.Me.IsOnTransport
-                    && !StyxWoW.Me.OnTaxi
-                    && SpellManager.HasSpell("Burst of Speed")
-                    && !StyxWoW.Me.HasAnyAura("Burst of Speed")
-                    && (BotPoi.Current == null || BotPoi.Current.Type == PoiType.None || BotPoi.Current.Location.Distance(StyxWoW.Me.Location) > 15)
-                    && !StyxWoW.Me.IsAboveTheGround(),
-
-                new PrioritySelector(
-                    Spell.WaitForCast(),
-                    new Decorator(
-                        ret => !Spell.IsGlobalCooldown(),
-                        new PrioritySelector(
-                            Spell.BuffSelf("Burst of Speed")
-                            )
-                        )
-                    )
-                );
-        }
-
 
         public static int AoeCount { get; set; }
 

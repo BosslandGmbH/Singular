@@ -42,7 +42,7 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreatePaladinHolyHealBehavior()
         {
             return new PrioritySelector(
-                Spell.BuffSelf( "Devotion Aura", req => Me.Silenced ),
+                Spell.BuffSelf("Devotion Aura", req => Me.Silenced ),
                 CreateRebirthBehavior(),
                 CreatePaladinHealBehavior(),
                 new Decorator(
@@ -146,7 +146,14 @@ namespace Singular.ClassSpecific.Paladin
                                 "Beacon of Light",
                                 ret => (WoWUnit)ret,
                                 ret => ret is WoWPlayer && Group.Tanks.Contains((WoWPlayer)ret) && Group.Tanks.All(t => !t.HasMyAura("Beacon of Light"))),
-
+                            Spell.Cast(
+                                "Holy Shock",
+                                ret => (WoWUnit)ret,
+                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().HolyShockHealth),
+                            Spell.Cast(
+                                "Bestow Faith",
+                                ret => (WoWUnit)ret,
+                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().BestowFaithHealth),
                            Spell.Cast(
                                 "Lay on Hands",
                                 ret => (WoWUnit)ret,
@@ -155,14 +162,9 @@ namespace Singular.ClassSpecific.Paladin
                             Spell.Cast(
                                 "Light of Dawn",
                                 ret => StyxWoW.Me,
-                                ret => StyxWoW.Me.CurrentHolyPower >= 3 &&
-                                       Unit.NearbyFriendlyPlayers.Count(p =>
+                                ret => Unit.NearbyFriendlyPlayers.Count(p =>
                                            p.HealthPercent <= SingularSettings.Instance.Paladin().LightOfDawnHealth && p != StyxWoW.Me &&
                                            p.DistanceSqr < 30 * 30 && StyxWoW.Me.IsSafelyFacing(p.Location)) >= SingularSettings.Instance.Paladin().LightOfDawnCount),
-                            Spell.Cast(
-                                "Holy Shock",
-                                ret => (WoWUnit)ret,
-                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().HolyShockHealth),
                             Spell.Cast(
                                 "Flash of Light",
                                 ret => (WoWUnit)ret,

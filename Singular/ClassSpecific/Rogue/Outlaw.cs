@@ -107,7 +107,6 @@ namespace Singular.ClassSpecific.Rogue
                         )
                     ),
 
-                Spell.BuffSelf("Crimson Vial", when => Me.HealthPercent <= 65),
                 Spell.Cast("Vanish", when => Me.TimeToDeath() < 2 && Me.TimeToDeath() < Me.CurrentTarget.TimeToDeath()),
 
                 new Decorator(

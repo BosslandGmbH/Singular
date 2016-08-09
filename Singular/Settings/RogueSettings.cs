@@ -23,33 +23,13 @@ namespace Singular.Settings
         {
         }
 
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Common")]
-        [DisplayName("Use Sprint")]
-        [Description("Sprint to close to target during Pull or Combat")]
-        public bool UseSprint { get; set; }
-
+        #region Common
         [Setting]
         [DefaultValue(70)]
         [Category("Common")]
-        [DisplayName("Recuperate Health%")]
-        [Description("Health % to Recuperate at during Combat, 0 to disable")]
-        public int RecuperateHealth { get; set; }
-
-        [Setting]
-        [DefaultValue(LethalPoisonType.Auto)]
-        [Category("Common")]
-        [DisplayName("Lethal Poison")]
-        [Description("Lethal Poison")]
-        public LethalPoisonType LethalPoison { get; set; }
-
-        [Setting]
-        [DefaultValue(NonLethalPoisonType.Auto)]
-        [Category("Common")]
-        [DisplayName("Non Lethal Poison")]
-        [Description("Non Lethal Poison")]
-        public NonLethalPoisonType NonLethalPoison { get; set; }
+        [DisplayName("Crimson Vail Health%")]
+        [Description("Health % to use Crimson Vail at during Combat, 0 to disable")]
+        public int CrimsonVialHealth { get; set; }
 
         [Setting]
         [DefaultValue(StealthMode.Auto)]
@@ -68,30 +48,9 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(4)]
         [Category("Common")]
-        [DisplayName("Fan of Knives Count")]
-        [Description("Use FoK as Combo Point builder at this enemy count")]
-        public int FanOfKnivesCount { get; set; }
-
-        [Setting]
-        [DefaultValue(4)]
-        [Category("Common")]
         [DisplayName("AOE Spell Priority Count")]
         [Description("Use AOE Spell Priorities at this enemy count")]
         public int AoeSpellPriorityCount { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
-        [DisplayName("Interrupt Spells")]
-        [Description("Interrupt Spells")]
-        public bool InterruptSpells { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
-        [DisplayName("Use TotT")]
-        [Description("Use TotT")]
-        public bool UseTricksOfTheTrade { get; set; }
 
         [Setting]
         [DefaultValue(true)]
@@ -114,48 +73,21 @@ namespace Singular.Settings
         [Description("Sap target that is moving to avoid having to follow while stealthed")]
         public bool SapMovingTargetsOnPull { get; set; }
 
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Combat Spec")]
-        [DisplayName("Use Rupture Finisher")]
-        [Description("Use Rupture Finisher")]
-        public bool CombatUseRuptureFinisher { get; set; }
-
         [Setting]
         [DefaultValue(false)]
         [Category("Common")]
         [DisplayName("Move Behind Targets")]
         [Description("Move behind targets for opener or when target stunned/not targeting Rogue")]
         public bool MoveBehindTargets { get; set; }
+        #endregion
 
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Combat Spec")]
-        [DisplayName("Use Expose Armor")]
-        [Description("Use Expose Armor")]
-        public bool UseExposeArmor { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
-        [DisplayName("Use Speed Buff")]
-        [Description("Cast Burst of Speed when running out of combat")]
-        public bool UseSpeedBuff { get; set; }
-
+        #region PickPocket
         [Setting]
         [DefaultValue(false)]
         [Category("Pick Pocket")]
         [DisplayName("Pick Pocket Only - Disable Pull")]
         [Description("Caution: use only with profiles designed for grinding.  Does not work with most Questing profiles")]
         public bool PickPocketOnlyPull { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Pick Pocket")]
-        [DisplayName("Pick Pocket Only - Sap")]
-        [Description("Sap the Pick Pocket target when Pick Pocket Only is enabled.  Reduces chance to enter combat")]
-        public bool PickPocketOnlySap { get; set; }
 
         [Setting]
         [DefaultValue(true)]
@@ -191,19 +123,39 @@ namespace Singular.Settings
         [DisplayName("Allow Pick Pocket in Combat")]
         [Description("Allow use in Combat on Current Target if spell usable and current target valid")]
         public bool AllowPickPocketInCombat { get; set; }
+        #endregion
 
+        #region Outlaw HonorTalents
         [Setting]
-        [DefaultValue(false)]
-        [Category("General")]
+        [DefaultValue(true)]
+        [Category("Outlaw - Honor Talents")]
         [DisplayName("Use Dismantle")]
         [Description("True: use Dismantle on cooldown; False: do not cast")]
         public bool UseDimantle { get; set; }
-		
-		[Setting]
-		[DefaultValue(30)]
-		[Category("Common")]
-		[DisplayName("Crimson Vial Health%")]
-		[Description("Health % to Crimson Vial at during Combat, 0 to disable")]
-		public int CrimsonVialHealth { get; set; }
+        #endregion
+
+        #region Assassination
+        [Setting]
+        [DefaultValue(LethalPoisonType.Auto)]
+        [Category("Assassination")]
+        [DisplayName("Lethal Poison")]
+        [Description("Lethal Poison")]
+        public LethalPoisonType LethalPoison { get; set; }
+
+        [Setting]
+        [DefaultValue(NonLethalPoisonType.Auto)]
+        [Category("Assassination")]
+        [DisplayName("Non Lethal Poison")]
+        [Description("Non Lethal Poison")]
+        public NonLethalPoisonType NonLethalPoison { get; set; }
+
+        [Setting]
+        [DefaultValue(4)]
+        [Category("Assassination")]
+        [DisplayName("Fan of Knives Count")]
+        [Description("Use FoK as Combo Point builder at this enemy count")]
+        public int FanOfKnivesCount { get; set; }
+        #endregion
+
     }
 }

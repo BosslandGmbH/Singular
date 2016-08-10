@@ -92,6 +92,9 @@ namespace Singular.GUI
                 case WoWClass.Monk:
                     toSelect = SingularSettings.Instance.Monk();
                     break;
+                case WoWClass.DemonHunter:
+                    toSelect = SingularSettings.Instance.DemonHunter();
+                    break;
                 default:
                     break;
             }

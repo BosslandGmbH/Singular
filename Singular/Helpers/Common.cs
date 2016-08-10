@@ -426,6 +426,14 @@ namespace Singular.Helpers
 
             #endregion
 
+            #region 20 Yards
+
+            if (Me.Class == WoWClass.DemonHunter)
+                prioSpell.AddChild(Spell.Cast("Consume Magic", ctx => _unitInterrupt, req => Me.IsSafelyFacing(_unitInterrupt)));
+
+            #endregion
+
+
             #region 25 yards
 
             if ( Me.Class == WoWClass.Shaman)

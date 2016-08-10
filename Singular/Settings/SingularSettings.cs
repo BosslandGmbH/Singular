@@ -308,6 +308,7 @@ namespace Singular.Settings
             // reference the internal references so we can display only for our class
             LogSettings("Singular", SingularSettings.Instance);
             LogSettings("HotkeySettings", Hotkeys());
+            if (StyxWoW.Me.Class == WoWClass.DemonHunter )  LogSettings("DemonHunterSettings", DemonHunter());
             if (StyxWoW.Me.Class == WoWClass.DeathKnight )  LogSettings("DeathKnightSettings", DeathKnight());
             if (StyxWoW.Me.Class == WoWClass.Druid )        LogSettings("DruidSettings", Druid());
             if (StyxWoW.Me.Class == WoWClass.Hunter )       LogSettings("HunterSettings", Hunter());
@@ -1361,6 +1362,7 @@ namespace Singular.Settings
         // Do not change anything within this region.
         // It's written so we ONLY load the settings we're going to use.
         // There's no reason to load the settings for every class, if we're only executing code for a Druid.
+        private DemonHunterSettings _dhSettings;
 
         private DeathKnightSettings _dkSettings;
 
@@ -1389,6 +1391,7 @@ namespace Singular.Settings
         // late-binding interfaces 
         // -- changed from readonly properties to methods as GetProperties() in SaveToXML() was causing all classes configs to load
         // -- this was causing Save to write a DeathKnight.xml file for all non-DKs for example
+        internal DemonHunterSettings DemonHunter() { return _dhSettings ?? (_dhSettings = new DemonHunterSettings()); }
         internal DeathKnightSettings DeathKnight() { return _dkSettings ?? (_dkSettings = new DeathKnightSettings()); } 
         internal DruidSettings Druid() { return _druidSettings ?? (_druidSettings = new DruidSettings()); }
         internal HunterSettings Hunter() { return _hunterSettings ?? (_hunterSettings = new HunterSettings()); }

@@ -159,6 +159,9 @@
     <Compile Include="ClassSpecific\DeathKnight\Frost.cs" />
     <Compile Include="ClassSpecific\DeathKnight\Lowbie.cs" />
     <Compile Include="ClassSpecific\DeathKnight\Unholy.cs" />
+    <Compile Include="ClassSpecific\DemonHunter\Common.cs" />
+    <Compile Include="ClassSpecific\DemonHunter\Havoc.cs" />
+    <Compile Include="ClassSpecific\DemonHunter\Vengeance.cs" />
     <Compile Include="ClassSpecific\Druid\Balance.cs" />
     <Compile Include="ClassSpecific\Druid\Common.cs" />
     <Compile Include="ClassSpecific\Druid\Feral.cs" />
@@ -242,6 +245,7 @@
     <Compile Include="Managers\PetManager.cs" />
     <Compile Include="Managers\SoulstoneManager.cs" />
     <Compile Include="Managers\SpellImmunityManager.cs" />
+    <Compile Include="Settings\DemonHunterSettings.cs" />
     <Compile Include="Settings\SpellList.cs" />
     <Compile Include="Settings\SpellList.MageSteallist.cs">
       <DependentUpon>SpellList.cs</DependentUpon>

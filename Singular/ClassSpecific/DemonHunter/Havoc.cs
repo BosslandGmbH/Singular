@@ -52,7 +52,7 @@ namespace Singular.ClassSpecific.DemonHunter
                         Common.CreateDemonHunterPullMore(),
 
                         // Buffs + Mitigation
-                        Spell.BuffSelf("Metamorphosis", ret => Me.HealthPercent <= DemonHunterSettings.HavocMetamorphosisHealthPercent),
+                        Spell.CastOnGround("Metamorphosis", on => (WoWUnit)on, ret => Me.HealthPercent <= DemonHunterSettings.HavocMetamorphosisHealthPercent),
                         Spell.BuffSelf("Blur", ret => Me.HealthPercent <= DemonHunterSettings.BlurHealthPercent),
                         Spell.BuffSelf("Darkness", ret => Me.HealthPercent <= DemonHunterSettings.HavocDarknessHealthPercent),
 
@@ -72,7 +72,7 @@ namespace Singular.ClassSpecific.DemonHunter
                                 Spell.Cast("Chaos Strike", ret => Unit.NearbyUnfriendlyUnits.Count() <= 3 && Common.HasTalent(DemonHunterTalents.ChaosCleave)),
                                 Spell.Cast("Blade Dance", ret => Unit.NearbyUnfriendlyUnits.Count() >= 4),
                                 Spell.Cast("Chaos Strike", ret => CurrentFury >= 70),
-                                Spell.Cast("Demon's Bite") // , ret => !Common.HasTalent(DemonHunterTalents.DemonBlades) - Demon Blades replaces it, this shouldn't be needed.
+                                Spell.Cast("Demon's Bite", ret => !Common.HasTalent(DemonHunterTalents.DemonBlades))
                                 )
                         ),
 
@@ -86,7 +86,7 @@ namespace Singular.ClassSpecific.DemonHunter
                                 DemonHunterSettings.DPSWithFelRush &&
                                 (Common.HasTalent(DemonHunterTalents.FelMastery) && CurrentFury <= 70) || Spell.GetCharges("Fel Rush") > 1),
                         Spell.Cast("Chaos Strike", ret => CurrentFury >= 70),
-                        Spell.Cast("Demon's Bite") // , ret => !Common.HasTalent(DemonHunterTalents.DemonBlades) - Demon Blades replaces it, this shouldn't be needed.
+                        Spell.Cast("Demon's Bite", ret => !Common.HasTalent(DemonHunterTalents.DemonBlades))
 
                         )
                     ),

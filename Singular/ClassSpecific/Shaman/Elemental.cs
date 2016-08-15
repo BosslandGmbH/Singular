@@ -207,7 +207,7 @@ namespace Singular.ClassSpecific.Shaman
 								&& (Me.ManaPercent > ShamanSettings.EarthquakeManaPercent || Me.GetAuraTimeLeft("Lucidity") > TimeSpan.Zero)
 								&& Unit.UnfriendlyUnitsNearTarget(10f).Count() >= ShamanSettings.EarthquakeCount - 1),
 						Spell.Cast("Earth Shock", req => Me.CurrentMaelstrom >= 90),
-                        Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Any() && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
+                        Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() > 1 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
                         Spell.Cast("Lightning Bolt")
                         )
                     )

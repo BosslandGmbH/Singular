@@ -92,9 +92,11 @@ namespace Singular.Helpers
                 || Me.Class == WoWClass.Rogue
                 || TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement
                 || Me.Class == WoWClass.Warrior
+                || Me.Class == WoWClass.DemonHunter
+                || TalentManager.CurrentSpec == WoWSpec.HunterSurvival
                 ;
 
-            bool autoAttackRanged = Me.Class == WoWClass.Hunter;
+            bool autoAttackRanged = TalentManager.CurrentSpec != WoWSpec.HunterSurvival && Me.Class == WoWClass.Hunter;
 
             saprio.AddChild(
                 new Decorator(

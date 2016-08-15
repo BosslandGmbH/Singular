@@ -63,13 +63,13 @@ namespace Singular.ClassSpecific.DemonHunter
                                 Spell.Cast("Fel Rush",
                                     ret =>
                                         DemonHunterSettings.DPSWithFelRush &&
-                                        (Common.HasTalent(DemonHunterTalents.FelMastery) && Havoc.CurrentFury <= 70) || (Unit.NearbyUnfriendlyUnits.Count() >= 3 && Spell.GetCharges("Fel Rush") > 1)),
+                                        ( (Common.HasTalent(DemonHunterTalents.FelMastery) && Havoc.CurrentFury <= 70) || (Unit.NearbyUnfriendlyUnits.Count() >= 3 && Spell.GetCharges("Fel Rush") > 1) )),
                                 Spell.Cast("Vengeful Retreat",
                                     ret =>
-                                        DemonHunterSettings.UseVengefulRetreat &&
-                                        (CurrentFury <= 85 || Common.HasTalent(DemonHunterTalents.Prepared)) && DemonHunterSettings.UseVengefulRetreat),
+                                        DemonHunterSettings.UseVengefulRetreat && Me.CurrentTarget.IsWithinMeleeRange &&
+                                        (Common.HasTalent(DemonHunterTalents.Prepared) || CurrentFury <= 85)),
                                 Spell.Cast("Eye Beam"),
-                                Spell.Cast("Chaos Strike", ret => Unit.NearbyUnfriendlyUnits.Count() <= 3 && Common.HasTalent(DemonHunterTalents.ChaosCleave)),
+                                Spell.Cast("Chaos Strike", ret => Common.HasTalent(DemonHunterTalents.ChaosCleave) && Unit.NearbyUnfriendlyUnits.Count() <= 3),
                                 Spell.Cast("Blade Dance", ret => Unit.NearbyUnfriendlyUnits.Count() >= 4),
                                 Spell.Cast("Chaos Strike", ret => CurrentFury >= 70),
                                 Spell.Cast("Demon's Bite", ret => !Common.HasTalent(DemonHunterTalents.DemonBlades))
@@ -84,7 +84,7 @@ namespace Singular.ClassSpecific.DemonHunter
                         Spell.Cast("Fel Rush",
                             ret =>
                                 DemonHunterSettings.DPSWithFelRush &&
-                                (Common.HasTalent(DemonHunterTalents.FelMastery) && CurrentFury <= 70) || Spell.GetCharges("Fel Rush") > 1),
+                                ((Common.HasTalent(DemonHunterTalents.FelMastery) && CurrentFury <= 70) || Spell.GetCharges("Fel Rush") > 1)),
                         Spell.Cast("Chaos Strike", ret => CurrentFury >= 70),
                         Spell.Cast("Demon's Bite", ret => !Common.HasTalent(DemonHunterTalents.DemonBlades))
 

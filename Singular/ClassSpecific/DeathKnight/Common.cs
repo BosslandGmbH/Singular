@@ -88,9 +88,9 @@ namespace Singular.ClassSpecific.DeathKnight
             return new Sequence(
                 Spell.Cast("Death Grip", 
                     req => !MovementManager.IsMovementDisabled 
-                        && !Me.CurrentTarget.IsBoss() 
+                        && (SingularRoutine.CurrentWoWContext != WoWContext.Instances || !Me.GroupInfo.IsInParty || Me.IsTank)
                         && Me.CurrentTarget.DistanceSqr > 10 * 10 
-                        && (((Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TaggedByMe) && !Me.CurrentTarget.IsMovingTowards() ) || (!Me.CurrentTarget.TaggedByOther && Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull && SingularRoutine.CurrentWoWContext != WoWContext.Instances))
+                        && (((Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TaggedByMe) && !Me.CurrentTarget.IsMovingTowards() ) || (!Me.CurrentTarget.TaggedByOther && Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull))
                     ),
                 new DecoratorContinue( req => Me.IsMoving, new Action(req => StopMoving.Now())),
                 new WaitContinue( 1, until => !Me.GotTarget() || Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())

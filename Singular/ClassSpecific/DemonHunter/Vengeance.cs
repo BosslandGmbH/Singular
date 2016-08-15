@@ -83,9 +83,9 @@ namespace Singular.ClassSpecific.DemonHunter
                         Spell.Cast("Fiery Brand", on => (WoWUnit)on, ret => Me.HealthPercent <= DemonHunterSettings.FieryBrandHealthPercent),
 
                         // High Priority Single+AoE
-                        Spell.BuffSelf("Immolation Aura"),
+                        Spell.BuffSelf("Immolation Aura", ret => Unit.UnfriendlyUnits(8).Any()),
                         Spell.Cast("Soul Cleave", on => (WoWUnit)on, ret => CurrentPain >= 50),
-                        Spell.HandleOffGCD(Spell.CastOnGround("Infernal Strike", on => (WoWUnit)on, ret => Spell.GetCharges("Infernal Strike") > 1)),
+                        Spell.HandleOffGCD(Spell.CastOnGround("Infernal Strike", on => (WoWUnit)on, ret => DemonHunterSettings.DPSInfernalStrike && Spell.GetCharges("Infernal Strike") > 1)),
 
                         // Average Priority AoE
                         new Decorator(

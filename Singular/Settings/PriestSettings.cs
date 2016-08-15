@@ -77,8 +77,8 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(30)]
         [Category("Shadow")]
-        [DisplayName("Flash Heal %")]
-        [Description("Health % for Flash Heal for shadow spec.  Used only if all attackers within 40 yds are crowd controlled")]
+        [DisplayName("Shadow Mend %")]
+        [Description("Health % for Shadow Mend for shadow spec.  Used only if all attackers within 40 yds are crowd controlled")]
         public int ShadowHeal { get; set; }
 
         [Setting]

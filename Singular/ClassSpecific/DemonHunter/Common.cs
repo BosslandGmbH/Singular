@@ -42,7 +42,8 @@ namespace Singular.ClassSpecific.DemonHunter
                             Movement.WaitForLineOfSpellSight(),
 
                             CreateThrowGlaiveBehavior(),
-                            Spell.Cast("Fel Rush", ret => Me.CurrentTarget.Distance <= 15 && Settings.EngageWithFelRush)
+                            Spell.Cast("Fel Rush", ret => Settings.EngageWithFelRush && Me.CurrentTarget.Distance <= 15),
+                            Spell.HandleOffGCD(Spell.CastOnGround("Infernal Strike", on => (WoWUnit)on, ret => Settings.PullInfernalStrike && Me.CurrentTarget.Distance < 30))
                             )
                         )
                 );

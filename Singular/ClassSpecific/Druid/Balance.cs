@@ -66,6 +66,7 @@ namespace Singular.ClassSpecific.Druid
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
 						
+                        Spell.Cast("Sunfire", ret => Me.CurrentTarget.IsTrivial()),
 						Spell.Cast("Lunar Strike"),
 						Spell.Cast("Solar Wrath")
 						)

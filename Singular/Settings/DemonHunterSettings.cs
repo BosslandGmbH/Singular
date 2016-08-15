@@ -21,14 +21,14 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Havoc")]
-        [DisplayName("DPS with Fel Rush")]
+        [DisplayName("Fel Rush - DPS")]
         [Description("Fel Rush is apart of the Havoc DPS rotation. If it's causing navigation issues for you, you can turn it off here.")]
         public bool DPSWithFelRush { get; set; }
 
         [Setting]
         [DefaultValue(true)]
         [Category("Havoc")]
-        [DisplayName("Engage with Fel Rush")]
+        [DisplayName("Fel Rush - Pull")]
         [Description("Use Fel Rush to get towards a mob when first engaging the mob.")]
         public bool EngageWithFelRush { get; set; }
 
@@ -68,8 +68,22 @@ namespace Singular.Settings
         [DefaultValue(65)]
         [Category("Vengeance")]
         [DisplayName("Soul Cleave Health %")]
-        [Description("Sould Cleave is used to avoid Pain capping, however you can set this so that it's also used to heal when your health gets to this percentage.")]
+        [Description("Soul Cleave is used to avoid Pain capping, however you can set this so that it's also used to heal when your health gets to this percentage.")]
         public int SoulCleaveHealthPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Vengeance")]
+        [DisplayName("Infernal Strike - DPS")]
+        [Description("Infernal Strike can be used as an AoE damage ability. By default the bot will AoE with this spell if we have at least two charges of it. Setting this to false will prevent usage of completely.")]
+        public bool DPSInfernalStrike { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Vengeance")]
+        [DisplayName("Infernal Strike - Pull")]
+        [Description("Use Infernal Strike to pull mobs.  Only used if we're engaging mobs that aren't yet fighting us.")]
+        public bool PullInfernalStrike { get; set; }
 
         [Setting]
         [DefaultValue(45)]
@@ -82,7 +96,7 @@ namespace Singular.Settings
         [DefaultValue(2)]
         [Category("Vengeance")]
         [DisplayName("Sigil of Flame Count")]
-        [Description("This will set the routine to cast SigiL of Flame if this many mobs or more are attacking us.")]
+        [Description("This will make the bot cast Sigil of Flame if this many mobs or more are attacking us.")]
         public int SigilOfFlameCount { get; set; }
 
         [Setting]

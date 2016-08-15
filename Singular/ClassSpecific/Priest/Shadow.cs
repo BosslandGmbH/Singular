@@ -35,17 +35,9 @@ namespace Singular.ClassSpecific.Priest
 		[Behavior(BehaviorType.Initialize, WoWClass.Priest, WoWSpec.PriestShadow)]
         public static Composite CreateShadowInitialize()
         {
-            if (SpellManager.HasSpell("Flash Heal"))
+            if (SpellManager.HasSpell("Shadow Mend"))
             {
-                Logger.Write(LogColor.Init, "Flash Heal: if all enemies cc'd and health below {0}%", PriestSettings.ShadowHeal);
-            }
-
-            if (SpellManager.HasSpell("Prayer of Mending"))
-            {
-                if (PriestSettings.PrayerOfMending == 0)
-                    Logger.Write(LogColor.Init, "Prayer of Mending: disabled by user setting");
-                else
-                    Logger.Write(LogColor.Init, "Prayer of Mending: if all enemies cc'd and health below {0}%", PriestSettings.PrayerOfMending);
+                Logger.Write(LogColor.Init, "Shadow Mend: if all enemies cc'd and health below {0}%", PriestSettings.ShadowHeal);
             }
 
             if (SpellManager.HasSpell("Psychic Scream"))
@@ -70,7 +62,7 @@ namespace Singular.ClassSpecific.Priest
         {
             return new PrioritySelector(
                 Spell.BuffSelf("Dispersion", ret => Me.ManaPercent < SingularSettings.Instance.MinMana && Me.IsSwimming ),
-                Rest.CreateDefaultRestBehaviour("Flash Heal", "Resurrection"),
+                Rest.CreateDefaultRestBehaviour("Shadow Mend", "Resurrection"),
                 Common.CreatePriestMovementBuffOnTank("Rest")
                 );
 
@@ -91,49 +83,23 @@ namespace Singular.ClassSpecific.Priest
         public static Composite CreateShadowHeal()
         {
             return new PrioritySelector(
-                Spell.Cast("Desperate Prayer", ret => Me, ret => Me.HealthPercent < PriestSettings.DesperatePrayerHealth),
-
-                Spell.BuffSelf("Power Word: Shield", ret => (Me.HealthPercent < PriestSettings.PowerWordShield || (!Me.HasAura("Shadowform") && SpellManager.HasSpell("Shadowform"))) && !Me.HasAura("Weakened Soul")),
+                Spell.BuffSelf("Power Word: Shield", ret => Me.HealthPercent < PriestSettings.PowerWordShield && !Me.HasAura("Weakened Soul")),
 
                 Common.CreatePsychicScreamBehavior(),
+                Spell.Cast(
+                    "Shadow Mend",
+                    ctx => Me,
+                    ret => {
+                        if (Me.HealthPercent > PriestSettings.ShadowHeal)
+                            return false;
 
-                // skip direct heals if VE is up (unless no mobs in range)
-                new Decorator(
-                    req => !Me.HasAura("Vampiric Embrace") || !Unit.UnitsInCombatWithMeOrMyStuff(40).Any(),
-                    new PrioritySelector(
-                        Spell.Cast(
-                            "Prayer of Mending",
-                            ctx => Me,
-                            ret => {
-                                if (!Me.Combat)
-                                    return false;
+                        if (Unit.UnitsInCombatWithMeOrMyStuff(40).Any(u => !u.IsCrowdControlled()))
+                            return false;
 
-                                if (Me.HealthPercent > PriestSettings.PrayerOfMending)
-                                    return false;
-
-                                if (!Unit.UnitsInCombatWithMeOrMyStuff(40).All(u => u.IsCrowdControlled()))
-                                    return false;
-
-                                return true;
-                                }
-                            ),
-
-                        Spell.Cast(
-                            "Flash Heal",
-                            ctx => Me,
-                            ret => {
-                                if (Me.HealthPercent > PriestSettings.ShadowHeal)
-                                    return false;
-
-                                if (Unit.UnitsInCombatWithMeOrMyStuff(40).Any(u => !u.IsCrowdControlled()))
-                                    return false;
-
-                                return true;
-                                }
-                            )
-                        )
-                    )
-                );
+                        return true;
+                    }
+                )
+            );
         }
 
         #region Normal Rotation

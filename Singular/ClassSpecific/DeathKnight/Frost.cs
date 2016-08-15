@@ -47,6 +47,8 @@ namespace Singular.ClassSpecific.DeathKnight
                         Movement.WaitForLineOfSpellSight(),
 
                         Common.CreateDeathKnightPullMore(),
+
+                        Common.CreateDeathGripBehavior(),
 						
                         // Cooldowns
                         Spell.BuffSelf("Pillar of Frost", req => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.IsStressful()),

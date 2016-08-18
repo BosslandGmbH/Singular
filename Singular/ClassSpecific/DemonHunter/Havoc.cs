@@ -79,7 +79,7 @@ namespace Singular.ClassSpecific.DemonHunter
                         // Single Target Rotation
                         Spell.Cast("Vengeful Retreat",
                             ret =>
-                                DemonHunterSettings.UseVengefulRetreat &&
+                                DemonHunterSettings.UseVengefulRetreat && Me.CurrentTarget.IsWithinMeleeRange &&
                                 (CurrentFury <= 85 || Common.HasTalent(DemonHunterTalents.Prepared))),
                         Spell.Cast("Fel Rush",
                             ret =>

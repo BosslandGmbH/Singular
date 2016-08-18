@@ -86,6 +86,7 @@ namespace Singular.ClassSpecific.Rogue
 
                 CreateStealthBehavior(ret => RogueSettings.StealthIfEating && Helpers.Rest.IsEatingOrDrinking),
                 Rest.CreateDefaultRestBehaviour( ),
+                CreateStealthBehavior(ret => RogueSettings.Stealth == StealthMode.Always),
 
                 CheckThatDaggersAreEquippedIfNeeded()
                 );
@@ -372,10 +373,9 @@ namespace Singular.ClassSpecific.Rogue
                         new PrioritySelector(
                             Spell.Buff("Sap", req => AreStealthAbilitiesAvailable && IsUnitViableForSap(Me.CurrentTarget)),
                             new Decorator(
-                                req => !Me.HasAnyAura("Sprint","Burst of Speed","Shadowstep"),
+                                req => !Me.HasAnyAura("Sprint","Shadowstep"),
                                 new PrioritySelector(
                                     Spell.BuffSelf("Shadowstep"),
-                                    Spell.BuffSelf("Burst of Speed"),
                                     Spell.BuffSelf("Sprint")
                                     )
                                 ),

@@ -65,6 +65,8 @@ namespace Singular.ClassSpecific.Warrior
 
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
+                        Spell.Cast("Storm Bolt", ret => WarriorSettings.ThrowPull == ThrowPull.StormBolt || WarriorSettings.ThrowPull == ThrowPull.Auto),
+                        Spell.Cast("Heroic Throw", ret => WarriorSettings.ThrowPull == ThrowPull.HeroicThrow || WarriorSettings.ThrowPull == ThrowPull.Auto),
                         Common.CreateChargeBehavior(),
 
                         //Buff up
@@ -256,10 +258,12 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     ret => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1,
                     new PrioritySelector(
+                        Spell.BuffSelf("Avatar", ret => WarriorSettings.AvatarOnCooldownAOE),
                         Spell.Cast("Thunder Clap", on => Unit.UnfriendlyUnits(Common.DistanceWindAndThunder(8)).FirstOrDefault()),
                         Spell.Cast("Shockwave", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => Me.IsSafelyFacing(u)), ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 10f) >= 3))
                     ),
 
+                Spell.BuffSelf("Avatar", ret => WarriorSettings.AvatarOnCooldownSingleTarget),
                 Spell.Cast("Ignore Pain", when => Me.RagePercent > 70 && !Me.HasAura("Ignore Pain")),
                 Spell.Cast("Shield Block"),
 

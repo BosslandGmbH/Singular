@@ -35,8 +35,8 @@ namespace Singular.ClassSpecific.Monk
 	    {
 		    return new PrioritySelector(
 				Spell.BuffSelf("Fortifying Brew", req => Me.HealthPercent <= MonkSettings.FortifyingBrewPct),
-				Spell.BuffSelf("Ironskin Brew", req => Spell.GetCharges("Ironskin Brew") > 1),
-				Spell.BuffSelf("Purifying Brew", req => Me.HasAura("Moderate Stagger")),
+                Spell.BuffSelf("Ironskin Brew", req => MonkSettings.UseIronskinBrew && Spell.GetCharges("Ironskin Brew") > MonkSettings.IronskinBrewCharges),
+                Spell.BuffSelf("Purifying Brew", req => Me.HasAura((int)MonkSettings.Stagger)),
 				Spell.BuffSelf("Expel Harm", req => Common.SphereCount(SphereType.Healing, 30) >= 3),
 				Spell.BuffSelf("Black Ox Brew", req => Spell.GetCharges("Ironskin Brew") <= 0)
 			    );
@@ -92,7 +92,7 @@ namespace Singular.ClassSpecific.Monk
 							Spell.Cast("Blackout Strike", on => (WoWUnit)on),
 							Spell.Cast("Rushing Jade Wind", on => (WoWUnit)on),
 							Spell.Cast("Chi Wave", on => (WoWUnit)on),
-							Spell.Cast("Leg Sweep", on => (WoWUnit)on),
+							Spell.Cast("Leg Sweep", on => (WoWUnit)on, ret => ((WoWUnit)ret).IsWithinMeleeRange),
 							Spell.Cast("Breath of Fire", on => (WoWUnit)on, req => Unit.UnfriendlyUnits(8).Any()),
 
 							Common.CreateCloseDistanceBehavior()

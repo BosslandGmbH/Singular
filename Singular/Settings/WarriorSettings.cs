@@ -7,6 +7,13 @@ using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 
 namespace Singular.Settings
 {
+    public enum ThrowPull
+    {
+        HeroicThrow,
+        StormBolt,
+        Auto,
+        None
+    }
     public enum WarriorStance
     {
         Auto,
@@ -77,6 +84,20 @@ namespace Singular.Settings
         #region DPS
 
         [Setting]
+        [DefaultValue(true)]
+        [Category("DPS")]
+        [DisplayName("Avatar on Cooldown - AOE")]
+        [Description("This will make the bot use Avatar anytime it is off cooldown while fighting multiple mobs.")]
+        public bool AvatarOnCooldownAOE { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("DPS")]
+        [DisplayName("Avatar on Cooldown - Single Target")]
+        [Description("This will make the bot use Avatar anytime it is off cooldown while fighting a single mob.")]
+        public bool AvatarOnCooldownSingleTarget { get; set; }
+
+        [Setting]
         [DefaultValue(50)]
         [Category("DPS")]
         [DisplayName("Enraged Regeneration Health")]
@@ -99,12 +120,22 @@ namespace Singular.Settings
 
         #endregion
 
+        #region Pull
+        [Setting]
+        [DefaultValue(ThrowPull.None)]
+        [Category("Pull")]
+        [DisplayName("Throw Pull")]
+        [Description("Which throw ability the bot should use when pulling.")]
+        public ThrowPull ThrowPull { get; set; }
+
         [Setting]
         [DefaultValue(true)]
-        [Category("General")]
+        [Category("Pull - Gap Closer")]
         [DisplayName("Use Charge/Heroic Leap?")]
-        [Description("True / False if you would like the cc to use any gap closers")]
+        [Description("Setting this to true will make the bot charge or leap at mobs that are away from us or while engaging/pulling mobs.")]
         public bool UseWarriorCloser { get; set; }
+
+        #endregion
 
         [Setting]
         [DefaultValue(WarriorShout.BattleShout)]

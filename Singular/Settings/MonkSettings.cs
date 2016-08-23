@@ -9,6 +9,13 @@ using System.Drawing;
 
 namespace Singular.Settings
 {
+    public enum StaggerLevel
+    {
+        Light = 124275,
+        Moderate = 124274,
+        Heavy = 124273
+    }
+
     internal class MonkSettings : Styx.Helpers.Settings
     {
         public MonkSettings()
@@ -42,9 +49,9 @@ namespace Singular.Settings
         public int DampenHarmPct { get; set; }
 
         [Setting]
-        [DefaultValue(60)]
+        [DefaultValue(3)]
         [Category("Common")]
-        [DisplayName("Dampen Harm Percent")]
+        [DisplayName("Dampen Harm Count")]
         [Description("Dampen Harm is used when facing this many attackers")]
         public int DampenHarmCount { get; set; }
 
@@ -75,38 +82,31 @@ namespace Singular.Settings
         #region Brewmaster
 
         [Setting]
-        [DefaultValue(6)]
+        [DefaultValue(StaggerLevel.Moderate)]
         [Category("Brewmaster")]
-        [DisplayName("Elusive Brew Min. Stack")]
-        [Description("Elusive Brew is used when player has this many stacks of Elusive Brew or more")]
-        public int ElusiveBrewMinumumCount { get; set; }
+        [DisplayName("Purifying Brew at Stagger Level")]
+        [Description("This setting will determine what level of stagger the bot should use Purifying Brew at.")]
+        public StaggerLevel Stagger { get; set; }
 
         [Setting]
         [DefaultValue(true)]
         [Category("Brewmaster")]
-        [DisplayName("Use Elusive Brew")]
-        public bool UseElusiveBrew { get; set; }
+        [DisplayName("Use Ironskin Brew")]
+        [Description("Enable or Disable usage of Ironskin Brew")]
+        public bool UseIronskinBrew { get; set; }
 
         [Setting]
-        [DefaultValue(90)]
+        [DefaultValue(1)]
         [Category("Brewmaster")]
-        [DisplayName("Guard Health Percent")]
-        [Description("Guard is used when health percent is at or below this value")]
-        public int GuardHealthPct { get; set; }
-
-        [Setting]
-        [DefaultValue(2)]
-        [Category("Brewmaster")]
-        [DisplayName("Guard Mob Count")]
-        [Description("Guard is used when in combat with this many mobs or more")]
-        public int GuardMobCount { get; set; }
-
+        [DisplayName("Ironskin Brew Charges")]
+        [Description("Ironskin Brew will be used until this many brew charges are left. This allows us to actively save charges for Purifying Brew usage.")]
+        public int IronskinBrewCharges { get; set; }
 
         #endregion
 
         #region Windwalker
 
-		[Setting]
+        [Setting]
 		[DefaultValue(true)]
 		[Category("Windwalker")]
 		[DisplayName("Use Storm, Earth, and Fire")]

@@ -21,6 +21,7 @@ namespace Singular.ClassSpecific.Warrior
     public class Fury
     {
         private static LocalPlayer Me => StyxWoW.Me;
+        private static WarriorSettings WarriorSettings => SingularSettings.Instance.Warrior();
         private static CombatScenario Scenario { get; set; }
 
         [Behavior(BehaviorType.Initialize, WoWClass.Warrior, WoWSpec.WarriorFury)]
@@ -67,6 +68,8 @@ namespace Singular.ClassSpecific.Warrior
 
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
+                        Spell.Cast("Storm Bolt", ret => WarriorSettings.ThrowPull == ThrowPull.StormBolt || WarriorSettings.ThrowPull == ThrowPull.Auto),
+                        Spell.Cast("Heroic Throw", ret => WarriorSettings.ThrowPull == ThrowPull.HeroicThrow || WarriorSettings.ThrowPull == ThrowPull.Auto),
                         Common.CreateChargeBehavior(),
 
                         Spell.Cast("Rampage")
@@ -197,6 +200,7 @@ namespace Singular.ClassSpecific.Warrior
                         new Decorator(  // Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3,
                             ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() < Common.DistanceWindAndThunder(8)) >= 3,                       
                             new PrioritySelector(
+                                Spell.BuffSelf("Avatar", ret => WarriorSettings.AvatarOnCooldownAOE),
                                 Spell.BuffSelf("Bladestorm"),
                                 Spell.Cast("Shockwave"),
 
@@ -232,9 +236,11 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     req => Me.CurrentTarget.HealthPercent > 20,
                     new PrioritySelector(
-                        new Decorator(req => (!Common.IsEnraged || Me.RagePercent >= 100) && Spell.CanCastHack("Rampage"),
+                        Spell.BuffSelf("Avatar", ret => WarriorSettings.AvatarOnCooldownSingleTarget),
+                        new Decorator(req => (!Common.IsEnraged || Me.RagePercent >= 100) && SpellManager.CanCast("Rampage"),
                             new PrioritySelector(
                                 Spell.Cast("Dragon Roar"),
+                                Spell.Cast("Battle Cry"),
                                 Spell.Cast("Rampage")
                         )),
                         Spell.Cast("Bloodthirst", ret => !Common.IsEnraged),

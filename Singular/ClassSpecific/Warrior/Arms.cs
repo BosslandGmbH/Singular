@@ -81,6 +81,8 @@ namespace Singular.ClassSpecific.Warrior
 
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
+                        Spell.Cast("Storm Bolt", ret => WarriorSettings.ThrowPull == ThrowPull.StormBolt || WarriorSettings.ThrowPull == ThrowPull.Auto),
+                        Spell.Cast("Heroic Throw", ret => WarriorSettings.ThrowPull == ThrowPull.HeroicThrow || WarriorSettings.ThrowPull == ThrowPull.Auto),
                         Common.CreateChargeBehavior(),
 
                         Spell.Cast("Mortal Strike")
@@ -219,6 +221,8 @@ namespace Singular.ClassSpecific.Warrior
                             ret => Me.GotTarget(), // WarriorSettings.ArmsSpellPriority == WarriorSettings.SpellPriority.Noxxic,
                             new PrioritySelector(
 
+                                Spell.BuffSelf("Avatar", ret => WarriorSettings.AvatarOnCooldownSingleTarget),
+
                                 new Decorator(
                                     ret => Spell.UseAOE && Me.GotTarget() && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss()) && Me.CurrentTarget.SpellDistance() < 8,
                                     new PrioritySelector(
@@ -282,6 +286,7 @@ namespace Singular.ClassSpecific.Warrior
             return new PrioritySelector(
                 new Decorator(ret => Spell.UseAOE && aoeCount(ret) >= 3,
                     new PrioritySelector(
+                        Spell.BuffSelf("Avatar", ret => WarriorSettings.AvatarOnCooldownAOE),
                         Spell.Cast("Cleave"),
                         Spell.Cast("Thunder Clap"),
 

@@ -16,6 +16,31 @@ namespace Singular.Settings
         {
         }
 
+        #region Category: OutOfCombat
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Out of Combat")]
+        [DisplayName("Soul Fragment Heal")]
+        [Description("While at rest and outside of combat, setting this to true will make the bot use Soul Fragments to heal.")]
+        public bool OOCUseSoulFragments { get; set; }
+
+        [Setting]
+        [DefaultValue(90)]
+        [Category("Out of Combat")]
+        [DisplayName("Soul Fragment Health%")]
+        [Description("If heal with soul fragments is set to true, this is how low our health percent must be for us to engage the Soul Fragmets.")]
+        public int OOCSoulFragmentHealthPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(25)]
+        [Category("Out of Combat")]
+        [DisplayName("Soul Fragment Range")]
+        [Description("If heal with soul fragments is set to true, this is how far away the bot will go to get the Soul Fragments.")]
+        public float OOCSoulFragmentRange { get; set; }
+
+        #endregion
+
         #region Category: Havoc
 
         [Setting]
@@ -60,6 +85,36 @@ namespace Singular.Settings
         [Description("Use Darnkess when you get at or below this health percent.")]
         public int HavocDarknessHealthPercent { get; set; }
 
+        #endregion
+
+        #region HavocSoulFragments
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Havoc - Soul Fragments")]
+        [DisplayName("Use Soul Fragments")]
+        [Description("Use Soul Fragments to heal or to generate fury while in combat.")]
+        public bool HavocUseSoulFragments { get; set; }
+
+        [Setting]
+        [DefaultValue(65)]
+        [Category("Havoc - Soul Fragments")]
+        [DisplayName("Soul Fragment Health%")]
+        [Description("If heal with soul fragments is set to true, this is how low our health percent must be for us to engage the Soul Fragmets.")]
+        public int HavocSoulFragmentHealthPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(20)]
+        [Category("Havoc - Soul Fragments")]
+        [DisplayName("Soul Fragment Fury")]
+        [Description("If our fury goes under this amount, we can use Soul Fragments to regen Fury.")]
+        public int HavocSoulFragmentFuryPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(20)]
+        [Category("Havoc - Soul Fragments")]
+        [DisplayName("Soul Fragment Range")]
+        [Description("This is how far away the bot will go out of its way to get the Soul Fragments.")]
+        public float HavocSoulFragmentRange { get; set; }
         #endregion
 
         #region Category: Vengeance

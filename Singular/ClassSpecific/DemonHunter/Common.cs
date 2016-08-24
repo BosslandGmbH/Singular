@@ -13,6 +13,7 @@ using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
+using Rest = Singular.Helpers.Rest;
 using System.Drawing;
 using System.Collections.Generic;
 
@@ -23,6 +24,23 @@ namespace Singular.ClassSpecific.DemonHunter
         private static LocalPlayer Me => StyxWoW.Me;
 	    private static DemonHunterSettings Settings => SingularSettings.Instance.DemonHunter();
 	    public static bool HasTalent(DemonHunterTalents talent) => TalentManager.IsSelected((int)talent);
+
+
+        #region Rest
+
+        [Behavior(BehaviorType.Rest, WoWClass.DemonHunter)]
+        public static Composite CreateDemonHunterRest()
+        {
+            return new PrioritySelector(
+                new Decorator(
+                    ret => Settings.OOCUseSoulFragments && !Rest.IsEatingOrDrinking && Me.HealthPercent <= Settings.OOCSoulFragmentHealthPercent,
+                        CreateCollectFragmentsBehavior(Settings.OOCSoulFragmentRange)
+                    ),
+
+                    Rest.CreateDefaultRestBehaviour()
+                );
+        }
+        #endregion
 
 
         #region Pull
@@ -79,9 +97,47 @@ namespace Singular.ClassSpecific.DemonHunter
                     )
                 );
         }
-	}
 
-	public enum DemonHunterTalents
+        #region Fragment Composites
+
+        private static IEnumerable<WoWAreaTrigger> FindFragments(float range)
+        {
+            range *= range;
+            return ObjectManager.GetObjectsOfType<WoWAreaTrigger>()
+                .Where(
+                    o =>
+                        !Blacklist.Contains(o, BlacklistFlags.Loot) && o.Caster == Me && o.DistanceSqr <= range &&
+                        (o.Entry == 11266 || o.Entry == 10665 || o.Entry == 12929 || o.Entry == 8352)).OrderBy(o => o.DistanceSqr);
+        }
+
+        public static Composite CreateCollectFragmentsBehavior(float range)
+        {
+            return new Decorator(
+                ret => !MovementManager.IsMovementDisabled && !Me.IsRooted(),
+                new PrioritySelector(
+                    // Set the closest fragment as the context.
+                    ctx => FindFragments(range).FirstOrDefault(),
+                    new Decorator(
+                        // Check if we could find a fragment. Context will be null when there were no fragments.
+                        ret => ret != null,
+                        new PrioritySelector(
+                            // Move to the fragment. This returns Failure when we are already in given range (3f)
+                            Movement.CreateMoveToLocationBehavior(to => ((WoWAreaTrigger) to).Location, false, distance => 3f),
+                            new Decorator(
+                                // Now check if fragment was not vacuumed to us automatically. We are already in 3 yards
+                                // range of the fragment and fragment is still valid at this point
+                                ret => ((WoWAreaTrigger) ret).IsValid,
+                                new Action(
+                                    ret =>
+                                        Blacklist.Add(((WoWAreaTrigger) ret).Guid, BlacklistFlags.Loot,
+                                            TimeSpan.FromMinutes(1), "Reached to fragment but it was not vacuumed")))
+                            ))));
+        }
+        #endregion
+
+    }
+
+    public enum DemonHunterTalents
     {
         FelMastery = 1,
         ChaosCleave,

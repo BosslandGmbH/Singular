@@ -35,6 +35,12 @@ namespace Singular.ClassSpecific.DemonHunter
         {
             return new PrioritySelector(
 
+                new Decorator(
+                    ret => DemonHunterSettings.HavocUseSoulFragments &&
+                    (Me.HealthPercent <= DemonHunterSettings.HavocSoulFragmentHealthPercent || CurrentFury <= DemonHunterSettings.HavocSoulFragmentFuryPercent),
+                        Common.CreateCollectFragmentsBehavior(DemonHunterSettings.HavocSoulFragmentRange)
+                    ),
+
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
 

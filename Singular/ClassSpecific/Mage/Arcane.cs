@@ -51,6 +51,7 @@ namespace Singular.ClassSpecific.Mage
 
                         Common.CreateMagePullBuffs(),
                         Spell.BuffSelf("Arcane Power"),
+                        Spell.BuffSelf("Mirror Image", ret => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= MageSettings.MirrorImageCount),
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),

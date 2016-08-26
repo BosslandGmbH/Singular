@@ -89,8 +89,9 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanEnhancementHeal()
         {
             return new PrioritySelector(
+                Spell.CastOnGround("Rainfall", on => Me, ret => Me.HealthPercent < ShamanSettings.Rainfall),
                 Spell.Cast("Healing Surge", on => Me, 
-                    ret => Me.PredictedHealthPercent(includeMyHeals: true) < ShamanSettings.MaelHealingSurge && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
+                    ret => Me.PredictedHealthPercent(true) < ShamanSettings.MaelHealingSurge && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
 
                 Common.CreateShamanDpsHealBehavior()
                 );
@@ -102,7 +103,7 @@ namespace Singular.ClassSpecific.Shaman
             return Common.CreateShamanDpsHealBehavior();
         }
 
-        [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Battlegrounds )]
+        [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Battlegrounds)]
         public static Composite CreateShamanEnhancementHealPvp()
         {
             return new PrioritySelector(
@@ -123,7 +124,6 @@ namespace Singular.ClassSpecific.Shaman
         #endregion
 
         #region Normal Rotation
-
         [Behavior(BehaviorType.Pull, WoWClass.Shaman, WoWSpec.ShamanEnhancement)]
         public static Composite CreateShamanEnhancementNormalPull()
         {
@@ -144,6 +144,8 @@ namespace Singular.ClassSpecific.Shaman
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
+
+                        Spell.Cast("Feral Lunge", ret => ShamanSettings.UseFeralLunge),
 
                         Spell.Cast("Lightning Bolt", ret => !ShamanSettings.AvoidMaelstromDamage && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
                         Spell.Cast("Unleash Elements", 
@@ -201,19 +203,23 @@ namespace Singular.ClassSpecific.Shaman
 
                                 // pull more logic (use instants first, then ranged pulls if possible)
 
+                                Spell.Cast("Ascendance", req => Me.HealthPercent <= ShamanSettings.AscendanceHealthPercent),
+                                Spell.Cast("Lava Lash", req => Me.HasActiveAura("Hot Hand")),
+                                Spell.Cast("Windsong"),
                                 Spell.Cast("Rockbiter", 
-									req => Common.HasTalent(ShamanTalents.Boulderfist) && !Me.HasActiveAura("Boulderfist") || 
-											Common.HasTalent(ShamanTalents.Landslide) && !Me.HasActiveAura("Landslide")),
+									req => (Common.HasTalent(ShamanTalents.Boulderfist) && !Me.HasActiveAura("Boulderfist")) || 
+											(Common.HasTalent(ShamanTalents.Landslide) && !Me.HasActiveAura("Landslide"))),
                                 Spell.Cast("Frostbrand", req => Common.HasTalent(ShamanTalents.Hailstorm) && !Me.HasActiveAura("Frostbrand")),
 								Spell.Cast("Boulderfist", req => Me.CurrentMaelstrom < 130 && Spell.GetCharges("Boulderfist") >= 2),
                                 Spell.Cast("Flametongue", req => !Me.HasActiveAura("Flametongue")),
                                 Spell.Cast("Feral Spirit"),
+                                Spell.Cast("Earthen Spike"),
                                 Spell.Cast("Crash Lightning", when => Unit.UnfriendlyUnitsNearTarget(10).Count(u => u.TaggedByMe || !u.TaggedByOther) >= 2),
                                 Spell.Cast("Stormstrike"),
 								Spell.Cast("Crash Ligthning", req => Common.HasTalent(ShamanTalents.CrashingStorm)),
                                 Spell.Cast("Lava Lash", req => Me.CurrentMaelstrom > 110),
-                                Spell.Cast("Boulderfist"),
-                                Spell.Cast("Flametongue"),
+                                Spell.Cast("Sundering", req => SingularRoutine.CurrentWoWContext != WoWContext.Instances),
+                                Spell.Cast("Rockbiter"),
                                 Spell.Cast("Lightning Bolt", req => !Me.CurrentTarget.IsWithinMeleeRange),
                                 // won't happen often, but if at range and no abilities enter ghost wolf 
                                 CreateInCombatGapCloser()
@@ -253,13 +259,13 @@ namespace Singular.ClassSpecific.Shaman
 
         public static Composite CreateInCombatGapCloser()
         {
-            if (!ShamanSettings.UseGhostWolf)
+            if (!ShamanSettings.UseGhostWolf && !ShamanSettings.UseFeralLunge)
                 return new ActionAlwaysFail();
 
             if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
                 return new ActionAlwaysFail();
 
-            if (!SpellManager.HasSpell("Ghost Wolf"))
+            if (!SpellManager.HasSpell("Ghost Wolf") && !SpellManager.HasSpell("Feral Lunge"))
                 return new ActionAlwaysFail();
 
             if (Me.Specialization != WoWSpec.ShamanEnhancement)
@@ -270,6 +276,8 @@ namespace Singular.ClassSpecific.Shaman
                     && !Me.CurrentTarget.IsWithinMeleeRange
                     && !Me.Mounted,
                 new PrioritySelector(
+
+                    Spell.Cast("Feral Lunge", ret => ShamanSettings.UseFeralLunge), // Instantly get to target.
 
                     // slow or root based on distance and cooldown
                     new Decorator(

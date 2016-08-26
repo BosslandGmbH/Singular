@@ -148,13 +148,6 @@ namespace Singular.Settings
         [Description("Won't attempt to use healing spells unless below this health percent")]
         public int DontHealPercent { get; set; }
 
-        [Setting]
-        [DefaultValue(3)]
-        [Category("Shadow")]
-        [DisplayName("Talent T6: Mob Count")]
-        [Description("0 = disable, 1 = on cooldown, otherwise minimum number of mobs to hit.  Will not cast if it will break CC or aggro non-trivial mobs not in combat")]
-        public int TalentTier6Count { get; set; }
-
         #endregion
 
         #region Common

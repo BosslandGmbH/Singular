@@ -118,6 +118,7 @@ namespace Singular.ClassSpecific.Shaman
                         Common.CreateShamanDpsShieldBehavior(),
 
                         Totems.CreateTotemsBehavior(),
+                        Spell.BuffSelf("Totem Mastery", req => !Me.HasAura("Ember Totem")), // Only one buff should need to be checked.
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
@@ -194,6 +195,9 @@ namespace Singular.ClassSpecific.Shaman
 						
                         Common.CastElementalBlast(),
 
+                        Spell.Cast("Lightning Surge Totem", ret => ShamanSettings.UseLightningSurgeTotem && SingularRoutine.CurrentWoWContext == WoWContext.Normal
+                                                                    && Unit.UnfriendlyUnits(8).Count() >= ShamanSettings.LightningSurgeTotemCount),
+                        Spell.BuffSelf("Totem Mastery", req => !Me.HasAura("Ember Totem")), // Only one buff should need to be checked.
                         Spell.Buff("Flame Shock", true, req => !Me.CurrentTarget.HasMyAura("Flame Shock") && Me.CurrentTarget.TimeToDeath(int.MaxValue) > 6),
                         Spell.Cast("Fire Elemental"),
                         Spell.Cast("Earth Shock", req => MaelstormDeficit <= 0),

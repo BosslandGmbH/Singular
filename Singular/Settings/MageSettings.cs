@@ -54,6 +54,13 @@ namespace Singular.Settings
         public bool SummonTableIfInParty { get; set; }
 
         [Setting]
+        [DefaultValue(2)]
+        [Category("Common")]
+        [DisplayName("Mirror Image Count")]
+        [Description("If this many mobs are attacking us, Mirror Image will be used.")]
+        public int MirrorImageCount { get; set; }
+
+        [Setting]
         [DefaultValue(false)]
         [Category("Common")]
         [DisplayName("Use Time Warp")]
@@ -101,6 +108,17 @@ namespace Singular.Settings
         [DisplayName("Evocation Mana %")]
         [Description("Mana % to cast this ability")]
         public int EvocationManaPct { get; set; }
+
+        #endregion
+
+        #region  Category: Fire
+
+        [Setting]
+        [DefaultValue(2)]
+        [Category("Fire")]
+        [DisplayName("Cinderstorm Mob Count")]
+        [Description("How many mobs should be near our target in order for us to use Cinderstorm. This does not count our current target, only the mobs around it.")]
+        public int CinderstormCount { get; set; }
 
         #endregion
 

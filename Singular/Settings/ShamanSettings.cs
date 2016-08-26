@@ -126,6 +126,20 @@ namespace Singular.Settings
         #region Category: Elemental
 
         [Setting]
+        [DefaultValue(true)]
+        [Category("Elemental")]
+        [DisplayName("Use Lightning Surge Totem")]
+        [Description("Setting this to true will make the bot use Lightning Surge Totem while in solo and during AoE combat.")]
+        public bool UseLightningSurgeTotem { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Elemental")]
+        [DisplayName("Lightning Surge Totem AoE Count")]
+        [Description("How many mobs must be attacking us before we consider using Lightning Surge Totem.")]
+        public int LightningSurgeTotemCount { get; set; }
+
+        [Setting]
         [DefaultValue(6)]
         [Category("Elemental")]
         [DisplayName("Earthquake Count")]
@@ -150,6 +164,20 @@ namespace Singular.Settings
 
 
         #region Category: Enhancement
+        [Setting]
+        [DefaultValue(65)]
+        [Category("Enhancement")]
+        [DisplayName("Ascendance Health %")]
+        [Description("Health % to cast this ability at. Set to 100 to cast on cooldown, Set to 0 to disable.")]
+        public int AscendanceHealthPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Enhancement")]
+        [DisplayName("Feral Lunge")]
+        [Description("Use Feral Lunge while pulling or gaping closer to mobs.")]
+        public bool UseFeralLunge { get; set; }
+
         [Setting]
         [DefaultValue(CastOn.All)]
         [Category("Enhancement")]
@@ -181,6 +209,13 @@ namespace Singular.Settings
         #endregion
 
         #region Category: Self-Healing
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Self-Heal")]
+        [DisplayName("Rainfall %")]
+        [Description("Health % to cast this ability at. Set to 100 to cast on cooldown, Set to 0 to disable.")]
+        public int Rainfall { get; set; }
 
         [Setting]
         [DefaultValue(85)]

@@ -58,7 +58,7 @@ namespace Singular.ClassSpecific.DemonHunter
                         Common.CreateDemonHunterPullMore(),
 
                         // Buffs + Mitigation
-                        Spell.CastOnGround("Metamorphosis", on => (WoWUnit)on, ret => Me.HealthPercent <= DemonHunterSettings.HavocMetamorphosisHealthPercent),
+                        Spell.CastOnGround("Metamorphosis", on => Me.CurrentTarget, ret => Me.HealthPercent <= DemonHunterSettings.HavocMetamorphosisHealthPercent),
                         Spell.BuffSelf("Blur", ret => Me.HealthPercent <= DemonHunterSettings.BlurHealthPercent),
                         Spell.BuffSelf("Darkness", ret => Me.HealthPercent <= DemonHunterSettings.HavocDarknessHealthPercent),
 
@@ -68,15 +68,15 @@ namespace Singular.ClassSpecific.DemonHunter
                             new PrioritySelector(
                                 Spell.Cast("Fel Rush",
                                     ret =>
-                                        DemonHunterSettings.DPSWithFelRush &&
-                                        ( (Common.HasTalent(DemonHunterTalents.FelMastery) && Havoc.CurrentFury <= 70) || (Unit.NearbyUnfriendlyUnits.Count() >= 3 && Spell.GetCharges("Fel Rush") > 1) )),
+                                        DemonHunterSettings.DPSWithFelRush && Me.CurrentTarget.Distance <= 15 && Me.IsSafelyFacing(Me.CurrentTarget, 5f) &&
+                                        ( (Common.HasTalent(DemonHunterTalents.FelMastery) && CurrentFury <= 70) || (Unit.NearbyUnfriendlyUnits.Count() >= 3 && Spell.GetCharges("Fel Rush") > 1) )),
                                 Spell.Cast("Vengeful Retreat",
                                     ret =>
                                         DemonHunterSettings.UseVengefulRetreat && Me.CurrentTarget.IsWithinMeleeRange &&
                                         (Common.HasTalent(DemonHunterTalents.Prepared) || CurrentFury <= 85)),
-                                Spell.Cast("Eye Beam"),
+                                Spell.Cast("Eye Beam"), // WaitForFacing will rotate us around for this.
                                 Spell.Cast("Chaos Strike", ret => Common.HasTalent(DemonHunterTalents.ChaosCleave) && Unit.NearbyUnfriendlyUnits.Count() <= 3),
-                                Spell.Cast("Blade Dance", ret => Unit.NearbyUnfriendlyUnits.Count() >= 4),
+                                Spell.Cast("Blade Dance", ret => Unit.UnfriendlyUnits(8).Count() >= 3),
                                 Spell.Cast("Chaos Strike", ret => CurrentFury >= 70),
                                 Spell.Cast("Demon's Bite", ret => !Common.HasTalent(DemonHunterTalents.DemonBlades))
                                 )
@@ -89,7 +89,7 @@ namespace Singular.ClassSpecific.DemonHunter
                                 (CurrentFury <= 85 || Common.HasTalent(DemonHunterTalents.Prepared))),
                         Spell.Cast("Fel Rush",
                             ret =>
-                                DemonHunterSettings.DPSWithFelRush &&
+                                DemonHunterSettings.DPSWithFelRush && Me.CurrentTarget.Distance <= 15 && Me.IsSafelyFacing(Me.CurrentTarget, 5f) &&
                                 ((Common.HasTalent(DemonHunterTalents.FelMastery) && CurrentFury <= 70) || Spell.GetCharges("Fel Rush") > 1)),
                         Spell.Cast("Chaos Strike", ret => CurrentFury >= 70),
                         Spell.Cast("Demon's Bite", ret => !Common.HasTalent(DemonHunterTalents.DemonBlades))

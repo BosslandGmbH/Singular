@@ -273,16 +273,6 @@ namespace Singular.ClassSpecific.Priest
                                     req => true
                                     ),
                                 
-                                new Decorator(
-                                    req => cntAoeTargets >= PriestSettings.TalentTier6Count,
-                                    new PrioritySelector(
-                                        // halo only if nothing near we aren't already in combat with
-                                        Spell.Cast("Halo", req => UseHalo()),
-                                        Spell.Cast("Cascade", on => GetBestCascadeTarget()),
-                                        Spell.Cast("Divine Star", req => UseDivineStar())
-                                        )
-                                    ),
-                                
                                 // When we enter void form, even if AOE, we use our single target rotation after maintaining debuffs.
                                 new Decorator(ret => InVoidform,
                                     CreateMaintainVoidformBehaviour()),
@@ -331,7 +321,7 @@ namespace Singular.ClassSpecific.Priest
         private static Composite CreateMaintainVoidformBehaviour()
         {
             return new PrioritySelector(
-                Spell.Cast("Void Bolt", when => InVoidform),
+                Spell.Cast("Void Eruption", when => InVoidform), // This is for casting Void Bolt, but something is causing Singular to fail casting it.
                 Spell.Cast("Shadowfiend", when => VoidformStacks < 20),
                 Spell.Cast("Shadow Word: Death", when => Me.GetAuraStacks("Shadow Word: Death") == 2 || (VoidformStacks < 10 && !Spell.CanCastHack("Mind Blast"))),
                 Spell.Cast("Mind Blast"),
@@ -515,16 +505,6 @@ namespace Singular.ClassSpecific.Priest
                 return false;
             }
 
-            int count = hitByDS.Count();
-            if (count >= PriestSettings.TalentTier6Count)
-            {
-                Logger.WriteDiagnostic(
-                    "UseDivineStar: will hit {0} mobs without aggroing adds / cc break",
-                    count
-                    );
-                return true;
-            }
-
             return false;
         }
 
@@ -554,16 +534,6 @@ namespace Singular.ClassSpecific.Priest
                     avoid.IsAvoidMob().ToYN()
                     );
                 return false;
-            }
-
-            int count = hitByHalo.Count();
-            if (count >= PriestSettings.TalentTier6Count)
-            {
-                Logger.WriteDiagnostic(
-                    "UseHalo: will hit {0} mobs without unwanted aggro / cc break",
-                    count
-                    );
-                return true;
             }
 
             return false;

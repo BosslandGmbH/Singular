@@ -62,6 +62,7 @@ namespace Singular.ClassSpecific.Mage
                                 }),
                             new Action( r => _lastPyroPull = DateTime.UtcNow )
                             ),
+                        Spell.Cast("Blast Wave"), // Slows movement, 100% increased damage to primary target.
                         Spell.Cast("Fire Blast", ret => !SpellManager.HasSpell("Inferno Blast")),
                         Spell.Cast("Scorch"),
                         Spell.Cast("Fireball")
@@ -104,19 +105,21 @@ namespace Singular.ClassSpecific.Mage
                             Common.CreateSlowMeleeBehavior()
                             ),
 						
+                        Spell.BuffSelf("Mirror Image", ret => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= MageSettings.MirrorImageCount),
 						Spell.BuffSelf("Combustion"),
 						Spell.CastOnGround("Flamestrike", 
 							on => Me.CurrentTarget, 
 							ret => Me.HasActiveAura("Hot Streak!") && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3),
 						Spell.Cast("Pyroblast", ret => Me.HasActiveAura("Hot Streak!")),
 						Spell.CastOnGround("Meteor", on => Me.CurrentTarget.Location),
+                        Spell.Cast("Cinderstorm", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count(u => u.HasAura("Ignite")) > MageSettings.CinderstormCount),
 						Spell.Cast("Dragon's Breath", 
 							ret => Me.GetAuraTimeLeft("Combustion") < Spell.GetSpellCastTime("Fireball") && 
 									Unit.UnfriendlyUnits(12).Any(u => Me.IsSafelyFacing(u))),
 						Spell.Cast("Living Bomb", ret => Me.CurrentTarget.TimeToDeath() > 12 && Unit.UnfriendlyUnitsNearTarget(10).Count(u => u.TimeToDeath() > 12) >= 2),
 						Spell.Cast("Flame On", ret => Spell.GetCharges("Fire Blast") <= 0),
 						Spell.Cast("Dragon's Breath", ret => Unit.UnfriendlyUnits(12).Any(u => Me.IsSafelyFacing(u))),
-						Spell.Cast("Fire Blast", ret => Me.HasActiveAura("Heating Up")),
+						Spell.HandleOffGCD(Spell.Cast("Fire Blast", ret => Me.HasActiveAura("Heating Up"))), // Add HandleOffGCDWhileCasting support?  
 						Spell.Cast("Fireball", ret => !Me.HasActiveAura("Heating Up")),
 						Spell.Cast("Scorch", ret => Me.IsMoving && (!Common.HasTalent(MageTalents.IceFloes) || Spell.GetCharges("Ice Floes") <= 0)),
 

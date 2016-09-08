@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Numerics;
 using CommonBehaviors.Actions;
 using Singular.Dynamics;
 using Singular.Helpers;
@@ -12,6 +13,7 @@ using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 
 using Singular.Settings;
+using Styx.Common;
 using Styx.WoWInternals;
 using Styx.Common.Helpers;
 
@@ -91,6 +93,7 @@ namespace Singular.ClassSpecific.Monk
 						new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >= 2,
 							new PrioritySelector(
 								Spell.BuffSelf("Serenity"),
+								Spell.Cast("Strike of the Windlord"),
 								Spell.Cast("Whirling Dragon Punch"),
 								Spell.Cast("Fists of Fury"),
 								Spell.Cast("Rushing Jade Wind", req => Unit.UnfriendlyUnits(8).Count() <= 7),
@@ -106,7 +109,7 @@ namespace Singular.ClassSpecific.Monk
 								Spell.Cast("Tiger Palm", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => !u.HasMyAura("Mark of the Crane"))),
 								Spell.Cast("Tiger Palm")
 								)),
-
+						Spell.Cast("Strike of the Windlord"),
 						Spell.Cast("Fists of Fury"),
 						Spell.Cast("Whirling Dragon Punch"),
 						Spell.Cast("Tiger Palm", req => Me.CurrentChi < 4 && EnergyDeficit < 10),

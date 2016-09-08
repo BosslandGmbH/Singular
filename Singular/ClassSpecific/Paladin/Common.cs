@@ -153,23 +153,6 @@ namespace Singular.ClassSpecific.Paladin
                 );
         }
 
-        /// <summary>
-        /// behavior to cast appropriate seal 
-        /// </summary>
-        /// <returns></returns>
-
-        static PaladinSeal _seal;
-
-        static string SealSpell( PaladinSeal s)
-        { 
-            return "Seal of " + s.ToString(); 
-        }
-
-        /// <summary>
-        /// determines the best PaladinSeal value to use.  Attempts to use 
-        /// user setting first, but defaults to something reasonable otherwise
-        /// </summary>
-        /// <returns>PaladinSeal to use</returns>
 
         public static Composite CreatePaladinBlindingLightBehavior()
         {
@@ -215,8 +198,6 @@ namespace Singular.ClassSpecific.Paladin
                         && !Me.CurrentTarget.IsWithinMeleeRange,
                     new PrioritySelector(
                         Spell.Cast("Judgement"),
-                        Spell.Cast("Exorcism"),
-                        Spell.Cast("Hammer of Wrath"),
                         Spell.Cast("Reckoning"),
                         Spell.Cast("Hammer of Justice"),
                         Spell.Cast("Holy Shock")

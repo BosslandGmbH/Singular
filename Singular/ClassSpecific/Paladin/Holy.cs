@@ -92,7 +92,6 @@ namespace Singular.ClassSpecific.Paladin
 
                                 Spell.Cast("Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal),
                                 Spell.Buff("Judgment"),
-                                Spell.Cast("Hammer of Wrath"),
                                 Spell.Cast("Holy Shock"),
                                 Spell.Cast("Crusader Strike")
                                 )
@@ -179,7 +178,6 @@ namespace Singular.ClassSpecific.Paladin
                                     Helpers.Common.EnsureReadyToAttackFromMelee(),
                                     Helpers.Common.CreateInterruptBehavior(),
                                     Spell.Buff("Judgment"),
-                                    Spell.Cast("Hammer of Wrath"),
                                     Spell.Cast("Holy Shock"),
                                     Spell.Cast("Crusader Strike"),
                                     Movement.CreateMoveToMeleeBehavior(true)

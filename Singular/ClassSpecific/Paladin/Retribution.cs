@@ -161,7 +161,6 @@ namespace Singular.ClassSpecific.Paladin
                             new PrioritySelector(
                                 // Bobby53: Inq > 5HP DS > Exo > HotR > 3-4HP DS
                                 Spell.Cast("Divine Storm", ret => Me.CurrentHolyPower == 5 && Spell.UseAOE),
-                                Spell.Cast("Exorcism", req => TalentManager.HasGlyph("Mass Exorcism")),
                                 Spell.Cast("Hammer of the Righteous"),
                                 Spell.Cast("Divine Storm", ret => Me.CurrentHolyPower >= 3 && Spell.UseAOE)
                                 )
@@ -181,7 +180,6 @@ namespace Singular.ClassSpecific.Paladin
                                 Spell.Cast("Divine Storm", req => Spell.UseAOE && Me.HasAura("Divine Crusader")),   // T16 buff
                                 Spell.Cast(SpellManager.HasSpell("Hammer of the Righteous") ? "Hammer of the Righteous" : "Crusader Strike"),
                                 Spell.Cast("Judgment"),
-                                Spell.Cast("Exorcism"),
                                 Spell.Cast(Spell.UseAOE && SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower >= 3),
                                 Spell.BuffSelf("Sacred Shield"),
                                 Movement.CreateMoveToMeleeBehavior(true),

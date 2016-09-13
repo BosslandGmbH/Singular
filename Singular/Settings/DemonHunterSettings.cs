@@ -9,6 +9,14 @@ using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 
 namespace Singular.Settings
 {
+
+    public enum UseArtifactWeaponWhen
+    {
+        OnCooldown,
+        AtHighestDPSOpportunity,
+        None
+    }
+
     internal class DemonHunterSettings : Styx.Helpers.Settings
     {
         public DemonHunterSettings()
@@ -175,6 +183,22 @@ namespace Singular.Settings
         [Description("Use Fiery Brand if we go below this health percent. Note: If you have the Burning Alive talent, Fiery Brand will be used as an AoE damage ability regardless of this setting.")]
         public int FieryBrandHealthPercent { get; set; }
 
+        #endregion
+
+        #region Category: Artifact Weapon
+        [Setting]
+        [DefaultValue(UseArtifactWeaponWhen.OnCooldown)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Use When...")]
+        [Description("Toggle when the artifact weapon ability should be used.")]
+        public UseArtifactWeaponWhen UseArtifactWeaponWhen { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Use Only In AoE")]
+        [Description("If set to true, this will make the artifact waepon only be used when more than one mob is attacking us.")]
+        public bool UseArtifactOnlyInAoE { get; set; }
         #endregion
 
     }

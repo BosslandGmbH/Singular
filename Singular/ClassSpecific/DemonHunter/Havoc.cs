@@ -14,7 +14,6 @@ using Styx.CommonBot;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using Singular.ClassSpecific.DeathKnight;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 
@@ -61,11 +60,37 @@ namespace Singular.ClassSpecific.DemonHunter
                         Spell.CastOnGround("Metamorphosis", on => Me.CurrentTarget, ret => Me.HealthPercent <= DemonHunterSettings.HavocMetamorphosisHealthPercent),
                         Spell.BuffSelf("Blur", ret => Me.HealthPercent <= DemonHunterSettings.BlurHealthPercent),
                         Spell.BuffSelf("Darkness", ret => Me.HealthPercent <= DemonHunterSettings.HavocDarknessHealthPercent),
+                        Spell.BuffSelf("Chaos Blades", ret => Me.CurrentTarget.IsWithinMeleeRange),
+
+                        // Out of Range
+                        Common.CreateThrowGlaiveBehavior(),
+
+                        // Artifact Weapon
+                        new Decorator(
+                            ret => DemonHunterSettings.UseArtifactOnlyInAoE && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 6) > 1,
+                            new PrioritySelector(
+                                Spell.Cast("Fury of the Illidari",
+                                    ret =>
+                                        DemonHunterSettings.UseArtifactWeaponWhen == UseArtifactWeaponWhen.OnCooldown
+                                        || (!Common.HasTalent(DemonHunterTalents.Momentum) && DemonHunterSettings.UseArtifactWeaponWhen != UseArtifactWeaponWhen.None)
+                                        || (DemonHunterSettings.UseArtifactWeaponWhen == UseArtifactWeaponWhen.AtHighestDPSOpportunity && Me.HasActiveAura("Momentum"))
+                                )
+                            )
+                        ),
+                        Spell.Cast("Fury of the Illidari",
+                            ret =>
+                                !DemonHunterSettings.UseArtifactOnlyInAoE &&
+                                ( DemonHunterSettings.UseArtifactWeaponWhen == UseArtifactWeaponWhen.OnCooldown
+                                || (DemonHunterSettings.UseArtifactWeaponWhen == UseArtifactWeaponWhen.AtHighestDPSOpportunity && Me.HasActiveAura("Momentum"))
+                                || (DemonHunterSettings.UseArtifactWeaponWhen != UseArtifactWeaponWhen.None && !Common.HasTalent(DemonHunterTalents.Momentum)) )
+                        ),
 
                         // AoE Rotation
                         new Decorator(
                             ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.MeleeDistance() < 10) > 1,
                             new PrioritySelector(
+                                Spell.Cast("Nemesis"),
+                                Spell.Cast("Chaos Nova", ret => Common.HasTalent(DemonHunterTalents.UnleashedPower) || Me.HealthPercent <= 75),
                                 Spell.Cast("Fel Rush",
                                     ret =>
                                         DemonHunterSettings.DPSWithFelRush && Me.CurrentTarget.Distance <= 15 && Me.IsSafelyFacing(Me.CurrentTarget, 5f) &&
@@ -74,10 +99,23 @@ namespace Singular.ClassSpecific.DemonHunter
                                     ret =>
                                         DemonHunterSettings.UseVengefulRetreat && Me.CurrentTarget.IsWithinMeleeRange &&
                                         (Common.HasTalent(DemonHunterTalents.Prepared) || CurrentFury <= 85)),
-                                Spell.Cast("Eye Beam"), // WaitForFacing will rotate us around for this.
+                                Spell.Cast("Fel Barrage", ret =>
+                                    (Common.HasTalent(DemonHunterTalents.Momentum) && Me.HasActiveAura("Momentum") && Spell.GetCharges("Fel Barrage") >= 4)
+                                    || (!Common.HasTalent(DemonHunterTalents.Momentum) && Spell.GetCharges("Fel Barrage") >= 4)
+                                ),
+                                Spell.Cast("Eye Beam", ret => (!Common.HasTalent(DemonHunterTalents.Momentum) || Me.HasActiveAura("Momentum"))), // WaitForFacing will rotate us around for this.
                                 Spell.Cast("Chaos Strike", ret => Common.HasTalent(DemonHunterTalents.ChaosCleave) && Unit.NearbyUnfriendlyUnits.Count() <= 3),
                                 Spell.Cast("Blade Dance", ret => Unit.UnfriendlyUnits(8).Count() >= 3),
+                                Spell.Cast("Throw Glaive", ret =>
+                                    (!Common.HasTalent(DemonHunterTalents.Momentum) && Common.HasTalent(DemonHunterTalents.Bloodlet))
+                                    || Me.HasActiveAura("Momentum")
+                                ),
                                 Spell.Cast("Chaos Strike", ret => CurrentFury >= 70),
+                                Spell.Cast("Throw Glaive"),
+                                Spell.Cast("Chaos Strike", ret =>
+                                    (!Common.HasTalent(DemonHunterTalents.DemonBlades) && CurrentFury >= 70)
+                                    || (Common.HasTalent(DemonHunterTalents.DemonBlades) && CurrentFury >= 60)
+                                ),
                                 Spell.Cast("Demon's Bite", ret => !Common.HasTalent(DemonHunterTalents.DemonBlades))
                                 )
                         ),
@@ -90,10 +128,32 @@ namespace Singular.ClassSpecific.DemonHunter
                         Spell.Cast("Fel Rush",
                             ret =>
                                 DemonHunterSettings.DPSWithFelRush && Me.CurrentTarget.Distance <= 15 && Me.IsSafelyFacing(Me.CurrentTarget, 5f) &&
-                                ((Common.HasTalent(DemonHunterTalents.FelMastery) && CurrentFury <= 70) || Spell.GetCharges("Fel Rush") > 1)),
+                                ( (Common.HasTalent(DemonHunterTalents.FelMastery) && CurrentFury <= 70)
+                                || Common.HasTalent(DemonHunterTalents.Momentum) && !Me.HasActiveAura("Momentum")
+                                || Spell.GetCharges("Fel Rush") > 1)
+                        ),
+                        Spell.Cast("Eye Beam", ret => Common.HasTalent(DemonHunterTalents.Demonic)),
+                        Spell.Cast("Fel Eruption"),
+                        Spell.Cast("Blade Dance", ret => 
+                            (!Common.HasTalent(DemonHunterTalents.Momentum) && Common.HasTalent(DemonHunterTalents.FirstBlood))
+                            || Me.HasActiveAura("Momentum")
+                        ),
+                        Spell.Cast("Felblade", ret => FuryDeficit >= 30),
+                        Spell.Cast("Throw Glaive", ret =>
+                            (!Common.HasTalent(DemonHunterTalents.Momentum) && Common.HasTalent(DemonHunterTalents.Bloodlet))
+                            || Me.HasActiveAura("Momentum")
+                        ),
+                        Spell.Cast("Fel Barrage", ret =>
+                            (!Common.HasTalent(DemonHunterTalents.Momentum) && Spell.GetCharges("Fel Barrage") >= 5)
+                            || (Me.HasActiveAura("Momentum") && Spell.GetCharges("Fel Barrage") >= 5)
+                        ),
+                        Spell.Cast("Annihilation", ret => FuryDeficit <= 30),
                         Spell.Cast("Chaos Strike", ret => CurrentFury >= 70),
+                        Spell.Cast("Fel Barrage", ret =>
+                            (!Common.HasTalent(DemonHunterTalents.Momentum) && Spell.GetCharges("Fel Barrage") >= 4)
+                            || (Me.HasActiveAura("Momentum") && Spell.GetCharges("Fel Barrage") >= 4)
+                        ),
                         Spell.Cast("Demon's Bite", ret => !Common.HasTalent(DemonHunterTalents.DemonBlades))
-
                         )
                     ),
 

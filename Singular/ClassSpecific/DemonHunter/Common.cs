@@ -100,7 +100,7 @@ namespace Singular.ClassSpecific.DemonHunter
 
         #region Fragment Composites
 
-        private static IEnumerable<WoWAreaTrigger> FindFragments(float range)
+        public static IEnumerable<WoWAreaTrigger> FindFragments(float range)
         {
             range *= range;
             return ObjectManager.GetObjectsOfType<WoWAreaTrigger>()

@@ -83,6 +83,8 @@ namespace Singular.ClassSpecific.DemonHunter
                         Spell.Cast("Fiery Brand", on => (WoWUnit)on, ret => Me.HealthPercent <= DemonHunterSettings.FieryBrandHealthPercent),
 
                         // High Priority Single+AoE
+                        Spell.Cast("Soul Carver", on => (WoWUnit)on, ret => !DemonHunterSettings.UseArtifactOnlyInAoE && DemonHunterSettings.UseArtifactWeaponWhen != UseArtifactWeaponWhen.None),
+                        Spell.Cast("Fel Devastation", on => (WoWUnit)on),
                         Spell.BuffSelf("Immolation Aura", ret => Unit.UnfriendlyUnits(8).Any()),
                         Spell.Cast("Soul Cleave", on => (WoWUnit)on, ret => CurrentPain >= 50),
                         Spell.HandleOffGCD(Spell.CastOnGround("Infernal Strike", on => (WoWUnit)on, ret => DemonHunterSettings.DPSInfernalStrike && Spell.GetCharges("Infernal Strike") > 1)),
@@ -91,13 +93,27 @@ namespace Singular.ClassSpecific.DemonHunter
                         new Decorator(
                             ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.MeleeDistance() < 10) > 1,
                             new PrioritySelector(
+                                Spell.Cast("Soul Carver", on => (WoWUnit)on, ret => DemonHunterSettings.UseArtifactWeaponWhen != UseArtifactWeaponWhen.None),
+                                Spell.Cast("Spirit Bomb", on => (WoWUnit)on, ret => !Me.CurrentTarget.HasAura("Frality") && Common.FindFragments(39).Any()),
+                                Spell.Cast("Felblade", on => (WoWUnit)on),
+                                Spell.Cast("Shear", on => (WoWUnit)on, ret => Me.HasActiveAura("Blade Turning")),
                                 Spell.CastOnGround("Sigil of Flame", on => (WoWUnit)on, ret => Unit.UnfriendlyUnitsNearTarget(30).Count() >= DemonHunterSettings.SigilOfFlameCount, false),
-                                Spell.Cast("Fiery Brand", on => (WoWUnit)on, ret => Common.HasTalent(DemonHunterTalents.BurningAlive))
+                                Spell.Cast("Fiery Brand", on => (WoWUnit)on, ret => Common.HasTalent(DemonHunterTalents.BurningAlive)),
+                                Spell.Cast("Fel Erruption", on => (WoWUnit)on)
                             )
                         ),
 
-                        // Low Priority single target pain generator.
-                        Spell.Cast("Shear")
+                        // Average Priority Single Target
+                        Spell.Cast("Felblade", on => (WoWUnit)on),
+                        Spell.Cast("Fel Erruption", on => (WoWUnit)on),
+                        Spell.Cast("Spirit Bomb", on => (WoWUnit)on, ret => !Me.CurrentTarget.HasAura("Frality") && Common.FindFragments(39).Any()),
+                        Spell.Cast("Shear", on => (WoWUnit)on, ret => Me.HasActiveAura("Blade Turning")),
+                        Spell.Cast("Fracture", on => (WoWUnit)on, ret => CurrentPain >= 60),
+                        Spell.CastOnGround("Sigil of Flame", on => (WoWUnit)on, ret => Unit.UnfriendlyUnitsNearTarget(30).Count() >= DemonHunterSettings.SigilOfFlameCount, false),
+
+
+                        // Low Priority single target filler pain generator.
+                        Spell.Cast("Shear", on => (WoWUnit)on)
                     )
                 )
 

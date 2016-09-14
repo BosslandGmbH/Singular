@@ -83,7 +83,7 @@ namespace Singular.ClassSpecific.DemonHunter
                         Spell.Cast("Fiery Brand", on => (WoWUnit)on, ret => Me.HealthPercent <= DemonHunterSettings.FieryBrandHealthPercent),
 
                         // High Priority Single+AoE
-                        Spell.Cast("Soul Carver", on => (WoWUnit)on, ret => !DemonHunterSettings.UseArtifactOnlyInAoE && DemonHunterSettings.UseArtifactWeaponWhen != UseArtifactWeaponWhen.None),
+                        Spell.Cast("Soul Carver", on => (WoWUnit)on, ret => !DemonHunterSettings.UseArtifactOnlyInAoE && DemonHunterSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
                         Spell.Cast("Fel Devastation", on => (WoWUnit)on),
                         Spell.BuffSelf("Immolation Aura", ret => Unit.UnfriendlyUnits(8).Any()),
                         Spell.Cast("Soul Cleave", on => (WoWUnit)on, ret => CurrentPain >= 50),
@@ -93,7 +93,7 @@ namespace Singular.ClassSpecific.DemonHunter
                         new Decorator(
                             ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.MeleeDistance() < 10) > 1,
                             new PrioritySelector(
-                                Spell.Cast("Soul Carver", on => (WoWUnit)on, ret => DemonHunterSettings.UseArtifactWeaponWhen != UseArtifactWeaponWhen.None),
+                                Spell.Cast("Soul Carver", on => (WoWUnit)on, ret => DemonHunterSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
                                 Spell.Cast("Spirit Bomb", on => (WoWUnit)on, ret => !Me.CurrentTarget.HasAura("Frality") && Common.FindFragments(19).Any()),
                                 Spell.Cast("Felblade", on => (WoWUnit)on),
                                 Spell.Cast("Shear", on => (WoWUnit)on, ret => Me.HasActiveAura("Blade Turning")),

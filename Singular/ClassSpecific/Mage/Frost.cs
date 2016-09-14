@@ -336,7 +336,16 @@ namespace Singular.ClassSpecific.Mage
                                 )
                             ),
 
-						Spell.Cast("Ray of Frost", req => Spell.IsSpellOnCooldown("Rune of Power")),
+                        // Artifact Weapon
+                        new Decorator(
+                            ret => MageSettings.UseArtifactOnlyInAoE && Unit.UnfriendlyUnitsNearTarget(15).Count() > 1,
+                            new PrioritySelector(
+                                Spell.Cast("Ebonbolt", ret => MageSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None)
+                            )
+                        ),
+                        Spell.Cast("Ebonbolt", ret => !MageSettings.UseArtifactOnlyInAoE && MageSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
+
+                        Spell.Cast("Ray of Frost", req => Spell.IsSpellOnCooldown("Rune of Power")),
 						Spell.BuffSelf("Icy Veins"),
 						Spell.Buff("Frost Bomb", req => Me.GetAuraStacks("Fingers of Frost") >= 2),
 						Spell.Cast("Frozen Orb"),

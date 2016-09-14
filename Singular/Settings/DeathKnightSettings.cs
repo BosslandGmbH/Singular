@@ -128,7 +128,30 @@ namespace Singular.Settings
 		[Description("Will use Epidemic when agro mob count is equal to or higher then this value.")]
 		public int EpidemicCount { get; set; }
 
-		#endregion
+        #endregion
 
-	}
+        #region Category: Artifact Weapon
+        [Setting]
+        [DefaultValue(UseDPSArtifactWeaponWhen.OnCooldown)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Use When...")]
+        [Description("Toggle when the artifact weapon ability should be used. NOTE: Setting AtHighestDPSOpportunity will only make it cast at 8 Festering Wounds.  OnCooldown abides by the Festering Wounds Count setting.")]
+        public UseDPSArtifactWeaponWhen UseDPSArtifactWeaponWhen { get; set; }
+
+        [Setting]
+        [DefaultValue(7)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Unholy: Festering Wounds Count")]
+        [Description("This is only used if UseWhen is set to OnCooldown! This is how many stacks of Festering Wounds must be on our current target before Apocalypse is used.")]
+        public int FesteringWoundsCount { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Use Only In AoE")]
+        [Description("If set to true, this will make the artifact waepon only be used when more than one mob is attacking us.")]
+        public bool UseArtifactOnlyInAoE { get; set; }
+        #endregion
+
+    }
 }

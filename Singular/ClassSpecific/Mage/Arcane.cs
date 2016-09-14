@@ -16,6 +16,7 @@ using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using Singular.Settings;
 using System.Drawing;
+using Singular.ClassSpecific.DemonHunter;
 using Styx.Common;
 
 namespace Singular.ClassSpecific.Mage
@@ -124,6 +125,17 @@ namespace Singular.ClassSpecific.Mage
                         Helpers.Common.CreateInterruptBehavior(),
 
 						Common.CreateMageRuneOfPowerBehavior(),
+
+                        // Artifact Weapon
+                        new Decorator(
+                            ret => MageSettings.UseArtifactOnlyInAoE && Unit.UnfriendlyUnitsNearTarget(15).Count() > 1,
+                            new PrioritySelector(
+                                Spell.Cast("Fury of the Illidari",  ret => MageSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None)
+                            )
+                        ),
+                        Spell.Cast("Fury of the Illidari", ret => !MageSettings.UseArtifactOnlyInAoE && MageSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
+
+
                         Spell.BuffSelf("Arcane Power", ret => ArcaneCharges >= 4),
 
                         Movement.WaitForFacing(),

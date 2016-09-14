@@ -192,6 +192,15 @@ namespace Singular.ClassSpecific.Shaman
 
                         Spell.BuffSelf("Feral Spirit", ret => !Me.CurrentTarget.IsTrivial() && NeedFeralSpirit),
 
+                        // Artifact Weapon
+                        new Decorator(
+                            ret => ShamanSettings.UseArtifactOnlyInAoE && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1,
+                            new PrioritySelector(
+                                Spell.Cast("Doom Winds", ret => ShamanSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown)
+                            )
+                        ),
+                        Spell.Cast("Doom Winds", ret => !ShamanSettings.UseArtifactOnlyInAoE && ShamanSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown),
+
                         new Decorator(
                             req => AttackEvenIfGhostWolf,
                             new PrioritySelector(

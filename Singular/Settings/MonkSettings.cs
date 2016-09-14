@@ -145,12 +145,35 @@ namespace Singular.Settings
         #region Category: Self-Healing
 
         [Setting]
-        [DefaultValue(85)]
+        [DefaultValue(45)]
         [Category("Self-Heal")]
         [DisplayName("Effuse %")]
         [Description("Health % to cast this ability at. Set to 100 to cast on cooldown, Set to 0 to disable.")]
         public int Effuse { get; set; }
 
+        #endregion
+
+        #region Category: Artifact Weapon
+        [Setting]
+        [DefaultValue(UseDPSArtifactWeaponWhen.OnCooldown)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Use When...")]
+        [Description("Toggle when the artifact weapon ability should be used. NOTE: Brewmaster Specialization artifact is only affected by the 'None' setting.")]
+        public UseDPSArtifactWeaponWhen UseDPSArtifactWeaponWhen { get; set; }
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Brewmaster: Health Percent to Use")]
+        [Description("Once our hearth percent falls below this number, we will use the artifact weapon's ability.")]
+        public int ArtifactHealthPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Use Only In AoE")]
+        [Description("If set to true, this will make the artifact waepon only be used when more than one mob is attacking us. NOTE: Brewmaster Specialization artifact is not affected by this.")]
+        public bool UseArtifactOnlyInAoE { get; set; }
         #endregion
 
         #region Context Late Loading Wrappers

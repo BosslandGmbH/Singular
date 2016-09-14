@@ -321,6 +321,26 @@ namespace Singular.ClassSpecific.Priest
         private static Composite CreateMaintainVoidformBehaviour()
         {
             return new PrioritySelector(
+                // Artifact Weapon
+                new Decorator(
+                    ret => PriestSettings.UseArtifactOnlyInAoE && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1,
+                        new PrioritySelector(
+                            Spell.Cast("Void Torrent", ret =>
+                                    PriestSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown
+                                    || ( PriestSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity
+                                        && Me.CurrentTarget.GetAuraTimeLeft("Shadow Word: Pain") >= TimeSpan.FromSeconds(6)
+                                        && Me.CurrentTarget.GetAuraTimeLeft("Vampiric Touch") >= TimeSpan.FromSeconds(6) )
+                            )
+                        )
+                ),
+                Spell.Cast("Void Torrent", ret =>
+                    !PriestSettings.UseArtifactOnlyInAoE &&
+                    ( PriestSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown
+                    || ( PriestSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity
+                        && Me.CurrentTarget.GetAuraTimeLeft("Shadow Word: Pain") >= TimeSpan.FromSeconds(6)
+                        && Me.CurrentTarget.GetAuraTimeLeft("Vampiric Touch") >= TimeSpan.FromSeconds(6) ) )
+                ),
+
                 Spell.Cast("Void Eruption", when => InVoidform), // This is for casting Void Bolt, but something is causing Singular to fail casting it.
                 Spell.Cast("Shadowfiend", when => VoidformStacks < 20),
                 Spell.Cast("Shadow Word: Death", when => Me.GetAuraStacks("Shadow Word: Death") == 2 || (VoidformStacks < 10 && !Spell.CanCastHack("Mind Blast"))),

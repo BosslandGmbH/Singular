@@ -122,6 +122,7 @@ namespace Singular.ClassSpecific.Warlock
 
                         CreateAoeBehavior(),
 
+
                         // Noxxic
                         Spell.Cast("Shadowburn", ret => Me.CurrentTarget.HealthPercent < 20),
                         Spell.Buff("Immolate", 4, on => Me.CurrentTarget, ret => true),
@@ -130,6 +131,15 @@ namespace Singular.ClassSpecific.Warlock
                         Common.CastCataclysm(),
 
                         Spell.Cast("Chaos Bolt", ret => Me.CurrentTarget.HealthPercent >= 20 && BackdraftStacks < 3),
+
+                        // Artifact Weapon
+                        new Decorator(
+                            ret => WarlockSettings.UseArtifactOnlyInAoE && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1,
+                            new PrioritySelector(
+                                Spell.Cast("Reap Souls", ret => WarlockSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None)
+                            )
+                        ),
+                        Spell.Cast("Reap Souls", ret => !WarlockSettings.UseArtifactOnlyInAoE && WarlockSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
 
                         Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => Spell.UseAOE && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire") && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => !u.Aggro || u.IsCrowdControlled()), false),
 

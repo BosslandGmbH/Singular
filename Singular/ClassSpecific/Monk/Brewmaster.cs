@@ -76,7 +76,8 @@ namespace Singular.ClassSpecific.Monk
 
 						new PrioritySelector(
 							ctx => TankManager.Instance.TargetList.FirstOrDefault(u => u.IsWithinMeleeRange) ?? Me.CurrentTarget,
-							Spell.Cast("Keg Smash", on => (WoWUnit)on),
+                            Spell.CastOnGround("Exploding Keg", on => (WoWUnit)on, ret => MonkSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && Me.HealthPercent <= MonkSettings.ArtifactHealthPercent),
+                            Spell.Cast("Keg Smash", on => (WoWUnit)on),
 							Spell.Cast("Tiger Palm", on => (WoWUnit)on, req => Common.HasTalent(MonkTalents.EyeOfTheTiger) && Me.GetAuraTimeLeft("Eye of the Tiger").TotalSeconds <= 1.8),
 							new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >= 2,
 								new PrioritySelector(

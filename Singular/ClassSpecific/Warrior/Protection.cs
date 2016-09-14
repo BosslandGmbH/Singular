@@ -254,6 +254,15 @@ namespace Singular.ClassSpecific.Warrior
                 // special "in combat" pull logic for mobs not tagged and out of melee range
                 Common.CreateWarriorCombatPullMore(),
 
+                // Artifact Weapon
+                new Decorator(
+                    ret => WarriorSettings.UseArtifactOnlyInAoE && Clusters.GetConeClusterCount(90f, Unit.UnfriendlyUnits(12), 100f) > 1,
+                    new PrioritySelector(
+                        Spell.Cast("Neltharion's Fury", ret => WarriorSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None)
+                    )
+                ),
+                Spell.Cast("Neltharion's Fury", ret => !WarriorSettings.UseArtifactOnlyInAoE && WarriorSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
+
                 // Multi-target?  get the debuff on them
                 new Decorator(
                     ret => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1,

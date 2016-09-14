@@ -197,9 +197,16 @@ namespace Singular.ClassSpecific.Warrior
                         // AOE 
                         // -- check melee dist+3 rather than 8 so works for large hitboxes (8 is range of DR and WW)
 
+                        // Artifact Weapon
                         new Decorator(  // Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3,
                             ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() < Common.DistanceWindAndThunder(8)) >= 3,                       
                             new PrioritySelector(
+                                new Decorator(
+                                    ret => WarriorSettings.UseArtifactOnlyInAoE,
+                                        new PrioritySelector(
+                                            Spell.Cast("Warbreaker", ret => WarriorSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None)
+                                        )
+                                ),
                                 Spell.BuffSelf("Avatar", ret => WarriorSettings.AvatarOnCooldownAOE),
                                 Spell.BuffSelf("Bladestorm"),
                                 Spell.Cast("Shockwave"),
@@ -236,6 +243,7 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     req => Me.CurrentTarget.HealthPercent > 20,
                     new PrioritySelector(
+                        Spell.Cast("Warbreaker", ret => !WarriorSettings.UseArtifactOnlyInAoE && WarriorSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
                         Spell.BuffSelf("Avatar", ret => WarriorSettings.AvatarOnCooldownSingleTarget),
                         new Decorator(req => (!Common.IsEnraged || Me.RagePercent >= 100) && SpellManager.CanCast("Rampage"),
                             new PrioritySelector(

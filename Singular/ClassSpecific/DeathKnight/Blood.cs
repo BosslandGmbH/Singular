@@ -116,6 +116,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         new Decorator(
                             ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.MeleeDistance() < 10) > 1,
                             new PrioritySelector(
+                                Spell.Cast("Consumption", ret => DeathKnightSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
                                 Spell.CastOnGround("Death and Decay", on => (WoWUnit)on, ret => Unit.UnfriendlyUnitsNearTarget(15).Count() >= DeathKnightSettings.DeathAndDecayCount, false),
 								Spell.Cast("Marrowrend", on => (WoWUnit)on, ret => Me.GetAuraStacks("Bone Shield") < (Unit.NearbyUnfriendlyUnits.Count(u => u.MeleeDistance() < 10) >= 4 ? 5 : 1)),
 								Spell.Cast("Death Strike", on => (WoWUnit)on),
@@ -125,7 +126,8 @@ namespace Singular.ClassSpecific.DeathKnight
                             ),
 						
 						// Single target rotation
-						Spell.CastOnGround("Death and Decay", on => (WoWUnit)on, ret => Me.HasAura(CrimsonScourgeProc)),
+                        Spell.Cast("Consumption", ret => DeathKnightSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && !DeathKnightSettings.UseArtifactOnlyInAoE),
+                        Spell.CastOnGround("Death and Decay", on => (WoWUnit)on, ret => Me.HasAura(CrimsonScourgeProc)),
 						Spell.Cast("Marrowrend", on => (WoWUnit)on, ret => Me.GetAuraStacks("Bone Shield") < 5),
 						Spell.Cast("Death Strike", on => (WoWUnit)on),
 						new Decorator(ret => Me.GetAuraStacks("Bone Shield") >= 5 && Me.CurrentRunes > 0,

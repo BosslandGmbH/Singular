@@ -104,9 +104,15 @@ namespace Singular.ClassSpecific.Druid
 						Spell.Cast("Blessing of the Ancients", ret => !Me.HasAura("Blessing of Elune")),
 						Spell.CastOnGround("Force of Nature", on => Me.CurrentTarget.Location),
 						Spell.BuffSelf("Celestial Alignment", ret => Me.CurrentTarget.IsStressful()),
+
+                        // Rotation
 						Spell.Cast("Moonfire", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.GetAuraTimeLeft("Moonfire").TotalSeconds < 1.8 && u.TimeToDeath(int.MaxValue) > 4)),
 						Spell.Cast("Sunfire", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.GetAuraTimeLeft("Sunfire").TotalSeconds < 1.8 && u.TimeToDeath(int.MaxValue) > 4)),
-						Spell.Cast("Stellar Flare", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.GetAuraTimeLeft("Stellar Flare").TotalSeconds < 1.8 && u.TimeToDeath(int.MaxValue) > 12)),
+
+                        Spell.Cast("New Moon", ret => DruidSettings.UseArtifactOnlyInAoE && DruidSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && Unit.UnfriendlyUnitsNearTarget(8f).Count() > 1),
+                        Spell.Cast("New Moon", ret => !DruidSettings.UseArtifactOnlyInAoE && DruidSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
+
+                        Spell.Cast("Stellar Flare", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.GetAuraTimeLeft("Stellar Flare").TotalSeconds < 1.8 && u.TimeToDeath(int.MaxValue) > 12)),
 
 						Spell.CastOnGround("Starfall", on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 15).Location, ret => Unit.NearbyUnfriendlyUnits.Count() >= 3),
 						Spell.Cast("Starsurge", ret => Me.GetAuraStacks("Lunar Empowerment") < 3 && Me.GetAuraStacks("Solar Empowerment") < 3),

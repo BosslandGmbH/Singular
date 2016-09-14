@@ -168,11 +168,14 @@ namespace Singular.ClassSpecific.Paladin
 
                         Common.CreatePaladinBlindingLightBehavior(),
 
+                        // Wake of Ashes notes:  UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity would be good if the player has the Ashes to Ashes artifact trait and if the player needs Holy Power.
+
                         new Decorator(
                             ret => _mobCount >= 2 && Spell.UseAOE,
                             new PrioritySelector(
                                 // was EJ: Inq > 5HP DS > LH > HoW > Exo > HotR > Judge > 3-4HP DS (> SS)
                                 // now EJ: Inq > 5HP DS > LH > HoW (> T16 Free DS) > HotR > Judge > Exo > 3-4HP DS (> SS)
+                                Spell.Cast("Wake of Ashes", ret => PaladinSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
                                 Spell.Cast("Consecration"),
                                 Spell.Cast("Holy Wrath", ret => Me.HealthPercent <= 55),
                                 Spell.Cast(SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower == 5),
@@ -187,6 +190,7 @@ namespace Singular.ClassSpecific.Paladin
                                 )
                             ),
 
+                        Spell.Cast("Wake of Ashes", ret => !PaladinSettings.UseArtifactOnlyInAoE && PaladinSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
                         Spell.Cast("Crusader Strike"), // Can be replaced by Zeal - casts both ways.
                         Spell.Cast("Blade of Justice"), //Can be replaced by Blade of Wrath or Divine Hammer - BoJ casts all ways.
                         Spell.Cast("Judgment"),

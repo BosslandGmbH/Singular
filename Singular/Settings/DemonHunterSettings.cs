@@ -9,14 +9,6 @@ using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 
 namespace Singular.Settings
 {
-
-    public enum UseArtifactWeaponWhen
-    {
-        OnCooldown,
-        AtHighestDPSOpportunity,
-        None
-    }
-
     internal class DemonHunterSettings : Styx.Helpers.Settings
     {
         public DemonHunterSettings()
@@ -187,11 +179,11 @@ namespace Singular.Settings
 
         #region Category: Artifact Weapon
         [Setting]
-        [DefaultValue(UseArtifactWeaponWhen.OnCooldown)]
+        [DefaultValue(UseDPSArtifactWeaponWhen.OnCooldown)]
         [Category("Artifact Weapon Usage")]
         [DisplayName("Use When...")]
         [Description("Toggle when the artifact weapon ability should be used.")]
-        public UseArtifactWeaponWhen UseArtifactWeaponWhen { get; set; }
+        public UseDPSArtifactWeaponWhen UseDPSArtifactWeaponWhen { get; set; }
 
         [Setting]
         [DefaultValue(false)]

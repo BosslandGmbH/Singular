@@ -19,6 +19,7 @@ using Styx.WoWInternals;
 using CommonBehaviors.Actions;
 using System.Collections.Generic;
 using System.Drawing;
+using Singular.ClassSpecific.DemonHunter;
 
 namespace Singular.ClassSpecific.Priest
 {
@@ -652,6 +653,16 @@ namespace Singular.ClassSpecific.Priest
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
+
+                        // Artifact Weapon
+                        // Light's Wrath notes:  UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity would be good if the player has a larger number of attonement stacks.  However, this would only apply for dungeon context.
+                        new Decorator(
+                            ret => PriestSettings.UseArtifactOnlyInAoE && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1,
+                            new PrioritySelector(
+                                Spell.Cast("Light's Wrath", ret => PriestSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown)
+                            )
+                        ),
+                        Spell.Cast("Light's Wrath", ret => !PriestSettings.UseArtifactOnlyInAoE && PriestSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown),
 
                         Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
                         Spell.Buff("Shadow Word: Pain", req => Me.CurrentTarget.HasAuraExpired("Shadow Word: Pain", 1) && Me.CurrentTarget.TimeToDeath(99) >= 8),

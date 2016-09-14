@@ -306,140 +306,156 @@ namespace Singular.Settings
         #endregion
 
         #region Discipline
-/*
-        [Setting]
-        [DefaultValue(80)]
-        [Category("Discipline")]
-        [DisplayName("Spirit Shell")]
-        [Description("Spirit Shell will be used at this value along with Prayer of Healing")]
-        public int SpiritShell { get; set; }
+        /*
+                [Setting]
+                [DefaultValue(80)]
+                [Category("Discipline")]
+                [DisplayName("Spirit Shell")]
+                [Description("Spirit Shell will be used at this value along with Prayer of Healing")]
+                public int SpiritShell { get; set; }
 
-        [Setting]
-        [DefaultValue(30)]
-        [Category("Discipline")]
-        [DisplayName("Penance Health")]
-        [Description("Penance will be used at this value")]
-        public int Penance { get; set; }
+                [Setting]
+                [DefaultValue(30)]
+                [Category("Discipline")]
+                [DisplayName("Penance Health")]
+                [Description("Penance will be used at this value")]
+                public int Penance { get; set; }
 
-        [Setting]
-        [DefaultValue(40)]
-        [Category("Discipline")]
-        [DisplayName("Flash Heal Health")]
-        [Description("Flash Heal will be used at this value")]
-        public int FlashHeal { get; set; }
+                [Setting]
+                [DefaultValue(40)]
+                [Category("Discipline")]
+                [DisplayName("Flash Heal Health")]
+                [Description("Flash Heal will be used at this value")]
+                public int FlashHeal { get; set; }
 
-        [Setting]
-        [DefaultValue(50)]
-        [Category("Discipline")]
-        [DisplayName("Heal Health")]
-        [Description("Heal will be used at this value")]
-        public int Heal { get; set; }
+                [Setting]
+                [DefaultValue(50)]
+                [Category("Discipline")]
+                [DisplayName("Heal Health")]
+                [Description("Heal will be used at this value")]
+                public int Heal { get; set; }
 
-        [Setting]
-        [DefaultValue(30)]
-        [Category("Discipline")]
-        [DisplayName("Pain Suppression Health")]
-        [Description("Pain Suppression will be used at this value")]
-        public int PainSuppression { get; set; }
+                [Setting]
+                [DefaultValue(30)]
+                [Category("Discipline")]
+                [DisplayName("Pain Suppression Health")]
+                [Description("Pain Suppression will be used at this value")]
+                public int PainSuppression { get; set; }
 
-        [Setting]
-        [DefaultValue(50)]
-        [Category("Discipline")]
-        [DisplayName("Prayer of Healing Health")]
-        [Description("Prayer of Healing will be used at this value")]
-        public int PrayerOfHealing { get; set; }
+                [Setting]
+                [DefaultValue(50)]
+                [Category("Discipline")]
+                [DisplayName("Prayer of Healing Health")]
+                [Description("Prayer of Healing will be used at this value")]
+                public int PrayerOfHealing { get; set; }
 
-        [Setting]
-        [DefaultValue(40)]
-        [Category("Discipline")]
-        [DisplayName("Power Word: Shield Health")]
-        [Description("Power Word: Shield will be used at this value")]
-        public int PowerWordShield { get; set; }
+                [Setting]
+                [DefaultValue(40)]
+                [Category("Discipline")]
+                [DisplayName("Power Word: Shield Health")]
+                [Description("Power Word: Shield will be used at this value")]
+                public int PowerWordShield { get; set; }
 
-        [Setting]
-        [DefaultValue(3)]
-        [Category("Discipline")]
-        [DisplayName("Prayer of Healing Count")]
-        [Description("Prayer of Healing will be used when count of players whom health is below PoH Health setting mets this value")]
-        public int PrayerOfHealingCount { get; set; }
+                [Setting]
+                [DefaultValue(3)]
+                [Category("Discipline")]
+                [DisplayName("Prayer of Healing Count")]
+                [Description("Prayer of Healing will be used when count of players whom health is below PoH Health setting mets this value")]
+                public int PrayerOfHealingCount { get; set; }
 
-        [Setting]
-        [DefaultValue(70)]
-        [Category("Discipline")]
-        [DisplayName("Dps Mana")]
-        [Description("Dps while mana is above this value (Used while in a party)")]
-        public int DpsMana { get; set; }
-*/
+                [Setting]
+                [DefaultValue(70)]
+                [Category("Discipline")]
+                [DisplayName("Dps Mana")]
+                [Description("Dps while mana is above this value (Used while in a party)")]
+                public int DpsMana { get; set; }
+        */
         #endregion
 
         #region Holy
-/*
+        /*
+                [Setting]
+                [DefaultValue(95)]
+                [Category("Holy")]
+                [DisplayName("Heal Health")]
+                [Description("Heal will be used at this value")]
+                public int HolyHealPercent { get; set; }
+
+                [Setting]
+                [DefaultValue(50)]
+                [Category("Holy")]
+                [DisplayName("Heal Health")]
+                [Description("Heal will be used at this value")]
+                public int HolyHeal { get; set; }
+
+                [Setting]
+                [DefaultValue(25)]
+                [Category("Holy")]
+                [DisplayName("Flash Heal Health")]
+                [Description("Flash Heal will be used at this value")]
+                public int HolyFlashHeal { get; set; }
+
+                [Setting]
+                [DefaultValue(40)]
+                [Category("Holy")]
+                [DisplayName("Divine Hymn Health")]
+                [Description("Divine Hymn will be used at this value")]
+                public int DivineHymnHealth { get; set; }
+
+                [Setting]
+                [DefaultValue(6)]
+                [Category("Holy")]
+                [DisplayName("Divine Hymn Count")]
+                [Description("Divine Hymn will be used when this many heal targets below the Divine Hymn Health percent")]
+                public int DivineHymnCount { get; set; }
+
+                [Setting]
+                [DefaultValue(80)]
+                [Category("Holy")]
+                [DisplayName("Prayer of Healing with Serendipity Health")]
+                [Description("Prayer of Healing with Serendipity will be used at this value")]
+                public int PrayerOfHealingSerendipityHealth { get; set; }
+
+                [Setting]
+                [DefaultValue(4)]
+                [Category("Holy")]
+                [DisplayName("Prayer of Healing with Serendipity Count")]
+                [Description("Prayer of Healing with Serendipity will be used when this many heal targets below the Prayer of Healing with Serendipity Health percent")]
+                public int PrayerOfHealingSerendipityCount { get; set; }
+
+                [Setting]
+                [DefaultValue(95)]
+                [Category("Holy")]
+                [DisplayName("Circle of Healing Health")]
+                [Description("Circle of Healing will be used at this value")]
+                public int CircleOfHealingHealth { get; set; }
+
+                [Setting]
+                [DefaultValue(5)]
+                [Category("Holy")]
+                [DisplayName("Circle of Healing Count")]
+                [Description("Circle of Healing will be used when this many heal targets below the Circle of Healing Health percent")]
+                public int CircleOfHealingCount { get; set; }
+
+        */
+
+
+        #endregion
+
+        #region Category: Artifact Weapon
         [Setting]
-        [DefaultValue(95)]
-        [Category("Holy")]
-        [DisplayName("Heal Health")]
-        [Description("Heal will be used at this value")]
-        public int HolyHealPercent { get; set; }
+        [DefaultValue(UseDPSArtifactWeaponWhen.OnCooldown)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Use When...")]
+        [Description("Toggle when the artifact weapon ability should be used.")]
+        public UseDPSArtifactWeaponWhen UseDPSArtifactWeaponWhen { get; set; }
 
         [Setting]
-        [DefaultValue(50)]
-        [Category("Holy")]
-        [DisplayName("Heal Health")]
-        [Description("Heal will be used at this value")]
-        public int HolyHeal { get; set; }
-
-        [Setting]
-        [DefaultValue(25)]
-        [Category("Holy")]
-        [DisplayName("Flash Heal Health")]
-        [Description("Flash Heal will be used at this value")]
-        public int HolyFlashHeal { get; set; }
-
-        [Setting]
-        [DefaultValue(40)]
-        [Category("Holy")]
-        [DisplayName("Divine Hymn Health")]
-        [Description("Divine Hymn will be used at this value")]
-        public int DivineHymnHealth { get; set; }
-
-        [Setting]
-        [DefaultValue(6)]
-        [Category("Holy")]
-        [DisplayName("Divine Hymn Count")]
-        [Description("Divine Hymn will be used when this many heal targets below the Divine Hymn Health percent")]
-        public int DivineHymnCount { get; set; }
-
-        [Setting]
-        [DefaultValue(80)]
-        [Category("Holy")]
-        [DisplayName("Prayer of Healing with Serendipity Health")]
-        [Description("Prayer of Healing with Serendipity will be used at this value")]
-        public int PrayerOfHealingSerendipityHealth { get; set; }
-
-        [Setting]
-        [DefaultValue(4)]
-        [Category("Holy")]
-        [DisplayName("Prayer of Healing with Serendipity Count")]
-        [Description("Prayer of Healing with Serendipity will be used when this many heal targets below the Prayer of Healing with Serendipity Health percent")]
-        public int PrayerOfHealingSerendipityCount { get; set; }
-
-        [Setting]
-        [DefaultValue(95)]
-        [Category("Holy")]
-        [DisplayName("Circle of Healing Health")]
-        [Description("Circle of Healing will be used at this value")]
-        public int CircleOfHealingHealth { get; set; }
-
-        [Setting]
-        [DefaultValue(5)]
-        [Category("Holy")]
-        [DisplayName("Circle of Healing Count")]
-        [Description("Circle of Healing will be used when this many heal targets below the Circle of Healing Health percent")]
-        public int CircleOfHealingCount { get; set; }
-
-*/
-
-
+        [DefaultValue(false)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Use Only In AoE")]
+        [Description("If set to true, this will make the artifact waepon only be used when more than one mob is attacking us.")]
+        public bool UseArtifactOnlyInAoE { get; set; }
         #endregion
 
     }

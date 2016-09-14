@@ -23,10 +23,11 @@ namespace Singular.ClassSpecific.Hunter
     public class Marksman
     {
         private static LocalPlayer Me => StyxWoW.Me;
+        private static HunterSettings HunterSettings => SingularSettings.Instance.Hunter();
 
         #region Normal Rotation
 
-	    private static SpellChargeInfo GetSidewindersChargeInfo()
+        private static SpellChargeInfo GetSidewindersChargeInfo()
 	    {
 			SpellFindResults sfr;
 			SpellManager.FindSpell("Sidewinders", out sfr);
@@ -59,8 +60,17 @@ namespace Singular.ClassSpecific.Hunter
 					    Helpers.Common.CreateInterruptBehavior(),
 
 					    Common.CreateHunterNormalCrowdControl(),
+                        
+                        // Artifact Weapon
+                        new Decorator(
+                            ret => HunterSettings.UseArtifactOnlyInAoE && Unit.UnfriendlyUnitsNearTarget(15).Count() > 1,
+                            new PrioritySelector(
+                                Spell.Cast("Windburst", ret => HunterSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None)
+                                )
+                        ),
+                        Spell.Cast("Windburst", ret => HunterSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
 
-					    Spell.Buff("Concussive Shot",
+                        Spell.Buff("Concussive Shot",
 						    ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
 						           && Me.CurrentTarget.Distance > Spell.MeleeRange),
 

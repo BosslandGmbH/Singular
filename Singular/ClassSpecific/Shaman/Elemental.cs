@@ -211,6 +211,24 @@ namespace Singular.ClassSpecific.Shaman
 								&& (Me.ManaPercent > ShamanSettings.EarthquakeManaPercent || Me.GetAuraTimeLeft("Lucidity") > TimeSpan.Zero)
 								&& Unit.UnfriendlyUnitsNearTarget(10f).Count() >= ShamanSettings.EarthquakeCount - 1),
 						Spell.Cast("Earth Shock", req => Me.CurrentMaelstrom >= 90),
+
+                        // Artifact Weapon
+                        new Decorator(
+                            ret => ShamanSettings.UseArtifactOnlyInAoE && Unit.UnfriendlyUnitsNearTarget(10f).Count() > 1, // Focused toward Chain Lightning
+                            new PrioritySelector(
+                                Spell.Cast("Stormkeeper",
+                                    ret =>
+                                        ShamanSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown || !Common.HasTalent(ShamanTalents.Ascendance)
+                                        || (ShamanSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Common.HasTalent(ShamanTalents.Ascendance) && Spell.GetSpellCooldown("Ascendance") > TimeSpan.FromSeconds(15))
+                                )
+                            )
+                        ),
+                        Spell.Cast("Stormkeeper",
+                            ret =>
+                                ShamanSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown || !Common.HasTalent(ShamanTalents.Ascendance)
+                                || (ShamanSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Common.HasTalent(ShamanTalents.Ascendance) && Spell.GetSpellCooldown("Ascendance") > TimeSpan.FromSeconds(15))
+                        ),
+
                         Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() > 1 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
                         Spell.Cast("Lightning Bolt")
                         )

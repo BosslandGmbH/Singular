@@ -19,8 +19,9 @@ namespace Singular.ClassSpecific.Hunter
     public class Survival
     {
         private static LocalPlayer Me => StyxWoW.Me;
+        private static HunterSettings HunterSettings => SingularSettings.Instance.Hunter();
 
-	    #region Normal Rotation
+        #region Normal Rotation
         [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterSurvival)]
         public static Composite CreateHunterSurvivalPullAndCombat()
 		{
@@ -42,8 +43,25 @@ namespace Singular.ClassSpecific.Hunter
                         Movement.WaitForLineOfSpellSight(),
 
                         Helpers.Common.CreateInterruptBehavior(),
-						
-						Spell.BuffSelf("Aspect of the Eagle", ret => Me.GetAuraTimeLeft("Mongoose Fury", false).TotalSeconds > 10),
+
+                        // Artifact Weapon
+                        new Decorator(
+                            ret => HunterSettings.UseArtifactOnlyInAoE && Clusters.GetConeClusterCount(90f, Unit.UnfriendlyUnits(8), 100f) > 1,
+                            new PrioritySelector(
+                                Spell.Cast("Fury of the Eagle",
+                                    ret =>
+                                        HunterSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown
+                                        || (HunterSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.GetAuraStacks("Mongoose Fury") >= 6)
+                                )
+                            )
+                        ),
+                        Spell.Cast("Fury of the Eagle",
+                            ret =>
+                                HunterSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown
+                                || (HunterSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.GetAuraStacks("Mongoose Fury") >= 6)
+                        ),
+
+                        Spell.BuffSelf("Aspect of the Eagle", ret => Me.GetAuraTimeLeft("Mongoose Fury", false).TotalSeconds > 10),
 						Spell.Cast("Mongoose Bite", req => SpellManager.HasSpell("Aspect of the Eagle") && Spell.GetSpellCooldown("Aspect of the Eagle").TotalSeconds <= 0 && !Me.HasActiveAura("Mongoose Fury")),
 						Spell.BuffSelf("Snake Hunter", ret => Me.HasAura("Aspect of the Eagle") && mongooseBiteChargeInfo?.ChargesLeft <= 0),
 						Spell.Cast("Butchery", ret => Unit.UnfriendlyUnits(8).Count() >= 2),

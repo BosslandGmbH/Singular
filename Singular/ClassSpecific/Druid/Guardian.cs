@@ -66,12 +66,13 @@ namespace Singular.ClassSpecific.Druid
                 CreateGuardianDiagnosticOutputBehavior("Combat"),
 
                 // defensive
+                Spell.BuffSelf("Rage of the Sleeper", ret => Settings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && Me.HealthPercent <= Settings.ArtifactHealthPercent),
                 Spell.BuffSelf("Survival Instincts", ret => Me.HealthPercent <= Settings.TankSurvivalInstinctsHealth),
                 Spell.BuffSelf("Barkskin", ret => Me.HealthPercent <= Settings.TankFeralBarkskin),
                 CreateGuardianIronfurBehavior(),
                 Spell.BuffSelf("Bristling Fur", req => Me.RagePercent <= Settings.TankFeralBristlingFurRage
                     && !Me.HasActiveAura("Survival Instincts") && !Me.HasActiveAura("Barkskin")),
-                Spell.BuffSelf("Mark of Ursol", ret => (Me.HealthPercent < Settings.TankFeralMarkOfUrsolHealth) && Unit.NearbyUnitsInCombatWithMe.Where(u => u.IsCasting).Any()),
+                Spell.BuffSelf("Mark of Ursol", ret => (Me.HealthPercent < Settings.TankFeralMarkOfUrsolHealth) && Unit.NearbyUnitsInCombatWithMe.Any(u => u.IsCasting)),
 
                 // self-heal
                 Spell.BuffSelf(
@@ -121,7 +122,6 @@ namespace Singular.ClassSpecific.Druid
         {
             TankManager.NeedTankTargeting = (SingularRoutine.CurrentWoWContext == WoWContext.Instances);
 
-            // Logger.Write("guardian loop.");
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 CreateGuardianWildChargeBehavior(),

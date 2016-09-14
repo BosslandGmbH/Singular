@@ -78,6 +78,26 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Spell.Cast("Death Strike", ret => (Me.HasActiveAura("Dark Succor") && Me.HealthPercent <= 80) || Me.HealthPercent <= 40),
 
+                        // Artifact Weapon
+                        new Decorator(
+                            ret => DeathKnightSettings.UseArtifactOnlyInAoE && Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) > 1,
+                            new PrioritySelector(
+                                Spell.Cast("Apocalypse", ret =>
+                                    DeathKnightSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && !DeathKnightSettings.UseArtifactOnlyInAoE &&
+                                    ((DeathKnightSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.CurrentTarget.GetAuraStacks("Festering Wound") >= 8)
+                                    || (DeathKnightSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown && Me.CurrentTarget.GetAuraStacks("Festering Wound") >= DeathKnightSettings.FesteringWoundsCount)
+                                    )
+                                )
+                            )
+                        ),
+                        Spell.Cast("Apocalypse", ret =>
+                            DeathKnightSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && !DeathKnightSettings.UseArtifactOnlyInAoE &&
+                            ( (DeathKnightSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.CurrentTarget.GetAuraStacks("Festering Wound") >= 8)
+                            || (DeathKnightSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown && Me.CurrentTarget.GetAuraStacks("Festering Wound") >= DeathKnightSettings.FesteringWoundsCount)
+                            )
+                        ),
+
+
                         new Decorator(
 							ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= DeathKnightSettings.DeathAndDecayCount || 
 									Common.HasTalent(DeathKnightTalents.Epidemic) && Unit.NearbyUnfriendlyUnits.Count() >= DeathKnightSettings.EpidemicCount,
@@ -170,7 +190,7 @@ namespace Singular.ClassSpecific.DeathKnight
 				Spell.BuffSelf("Dark Transformation", ret => Me.GotAlivePet),
 				Spell.Cast("Festering Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") < 5),
 				Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") >= 3),
-				Spell.Cast("Scourge Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") >= 1),
+                Spell.Cast("Scourge Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") >= 1),
 				Spell.Cast("Death Coil", ret => Common.RunicPowerDeficit < 10)
 				);
 		}

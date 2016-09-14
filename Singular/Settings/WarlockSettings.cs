@@ -42,6 +42,36 @@ namespace Singular.Settings
         {
         }
 
+        #region Category: Artifact Weapon
+        [Setting]
+        [DefaultValue(UseDPSArtifactWeaponWhen.OnCooldown)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Use When...")]
+        [Description("Toggle when the artifact weapon ability should be used. NOTE: OnCooldown and AtHighestDPSOpportunity does not affect the Demonology and Affliction artifact weapon.")]
+        public UseDPSArtifactWeaponWhen UseDPSArtifactWeaponWhen { get; set; }
+
+        [Setting]
+        [DefaultValue(5)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Affliction: Tormented Soul Count")]
+        [Description("This is how many tormented souls must be spawned before the Affliction artifact weapon is used.")]
+        public int ArtifactTormentedSoulCount { get; set; }
+
+        [Setting]
+        [DefaultValue(5)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Demonology: Active Demon Count")]
+        [Description("This is how many demons we must have summoned before the Demonology artifact weapon is used.")]
+        public int ArtifactDemonCount { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Use Only In AoE")]
+        [Description("If set to true, this will make the artifact waepon only be used when more than one mob is attacking us.")]
+        public bool UseArtifactOnlyInAoE { get; set; }
+        #endregion
+
         [Setting]
         [DefaultValue(WarlockPet.Auto)]
         [Category("Pet")]

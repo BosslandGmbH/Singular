@@ -75,6 +75,8 @@ namespace Singular.ClassSpecific.Paladin
                     new PrioritySelector(
 
                         // Defensive
+                        Spell.Cast("Eye of Tyr", ret => PaladinSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && Me.HealthPercent <= PaladinSettings.ArtifactHealthPercent),
+
                         Spell.BuffSelf("Hand of Freedom",
                             ret => Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
                                                                     WoWSpellMechanic.Disoriented,

@@ -17,7 +17,7 @@ namespace Singular.ClassSpecific.Mage
     {
         private static LocalPlayer Me => StyxWoW.Me;
 	    private static MageSettings MageSettings => SingularSettings.Instance.Mage();
-
+        private static bool HasArtifact => Me.Inventory.Equipped.MainHand.Entry == 128820;
 	    #region Normal Rotation
 
         [Behavior(BehaviorType.Heal, WoWClass.Mage, WoWSpec.MageFire)]
@@ -104,22 +104,42 @@ namespace Singular.ClassSpecific.Mage
                                     ),
                             Common.CreateSlowMeleeBehavior()
                             ),
-						
+
+                        Spell.Cast("Flame On", ret => Spell.GetCharges("Fire Blast") <= 0 && !Me.HasActiveAura("Heating Up") && !Me.HasActiveAura("Hot Streak!")),
+                        Spell.HandleOffGCD(Spell.Cast("Fire Blast", ret => Me.HasActiveAura("Heating Up"))), // Add HandleWhileCasting support?  
                         Spell.BuffSelf("Mirror Image", ret => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= MageSettings.MirrorImageCount),
 						Spell.BuffSelf("Combustion"),
 						Spell.CastOnGround("Flamestrike", 
 							on => Me.CurrentTarget, 
 							ret => Me.HasActiveAura("Hot Streak!") && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3),
 						Spell.Cast("Pyroblast", ret => Me.HasActiveAura("Hot Streak!")),
-						Spell.CastOnGround("Meteor", on => Me.CurrentTarget.Location),
+
+                        // Artifact Weapon
+                        new Decorator(
+                            ret => MageSettings.UseArtifactOnlyInAoE && Unit.UnfriendlyUnitsNearTarget(15).Count() > 1,
+                            new PrioritySelector(
+                                Spell.Cast("Phoenix's Flames",
+                                    ret =>
+                                        MageSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown
+                                        || (MageSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.HasActiveAura("Combustion") && Spell.GetCharges("Phoenix's Flames") >= 1 && (SpellManager.CanCast("Flame On") || Me.HasActiveAura("Flame On")))
+                                        || (MageSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown || MageSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.None)
+                                )
+                            )
+                        ),
+                        Spell.Cast("Phoenix's Flames",
+                            ret =>
+                                !MageSettings.UseArtifactOnlyInAoE && MageSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown
+                                || (MageSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.HasActiveAura("Combustion") && Spell.GetCharges("Phoenix's Flames") >= 1 && (SpellManager.CanCast("Flame On") || Me.HasActiveAura("Flame On")))
+                                || (MageSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown || MageSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.None) || (MageSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Spell.GetCharges("Phoenix's Flames") >= 2 && (SpellManager.CanCast("Flame On") || Me.HasActiveAura("Flame On")))
+                        ),
+
+                        Spell.CastOnGround("Meteor", on => Me.CurrentTarget.Location),
                         Spell.Cast("Cinderstorm", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count(u => u.HasAura("Ignite")) > MageSettings.CinderstormCount),
 						Spell.Cast("Dragon's Breath", 
 							ret => Me.GetAuraTimeLeft("Combustion") < Spell.GetSpellCastTime("Fireball") && 
 									Unit.UnfriendlyUnits(12).Any(u => Me.IsSafelyFacing(u))),
 						Spell.Cast("Living Bomb", ret => Me.CurrentTarget.TimeToDeath() > 12 && Unit.UnfriendlyUnitsNearTarget(10).Count(u => u.TimeToDeath() > 12) >= 2),
-						Spell.Cast("Flame On", ret => Spell.GetCharges("Fire Blast") <= 0),
 						Spell.Cast("Dragon's Breath", ret => Unit.UnfriendlyUnits(12).Any(u => Me.IsSafelyFacing(u))),
-						Spell.HandleOffGCD(Spell.Cast("Fire Blast", ret => Me.HasActiveAura("Heating Up"))), // Add HandleOffGCDWhileCasting support?  
 						Spell.Cast("Fireball", ret => !Me.HasActiveAura("Heating Up")),
 						Spell.Cast("Scorch", ret => Me.IsMoving && (!Common.HasTalent(MageTalents.IceFloes) || Spell.GetCharges("Ice Floes") <= 0)),
 

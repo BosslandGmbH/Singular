@@ -18,6 +18,12 @@ using Styx.CommonBot.CharacterManagement;
 
 namespace Singular.Settings
 {
+    enum UseDPSArtifactWeaponWhen
+    {
+        OnCooldown,
+        AtHighestDPSOpportunity,
+        None
+    }
     enum AllowMovementType
     {
         None,

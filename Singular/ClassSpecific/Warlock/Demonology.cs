@@ -121,7 +121,25 @@ namespace Singular.ClassSpecific.Warlock
             #region CurrentTarget DoTs
 
                         Common.CastCataclysm(),
-                        
+
+
+                        // Artifact Weapon
+                        new Decorator(
+                            ret => WarlockSettings.UseArtifactOnlyInAoE && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1,
+                            new PrioritySelector(
+                                Spell.Cast("Thal'kiel's Consumption",
+                                    ret =>
+                                        WarlockSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None
+                                        && Me.Minions.Count() >= WarlockSettings.ArtifactDemonCount)
+                            )
+                        ),
+                        Spell.Cast("Thal'kiel's Consumption",
+                            ret =>
+                                !WarlockSettings.UseArtifactOnlyInAoE
+                                && WarlockSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None
+                                && Me.Minions.Count() >= WarlockSettings.ArtifactDemonCount
+                        ),
+
                         Spell.Buff("Doom", req => !Me.CurrentTarget.HasAura("Doom")),
                         Spell.Cast("Summon Darkglare"),
                         Spell.Cast("Call Dreadstalkers"),

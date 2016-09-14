@@ -113,6 +113,15 @@ namespace Singular.ClassSpecific.Warlock
                             return RunStatus.Failure;
                         }),
 
+                        // Artifact Weapon
+                        new Decorator(
+                            ret => WarlockSettings.UseArtifactOnlyInAoE && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1,
+                            new PrioritySelector(
+                                Spell.Cast("Reap Souls", ret => WarlockSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && Me.GetAuraStacks("Tormented Souls") >= WarlockSettings.ArtifactTormentedSoulCount)
+                            )
+                        ),
+                        Spell.Cast("Reap Souls", ret => !WarlockSettings.UseArtifactOnlyInAoE && WarlockSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && Me.GetAuraStacks("Tormented Souls") >= WarlockSettings.ArtifactTormentedSoulCount),
+
                         CreateAoeBehavior(),
 
                         Common.CastCataclysm(),

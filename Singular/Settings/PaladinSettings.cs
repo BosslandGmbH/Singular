@@ -191,5 +191,28 @@ namespace Singular.Settings
         public bool RetAvengAndGoatK { get; set; }
 
         #endregion
+
+        #region Category: Artifact Weapon
+        [Setting]
+        [DefaultValue(UseDPSArtifactWeaponWhen.OnCooldown)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Use When...")]
+        [Description("Toggle when the artifact weapon ability should be used. NOTE: Protection Specialization artifact is only affected by the 'None' setting.")]
+        public UseDPSArtifactWeaponWhen UseDPSArtifactWeaponWhen { get; set; }
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Protection: Health Percent to Use")]
+        [Description("Once our hearth percent falls below this number, we will use the artifact weapon's ability.")]
+        public int ArtifactHealthPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Use Only In AoE")]
+        [Description("If set to true, this will make the artifact waepon only be used when more than one mob is attacking us. NOTE: Protection Specialization artifact is not affected by this.")]
+        public bool UseArtifactOnlyInAoE { get; set; }
+        #endregion
     }
 }

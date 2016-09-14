@@ -235,6 +235,25 @@ namespace Singular.ClassSpecific.Warrior
                                 new Decorator(
                                     new PrioritySelector(
                                         Spell.Cast("Colossus Smash"),
+
+                                        // Artifact Weapon
+                                        new Decorator(
+                                            ret => WarriorSettings.UseArtifactOnlyInAoE && Unit.UnfriendlyUnits(8).Count() > 1,
+                                            new PrioritySelector(
+                                                Spell.Cast("Warbreaker",
+                                                    ret =>
+                                                        WarriorSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown
+                                                        || (WarriorSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && !Me.CurrentTarget.HasActiveAura("Colossus Smash"))
+                                                )
+                                            )
+                                        ),
+                                        Spell.Cast("Warbreaker",
+                                            ret =>
+                                                !WarriorSettings.UseArtifactOnlyInAoE &&
+                                                ( WarriorSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown
+                                                || (WarriorSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && !Me.CurrentTarget.HasActiveAura("Colossus Smash")) )
+                                        ),
+
                                         Spell.Cast("Execute", ret => Me.CurrentTarget.HasAura("Colossus Smash") && Me.CurrentTarget.HealthPercent < 20),
                                         Spell.Cast("Overpower"),
                                         Spell.Cast("Mortal Strike", ret => Spell.GetSpellCooldown("Colossus Smash") > TimeSpan.FromSeconds(2)),

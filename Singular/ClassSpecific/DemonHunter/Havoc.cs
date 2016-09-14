@@ -71,18 +71,16 @@ namespace Singular.ClassSpecific.DemonHunter
                             new PrioritySelector(
                                 Spell.Cast("Fury of the Illidari",
                                     ret =>
-                                        DemonHunterSettings.UseArtifactWeaponWhen == UseArtifactWeaponWhen.OnCooldown
-                                        || (!Common.HasTalent(DemonHunterTalents.Momentum) && DemonHunterSettings.UseArtifactWeaponWhen != UseArtifactWeaponWhen.None)
-                                        || (DemonHunterSettings.UseArtifactWeaponWhen == UseArtifactWeaponWhen.AtHighestDPSOpportunity && Me.HasActiveAura("Momentum"))
+                                        DemonHunterSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown
+                                        || (DemonHunterSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.HasActiveAura("Momentum"))
                                 )
                             )
                         ),
                         Spell.Cast("Fury of the Illidari",
                             ret =>
                                 !DemonHunterSettings.UseArtifactOnlyInAoE &&
-                                ( DemonHunterSettings.UseArtifactWeaponWhen == UseArtifactWeaponWhen.OnCooldown
-                                || (DemonHunterSettings.UseArtifactWeaponWhen == UseArtifactWeaponWhen.AtHighestDPSOpportunity && Me.HasActiveAura("Momentum"))
-                                || (DemonHunterSettings.UseArtifactWeaponWhen != UseArtifactWeaponWhen.None && !Common.HasTalent(DemonHunterTalents.Momentum)) )
+                                ( DemonHunterSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown
+                                || (DemonHunterSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.HasActiveAura("Momentum")) )
                         ),
 
                         // AoE Rotation

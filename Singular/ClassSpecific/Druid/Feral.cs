@@ -280,6 +280,26 @@ namespace Singular.ClassSpecific.Druid
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
+
+                        //High Priorty Artifact Weapon Ashamane's Frenzy
+                        new Decorator(
+                            ret => DruidSettings.UseArtifactOnlyInAoE && Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) > 1,
+                            new PrioritySelector(
+                                Spell.Cast("Ashamane's Frenzy",
+                                    ret =>
+                                        DruidSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown
+                                        || (DruidSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.HasActiveAura("Tiger's Fury"))
+                                )
+                            )
+                        ),
+                        Spell.Cast("Ashamane's Frenzy",
+                            ret =>
+                                !DruidSettings.UseArtifactOnlyInAoE &&
+                                ( DruidSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown
+                                || (DruidSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.HasActiveAura("Tiger's Fury")) )
+                        ),
+
+
                         //Single target
                         CreateFeralFaerieFireBehavior(),
 

@@ -94,7 +94,7 @@ namespace Singular.ClassSpecific.DemonHunter
                             ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.MeleeDistance() < 10) > 1,
                             new PrioritySelector(
                                 Spell.Cast("Soul Carver", on => (WoWUnit)on, ret => DemonHunterSettings.UseArtifactWeaponWhen != UseArtifactWeaponWhen.None),
-                                Spell.Cast("Spirit Bomb", on => (WoWUnit)on, ret => !Me.CurrentTarget.HasAura("Frality") && Common.FindFragments(39).Any()),
+                                Spell.Cast("Spirit Bomb", on => (WoWUnit)on, ret => !Me.CurrentTarget.HasAura("Frality") && Common.FindFragments(19).Any()),
                                 Spell.Cast("Felblade", on => (WoWUnit)on),
                                 Spell.Cast("Shear", on => (WoWUnit)on, ret => Me.HasActiveAura("Blade Turning")),
                                 Spell.CastOnGround("Sigil of Flame", on => (WoWUnit)on, ret => Unit.UnfriendlyUnitsNearTarget(30).Count() >= DemonHunterSettings.SigilOfFlameCount, false),
@@ -106,7 +106,7 @@ namespace Singular.ClassSpecific.DemonHunter
                         // Average Priority Single Target
                         Spell.Cast("Felblade", on => (WoWUnit)on),
                         Spell.Cast("Fel Erruption", on => (WoWUnit)on),
-                        Spell.Cast("Spirit Bomb", on => (WoWUnit)on, ret => !Me.CurrentTarget.HasAura("Frality") && Common.FindFragments(39).Any()),
+                        Spell.Cast("Spirit Bomb", on => (WoWUnit)on, ret => !Me.CurrentTarget.HasAura("Frality") && Common.FindFragments(19).Any()),
                         Spell.Cast("Shear", on => (WoWUnit)on, ret => Me.HasActiveAura("Blade Turning")),
                         Spell.Cast("Fracture", on => (WoWUnit)on, ret => CurrentPain >= 60),
                         Spell.CastOnGround("Sigil of Flame", on => (WoWUnit)on, ret => Unit.UnfriendlyUnitsNearTarget(30).Count() >= DemonHunterSettings.SigilOfFlameCount, false),

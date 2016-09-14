@@ -43,22 +43,9 @@ namespace Singular.ClassSpecific.DeathKnight
         {
             return new PrioritySelector(
                 Spell.WaitForCastOrChannel(),
-
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-                        new Decorator(
-                            ret => !Rest.IsEatingOrDrinking,
-                            new PrioritySelector(
-                                UnholyCastRaiseDead(),
-                                Spell.Cast("Death Coil", on => Me.Pet, req => Me.GotAlivePet && Me.Pet.HealthPercent < 85)
-                                )
-                            ),
-
-                        Singular.Helpers.Rest.CreateDefaultRestBehaviour()
-                        )
-                    )
-                );
+                UnholyCastRaiseDead(),
+                Rest.CreateDefaultRestBehaviour()
+            );
         }
 
         #endregion

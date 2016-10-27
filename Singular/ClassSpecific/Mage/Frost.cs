@@ -17,6 +17,8 @@ using Action = Styx.TreeSharp.Action;
 using System;
 using System.Drawing;
 using System.Collections.Generic;
+using System.Numerics;
+using Styx.Common;
 
 namespace Singular.ClassSpecific.Mage
 {
@@ -25,7 +27,7 @@ namespace Singular.ClassSpecific.Mage
         private static LocalPlayer Me => StyxWoW.Me;
 	    private static MageSettings MageSettings => SingularSettings.Instance.Mage();
 
-	    const int FINGERS_OF_FROST = 44544;
+        const int FINGERS_OF_FROST = 44544;
 
         [Behavior(BehaviorType.Initialize, WoWClass.Mage, WoWSpec.MageFrost)]
         public static Composite CreateMageFrostInit()
@@ -299,7 +301,7 @@ namespace Singular.ClassSpecific.Mage
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
 
-						// stack buffs for some burst... only every few minutes, but we'll use em if we got em
+                        // stack buffs for some burst... only every few minutes, but we'll use em if we got em
                         new Decorator(
                              req => Me.GotTarget() && !Me.CurrentTarget.IsTrivial() && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TimeToDeath() > 40 || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3),
                              new Decorator(
@@ -308,10 +310,10 @@ namespace Singular.ClassSpecific.Mage
                                     && (Me.Level < 24 || Me.HasAura(FINGERS_OF_FROST)) 
                                     && (Me.Level < 36 || Spell.CanCastHack("Icy Veins", Me, skipWowCheck: true)),
                                  new PrioritySelector(
-									 Spell.BuffSelf("Mirror Image"),
+                                     Spell.BuffSelf("Mirror Image"),
 									 Spell.HandleOffGCD(Spell.BuffSelf("Icy Veins"))
-                                    )
-                                )
+                                                )
+                                            )
                             ),
 
                         Common.CreateMagePolymorphOnAddBehavior(),
@@ -325,15 +327,15 @@ namespace Singular.ClassSpecific.Mage
                                     ),
                             new Decorator(
                                 ret => ret != null && SingularRoutine.CurrentWoWContext != WoWContext.Instances,
-                                new PrioritySelector(
-                                    Spell.Buff("Frost Nova", on => (WoWUnit) on, req => !Unit.UnitsInCombatWithUsOrOurStuff(12).Any(u => u.IsCrowdControlled())),
+                                    new PrioritySelector(
+                                        Spell.Buff("Frost Nova", on => (WoWUnit) on, req => !Unit.UnitsInCombatWithUsOrOurStuff(12).Any(u => u.IsCrowdControlled())),
                                     CastFreeze(
 										on => (WoWUnit)on, 
 										req => 
 											Spell.IsSpellOnCooldown("Frost Nova") && !((WoWUnit)req).IsFrozen() && 
 											!Unit.UnfriendlyUnitsNearTarget(12).Any(u => u.IsCrowdControlled()))
+                                            )
                                     )
-                                )
                             ),
 
                         // Artifact Weapon
@@ -345,8 +347,8 @@ namespace Singular.ClassSpecific.Mage
                         ),
                         Spell.Cast("Ebonbolt", ret => !MageSettings.UseArtifactOnlyInAoE && MageSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
 
-                        Spell.Cast("Ray of Frost", req => Spell.IsSpellOnCooldown("Rune of Power")),
-						Spell.BuffSelf("Icy Veins"),
+						Spell.Cast("Ray of Frost", req => Spell.IsSpellOnCooldown("Rune of Power")),
+                                            Spell.BuffSelf("Icy Veins"),
 						Spell.Buff("Frost Bomb", req => Me.GetAuraStacks("Fingers of Frost") >= 2),
 						Spell.Cast("Frozen Orb"),
 						CastFreeze(
@@ -356,7 +358,7 @@ namespace Singular.ClassSpecific.Mage
 						Spell.Cast("Ice Lance", ret => Me.GetAuraStacks("Fingers of Frost") >= 2),
 						Spell.Cast("Flurry", req => Me.HasActiveAura("Brain Freeze") && !Me.HasActiveAura("Fingers of Frost")),
 						Spell.Cast("Ice Lance", req => Me.CurrentTarget.HasMyAura("Winter's Chill")),
-						Pet.CastPetAction("Water Jet", req => !Me.HasActiveAura("Fingers of Frost")),
+                        Spell.HandleOffGCD(Pet.CastPetAction("Water Jet", req => !Me.HasActiveAura("Fingers of Frost"))),
 						Spell.Cast("Ice Nova"),
 						Spell.CastOnGround("Blizzard", 
 							on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8), 
@@ -364,9 +366,9 @@ namespace Singular.ClassSpecific.Mage
 						Spell.Cast("Ice Lance", req => Me.GetAuraStacks("Fingers of Frost") == 1),
 						Spell.Cast("Glacial Spike"),
                         Spell.Cast("Frostbolt", ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost))
-                    )
-                )
-			);
+                                            )
+                                        )
+                 );
         }
 
         #endregion
@@ -374,7 +376,7 @@ namespace Singular.ClassSpecific.Mage
         public static Composite CreateSummonWaterElemental()
         {
             return new Decorator(
-                ret => PetManager.IsPetSummonAllowed
+                ret => PetManager.IsPetSummonAllowed    
                     && !Common.HasTalent(MageTalents.LonelyWinter)
                     && (!Me.GotAlivePet || Me.Pet.Distance > 40)
                     && PetManager.PetSummonAfterDismountTimer.IsFinished
@@ -475,7 +477,7 @@ namespace Singular.ClassSpecific.Mage
                 );
         }
 
-        static private WoWPoint _locFreeze;
+        static private Vector3 _locFreeze;
 
         #region Diagnostics
 

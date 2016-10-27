@@ -27,6 +27,8 @@ namespace Singular.ClassSpecific.Paladin
         private static PaladinSettings PaladinSettings { get { return SingularSettings.Instance.Paladin(); } }
 
         private const int RET_T13_ITEM_SET_ID = 1064;
+        private const int DP_PROC = 223819;
+        private const int J_DEBUFF = 197277; //Added this as bot was not respecting conditions otherwise.
 
         private static int NumTier13Pieces
         {
@@ -52,7 +54,7 @@ namespace Singular.ClassSpecific.Paladin
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Rest.CreateDefaultRestBehaviour( "Flash of Light", "Redemption")
+                        Rest.CreateDefaultRestBehaviour("Flash of Light", "Redemption")
                         )
                     )
                 );
@@ -61,7 +63,7 @@ namespace Singular.ClassSpecific.Paladin
         #endregion
 
         #region Buffs
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.Normal)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Paladin, WoWSpec.PaladinRetribution)]
         public static Composite CreatePaladinRetributionBuff()
         {
             return new PrioritySelector(
@@ -89,10 +91,9 @@ namespace Singular.ClassSpecific.Paladin
 
                 Spell.WaitForCastOrChannel(),
 
-                new Decorator( 
+                new Decorator(
                     ret => !Spell.IsGlobalCooldown() && Me.GotTarget(),
                     new PrioritySelector(
-
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
@@ -112,30 +113,27 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.BuffSelf("Word of Glory", req => Me.HealthPercent <= PaladinSettings.SelfWordOfGloryHealth && (SingularRoutine.CurrentWoWContext != WoWContext.Instances || !Me.GroupInfo.IsInParty)),
                         Spell.BuffSelf("Eye for an Eye", req => Me.HealthPercent <= PaladinSettings.EyeForAndEyeHealth),
                         Spell.BuffSelf("Shield of Vengeance", req => Me.HealthPercent <= PaladinSettings.ShieldOfVengeanceHealth),
+                        Spell.Cast("Blessing of Freedom", on => Me, ret =>
+                             Me.HasAuraWithMechanic(WoWSpellMechanic.Rooted, WoWSpellMechanic.Slowed, WoWSpellMechanic.Snared)
+                             || Me.HasAuraWithEffect(WoWApplyAuraType.ModRoot, WoWApplyAuraType.ModDecreaseSpeed) && !Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed)
+                        ),
 
-                        // Defensive
-                        Spell.BuffSelf("Blessing of Freedom",
-                            ret => Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
-                                                                  WoWSpellMechanic.Disoriented,
-                                                                  WoWSpellMechanic.Frozen,
-                                                                  WoWSpellMechanic.Incapacitated,
-                                                                  WoWSpellMechanic.Rooted,
-                                                                  WoWSpellMechanic.Slowed,
-                                                                  WoWSpellMechanic.Snared)),
+                        Spell.BuffSelf("Cleanse Toxins", ret => StyxWoW.Me.GetAllAuras().Any(a => a.Spell.DispelType == WoWDispelType.Disease || a.Spell.DispelType == WoWDispelType.Poison)),
 
-                        Spell.Cast("Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal ),
-                        Spell.Cast( 
-                            "War Stomp", 
-                            req => PaladinSettings.StunMobsWhileSolo 
+                        //Changed: WoWContext.ALL (was not casting in dungeons) and added Player for BGs
+                        Spell.Cast("Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo || Me.CurrentTarget.IsPlayer),
+                        Spell.Cast(
+                            "War Stomp",
+                            req => PaladinSettings.StunMobsWhileSolo
                                 && Me.Race == WoWRace.Tauren
                                 && EventHandlers.TimeSinceAttackedByEnemyPlayer.TotalSeconds < 5
-                                && EventHandlers.AttackingEnemyPlayer != null 
+                                && EventHandlers.AttackingEnemyPlayer != null
                                 && EventHandlers.AttackingEnemyPlayer.SpellDistance() < 8
                             ),
 
                         //7	Blow buffs seperatly.  No reason for stacking while grinding.
                         Spell.BuffSelf(
-                            "Holy Avenger", 
+                            "Holy Avenger",
                             req => PaladinSettings.RetAvengAndGoatK
                                 && Me.GotTarget()
                                 && Me.CurrentTarget.IsWithinMeleeRange && !Me.CurrentTarget.IsTrivial()
@@ -144,7 +142,7 @@ namespace Singular.ClassSpecific.Paladin
                             ),
 
                         Spell.BuffSelf(
-                            "Avenging Wrath", 
+                            "Avenging Wrath",
                             req => PaladinSettings.RetAvengAndGoatK
                                 && Me.GotTarget()
                                 && Me.CurrentTarget.IsWithinMeleeRange && !Me.CurrentTarget.IsTrivial()
@@ -171,32 +169,56 @@ namespace Singular.ClassSpecific.Paladin
                         // Wake of Ashes notes:  UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity would be good if the player has the Ashes to Ashes artifact trait and if the player needs Holy Power.
 
                         new Decorator(
-                            ret => _mobCount >= 2 && Spell.UseAOE,
+                            ret => _mobCount >= 3 && Spell.UseAOE && !Me.CurrentTarget.IsPlayer,
                             new PrioritySelector(
                                 // was EJ: Inq > 5HP DS > LH > HoW > Exo > HotR > Judge > 3-4HP DS (> SS)
                                 // now EJ: Inq > 5HP DS > LH > HoW (> T16 Free DS) > HotR > Judge > Exo > 3-4HP DS (> SS)
-                                Spell.Cast("Wake of Ashes", ret => PaladinSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
-                                Spell.Cast("Consecration"),
+
+								Spell.Cast("Wake of Ashes", ret => PaladinSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown
+								|| (PaladinSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.CurrentHolyPower <= 1)
+								&& Clusters.GetConeClusterCount(90f, Unit.UnfriendlyUnits(10), 100f) > 1),
+
+								Spell.Cast("Judgment", ret => Me.CurrentHolyPower >= 3),
+
+                                new Decorator(ret => Common.HasTalent(PaladinTalents.JusticarsVengeance),
+                                    new PrioritySelector(
+                                    Spell.Cast("Justicar's Vengeance", ret => Me.HealthPercent <= 50),
+                                    Spell.Cast("Divine Storm", ret => Spell.UseAOE && Me.HealthPercent > 50 && (Me.CurrentTarget.HasAura(J_DEBUFF) || Me.CurrentHolyPower == 5))
+									)
+                                ),
+                                Spell.Cast("Divine Storm", ret => !Common.HasTalent(PaladinTalents.JusticarsVengeance) && Spell.UseAOE && (Me.CurrentTarget.HasAura(J_DEBUFF) || Me.CurrentHolyPower == 5)),
+
+								Spell.Cast("Blade of Justice", ret => Me.CurrentHolyPower < 5),
+                                Spell.Cast("Consecration", req => Unit.UnfriendlyUnits(8).Any()),
                                 Spell.Cast("Holy Wrath", ret => Me.HealthPercent <= 55),
-                                Spell.Cast(SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower == 5),
                                 Spell.CastOnGround("Light's Hammer", on => Me.CurrentTarget, ret => 2 <= Clusters.GetClusterCount(Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 10f)),
-                                Spell.Cast("Divine Storm", req => Spell.UseAOE && Me.HasAura("Divine Crusader")),   // T16 buff
-                                Spell.Cast(SpellManager.HasSpell("Hammer of the Righteous") ? "Hammer of the Righteous" : "Crusader Strike"),
-                                Spell.Cast("Judgment"),
-                                Spell.Cast(Spell.UseAOE && SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower >= 3),
-                                Spell.BuffSelf("Sacred Shield"),
+                                Spell.Cast("Crusader Strike"), // Can be replaced by Zeal - casts both ways.
                                 Movement.CreateMoveToMeleeBehavior(true),
                                 new ActionAlwaysSucceed()
                                 )
                             ),
+                        //No need to specify Holy Power, bot will cast anyway if it can.
 
-                        Spell.Cast("Wake of Ashes", ret => !PaladinSettings.UseArtifactOnlyInAoE && PaladinSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
-                        Spell.Cast("Crusader Strike"), // Can be replaced by Zeal - casts both ways.
-                        Spell.Cast("Blade of Justice"), //Can be replaced by Blade of Wrath or Divine Hammer - BoJ casts all ways.
-                        Spell.Cast("Judgment"),
+                        Spell.BuffSelf("Divine Steed", req => !Me.Mounted && Me.IsMoving && Me.CurrentTarget.SpellDistance().Between(20, 60)),
+                        Spell.Cast("Hand of Hindrance", req => Me.CurrentTarget.SpellDistance().Between(3, 27) && Me.CurrentTarget.IsMovingAway()),
+                        Spell.Cast("Wake of Ashes", ret => !PaladinSettings.UseArtifactOnlyInAoE
+						&& (PaladinSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && PaladinSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity)
+						|| (PaladinSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.CurrentHolyPower <= 1)
+						&& Clusters.GetConeClusterCount(90f, Unit.UnfriendlyUnits(10), 100f) >= 1),
+
+						Spell.Cast("Judgment", ret => Me.CurrentHolyPower >= 3 || Me.CurrentTarget.Distance > 20d),
+
+                        new Decorator(ret => Common.HasTalent(PaladinTalents.JusticarsVengeance),
+                            new PrioritySelector(
+                                Spell.Cast("Justicar's Vengeance", ret => Me.HasAura(DP_PROC) && Me.CurrentTarget.HasAura(J_DEBUFF) || Me.HealthPercent <= 50),
+                                Spell.Cast("Templar's Verdict", ret => Me.HealthPercent > 50 && (Me.CurrentTarget.HasAura(J_DEBUFF) || Me.CurrentHolyPower == 5))
+								)
+                        ),
+                        Spell.Cast("Templar's Verdict", ret => !Common.HasTalent(PaladinTalents.JusticarsVengeance) && (Me.CurrentTarget.HasAura(J_DEBUFF) || Me.CurrentHolyPower == 5)),
+
+                        Spell.Cast("Blade of Justice", ret => Me.CurrentHolyPower < 5),
                         Spell.Cast("Execution Sentence", when => Me.CurrentTarget.TimeToDeath() > 8),
-                        Spell.Cast("Justicar's Vengeance", when => Me.HasAura("Divine Purpose")),
-                        Spell.Cast("Templar's Verdict", when => Me.CurrentTarget.HasAura("Judgment"))
+                        Spell.Cast("Crusader Strike") // Can be replaced by Zeal - casts both ways.
                         )
                     ),
 
@@ -219,12 +241,12 @@ namespace Singular.ClassSpecific.Paladin
         private static Composite CreateRetDiagnosticOutputBehavior()
         {
             if (!SingularSettings.Debug)
-                return new Action( ret => { return RunStatus.Failure; } );
+                return new Action(ret => { return RunStatus.Failure; });
 
             return new Sequence(
                 new ThrottlePasses(
-                    1, 
-                    TimeSpan.FromMilliseconds(1500), 
+                    1,
+                    TimeSpan.FromMilliseconds(1500),
                     RunStatus.Failure,
                     new Action(ret =>
                     {

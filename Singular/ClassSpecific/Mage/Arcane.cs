@@ -28,9 +28,9 @@ namespace Singular.ClassSpecific.Mage
 
 	    private static uint ArcaneCharges => Me.GetAllAuras().Where(a => a.Name == "Arcane Charge").Select(a => a.StackCount).DefaultIfEmpty(0u).Max();
 
-		#region Normal Rotation
+        #region Normal Rotation
 
-		private static bool useArcaneNow;
+        private static bool useArcaneNow;
 
         [Behavior(BehaviorType.Pull, WoWClass.Mage, WoWSpec.MageArcane)]
         public static Composite CreateMageArcaneNormalPull()
@@ -84,7 +84,7 @@ namespace Singular.ClassSpecific.Mage
                         // 2. area has another player competing for mobs (we want to tag the mob quickly)
                         new Decorator(
                             ret => StyxWoW.Me.CurrentTarget.Distance < 12
-                                || ObjectManager.GetObjectsOfType<WoWPlayer>(true, false).Any(p => p.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) <= 40 * 40),
+                                || ObjectManager.GetObjectsOfType<WoWPlayer>(true, false).Any(p => p.Location.DistanceSquared(StyxWoW.Me.CurrentTarget.Location) <= 40 * 40),
                             new PrioritySelector(
                                 Spell.Cast("Fire Blast"),
                                 Spell.Cast("Arcane Barrage")
@@ -160,19 +160,19 @@ namespace Singular.ClassSpecific.Mage
                             new PrioritySelector(
 								Spell.BuffSelf("Charged Up", ret => ArcaneCharges <= 0),
                                 Spell.Cast("Arcane Missiles"),
-                                Spell.Cast("Arcane Blast"),
+                        Spell.Cast("Arcane Blast"),
 								Spell.BuffSelf("Presence of Mind", ret => Me.GetAuraTimeLeft("Arcane Power").TotalSeconds < 4.5)
-                                )
-                            ),
+                        )
+                                    ),
 
 						Spell.Cast("Arcane Orb", ret => ArcaneCharges <= 0),
 						Spell.Cast("Nether Tempest", ret => ArcaneCharges >= 4 && Me.CurrentTarget.GetAuraTimeLeft("Nether Tempest").TotalSeconds < 4),
                         Spell.Cast("Arcane Missiles", ret => Me.GetAuraStacks("Arcane Missiles!") >= 3 || Me.ManaPercent < 100 && Me.GetAuraStacks("Arcane Missiles!") >= 2),
 						Spell.Cast("Supernova"),
 						Spell.Cast("Arcane Barrage", ret => Me.ManaPercent < 20),
-                        Spell.Cast("Arcane Blast")
+                                Spell.Cast("Arcane Blast")
+                                )
                         )
-                    )
                 );
         }
 

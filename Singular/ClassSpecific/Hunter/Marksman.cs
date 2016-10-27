@@ -17,6 +17,7 @@ using Action = Styx.TreeSharp.Action;
 using System.Drawing;
 using CommonBehaviors.Actions;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace Singular.ClassSpecific.Hunter
 {
@@ -27,7 +28,7 @@ namespace Singular.ClassSpecific.Hunter
 
         #region Normal Rotation
 
-        private static SpellChargeInfo GetSidewindersChargeInfo()
+	    private static SpellChargeInfo GetSidewindersChargeInfo()
 	    {
 			SpellFindResults sfr;
 			SpellManager.FindSpell("Sidewinders", out sfr);
@@ -70,7 +71,7 @@ namespace Singular.ClassSpecific.Hunter
                         ),
                         Spell.Cast("Windburst", ret => HunterSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
 
-                        Spell.Buff("Concussive Shot",
+					    Spell.Buff("Concussive Shot",
 						    ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
 						           && Me.CurrentTarget.Distance > Spell.MeleeRange),
 
@@ -78,7 +79,7 @@ namespace Singular.ClassSpecific.Hunter
 
 					    Spell.Cast("Sentinel",
 						    ret =>
-							    !Me.HasActiveAura("Marking Targets") && Unit.NearbyUnfriendlyUnits.All(u => !u.HasMyAura("Hunter's Mark"))),
+							    !Me.HasActiveAura("Marking Targets") && Unit.NearbyUnitsInCombatWithUsOrOurStuff.All(u => !u.HasMyAura("Hunter's Mark"))),
 					    // Detonate the missile
 					    Spell.Cast("Explosive Shot",
 						    ret =>
@@ -93,7 +94,7 @@ namespace Singular.ClassSpecific.Hunter
 						           Me.GetAuraTimeLeft("Steady Focus").TotalSeconds < 4.2d),
 					    Spell.Cast("Marked Shot",
 						    on =>
-							    Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HasMyAura("Vulnerable") && u.TimeToDeath(int.MaxValue) < 2)),
+							    Unit.NearbyUnitsInCombatWithUsOrOurStuff.FirstOrDefault(u => u.HasMyAura("Vulnerable") && u.TimeToDeath(int.MaxValue) < 2)),
 					    Spell.Cast("Marked Shot", ret => !Me.CurrentTarget.HasMyAura("Vulnerable")),
 					    // Cast Marked Shot if Vulnerable buff will expire until we can get a Aimed Shot out
 					    Spell.Cast("Marked Shot",
@@ -117,15 +118,15 @@ namespace Singular.ClassSpecific.Hunter
 							new PrioritySelector(
 								Spell.Cast("Sidewinders", ret => Common.HasTalent(HunterTalents.SteadyFocus) && !Me.HasActiveAura("Steady Focus")),
 								Spell.Cast("Sidewinders", ret => Me.HasActiveAura("Marking Targets")),
-								Spell.Cast("Sidewinders", 
+								Spell.Cast("Sidewinders",
 									ret => Spell.GetCharges("Sidewinders") >= 2 ||
 											Spell.GetCharges("Sidewinders") == 1 && GetSidewindersChargeInfo().TimeUntilNextCharge.TotalSeconds < 1.8)
 								)
 							),
 						new Decorator(ret => !Common.HasTalent(HunterTalents.Sidewinders),
 							new PrioritySelector(
-								Spell.Cast("Multi-Shot", ret => Unit.NearbyUnfriendlyUnits.Count() >= 2),
-								Spell.Cast("Arcane Shot", ret => Unit.NearbyUnfriendlyUnits.Count() < 2)
+								Spell.Cast("Multi-Shot", ret => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Count() >= 2),
+								Spell.Cast("Arcane Shot", ret => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Count() < 2)
 								)
 							)
                         )
@@ -142,9 +143,9 @@ namespace Singular.ClassSpecific.Hunter
             if (!SingularSettings.Debug)
                 return new ActionAlwaysFail();
 
-            return new ThrottlePasses( 
-                1, 
-                TimeSpan.FromSeconds(1), 
+            return new ThrottlePasses(
+                1,
+                TimeSpan.FromSeconds(1),
                 RunStatus.Failure,
                 new Action(ret =>
                 {

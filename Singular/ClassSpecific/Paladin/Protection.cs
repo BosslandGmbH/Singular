@@ -14,6 +14,7 @@ using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using System.Drawing;
 using System;
+using Styx.Common;
 
 namespace Singular.ClassSpecific.Paladin
 {
@@ -47,7 +48,7 @@ namespace Singular.ClassSpecific.Paladin
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Spell.Cast("Divine Steed", req => Me.CurrentTarget.Distance > 15d),
+                        Spell.Cast("Divine Steed", req => PaladinSettings.UseDivineSteed && Me.CurrentTarget.Distance > 15d),
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
@@ -68,7 +69,7 @@ namespace Singular.ClassSpecific.Paladin
             return new PrioritySelector(
                 Spell.BuffSelf("Devotion Aura", req => Me.Silenced),
 
-                Spell.Cast("Divine Steed", req => Me.CurrentTarget.Distance > 15d),
+                Spell.Cast("Divine Steed", req => PaladinSettings.UseDivineSteed && Me.CurrentTarget.Distance > 15d),
 
                 new Decorator(
                     req => !Unit.IsTrivial(Me.CurrentTarget),
@@ -152,7 +153,7 @@ namespace Singular.ClassSpecific.Paladin
                                 TankManager.Instance.TargetList.Count(
                                     u => u.SpellDistance() < 10 || u.Location.Distance(Me.CurrentTarget.Location) < 10);
                             return RunStatus.Failure;
-                        }),
+                            }),
 
                         CreateProtDiagnosticOutputBehavior(),
 
@@ -168,8 +169,8 @@ namespace Singular.ClassSpecific.Paladin
                         // Taunts - if reckoning on cooldown, throw some damage at them
                         new Decorator(
                             ret => SingularSettings.Instance.EnableTaunting
-                                   && TankManager.Instance.NeedToTaunt.Any()
-                                   && TankManager.Instance.NeedToTaunt.FirstOrDefault().InLineOfSpellSight,
+                                && TankManager.Instance.NeedToTaunt.Any()
+                                && TankManager.Instance.NeedToTaunt.FirstOrDefault().InLineOfSpellSight,
                             new Throttle(TimeSpan.FromMilliseconds(1500),
                                 new PrioritySelector(
                                     ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(e => e.SpellDistance() < 30),

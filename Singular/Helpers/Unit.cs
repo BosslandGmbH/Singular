@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using Styx;
@@ -18,6 +19,7 @@ using Singular.Dynamics;
 using Singular.Managers;
 using Singular.Settings;
 using Singular.Utilities;
+using Styx.Common;
 
 namespace Singular.Helpers
 {
@@ -590,10 +592,10 @@ namespace Singular.Helpers
             int distFromMe = 40 + (int) distance;
 
             var curTarLocation = unit.Location;
-            return Unit.UnfriendlyUnits(distFromMe).Where(p => p.Location.DistanceSqr(curTarLocation) <= distFromTargetSqr).ToList();
+            return Unit.UnfriendlyUnits(distFromMe).Where(p => p.Location.DistanceSquared(curTarLocation) <= distFromTargetSqr).ToList();
         }
 
-		/// <summary>
+        /// <summary>
 		/// Checks the active aura by the name on unit.
 		/// </summary>
 		/// <param name="unit"> The unit to check the active auras for. </param>
@@ -1015,7 +1017,7 @@ namespace Singular.Helpers
 
         public static uint GetAuraStacks(this WoWUnit onUnit, string auraName, bool fromMyAura = true)
         {
-	        WoWAura wantedAura =
+            WoWAura wantedAura =
 		        onUnit?.GetAllAuras()
 			        .FirstOrDefault(
 				        a => a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid));
@@ -1517,7 +1519,7 @@ namespace Singular.Helpers
             if (checkDist < 0)
                 return false;
 
-            // WoWPoint loc = WoWPoint.RayCast(StyxWoW.Me.CurrentTarget.Location, StyxWoW.Me.CurrentTarget.RenderFacing, checkDist);
+            // Vector3 loc = Vector3.RayCast(StyxWoW.Me.CurrentTarget.Location, StyxWoW.Me.CurrentTarget.RenderFacing, checkDist);
             // return StyxWoW.Me.IsFacing( loc );
 
             return unit.IsSafelyFacing(StyxWoW.Me, 10);
@@ -1659,8 +1661,7 @@ namespace Singular.Helpers
                 return true;
             }
 
-            WoWPoint dest = StyxWoW.Me.CurrentTarget.Location;
-            if (!StyxWoW.Me.CurrentTarget.IsWithinMeleeRange && !Styx.Pathing.Navigator.CanNavigateFully(StyxWoW.Me.Location, dest))
+            if (!StyxWoW.Me.CurrentTarget.IsWithinMeleeRange && !Movement.CanNavigateToMelee(StyxWoW.Me.CurrentTarget))
             {
                 Logger.Write(LogColor.Hilite, "Ranged Attack: {0} is not Fully Pathable! using ranged attack....", StyxWoW.Me.CurrentTarget.SafeName());
                 return true;

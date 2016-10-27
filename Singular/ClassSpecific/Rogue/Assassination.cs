@@ -18,7 +18,7 @@ namespace Singular.ClassSpecific.Rogue
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
-        
+
         #region Normal Rotation
 
         [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueAssassination)]
@@ -93,6 +93,7 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Buff("Hemorrhage"),
                         Spell.Buff("Garrote"),
                         Spell.Cast("Exsanguinate"),
+                        Spell.Cast("Kingsbane", ret => !RogueSettings.UseArtifactOnlyInAoE && RogueSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
                         Spell.Cast("Envenom", req => Me.ComboPoints >= 5),
                         Spell.Cast("Mutilate"),
 
@@ -100,16 +101,17 @@ namespace Singular.ClassSpecific.Rogue
                             ret => Spell.UseAOE && Common.AoeCount > 1,
                             new PrioritySelector(
                                 ctx => Common.AoeCount >= RogueSettings.AoeSpellPriorityCount,
+                                Spell.Cast("Kingsbane", ret => RogueSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
                                 Spell.Buff(
-                                    "Rupture", 
-                                    3, 
+                                    "Rupture",
+                                    3,
                                     on => Unit.UnfriendlyUnits(5)
                                         .FirstOrDefault(u => !u.HasMyAura("Rupture") && u.IsWithinMeleeRange && Me.IsSafelyFacing(u) && u.InLineOfSpellSight),
                                     req => !(bool) req
                                     ),
                                 Spell.BuffSelf(
-                                    "Fan of Knives", 
-                                    req => !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount 
+                                    "Fan of Knives",
+                                    req => !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount
                                     ),
                                 Spell.Cast("Mutilate", ret => !SpellManager.HasSpell("Fan of Knives") && Common.HasTwoDaggers),
                                 AssaCastSinisterStrike(),
@@ -117,7 +119,7 @@ namespace Singular.ClassSpecific.Rogue
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
                             ),
-                        
+
                         Common.CheckThatDaggersAreEquippedIfNeeded(),
 
                         AssaCastSinisterStrike()
@@ -155,7 +157,7 @@ namespace Singular.ClassSpecific.Rogue
                         (int)Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds,
                         Me.ComboPoints,
                         Me.ComboPoints,
-                        Common.AoeCount 
+                        Common.AoeCount
                         );
 
                     WoWUnit target = Me.CurrentTarget;

@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Styx;
-using Styx.WoWInternals.WoWObjects;
+using System.Numerics;
 using Bots.DungeonBuddy.Helpers;
-using Styx.WoWInternals;
+using Styx;
+using Styx.Common;
+using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.Helpers
 {
@@ -106,7 +107,7 @@ namespace Singular.Helpers
         private static IEnumerable<WoWUnit> GetRadiusCluster(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float radius)
         {
             var targetLoc = target.Location;
-            return otherUnits.Where(u => u.Location.DistanceSqr(targetLoc) <= radius * radius);
+            return otherUnits.Where(u => u.Location.DistanceSquared(targetLoc) <= radius * radius);
         }
 
         private static int GetRadiusClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float radius)
@@ -158,7 +159,7 @@ namespace Singular.Helpers
             return GetPathToPointCluster(target.Location, otherUnits, distance);
         }
 
-        public static IEnumerable<WoWUnit> GetPathToPointCluster(WoWPoint destLoc, IEnumerable<WoWUnit> otherUnits, float distance)
+        public static IEnumerable<WoWUnit> GetPathToPointCluster(Vector3 destLoc, IEnumerable<WoWUnit> otherUnits, float distance)
         {
             var myLoc = StyxWoW.Me.Location;
             return otherUnits.Where(u => (distance + u.CombatReach) <= u.Location.GetNearestPointOnSegment(myLoc, destLoc).Distance(u.Location));
@@ -172,8 +173,8 @@ namespace Singular.Helpers
         static WoWUnit GetChainTarget(WoWUnit from, IEnumerable<WoWUnit> otherUnits, List<WoWUnit> currentChainTargets, float chainRangeSqr)
         {
             return otherUnits
-                .Where(u => !currentChainTargets.Contains(u) && from.Location.DistanceSqr(u.Location) <= chainRangeSqr)
-                .OrderBy(u => from.Location.DistanceSqr(u.Location))
+                .Where(u => !currentChainTargets.Contains(u) && from.Location.DistanceSquared(u.Location) <= chainRangeSqr)
+                .OrderBy(u => from.Location.DistanceSquared(u.Location))
                 .FirstOrDefault();
         }
     }

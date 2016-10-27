@@ -76,7 +76,23 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Common.CreateDeathGripBehavior(),
 
-                        Spell.Cast("Death Strike", ret => (Me.HasActiveAura("Dark Succor") && Me.HealthPercent <= 80) || Me.HealthPercent <= 40),
+						Common.CreateAntiMagicShellBehavior(),
+
+                        Spell.Cast("Death Strike", ret =>
+                                (Me.HasActiveAura("Dark Succor") && Me.HealthPercent <= DeathKnightSettings.DeathStrikeSuccorPercent)
+                                || Me.HealthPercent <= DeathKnightSettings.DeathStrikePercent
+                        ),
+
+                        Spell.Cast("Icebound Fortitude", ret => Me.HealthPercent <= DeathKnightSettings.IceboundFortitudePercent),
+
+						//Corpse Shield
+						new Decorator(
+                            ret => Common.HasTalent(DeathKnightTalents.CorpseShield) && Me.HealthPercent <= DeathKnightSettings.CorpseShieldPercent && Me.GotAlivePet,
+                            new PrioritySelector(
+                                PetManager.CastAction("Protective Bile", on => Me.Pet),
+								Spell.Cast("Corpse Shield")
+                            )
+						),
 
                         // Artifact Weapon
                         new Decorator(
@@ -99,7 +115,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
 
                         new Decorator(
-							ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= DeathKnightSettings.DeathAndDecayCount || 
+							ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= DeathKnightSettings.DeathAndDecayCount ||
 									Common.HasTalent(DeathKnightTalents.Epidemic) && Unit.NearbyUnfriendlyUnits.Count() >= DeathKnightSettings.EpidemicCount,
 							new PrioritySelector(
 								Spell.Cast("Summon Gargoyle", ret => Me.CurrentTarget.IsStressful() && DeathKnightSettings.UseSummonGargoyle),
@@ -107,12 +123,12 @@ namespace Singular.ClassSpecific.DeathKnight
 								Spell.BuffSelf("Dark Transformation", ret => Me.GotAlivePet),
 								Spell.CastOnGround("Death and Decay", on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location),
 								Spell.Cast("Scourge Strike"),
-								Spell.Cast("Epidemic", 
+								Spell.Cast("Epidemic",
 									ret => Spell.IsSpellOnCooldown("Death and Decay") || Spell.IsSpellOnCooldown("Defile") ||
-											Unit.NearbyUnfriendlyUnits.Count() >= DeathKnightSettings.EpidemicCount && 
+											Unit.NearbyUnfriendlyUnits.Count() >= DeathKnightSettings.EpidemicCount &&
 											Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) < DeathKnightSettings.DeathAndDecayCount),
 								Spell.Cast("Festering Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") < 5),
-								Spell.Cast("Death Coil", ret => Me.RunicPowerPercent > 90)
+								Spell.Cast("Death Coil", ret => Me.RunicPowerPercent > 90 || Me.HasActiveAura("Sudden Doom"))
 								)
 							),
 
@@ -150,7 +166,7 @@ namespace Singular.ClassSpecific.DeathKnight
 				Spell.BuffSelf("Dark Transformation", ret => Me.GotAlivePet),
 				Spell.Cast("Festering Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") < 5),
 				Spell.Cast("Scourge Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") >= 1),
-				Spell.Cast("Death Coil", req => Common.RunicPowerDeficit < 10)
+				Spell.Cast("Death Coil", req => Common.RunicPowerDeficit < 10 || Me.HasActiveAura("Sudden Doom"))
 				);
 	    }
 
@@ -163,7 +179,7 @@ namespace Singular.ClassSpecific.DeathKnight
 				Spell.CastOnGround("Defile", on => Me.Location, ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange)),
 				Spell.Cast("Festering Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") < 5),
 				Spell.Cast("Scourge Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") >= 1),
-				Spell.Cast("Death Coil", ret => Me.RunicPowerPercent > 90)
+				Spell.Cast("Death Coil", ret => Me.RunicPowerPercent > 90 || Me.HasActiveAura("Sudden Doom"))
 				);
 		}
 
@@ -177,7 +193,7 @@ namespace Singular.ClassSpecific.DeathKnight
 				Spell.Cast("Death Coil", ret => Me.HasActiveAura("Dark Arbiter")),
 				Spell.Cast("Festering Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") < 5),
 				Spell.Cast("Scourge Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") >= 1),
-				Spell.Cast("Death Coil", req => Common.RunicPowerDeficit < 10)
+				Spell.Cast("Death Coil", req => Common.RunicPowerDeficit < 10 || Me.HasActiveAura("Sudden Doom"))
 				);
 		}
 
@@ -191,7 +207,7 @@ namespace Singular.ClassSpecific.DeathKnight
 				Spell.Cast("Festering Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") < 5),
 				Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") >= 3),
                 Spell.Cast("Scourge Strike", ret => Me.CurrentTarget.GetAuraStacks("Festering Wound") >= 1),
-				Spell.Cast("Death Coil", ret => Common.RunicPowerDeficit < 10)
+				Spell.Cast("Death Coil", ret => Common.RunicPowerDeficit < 10 || Me.HasActiveAura("Sudden Doom"))
 				);
 		}
 

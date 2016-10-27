@@ -17,6 +17,7 @@ using CommonBehaviors.Actions;
 using Styx.Common.Helpers;
 using System.Collections.Generic;
 using System.Drawing;
+using Styx.Common;
 
 namespace Singular.ClassSpecific.Druid
 {
@@ -25,7 +26,7 @@ namespace Singular.ClassSpecific.Druid
         private static LocalPlayer Me => StyxWoW.Me;
 	    private static DruidSettings DruidSettings => SingularSettings.Instance.Druid();
 
-	    const int PriEmergencyBase = 500;
+        const int PriEmergencyBase = 500;
         const int PriHighBase = 400;
         const int PriAoeBase = 300;
         const int PriHighAtone = 200;
@@ -60,7 +61,7 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidRestoration)]
         public static Composite CreateRestoDruidRest()
         {
-            return new PrioritySelector(                
+            return new PrioritySelector(
                 new Decorator(
                     req => !Rest.IsEatingOrDrinking,
                     CreateRestoNonCombatHeal(true)
@@ -134,18 +135,18 @@ namespace Singular.ClassSpecific.Druid
                             "Heart of the Wild",
                             req => ((WoWUnit)req).HealthPercent < DruidSettings.Heal.HeartOfTheWild
                                 && DruidSettings.Heal.CountHeartOfTheWild <= HealerManager.Instance.TargetList
-                                    .Count(p => p.IsAlive && p.HealthPercent <= DruidSettings.Heal.HeartOfTheWild && p.Location.DistanceSqr(((WoWUnit)req).Location) <= 30 * 30)
+                                    .Count(p => p.IsAlive && p.HealthPercent <= DruidSettings.Heal.HeartOfTheWild && p.Location.DistanceSquared(((WoWUnit)req).Location) <= 30 * 30)
                             )
                         )
                     );
             }
-			
+
             if (DruidSettings.Heal.Tranquility != 0)
                 behavs.AddBehavior(798, "Tranquility @ " + DruidSettings.Heal.Tranquility + "% MinCount: " + DruidSettings.Heal.CountTranquility, "Tranquility",
                     new Decorator(
                         ret => Me.IsInGroup(),
                         Spell.Cast(
-                            "Tranquility", 
+                            "Tranquility",
                             mov => true,
                             on => (WoWUnit)on,
                             req => HealerManager.Instance.TargetList.Count( h => h.IsAlive && h.HealthPercent < DruidSettings.Heal.Tranquility && h.SpellDistance() < 40) >= DruidSettings.Heal.CountTranquility,
@@ -180,7 +181,7 @@ namespace Singular.ClassSpecific.Druid
                         )
                     );
             }
-			
+
             #endregion
 
             #region Tank Buffing
@@ -278,14 +279,14 @@ namespace Singular.ClassSpecific.Druid
             if (DruidSettings.Heal.TreeOfLife != 0)
             {
                 behavs.AddBehavior(HealerManager.HealthToPriority(DruidSettings.Heal.TreeOfLife) + PriHighBase, "Incarnation: Tree of Life @ " + DruidSettings.Heal.TreeOfLife + "% MinCount: " + DruidSettings.Heal.CountTreeOfLife, "Incarnation: Tree of Life",
-                    Spell.BuffSelf("Incarnation: Tree of Life", 
+                    Spell.BuffSelf("Incarnation: Tree of Life",
                         req => ((WoWUnit)req).HealthPercent < DruidSettings.Heal.TreeOfLife
                             && DruidSettings.Heal.CountTreeOfLife <= HealerManager.Instance.TargetList.Count(h => h.IsAlive && h.HealthPercent < DruidSettings.Heal.TreeOfLife))
                     );
             }
 
             #endregion
-			
+
             #region AoE Heals
 
             if (DruidSettings.Heal.Efflorescence != 0)
@@ -307,20 +308,20 @@ namespace Singular.ClassSpecific.Druid
                                 on => (WoWUnit)on,
                                 req => ((WoWUnit)req).HealthPercent < DruidSettings.Heal.WildGrowth
                                     && DruidSettings.Heal.CountWildGrowth <= HealerManager.Instance.TargetList
-                                        .Count(p => p.IsAlive && p.HealthPercent <= DruidSettings.Heal.WildGrowth && p.Location.DistanceSqr(((WoWUnit)req).Location) <= 30 * 30))
+                                        .Count(p => p.IsAlive && p.HealthPercent <= DruidSettings.Heal.WildGrowth && p.Location.DistanceSquared(((WoWUnit)req).Location) <= 30 * 30))
                             )
                         )
                     );
-			
+
             #endregion
 
             #region Direct Heals
 
-            // Regrowth above ToL: Lifebloom so we use Clearcasting procs 
+            // Regrowth above ToL: Lifebloom so we use Clearcasting procs
             behavs.AddBehavior(200 + PriSingleBase, "Regrowth on Clearcasting", "Regrowth",
                 new Sequence(
                     CastRegrowth(
-                        on => 
+                        on =>
                         {
                             if (Spell.DoubleCastContains(Me, "Clearcasting"))
                                 return null;
@@ -333,7 +334,7 @@ namespace Singular.ClassSpecific.Druid
 
                             WoWUnit target = (WoWUnit)on;
                             double healthPercent = target == null ? 0.0 : target.HealthPercent;
-							
+
                             // clearLeft > 3000, so clear target if not needed now and try again next pass
                             if (target != null)
                             {
@@ -425,7 +426,7 @@ namespace Singular.ClassSpecific.Druid
                     {
                         regrowthInstead = Math.Max(DruidSettings.Heal.Regrowth, DruidSettings.Heal.HealingTouch);
                         whyRegrowth = "Regrowth (since Healing Touch unknown) @ ";
-                    }
+                }
                 }
 
                 if (regrowthInstead != 0)
@@ -482,7 +483,7 @@ namespace Singular.ClassSpecific.Druid
                         )
                     )
                 );
-			
+
             #endregion
 
             behavs.OrderBehaviors();
@@ -523,7 +524,7 @@ namespace Singular.ClassSpecific.Druid
                     )
                 );
         }
-		
+
         /// <summary>
         /// non-combat heal to top people off and avoid lifebloom, buffs, etc.
         /// </summary>
@@ -534,7 +535,7 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 ctx => selfOnly || !Me.IsInGroup() ? StyxWoW.Me : HealerManager.FindLowestHealthTarget(), // HealerManager.Instance.FirstUnit,
 
-                new Decorator( 
+                new Decorator(
                     req => req != null && ((WoWUnit)req).Combat && ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < SingularSettings.Instance.IgnoreHealTargetsAboveHealth,
                     CreateRestoDruidHealOnlyBehavior()
                     ),
@@ -632,38 +633,26 @@ namespace Singular.ClassSpecific.Druid
                                 Movement.WaitForFacing(),
                                 Movement.WaitForLineOfSpellSight(),
 
-                                new Decorator(
-                                    ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
-                                    new PrioritySelector(
+                                Common.CastForm(ShapeshiftForm.Moonkin, req => Common.HasTalent(DruidTalents.BalanceAffinity) && Me.Shapeshift != ShapeshiftForm.Moonkin && !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
-                                        new PrioritySelector(
-                                            ctx => Unit.UnitsInCombatWithUsOrOurStuff(35).Where(u => !u.IsCrowdControlled() && Me.IsSafelyFacing(u)).ToList(),
-                                            Spell.Buff("Moonfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2))),
-                                            new Decorator(
-                                                req => SingularRoutine.CurrentWoWContext == WoWContext.Normal,
-                                                Common.CastHurricaneBehavior(
-                                                    on => Me.CurrentTarget,
-                                                    cancel => {
-                                                        if (Me.HealthPercent < 30)
-                                                        {
-                                                            Logger.Write(LogColor.Cancel, "/cancel Hurricane since my health at {0:F1}%", Me.HealthPercent);
-                                                            return true;
-                                                        }
-                                                        return false;
-                                                    }
-
-                                                    )
-                                                )
-                                            )
-                                        )
-                                    ),
-
-
-                                Spell.Buff("Moonfire"),
+                                Spell.Cast("Moonfire", on => Unit.NearbyUnitsInCombatWithUsOrOurStuff.FirstOrDefault(u => u.GetAuraTimeLeft("Moonfire").TotalSeconds < 1.8 && u.TimeToDeath(int.MaxValue) > 4)),
+                                Spell.Cast("Sunfire", on => Unit.NearbyUnitsInCombatWithUsOrOurStuff.FirstOrDefault(u => u.GetAuraTimeLeft("Sunfire").TotalSeconds < 1.8 && u.TimeToDeath(int.MaxValue) > 4)),
                                 Spell.Cast(
-                                    "Wrath", 
-                                    on => Unit.UnitsInCombatWithUsOrOurStuff(40).Where(u => !u.IsCrowdControlled() && u.InLineOfSpellSight).OrderByDescending(u => (uint)u.HealthPercent).FirstOrDefault(), 
-                                    req => true, 
+                                    "Starsurge",
+                                    on => Unit.UnitsInCombatWithUsOrOurStuff(40).Where(u => !u.IsCrowdControlled() && u.InLineOfSpellSight).OrderByDescending(u => (uint)u.HealthPercent).FirstOrDefault(),
+                                    req => true,
+                                    cancel => HealerManager.CancelHealerDPS()
+                                    ),
+                                Spell.Cast(
+                                    "Lunar Strike",
+                                    on => Unit.UnitsInCombatWithUsOrOurStuff(40).Where(u => !u.IsCrowdControlled() && u.InLineOfSpellSight).OrderByDescending(u => (uint)u.HealthPercent).FirstOrDefault(),
+                                    req => true,
+                                    cancel => HealerManager.CancelHealerDPS()
+                                    ),
+                                Spell.Cast(
+                                    "Solar Wrath",
+                                    on => Unit.UnitsInCombatWithUsOrOurStuff(40).Where(u => !u.IsCrowdControlled() && u.InLineOfSpellSight).OrderByDescending(u => (uint)u.HealthPercent).FirstOrDefault(),
+                                    req => true,
                                     cancel => HealerManager.CancelHealerDPS()
                                     )
                                 )
@@ -686,10 +675,10 @@ namespace Singular.ClassSpecific.Druid
         {
             WoWUnit hotTarget;
             hotTarget = Group.Tanks
-                .Where(u => u.IsAlive 
-                    && u.Combat 
+                .Where(u => u.IsAlive
+                    && u.Combat
                     && u.HealthPercent < health
-                    && (u.GetAuraStacks(hotName) < stacks || u.GetAuraTimeLeft(hotName).TotalSeconds < 3) 
+                    && (u.GetAuraStacks(hotName) < stacks || u.GetAuraTimeLeft(hotName).TotalSeconds < 3)
                     && Spell.CanCastHack(hotName, u))
                 .OrderBy(u => (int) u.HealthPercent)
                 .FirstOrDefault();
@@ -701,7 +690,7 @@ namespace Singular.ClassSpecific.Druid
         }
 
         /// <summary>
-        /// returns the Target that has Lifebloom on it or should.  identifies 
+        /// returns the Target that has Lifebloom on it or should.  identifies
         /// </summary>
         /// <returns></returns>
         public static WoWUnit GetLifebloomTarget()
@@ -709,7 +698,7 @@ namespace Singular.ClassSpecific.Druid
             string hotName = "Lifebloom";
             string canCastSpell = "Rejuvenation";
 
-            // find tank already with HOT 
+            // find tank already with HOT
             WoWUnit hotTarget = Group.Tanks.FirstOrDefault(u => u.IsAlive && u.HasMyAura(hotName));
             if (hotTarget != null)
                 return hotTarget;

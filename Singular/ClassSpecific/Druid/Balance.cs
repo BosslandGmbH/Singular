@@ -31,15 +31,15 @@ namespace Singular.ClassSpecific.Druid
 	    private static long AstralPowerDeficit => Me.MaxAstralPower - Me.CurrentAstralPower;
 
         #endregion
-		
+
         #region Heal
-		
+
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidBalance, priority: 1)]
         public static Composite CreateDruidBalanceHeal()
         {
             return new PrioritySelector(
                 new Decorator(
-                    req => Me.Combat 
+                    req => Me.Combat
                         && Me.HealthPercent < DruidSettings.SelfHealingTouchHealth && Me.GetPredictedHealthPercent(true) < DruidSettings.SelfHealingTouchHealth,
                     Common.CreateDruidCrowdControl()
                     )
@@ -65,7 +65,7 @@ namespace Singular.ClassSpecific.Druid
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
-						
+
                         Spell.Cast("Sunfire", ret => Me.CurrentTarget.IsTrivial()),
 						Spell.Cast("Lunar Strike"),
 						Spell.Cast("Solar Wrath")
@@ -91,10 +91,10 @@ namespace Singular.ClassSpecific.Druid
                         // SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
                         SingularRoutine.Instance.HealBehavior,
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
-						
+
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
-						
+
                         Helpers.Common.CreateInterruptBehavior(),
 
 						Common.CastForm(ShapeshiftForm.Moonkin, req => Me.Shapeshift != ShapeshiftForm.Moonkin && !Utilities.EventHandlers.IsShapeshiftSuppressed),
@@ -106,15 +106,15 @@ namespace Singular.ClassSpecific.Druid
 						Spell.BuffSelf("Celestial Alignment", ret => Me.CurrentTarget.IsStressful()),
 
                         // Rotation
-						Spell.Cast("Moonfire", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.GetAuraTimeLeft("Moonfire").TotalSeconds < 1.8 && u.TimeToDeath(int.MaxValue) > 4)),
-						Spell.Cast("Sunfire", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.GetAuraTimeLeft("Sunfire").TotalSeconds < 1.8 && u.TimeToDeath(int.MaxValue) > 4)),
+						Spell.Cast("Moonfire", on => Unit.NearbyUnitsInCombatWithUsOrOurStuff.FirstOrDefault(u => u.GetAuraTimeLeft("Moonfire").TotalSeconds < 1.8 && u.TimeToDeath(int.MaxValue) > 4)),
+						Spell.Cast("Sunfire", on => Unit.NearbyUnitsInCombatWithUsOrOurStuff.FirstOrDefault(u => u.GetAuraTimeLeft("Sunfire").TotalSeconds < 1.8 && u.TimeToDeath(int.MaxValue) > 4)),
 
                         Spell.Cast("New Moon", ret => DruidSettings.UseArtifactOnlyInAoE && DruidSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && Unit.UnfriendlyUnitsNearTarget(8f).Count() > 1),
                         Spell.Cast("New Moon", ret => !DruidSettings.UseArtifactOnlyInAoE && DruidSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
 
-                        Spell.Cast("Stellar Flare", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.GetAuraTimeLeft("Stellar Flare").TotalSeconds < 1.8 && u.TimeToDeath(int.MaxValue) > 12)),
+                        Spell.Cast("Stellar Flare", on => Unit.NearbyUnitsInCombatWithUsOrOurStuff.FirstOrDefault(u => u.GetAuraTimeLeft("Stellar Flare").TotalSeconds < 1.8 && u.TimeToDeath(int.MaxValue) > 12)),
 
-						Spell.CastOnGround("Starfall", on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 15).Location, ret => Unit.NearbyUnfriendlyUnits.Count() >= 3),
+						Spell.CastOnGround("Starfall", on => Clusters.GetBestUnitForCluster(Unit.NearbyUnitsInCombatWithUsOrOurStuff, ClusterType.Radius, 15).Location, ret => Unit.NearbyUnfriendlyUnits.Count() >= 3),
 						Spell.Cast("Starsurge", ret => Me.GetAuraStacks("Lunar Empowerment") < 3 && Me.GetAuraStacks("Solar Empowerment") < 3),
 
 						Spell.Cast("Solar Wrath", ret => Me.GetAuraStacks("Solar Empowerment") > 0),

@@ -45,8 +45,8 @@ namespace Singular.ClassSpecific
         {
             // Saving Settings via GUI will now force reinitialize so we can build the behaviors
             // basead upon the settings rather than continually checking the settings in the Btree
-            // 
-            // 
+            //
+            //
 
             if (SingularSettings.Instance.Trinket1Usage == TrinketUsage.Never
                 && SingularSettings.Instance.Trinket2Usage == TrinketUsage.Never)
@@ -171,9 +171,9 @@ namespace Singular.ClassSpecific
             return new Throttle(
                 TimeSpan.FromMilliseconds(250),
                 new Decorator(
-                    req => !Spell.IsGlobalCooldown() 
-                        && !Spell.IsCastingOrChannelling() 
-                        && !SuppressGenericRacialBehavior, 
+                    req => !Spell.IsGlobalCooldown()
+                        && !Spell.IsCastingOrChannelling()
+                        && !SuppressGenericRacialBehavior,
                         pri
                     )
                 );
@@ -246,7 +246,7 @@ namespace Singular.ClassSpecific
                         return true;    // since likely a ranged target
                     }
                 }
-                else if (!Unit.NearbyUnfriendlyUnits.Any(unit => unit.CurrentTargetGuid == StyxWoW.Me.Guid))
+                else if (Unit.NearbyUnfriendlyUnits.All(unit => unit.CurrentTargetGuid != StyxWoW.Me.Guid))
                 {
                     return false;
                 }
@@ -269,18 +269,18 @@ namespace Singular.ClassSpecific
 
             return new Sequence(
                 ctx => StyxWoW.Me.GetAllAuras().FirstOrDefault( a => a.Name == "Shadowmeld"),
-                
+
                 // fail sequence if no aura
-                new Action( r => 
-                { 
+                new Action( r =>
+                {
                     if (r == null)
                         return RunStatus.Failure;
-                    return RunStatus.Success; 
+                    return RunStatus.Success;
                 }),
 
                 new PrioritySelector(
                     new Sequence(
-                        new Action( r => 
+                        new Action( r =>
                         {
                             const int timeLimitSeconds = 20;
                             TimeSpan timeLimit = TimeSpan.FromSeconds(timeLimitSeconds);
@@ -295,7 +295,7 @@ namespace Singular.ClassSpecific
                                 Logger.Write(LogColor.Cancel, "/cancelaura shadowmeld (exceeded {0:F1} seconds)", timeLimit.TotalSeconds);
                                 return RunStatus.Success;
                             }
-                             
+
                             shadowMeldAggro = Unit.UnfriendlyUnits()
                                 .Where(u => u.MyReaction == WoWUnitReaction.Hostile && u.SpellDistance() < (u.MyAggroRange + 5))
                                 .FirstOrDefault();
@@ -304,28 +304,28 @@ namespace Singular.ClassSpecific
                                 Logger.Write(LogColor.Cancel, "/cancelaura shadowmeld (no hostile mobs in aggro range)");
                                 return RunStatus.Success;
                             }
-                            
+
                             // otherwise, exit sequence with failure
                             return RunStatus.Failure;
                         }),
                         new Action( r => StyxWoW.Me.CancelAura("Shadowmeld") ),
                         new PrioritySelector(
                             new Wait( 1, until => !StyxWoW.Me.HasAura("Shadowmeld"), new ActionAlwaysSucceed()),
-                            new Action( r => 
+                            new Action( r =>
                             {
                                 Logger.WriteDiagnostic("Shadowmeld: aura not removed after cancel");
                                 return RunStatus.Failure;
                             })
                             ),
-                        new Action( r => 
+                        new Action( r =>
                         {
                             Logger.WriteDiagnostic("Shadowmeld: removed - after {0:F1} seconds", (DateTime.UtcNow - shadowMeldStart).TotalSeconds );
                             shadowMeldStart = DateTime.MinValue;
                             return RunStatus.Success;
                         })
                         ),
-                    new ThrottlePasses( 
-                        1, 
+                    new ThrottlePasses(
+                        1,
                         TimeSpan.FromSeconds(5),
                         RunStatus.Success,
                         new Action( r =>
@@ -333,7 +333,7 @@ namespace Singular.ClassSpecific
                             WoWAura aura = (WoWAura) r;
                             Logger.Write( LogColor.Hilite, "Shadowmeld: wait for {0} @ {1:F1} yds to clear area", shadowMeldAggro.SafeName(), shadowMeldAggro.SpellDistance());
                             Logger.WriteDiagnostic("Shadowmeld: {0} @ {1:F1} has {2:F1} aggro range with me", shadowMeldAggro.SafeName(), shadowMeldAggro.SpellDistance(), shadowMeldAggro.MyAggroRange);
-                        })                    
+                        })
                         )
                     )
                 );
@@ -418,7 +418,7 @@ namespace Singular.ClassSpecific
         {
             "Call to Arms",
             "Champion's Honor",
-            "Artillery Strike",             
+            "Artillery Strike",
             "Guardian Orb"
         };
 

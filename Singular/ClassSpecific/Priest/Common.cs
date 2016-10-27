@@ -12,7 +12,7 @@ using Styx.CommonBot.POI;
 using Styx.CommonBot;
 using System;
 using CommonBehaviors.Actions;
-
+using Styx.Common;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using Styx.Helpers;
@@ -33,7 +33,7 @@ namespace Singular.ClassSpecific.Priest
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
 
-            #region Avoidance 
+            #region Avoidance
 
                     new Decorator(
                         ret => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.SpellDistance() < 8)
@@ -41,7 +41,7 @@ namespace Singular.ClassSpecific.Priest
                         CreatePriestAvoidanceBehavior()
                         )
 
-            #endregion 
+            #endregion
 
                     )
                 );
@@ -51,7 +51,7 @@ namespace Singular.ClassSpecific.Priest
         public static Composite CreatePriestPreCombatBuffs()
         {
             return new PrioritySelector(
-                        
+
                 Spell.WaitForCast(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -66,12 +66,10 @@ namespace Singular.ClassSpecific.Priest
                                 new Wait( 1, until => !Me.HasMyAura("Levitate"), new ActionAlwaysSucceed())
                                 )
                             ),
-
-                        PartyBuff.BuffGroup("Power Word: Fortitude"),
                         //Spell.BuffSelf("Shadow Protection", ret => PriestSettings.UseShadowProtection && Unit.NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && (u.IsInMyPartyOrRaid() || u.IsMe) && !Unit.HasAura(u, "Shadow Protection", 0))), // we no longer have Shadow resist
                         Spell.BuffSelf("Fear Ward", ret => PriestSettings.UseFearWard),
 
-                        Spell.BuffSelf("Shadowform"),
+                        Spell.BuffSelf("Shadowform", ret => !Shadow.InVoidform),
 
                         CreatePriestMovementBuffOnTank("PreCombat")
                         )
@@ -90,14 +88,6 @@ namespace Singular.ClassSpecific.Priest
                     Spell.Cast("Dispersion", on => Me, ret => Me.HealthPercent < 60 || Me.IsSlowed(20) || Me.Rooted)
                     )
                 );
-        }
-
-        private static bool CanCastFortitudeOn(WoWUnit unit)
-        {
-            //return !unit.HasAura("Blood Pact") &&
-            return !unit.HasAura("Power Word: Fortitude") &&
-                   !unit.HasAura("Qiraji Fortitude") &&
-                   !unit.HasAura("Commanding Shout");
         }
 
         public static Composite CreatePriestMovementBuff()
@@ -168,7 +158,7 @@ namespace Singular.ClassSpecific.Priest
 
                 new Throttle( 2,
                     new Decorator(
-                        req => PriestSettings.UseSpeedBuffOnTank 
+                        req => PriestSettings.UseSpeedBuffOnTank
                             && (HasTalent(PriestTalents.BodyAndSoul) || HasTalent(PriestTalents.AngelicFeather))
                             && SingularRoutine.CurrentWoWContext == WoWContext.Instances,
                         new PrioritySelector(
@@ -176,9 +166,9 @@ namespace Singular.ClassSpecific.Priest
                             Spell.Buff("Power Word: Shield", on => (WoWUnit) on, req => HasTalent(PriestTalents.BodyAndSoul) && !((WoWUnit)req).HasAura("Weakened Soul")),
                             new Sequence(
                                 Spell.CastOnGround(
-                                    "Angelic Feather", 
+                                    "Angelic Feather",
                                     loc => (loc as WoWUnit).Location.RayCast((loc as WoWUnit).RenderFacing, 1.5f),
-                                    req => req != null, 
+                                    req => req != null,
                                     waitForSpell: false,
                                     tgtDescRtrv: desc => string.Format("Speed Boost Tank {0}", (desc as WoWUnit).SafeName())
                                     ),
@@ -192,7 +182,7 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => MovementManager.IsClassMovementAllowed
                         && PriestSettings.UseSpeedBuff
-                        && StyxWoW.Me.IsAlive 
+                        && StyxWoW.Me.IsAlive
                         && (!checkMoving || StyxWoW.Me.IsMoving)
                         && !StyxWoW.Me.Mounted
                         && !StyxWoW.Me.IsOnTransport
@@ -204,12 +194,12 @@ namespace Singular.ClassSpecific.Priest
 
                     new PrioritySelector(
                         Spell.WaitForCast(),
-                        new Throttle( 3, 
+                        new Throttle( 3,
                             new Decorator(
                                 ret => !Spell.IsGlobalCooldown(),
                                 new PrioritySelector(
 
-                                    Spell.BuffSelf( "Power Word: Shield", 
+                                    Spell.BuffSelf( "Power Word: Shield",
                                         ret => TalentManager.IsSelected((int) PriestTalents.BodyAndSoul)
                                             && !StyxWoW.Me.HasAnyAura("Body and Soul", "Weakened Soul")),
 
@@ -277,8 +267,8 @@ namespace Singular.ClassSpecific.Priest
         {
             return new PrioritySelector(
 
-                Spell.Cast( "Mass Dispel", 
-                    on => Me, 
+                Spell.Cast( "Mass Dispel",
+                    on => Me,
                     req =>  Me.Combat
                         && PriestSettings.CountMassDispel > 0
                         && Unit.NearbyGroupMembers.Count(u => u.IsAlive && u.SpellDistance() < 15 && Dispelling.CanDispel(u, DispelCapabilities.All)) >= PriestSettings.CountMassDispel),
@@ -522,7 +512,7 @@ namespace Singular.ClassSpecific.Priest
         DesperatePrayer = Masochism,
 
         Mania = AngelicFeather,
-        
+
 
         ShiningForce = 7,
         PsychicVoice,
@@ -532,7 +522,7 @@ namespace Singular.ClassSpecific.Priest
         Afterlife = DominantMind,
 
         MindBomb = ShiningForce,
-        
+
 
         PowerWordSolace = 10,
         ShieldDiscipline,
@@ -565,7 +555,7 @@ namespace Singular.ClassSpecific.Priest
         Halo,
 
         Divinity = ClarityOfWill,
-        
+
         PowerInfusionShadow = ClarityOfWill,
         ShadowCrash = DivineStar,
         MindbenderShadow = Halo,

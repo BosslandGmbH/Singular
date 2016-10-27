@@ -17,13 +17,11 @@ using CommonBehaviors.Actions;
 using System.Diagnostics;
 using Singular.Managers;
 using System.Drawing;
+using System.Numerics;
 using Styx.CommonBot;
 using System.Reflection;
+using Styx.Common;
 using Styx.WoWInternals;
-using Tripper.Navigation;
-using Tripper.MeshMisc;
-using Tripper.RecastManaged.Detour;
-using Tripper.Tools.Math;
 using Styx.CommonBot.Routines;
 
 namespace Singular.Helpers
@@ -65,7 +63,8 @@ namespace Singular.Helpers
                     WoWUnit unit = (WoWUnit) ret;
                     if (unit != null)
                     {
-                        MoveResult moveRes = Navigator.MoveTo(unit.Location);
+                        var parameters = new MoveToParameters(unit.Location) {DistanceTolerance = unit.MeleeRange};
+                        MoveResult moveRes = Navigator.MoveTo(parameters);
                         if (unit.Guid != _lastLossGuid || moveRes != _lastLossMoveResult || DateTime.UtcNow > _nextLossMessage)
                         {
                             _lastLossGuid = unit.Guid;
@@ -87,7 +86,7 @@ namespace Singular.Helpers
             toUnit = toUnit ?? (u => Me.CurrentTarget);
 
             return new Sequence(
-                
+
                 ctx => toUnit(ctx),
 
                 new DecoratorContinue(
@@ -123,7 +122,7 @@ namespace Singular.Helpers
         /// towards because WoWUnit.InLineOfSpellSight will return true while the
         /// WOW Game Client fails the spell cast.  See EventHandler.cs for setting
         /// LastLineOfSightError
-        /// 
+        ///
         /// Only use this for unit we are moving towards.  Not to be used when checking
         /// ability to cast spells on various mobs
         /// </summary>
@@ -292,8 +291,8 @@ namespace Singular.Helpers
                             ),
                         new Action(r =>
                         {
-                            Logger.WriteDiagnostic(LogColor.Hilite, "FaceTarget: stop {0} @ {1:F2} secs distance {1:F2} yds", 
-                                _strafeDirection, 
+                            Logger.WriteDiagnostic(LogColor.Hilite, "FaceTarget: stop {0} @ {1:F2} secs distance {1:F2} yds",
+                                _strafeDirection,
                                 (DateTime.UtcNow - (_strafeStopTime - _strafeDuration)).TotalSeconds,
                                 (r as WoWUnit).Distance
                                 );
@@ -326,9 +325,9 @@ namespace Singular.Helpers
                 new DecoratorContinue(
                     req => Me.InVehicle,
                     new ThrottlePasses(
-                        1, 
-                        TimeSpan.FromSeconds(5), 
-                        RunStatus.Failure, 
+                        1,
+                        TimeSpan.FromSeconds(5),
+                        RunStatus.Failure,
                         new Action(r =>
                         {
                             Logger.WriteDebug("FaceTarget: don't wait to face {0} since we are in vehicle", ((WoWUnit) r).SafeName());
@@ -358,7 +357,7 @@ namespace Singular.Helpers
                     ),
 
                 new DecoratorContinue(
-                    req => Me.InVehicle,
+                    req => req != null && Me.InVehicle,
                     new PriLog( 5f, LogColor.Diagnostic, s => string.Format("warning: in vehicle so ignoring facing requirement for {0}", (s as WoWUnit).SafeName()))
                     ),
 
@@ -422,10 +421,11 @@ namespace Singular.Helpers
             return new Decorator(
                 ret => !MovementManager.IsMovementDisabled,
                 new Action(ret => {
-                    WoWUnit unit = onUnit == null ? null : onUnit(ret);
+                    WoWUnit unit = onUnit?.Invoke(ret);
                     if ( unit != null && unit.SpellDistance() > range)
                     {
-                        MoveResult moveRes = Navigator.MoveTo(unit.Location);
+                        var parameters = new MoveToParameters(unit.Location) { DistanceTolerance = Math.Max(range, 3f) };
+                        MoveResult moveRes = Navigator.MoveTo(parameters);
                         if (unit.Guid != _lastGuid || moveRes != _lastMoveResult || DateTime.UtcNow > _nextMessage)
                         {
                             _lastGuid = unit.Guid;
@@ -461,7 +461,7 @@ namespace Singular.Helpers
 
         /// <summary>
         /// Creates a move to melee range behavior.  Tests .IsWithinMeleeRange so we know whether WoW thinks
-        /// we are within range, which is more important than our distance calc.  For players keep moving 
+        /// we are within range, which is more important than our distance calc.  For players keep moving
         /// until 2 yds away so we stick to them in pvp
         /// </summary>
         /// <param name="stopInRange"></param>
@@ -502,7 +502,7 @@ namespace Singular.Helpers
                     new Sequence(
                         ctx => new MoveContext(),
                         new DecoratorContinue(
-                            req => SingularSettings.Debug,  // save time if debug = false 
+                            req => SingularSettings.Debug,  // save time if debug = false
                             new Throttle( 1, TimeSpan.FromSeconds(1), RunStatus.Success,
                                 new Action(ret => {
                                     Logger.WriteDebug(Color.White, "MoveToMelee({0}): towards {1} @ {2:F1} yds", MoveContext(ret).Result, MoveContext(ret).Unit.SafeName(), MoveContext(ret).Distance);
@@ -519,7 +519,7 @@ namespace Singular.Helpers
 
         /// <summary>
         /// Creates a move to melee range behavior.  Tests .IsWithinMeleeRange so we know whether WoW thinks
-        /// we are within range, which is more important than our distance calc.  For players keep moving 
+        /// we are within range, which is more important than our distance calc.  For players keep moving
         /// until 2 yds away so we stick to them in pvp
         /// </summary>
         /// <param name="stopInRange"></param>
@@ -533,7 +533,7 @@ namespace Singular.Helpers
                     new Sequence(
                         ctx => new MoveContext(),
                         new DecoratorContinue(
-                            req => SingularSettings.Debug,  // save time if debug = false 
+                            req => SingularSettings.Debug,  // save time if debug = false
                             new Throttle(1, TimeSpan.FromSeconds(1), RunStatus.Success,
                                 new Action(ret =>
                                 {
@@ -554,9 +554,9 @@ namespace Singular.Helpers
                 return false;
 
             if (unit.IsPlayer)
-                return unit.DistanceSqr < (2 * 2);
+                return unit.DistanceSqr < 2 * 2;
 
-            float preferredDistance = Math.Max(2f, unit.CombatReach + 1f);
+            float preferredDistance = Math.Max(2f, unit.MeleeRange - 1.33f);
             if (unit.Distance <= preferredDistance && unit.IsWithinMeleeRange)
                 return true;
 
@@ -604,10 +604,10 @@ namespace Singular.Helpers
             return new Decorator(
                 ret =>
                 {
-                    if (MovementManager.IsMovementDisabled 
-                        || !SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.MoveBehind) 
-                        || !requirements(ret) 
-                        || Spell.IsCastingOrChannelling() 
+                    if (MovementManager.IsMovementDisabled
+                        || !SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.MoveBehind)
+                        || !requirements(ret)
+                        || Spell.IsCastingOrChannelling()
                         || Group.MeIsTank)
                         return false;
                     var currentTarget = Me.CurrentTarget;
@@ -619,14 +619,17 @@ namespace Singular.Helpers
                 new PrioritySelector(
                     ctx => CalculatePointBehindTarget(),
                     new Decorator(
-                        req => Navigator.CanNavigateFully(Me.Location, (WoWPoint)req),
+                        // TODO: FIXME: CanNavigateFully
+                        // Mesh sampling to the rescue!
+//                        req => Navigator.CanNavigateFully(Me.Location, (Vector3)req),
+                        req => true,
                         new Sequence(
                             new Action(ret => Logger.WriteDebug(Color.White, "MoveBehind: behind {0} @ {1:F1} yds", Me.CurrentTarget.SafeName(), Me.CurrentTarget.Distance)),
-                            new Action(behindPoint => Navigator.MoveTo((WoWPoint)behindPoint)),
-                            new Action(behindPoint => StopMoving.AtLocation((WoWPoint)behindPoint)),
+                            new Action(behindPoint => Navigator.MoveTo((Vector3)behindPoint)),
+                            new Action(behindPoint => StopMoving.AtLocation((Vector3)behindPoint)),
                             new PrioritySelector(
                                 new Decorator(
-                                    req => MovementManager.IsClassMovementAllowed, 
+                                    req => MovementManager.IsClassMovementAllowed,
                                     gapCloser
                                     ),
                                 new ActionAlwaysSucceed()
@@ -637,7 +640,7 @@ namespace Singular.Helpers
                 );
         }
 
-        public static WoWPoint CalculatePointBehindTarget()
+        public static Vector3 CalculatePointBehindTarget()
         {
             float facing = Me.CurrentTarget.Rotation;
             facing += WoWMathHelper.DegreesToRadians(180); // was 150 ?
@@ -684,7 +687,8 @@ namespace Singular.Helpers
                         new Action(r => {
                             string s = stopInRange ? string.Format("MoveInRangeOfLoc({0:F1} yds)", range(r)) : "MoveToLocation";
                             Logger.WriteDebug(Color.White, s + ": towards {0} @ {1:F1} yds", location(r),  range(r));
-                            Navigator.MoveTo(location(r));
+                            var parameters = new MoveToParameters(location(r)) { DistanceTolerance = Math.Max(range(r), 3f)};
+                            Navigator.MoveTo(parameters);
                         })
                         )
                     )
@@ -694,11 +698,11 @@ namespace Singular.Helpers
         #endregion
 
 /*
-        private static WoWPoint lastMoveToRangeSpot = WoWPoint.Empty;
+        private static Vector3 lastMoveToRangeSpot = Vector3.Empty;
         private static bool inRange = false;
         /// <summary>
-        ///   Movement for Ranged Classes or Ranged Pulls.  Move to Unit at range behavior 
-        ///   that stops in line of spell sight in range of target. Moves a maximum of 
+        ///   Movement for Ranged Classes or Ranged Pulls.  Move to Unit at range behavior
+        ///   that stops in line of spell sight in range of target. Moves a maximum of
         ///   10 yds at a time to minimize run past. will also only move towards unit if
         ///   not currently moving (to allow bot/human momvement precendence.)
         /// </summary>
@@ -707,7 +711,7 @@ namespace Singular.Helpers
         /// </remarks>
         /// <param name = "toUnit">unit to move towards</param>
         /// <param name = "range">The range.</param>
-        /// <returns>.</returns>       
+        /// <returns>.</returns>
         private static float _range;
         public static Composite CreateMoveToRangeAndStopBehavior(UnitSelectionDelegate toUnit, DynamicRangeRetriever range)
         {
@@ -778,8 +782,8 @@ namespace Singular.Helpers
             internal float Facing;
             internal float Speed;
             internal float MoveTime;
-            internal WoWPoint Origin;
-            internal WoWPoint Destination;
+            internal Vector3 Origin;
+            internal Vector3 Destination;
             internal WoWMovement.MovementDirection Direction;
             internal DateTime TimeToStop;
 
@@ -800,7 +804,7 @@ namespace Singular.Helpers
             return new Decorator(
 
                 req => Me.GotTarget(),
-                
+
                 new Sequence(
 
                     ctx => new CMTSData(),
@@ -834,18 +838,18 @@ namespace Singular.Helpers
                     }),
 
                     new WaitContinue(
-                        TimeSpan.FromMilliseconds(500), 
+                        TimeSpan.FromMilliseconds(500),
                         until => Me.IsMoving,
                         new Action(r => Logger.WriteDebug("MoveToSide: started diagonal movement"))
                         ),
 
                     new WaitContinue(
-                        TimeSpan.FromSeconds(3), 
+                        TimeSpan.FromSeconds(3),
                         until => !Me.IsMoving || DateTime.UtcNow > CMTS(until).TimeToStop,
                         new Action(r => Logger.WriteDebug("MoveToSide: timed stop of diagonal movement {0} successful", Me.IsMoving ? "WAS NOT" : "was"))
                         ),
 
-                    new Action(r => 
+                    new Action(r =>
                     {
                         if (Me.IsMoving)
                         {
@@ -865,13 +869,13 @@ namespace Singular.Helpers
 
                 new Action(r =>
                 {
-                    WoWPoint src = Me.Location;
+                    Vector3 src = Me.Location;
                     float currFacing = Me.RenderFacing;
 
                     WoWMovement.MovementDirection dir = new Random().Next(1) == 0 ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
                     float dirmultiplier = dir == WoWMovement.MovementDirection.StrafeLeft ? -1 : 1;
                     float newFacing = currFacing + (dirmultiplier * ((float)Math.PI) / 2f);
-                    WoWPoint dst = Me.Location.RayCast(newFacing, maxDist);
+                    Vector3 dst = Me.Location.RayCast(newFacing, maxDist);
                     bool movementObstructed = MeshTraceline(src, dst);
                     if (movementObstructed == true)
                     {
@@ -916,84 +920,99 @@ namespace Singular.Helpers
 
         }
 
+        public static bool CanNavigateToMelee(WoWUnit obj)
+        {
+            PathInformation inf = Navigator.LookupPathInfo(obj, obj.MeleeRange);
+            return inf.Navigability == PathNavigability.Navigable;
+        }
+
         /// <summary>
         /// determines if there is an obstruction in a straight line from source point to destination.
         /// </summary>
         /// <param name="src">origin</param>
         /// <param name="dest">destination</param>
         /// <returns>true if obstruction or cannot determine, false if safe to walk</returns>
-        public static bool MeshTraceline(WoWPoint src, WoWPoint dest)
+        public static bool MeshTraceline(Vector3 src, Vector3 dest)
         {
-            WoWPoint hit;
+            Vector3 hit;
             bool? pathObstructed = MeshTraceline(src, dest, out hit);
             return pathObstructed == null || (bool) pathObstructed;
         }
 
         /// <summary>
-        /// Checks if obstruction exists in walkable ray on the surface of the mesh from <c>wowPointSrc</c> to <c>wowPointDest</c>. 
+        /// Checks if obstruction exists in walkable ray on the surface of the mesh from <c>Vector3Src</c> to <c>Vector3Dest</c>.
         /// Return value indicates whether a wall (disjointed polygon edge) was encountered
         /// </summary>
-        /// <param name="wowPointSrc"></param>
-        /// <param name="wowPointDest"></param>
+        /// <param name="Vector3Src"></param>
+        /// <param name="Vector3Dest"></param>
         /// <param name="hitLocation">
-        /// The point where a wall (disjointed polygon edge) was encountered if any, otherwise WoWPoint.Empty. 
-        /// The hit calculation is done in 2d so the Z coord will not be accurate; It is an interpolation between <c>wowPointSrc</c>'s and <c>wowPointDest</c>'s Z coords
+        /// The point where a wall (disjointed polygon edge) was encountered if any, otherwise Vector3.Empty.
+        /// The hit calculation is done in 2d so the Z coord will not be accurate; It is an interpolation between <c>Vector3Src</c>'s and <c>Vector3Dest</c>'s Z coords
         /// </param>
-        /// <returns>Returns null if a result cannot be determined e.g <c>wowPointDest</c> is not on mesh, True if a wall (disjointed polygon edge) is encountered otherwise false</returns>
-        public static bool? MeshTraceline(WoWPoint wowPointSrc, WoWPoint wowPointDest, out WoWPoint hitLocation)
+        /// <returns>Returns null if a result cannot be determined e.g <c>Vector3Dest</c> is not on mesh, True if a wall (disjointed polygon edge) is encountered otherwise false</returns>
+        public static bool? MeshTraceline(Vector3 Vector3Src, Vector3 Vector3Dest, out Vector3 hitLocation)
         {
-            hitLocation = WoWPoint.Empty;
-            var meshNav = Navigator.NavigationProvider as MeshNavigator;
-            // 99.999999 % of the time Navigator.NavigationProvider will be a MeshNavigator type or subtype -
-            // but if it isn't then bail because another navigation system is being used.
-            if (meshNav == null)
-                return null;
-            var wowNav = meshNav.Nav;
-            Vector3 detourPointSrc = NavHelper.ToNav(wowPointSrc);
-            Vector3 detourPointDest = NavHelper.ToNav(wowPointDest);
-            // ensure tiles for start and end location are loaded. this does nothing if they're already loaded
-            wowNav.LoadTile(TileIdentifier.GetByPosition(wowPointSrc));
-            wowNav.LoadTile(TileIdentifier.GetByPosition(wowPointDest));
+	        hitLocation = Vector3.Zero;
+	        return null;
 
-            Vector3 nearestPolyPoint;
-            PolygonReference polyRef;
-            var status = wowNav.MeshQuery.FindNearestPolygon(
-                detourPointSrc,
-                wowNav.Extents,
-                wowNav.QueryFilter.InternalFilter,
-                out nearestPolyPoint,
-                out polyRef);
-            if (status.Failed || polyRef.Id == 0)
-                return null;
-
-            PolygonReference[] raycastPolys;
-            float rayHitDist;
-            Vector3 rayHitNorml;
-
-            //  normalized distance (0 to 1.0) if there was a hit, otherwise float.MaxValue.
-            status = wowNav.MeshQuery.Raycast(
-                polyRef,
-                detourPointSrc,
-                detourPointDest,
-                wowNav.QueryFilter.InternalFilter,
-                500,
-                out raycastPolys,
-                out rayHitDist,
-                out rayHitNorml);
-            if (status.Failed)
-                return null;
-
-            // check if there's a hit
-            if (rayHitDist != float.MaxValue)
-            {
-                // get wowPointSrc to wowPointDest vector
-                var startToEndOffset = wowPointDest - wowPointSrc;
-                // multiply segmentEndToNewPoint by rayHitDistance and add quanity to segmentEnd to get ray hit point.
-                // N.B. the Z coord will be an interpolation between wowPointSrc and wowPointDesc Z coords because the hit calculation is done in 2d
-                hitLocation = startToEndOffset * rayHitDist + wowPointSrc;
-                return true;
-            }
-            return false;
+#warning FIXME: MeshTraceline
+			// TODO: MeshTraceline
+            // Most users of this can use mesh sampling. For the monk behavior
+            // we could probably try generating a path and using its corridor.
+            // This will need a significant amount of work, so for now it can be
+            // delayed.
+//			hitLocation = Vector3.Empty;
+//            var meshNav = Navigator.NavigationProvider as MeshNavigator;
+//            // 99.999999 % of the time Navigator.NavigationProvider will be a MeshNavigator type or subtype -
+//            // but if it isn't then bail because another navigation system is being used.
+//            if (meshNav == null)
+//                return null;
+//            var wowNav = meshNav.Nav;
+//            Vector3 detourPointSrc = NavHelper.ToNav(Vector3Src);
+//            Vector3 detourPointDest = NavHelper.ToNav(Vector3Dest);
+//            // ensure tiles for start and end location are loaded. this does nothing if they're already loaded
+//            wowNav.LoadTile(TileIdentifier.GetByPosition(Vector3Src));
+//            wowNav.LoadTile(TileIdentifier.GetByPosition(Vector3Dest));
+//
+//            Vector3 nearestPolyPoint;
+//            PolygonReference polyRef;
+//            var status = wowNav.MeshQuery.FindNearestPolygon(
+//                detourPointSrc,
+//                wowNav.Extents,
+//                wowNav.QueryFilter.InternalFilter,
+//                out nearestPolyPoint,
+//                out polyRef);
+//            if (status.Failed || polyRef.Id == 0)
+//                return null;
+//
+//            PolygonReference[] raycastPolys;
+//            float rayHitDist;
+//            Vector3 rayHitNorml;
+//
+//            //  normalized distance (0 to 1.0) if there was a hit, otherwise float.MaxValue.
+//            status = wowNav.MeshQuery.Raycast(
+//                polyRef,
+//                detourPointSrc,
+//                detourPointDest,
+//                wowNav.QueryFilter.InternalFilter,
+//                500,
+//                out raycastPolys,
+//                out rayHitDist,
+//                out rayHitNorml);
+//            if (status.Failed)
+//                return null;
+//
+//            // check if there's a hit
+//            if (rayHitDist != float.MaxValue)
+//            {
+//                // get Vector3Src to Vector3Dest vector
+//                var startToEndOffset = Vector3Dest - Vector3Src;
+//                // multiply segmentEndToNewPoint by rayHitDistance and add quanity to segmentEnd to get ray hit point.
+//                // N.B. the Z coord will be an interpolation between Vector3Src and Vector3Desc Z coords because the hit calculation is done in 2d
+//                hitLocation = startToEndOffset * rayHitDist + Vector3Src;
+//                return true;
+//            }
+//            return false;
         }
 
 
@@ -1002,7 +1021,7 @@ namespace Singular.Helpers
     public static class StopMoving
     {
         internal static StopType Type { get; set; }
-        internal static WoWPoint Point { get; set; }
+        internal static Vector3 Point { get; set; }
         internal static WoWUnit Unit { get; set; }
         internal static double Range { get; set; }
         internal static SimpleBooleanDelegate StopRequestDelegate { get; set; }
@@ -1028,7 +1047,7 @@ namespace Singular.Helpers
         public static void Clear()
         {
             if (Type != StopType.None)
-                Set(StopType.None, null, WoWPoint.Empty, 0, stop => false, null);
+                Set(StopType.None, null, Vector3.Zero, 0, stop => false, null);
         }
 
         public static void Pulse()
@@ -1093,7 +1112,7 @@ namespace Singular.Helpers
             }
         }
 
-        private static void Set( StopType type, WoWUnit unit, WoWPoint pt, double range, SimpleBooleanDelegate stop, SimpleBooleanDelegate and )
+        private static void Set( StopType type, WoWUnit unit, Vector3 pt, double range, SimpleBooleanDelegate stop, SimpleBooleanDelegate and )
         {
             if (MovementManager.IsMovementDisabled)
                 return;
@@ -1132,73 +1151,67 @@ namespace Singular.Helpers
             StopRequestDelegate = ret => stop(ret) && and(ret);
         }
 
-        public static void AtLocation(WoWPoint pt, SimpleBooleanDelegate and = null)
+        public static void AtLocation(Vector3 pt, SimpleBooleanDelegate and = null)
         {
             Set( StopType.Location, null, pt, 0, at => Me.Location.Distance(pt) <= 1, and);
         }
 
-        public static void InRangeOfLocation(WoWPoint pt, double range, SimpleBooleanDelegate and = null)
+        public static void InRangeOfLocation(Vector3 pt, double range, SimpleBooleanDelegate and = null)
         {
             Set(StopType.RangeOfLocation, null, pt, range, at => Me.Location.Distance(pt) <= range, and);
         }
 
         public static void InRangeOfUnit(WoWUnit unit, double range, SimpleBooleanDelegate and = null)
         {
-            Set(StopType.RangeOfUnit, unit, WoWPoint.Empty, range, at => Unit == null || !Unit.IsValid || (Unit.SpellDistance() <= range && Unit.InLineOfSpellSight), and);
+            Set(StopType.RangeOfUnit, unit, Vector3.Zero, range, at => Unit == null || !Unit.IsValid || (Unit.SpellDistance() <= range && Unit.InLineOfSpellSight), and);
         }
 
         public static void InMeleeRangeOfUnit(WoWUnit unit, SimpleBooleanDelegate and = null)
         {
-            Set(StopType.RangeOfUnit, unit, WoWPoint.Empty, 0, at => Unit == null || !Unit.IsValid || Movement.InMoveToMeleeStopRange(Unit), and);
+            Set(StopType.RangeOfUnit, unit, Vector3.Zero, 0, at => Unit == null || !Unit.IsValid || Movement.InMoveToMeleeStopRange(Unit), and);
         }
 
         public static void InLosOfUnit(WoWUnit unit, SimpleBooleanDelegate and = null)
         {
-            Set(StopType.LosOfUnit, unit, WoWPoint.Empty, 0, at => Unit == null || !Unit.IsValid || Movement.InLineOfSpellSight(Unit), and);
+            Set(StopType.LosOfUnit, unit, Vector3.Zero, 0, at => Unit == null || !Unit.IsValid || Movement.InLineOfSpellSight(Unit), and);
         }
 
         public static void Now()
         {
-            Set(StopType.Now, null, WoWPoint.Empty, 0, at => true, null);
+            Set(StopType.Now, null, Vector3.Zero, 0, at => true, null);
             Pulse();
         }
 
         public static void AsSoonAsPossible( SimpleBooleanDelegate and = null)
         {
-            Set(StopType.AsSoonAsPossible, null, WoWPoint.Empty, 0, at => true, and);
+            Set(StopType.AsSoonAsPossible, null, Vector3.Zero, 0, at => true, and);
         }
     }
 
-   public class MoveContext 
+    public class MoveContext
     {
-        public WoWPoint Location { get; set; }
-        public WoWUnit Unit { get; set; }
-        public MoveResult Result { get; set; }
+        public Vector3 Location { get; }
+        public WoWUnit Unit { get; }
+        public MoveResult Result { get; }
 
-        public float Distance { get { return Location.Distance(StyxWoW.Me.Location); } }
+        public float Distance => Location.Distance(StyxWoW.Me.Location);
 
         public MoveContext()
             : this( StyxWoW.Me.CurrentTarget)
         {
         }
 
-        public MoveContext(WoWUnit unit)
+        private MoveContext(WoWUnit unit)
         {
             Unit = unit;
             Location = Unit.Location;
-            Result = Navigator.MoveTo(Location);
-        }
-
-        public MoveContext(WoWPoint loc)
-        {
-            Unit = null;
-            Location = loc;
-            Result = Navigator.MoveTo(Location);
+            MoveToParameters parameters = new MoveToParameters(Location) {DistanceTolerance = unit.MeleeRange};
+            Result = Navigator.MoveTo(parameters);
         }
     }
 
 
-    public delegate WoWPoint SimpleLocationRetriever(object context);
+    public delegate Vector3 SimpleLocationRetriever(object context);
 
     public delegate float DynamicRangeRetriever(object context);
 }

@@ -15,6 +15,7 @@ using Styx.CommonBot;
 using Styx.WoWInternals;
 using System.Drawing;
 using Styx.CommonBot.CharacterManagement;
+using Styx.CommonBot.Routines;
 
 namespace Singular.Settings
 {
@@ -29,7 +30,7 @@ namespace Singular.Settings
         None,
         ClassSpecificOnly,
         All,
-        Auto       
+        Auto
     }
 
     enum CheckTargets
@@ -194,7 +195,7 @@ namespace Singular.Settings
                     Logger.WriteDiagnostic(LogColor.Init, "Settings: config settings upgrade to {0} complete", ConfigVersion.ToString());
                 }
 
-                // Pull More settings should be overwritten if !fileExist or last config saved was before selecting Specialization 
+                // Pull More settings should be overwritten if !fileExist or last config saved was before selecting Specialization
                 if (!weSetPullMoreValues)
                     SetDefaultPullMoreSettingValues();
 
@@ -227,7 +228,7 @@ namespace Singular.Settings
         }
 
         /// <summary>
-        /// sets values for Pull More based upon current WoWSpec of character.  will set temporary defaults   
+        /// sets values for Pull More based upon current WoWSpec of character.  will set temporary defaults
         /// </summary>
         private void SetDefaultPullMoreSettingValues()
         {
@@ -292,8 +293,8 @@ namespace Singular.Settings
                 _instance = new SingularSettings();
         }
 
-        public static SingularSettings Instance 
-        { 
+        public static SingularSettings Instance
+        {
             get { return _instance ?? (_instance = new SingularSettings()); }
             set { _instance = value; }
         }
@@ -493,6 +494,9 @@ namespace Singular.Settings
         {
             get
             {
+                if (!SingularRoutine.IsAllowed(CapabilityFlags.Targeting))
+                    return true;
+
                 if (SingularSettings.Instance.TypeOfTargeting != TargetingStyle.Auto)
                     return SingularSettings.Instance.TypeOfTargeting == TargetingStyle.None;
 
@@ -513,8 +517,8 @@ namespace Singular.Settings
         [DisplayName("Spell Throttle")]
         [Description("Time between same instance of spell cast can be repeated")]
         public int SameSpellThrottle { get; set; }
-            
-        #endregion 
+
+        #endregion
 
         #region Category: Debug
 
@@ -643,7 +647,7 @@ namespace Singular.Settings
         [Description("Max time in seconds that player is out of attack distance (5 yds for melee, 40 yds for ranged) and/or line of sight before blacklisting.  Target is blacklisted for Pull if no aggro, and for Combat if aggro present")]
         public int MoveToTargetTimeout { get; set; }
 
-        #endregion 
+        #endregion
 
         #region Category: Consumables
 
@@ -874,7 +878,7 @@ namespace Singular.Settings
         [Description("True: Singular manages Taunt auto-cast; False: user controls Taunt Auto-Cast; ")]
         public bool PetAutoControlTaunt { get; set; }
 
-        #endregion 
+        #endregion
 
         #region Category: Group Healing / Support
 
@@ -1224,21 +1228,21 @@ namespace Singular.Settings
             }
         }
 
-        [Setting,ReadOnly(false)]        
+        [Setting,ReadOnly(false)]
         [DefaultValue(PullMoreTargetType.LikeCurrent)]
         [Category("Enemy Control")]
         [DisplayName("Pull More Target Type")]
         [Description("None: disabled, Current: like CurrentTarget; Hostile: any hostile target; Any: any nearby valid target")]
         public PullMoreTargetType PullMoreTargetType { get; set; }
 
-        [Setting,ReadOnly(false)]     
+        [Setting,ReadOnly(false)]
         [DefaultValue(3)]
         [Category("Enemy Control")]
         [DisplayName("Pull More Count")]
         [Description("Pull more until in combat with this many, then finish them off before acquiring more")]
         public int PullMoreMobCount { get; set; }
 
-        [Setting,ReadOnly(false)]        
+        [Setting,ReadOnly(false)]
         [DefaultValue(35)]
         [Category("Enemy Control")]
         [DisplayName("Pull More Dist Melee")]
@@ -1246,21 +1250,21 @@ namespace Singular.Settings
         public int PullMoreDistMelee { get; set; }
 
         [Setting,ReadOnly(false)]
-        
+
         [DefaultValue(55)]
         [Category("Enemy Control")]
         [DisplayName("Pull More Dist Ranged")]
         [Description("For Ranged Characters: Maximum distance of adds which will be pulled")]
         public int PullMoreDistRanged { get; set; }
 
-        [Setting,ReadOnly(false)]        
+        [Setting,ReadOnly(false)]
         [DefaultValue(60)]
         [Category("Enemy Control")]
         [DisplayName("Pull More Health %")]
         [Description("Pull more unless Health % below this")]
         public int PullMoreMinHealth { get; set; }
 
-        [Setting,ReadOnly(false)]       
+        [Setting,ReadOnly(false)]
         [DefaultValue(12)]
         [Category("Enemy Control")]
         [DisplayName("Pull More Tagged Timeout (secs)")]
@@ -1377,9 +1381,9 @@ namespace Singular.Settings
         private HunterSettings _hunterSettings;
 
         private MageSettings _mageSettings;
-		
+
 		private MonkSettings _monkSettings;
-		
+
         private PaladinSettings _pallySettings;
 
         private PriestSettings _priestSettings;
@@ -1394,11 +1398,11 @@ namespace Singular.Settings
 
         private HotkeySettings _hotkeySettings;
 
-        // late-binding interfaces 
+        // late-binding interfaces
         // -- changed from readonly properties to methods as GetProperties() in SaveToXML() was causing all classes configs to load
         // -- this was causing Save to write a DeathKnight.xml file for all non-DKs for example
         internal DemonHunterSettings DemonHunter() { return _dhSettings ?? (_dhSettings = new DemonHunterSettings()); }
-        internal DeathKnightSettings DeathKnight() { return _dkSettings ?? (_dkSettings = new DeathKnightSettings()); } 
+        internal DeathKnightSettings DeathKnight() { return _dkSettings ?? (_dkSettings = new DeathKnightSettings()); }
         internal DruidSettings Druid() { return _druidSettings ?? (_druidSettings = new DruidSettings()); }
         internal HunterSettings Hunter() { return _hunterSettings ?? (_hunterSettings = new HunterSettings()); }
         internal MageSettings Mage() { return _mageSettings ?? (_mageSettings = new MageSettings()); }
@@ -1413,7 +1417,7 @@ namespace Singular.Settings
 
         #endregion
 
-        class Validate 
+        class Validate
         {
             public static int IntValue( string name, int minValue, int maxValue, int setting)
             {

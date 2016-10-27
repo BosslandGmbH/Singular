@@ -11,6 +11,7 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using System;
 using System.Linq;
+using Styx.Common;
 using Action = Styx.TreeSharp.Action;
 
 namespace Singular.ClassSpecific.Paladin
@@ -36,18 +37,7 @@ namespace Singular.ClassSpecific.Paladin
                 );
         }
 
-        [Behavior(BehaviorType.LossOfControl, WoWClass.Paladin)]
-        public static Composite CreatePaladinLossOfControlBehavior()
-        {
-            return new Decorator(
-                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                new PrioritySelector(
-                    Spell.BuffSelf("Hand of Freedom")
-                    )
-                );
-        }
-
-        [Behavior(BehaviorType.Heal, WoWClass.Paladin, (WoWSpec) 0)]
+        [Behavior(BehaviorType.Heal, WoWClass.Paladin, (WoWSpec)0)]
         [Behavior(BehaviorType.Heal, WoWClass.Paladin, WoWSpec.PaladinProtection, WoWContext.Normal | WoWContext.Battlegrounds)]
         [Behavior(BehaviorType.Heal, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.Normal | WoWContext.Battlegrounds)]
         public static Composite CreateDpsPaladinHeal()
@@ -74,6 +64,8 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.BuffSelf("War Stomp", req => Unit.UnitsInCombatWithMeOrMyStuff(8).Any(u => u.IsPlayer && !u.IsCrowdControlled()))
                     ),
 
+                Spell.WaitForCastOrChannel(),
+
                 Spell.Cast("Flash of Light",
                     mov => false,
                     on => Me,
@@ -90,7 +82,7 @@ namespace Singular.ClassSpecific.Paladin
             if (myPredictedHealth <= PaladinSettings.SelfFlashOfLightHealth)
                 return true;
 
-            if (myPredictedHealth <= 90)
+            if (myPredictedHealth <= 80)
             {
                 if (Me.HasAura("Divine Shield"))
                     return true;
@@ -103,6 +95,9 @@ namespace Singular.ClassSpecific.Paladin
                         return true;
                     }
                 }
+
+                if (!Me.Combat)
+                    return true;
             }
             return false;
         }
@@ -149,7 +144,7 @@ namespace Singular.ClassSpecific.Paladin
                             .FirstOrDefault()
                             )
                         )
-                    )
+                        )
                 );
         }
 
@@ -180,7 +175,7 @@ namespace Singular.ClassSpecific.Paladin
         }
 
         /// <summary>
-        /// invoke on CurrentTarget if not tagged. use ranged instant casts if possible.  this  
+        /// invoke on CurrentTarget if not tagged. use ranged instant casts if possible.  this
         /// is a blend of abilities across all specializations
         /// </summary>
         /// <returns></returns>
@@ -246,7 +241,7 @@ namespace Singular.ClassSpecific.Paladin
         Repentance,
         BlindingLight,
 
-        
+
 
         DevotionAura = 10,
         AuraOfSacrifice,

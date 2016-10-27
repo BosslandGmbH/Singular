@@ -56,7 +56,7 @@ namespace Singular.ClassSpecific.Rogue
 
                         // ok, everything else failed so just hit him!!!!
                         Spell.Buff("Revealing Strike", req => true),
-                        Spell.Cast("Sinister Strike")
+                        Spell.Cast("Pistol Shot")
                         )
                     )
                 );
@@ -110,6 +110,11 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.Cast("Vanish", when => Me.TimeToDeath() < 2 && Me.TimeToDeath() < Me.CurrentTarget.TimeToDeath()),
 
                 new Decorator(
+                    ret => Me.HasActiveAura("Curse of the Dreadblades"),
+                    CreateDreadbladeRotation()
+                ),
+
+                new Decorator(
                     ret => !Common.HaveTalent(RogueTalents.SliceAndDice),
                     CreateRollTheBonesRotation()
                 ),
@@ -121,19 +126,28 @@ namespace Singular.ClassSpecific.Rogue
             );
         }
 
+        private static Composite CreateDreadbladeRotation()
+        {
+            return new PrioritySelector(
+					Spell.Cast("Run Through", req => Me.ComboPoints >= 5),
+                    Spell.Cast("Pistol Shot", req => Me.HasActiveAura("Opportunity")),
+                    Spell.Cast("Saber Slash")
+                );
+        }
         private static Composite CreateRollTheBonesRotation()
         {
             return new PrioritySelector(
                     Spell.BuffSelf("Adrenaline Rush", ret =>
                         Me.HasActiveAura("True Bearing")
                         || (Me.HasActiveAura("Broadsides") && Me.HasActiveAura("Shark Infested Waters"))
-                        || RollTheBonesBuffs.Count(a => Me.HasActiveAura(a)) >= 3),
+                        || RollTheBonesBuffs.Count(a => Me.HasActiveAura(a)) >= RogueSettings.RollTheBonesBurstCount),
                     Spell.Cast("Marked for Death", req => Me.ComboPoints <= 1),
+                    Spell.Cast("Curse of the Dreadblades", ret => RogueSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
                     Spell.Cast("Death from Above", req => !Me.HasActiveAura("Adrenaline Rush") && Me.ComboPoints >= 6),
                     new Decorator(ret => !Me.HasActiveAura("True Bearing"),
                         new PrioritySelector(
-                            Spell.Cast("Roll the Bones", req => !Spell.CanCastHack("Adrenaline Rush") && RollTheBonesBuffs.Count(a => Me.HasActiveAura(a)) < 2),
-                            Spell.Cast("Roll the Bones", req => Spell.CanCastHack("Adrenaline Rush") && RollTheBonesBuffs.Count(a => Me.HasActiveAura(a)) < 3)
+                            Spell.Cast("Roll the Bones", req => !Spell.CanCastHack("Adrenaline Rush") && RollTheBonesBuffs.Count(a => Me.HasActiveAura(a)) < RogueSettings.RollTheBonesNormalCount),
+                            Spell.Cast("Roll the Bones", req => Spell.CanCastHack("Adrenaline Rush") && RollTheBonesBuffs.Count(a => Me.HasActiveAura(a)) < RogueSettings.RollTheBonesBurstCount)
                             )
                         ),
                     Spell.Cast("Pistol Shot", req => Me.HasActiveAura("Opportunity") && Me.ComboPoints <= 4),
@@ -147,6 +161,7 @@ namespace Singular.ClassSpecific.Rogue
             return new PrioritySelector(
                     Spell.Cast("Slice and Dice", ret => Me.ComboPoints > 0 && Me.GetAuraTimeLeft("Slice and Dice").TotalSeconds < 2),
                     Spell.BuffSelf("Adrenaline Rush", ret => Me.GetAuraTimeLeft("Slice and Dice").TotalSeconds >= 15),
+                    Spell.Cast("Curse of the Dreadblades", ret => RogueSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
                     Spell.Cast("Run Through", req => Me.ComboPoints >= 5),
                     Spell.Cast("Pistol Shot", req => Me.HasActiveAura("Opportunity") && Me.ComboPoints <= 4),
                     Spell.Cast("Saber Slash")
@@ -176,7 +191,13 @@ namespace Singular.ClassSpecific.Rogue
         [Behavior(BehaviorType.Heal, WoWClass.Rogue, WoWSpec.RogueOutlaw, priority: 99)]
         public static Composite CreateRogueHeal()
         {
-            return CreateCombatDiagnosticOutputBehavior("Combat");
+            return new PrioritySelector(
+			CreateCombatDiagnosticOutputBehavior("Combat"),
+			
+			Spell.BuffSelf("Riposte", 
+					ret => (Me.HealthPercent <= RogueSettings.RiposteHealth && Unit.NearbyUnitsInCombatWithMe.Any(u => u.IsTargetingMeOrPet && u.MeleeDistance() < 10)) 
+					|| Unit.NearbyUnitsInCombatWithMe.Count(u => u.IsTargetingMeOrPet && u.MeleeDistance() < 10) >= RogueSettings.RiposteCount)
+			);
         }
 
         private static Composite CreateCombatDiagnosticOutputBehavior(string sState = "")

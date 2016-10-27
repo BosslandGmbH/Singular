@@ -132,7 +132,7 @@ namespace Singular.ClassSpecific.DemonHunter
                         ),
                         Spell.Cast("Eye Beam", ret => Common.HasTalent(DemonHunterTalents.Demonic)),
                         Spell.Cast("Fel Eruption"),
-                        Spell.Cast("Blade Dance", ret => 
+                        Spell.Cast("Blade Dance", ret =>
                             (!Common.HasTalent(DemonHunterTalents.Momentum) && Common.HasTalent(DemonHunterTalents.FirstBlood))
                             || Me.HasActiveAura("Momentum")
                         ),

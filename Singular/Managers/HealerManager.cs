@@ -13,8 +13,9 @@ using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using System;
 using System.Drawing;
+using System.Numerics;
 using CommonBehaviors.Actions;
-
+using Styx.Common;
 using Action = Styx.TreeSharp.Action;
 
 namespace Singular.Managers
@@ -191,7 +192,7 @@ namespace Singular.Managers
                 maxHealRange = SingularSettings.Instance.MaxHealTargetRange + Me.CombatReach;
 
             maxHealRangeSqr = maxHealRange * maxHealRange;
-            WoWPoint myLoc = Me.Location;
+            Vector3 myLoc = Me.Location;
 
             int unitsLeft = 0;
             for (int i = units.Count - 1; i >= 0; i--)
@@ -243,7 +244,7 @@ namespace Singular.Managers
                     // Almost all healing is 40 yards, so we'll use that. If in Battlegrounds use a slightly larger value to expane our 
                     // healing range, but not too large that we are running all over the bg zone 
                     // note: reordered following tests so only one floating point distance comparison done due to evalution of DisableAllMovement
-                    if (unit.Location.DistanceSqr(myLoc) > maxHealRangeSqr)
+                    if (unit.Location.DistanceSquared(myLoc) > maxHealRangeSqr)
                     {
                         units.RemoveAt(i);
                         continue;
@@ -298,7 +299,7 @@ namespace Singular.Managers
                     prio.Score -= u.HealthPercent * 5;
 
                     // If they're out of range, give them a bit lower score.
-                    if (u.Location.DistanceSqr(myLoc) > 41 * 41)
+                    if (u.Location.DistanceSquared(myLoc) > 41 * 41)
                     {
                         prio.Score -= 50f;
                     }
@@ -1014,7 +1015,7 @@ namespace Singular.Managers
     /// </summary>
     internal class HmmContext
     {
-        //internal WoWPoint loc;
+        //internal Vector3 loc;
         internal WoWUnit target;
         internal WoWUnit tank;
         internal bool behind;

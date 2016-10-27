@@ -18,7 +18,7 @@ using CommonBehaviors.Actions;
 namespace Singular.ClassSpecific.Warrior
 {
     /// <summary>
-    /// plaguerized from Apoc's simple Arms Warrior CC 
+    /// plaguerized from Apoc's simple Arms Warrior CC
     /// see http://www.thebuddyforum.com/honorbuddy-forum/combat-routines/warrior/79699-arms-armed-quick-dirty-simple-fast.html#post815973
     /// </summary>
     public class Arms
@@ -145,24 +145,6 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Battle Cry"),
                         Spell.Cast("Storm Bolt"),  // in normal rotation
 
-                        // Execute is up, so don't care just cast
-                        Spell.HandleOffGCD(
-                            Spell.BuffSelf(
-                                "Berserker Rage",
-                                req =>
-                                {
-                                    if (Me.CurrentTarget.HealthPercent <= 20)
-                                        return true;
-                                    if (!Common.IsEnraged && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 6)
-                                        return true;
-                                    return false;
-                                },
-                                0,
-                                HasGcd.No
-                                )
-                            ),
-
-
                         Spell.BuffSelf(Common.SelectedShoutAsSpellName)
 
                         )
@@ -195,6 +177,7 @@ namespace Singular.ClassSpecific.Warrior
                         Movement.WaitForLineOfSpellSight(),
 
                         Helpers.Common.CreateInterruptBehavior(),
+						Common.CreateSpellReflectBehavior(),
 
                         Common.CreateVictoryRushBehavior(),
 
@@ -249,7 +232,7 @@ namespace Singular.ClassSpecific.Warrior
                                         ),
                                         Spell.Cast("Warbreaker",
                                             ret =>
-                                                !WarriorSettings.UseArtifactOnlyInAoE &&
+                                                !WarriorSettings.UseArtifactOnlyInAoE && Me.CurrentTarget.IsWithinMeleeRange &&
                                                 ( WarriorSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown
                                                 || (WarriorSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && !Me.CurrentTarget.HasActiveAura("Colossus Smash")) )
                                         ),
@@ -268,7 +251,7 @@ namespace Singular.ClassSpecific.Warrior
                                         Spell.Cast("Execute", req => Me.CurrentTarget.HealthPercent <= 20),
 
                                         // 2 Mortal Strike on cooldown when target is above 20% health.
-                                        Spell.Cast("Mortal Strike", req => Me.HealthPercent > 20),
+                                        Spell.Cast("Mortal Strike", req => Me.CurrentTarget.HealthPercent > 20 || Common.HasTalent(WarriorTalents.InForTheKill) && Me.RagePercent < 40),
 
                                         // 3 Whirlwind as a filler ability when target is above 20% health.
                                         Spell.Cast("Whirlwind", req => Me.CurrentTarget.HealthPercent > 20 && Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8)),
@@ -299,7 +282,7 @@ namespace Singular.ClassSpecific.Warrior
                     )
                 );
         }
-		
+
         private static Composite CreateArmsAoeCombat(SimpleIntDelegate aoeCount)
         {
             return new PrioritySelector(
@@ -312,7 +295,7 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Bladestorm", ret => aoeCount(ret) >= 4),
                         Spell.Cast("Shockwave", ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 10f) >= 3),
 
-                        Spell.Cast("Whirlwind"),
+                        Spell.Cast("Whirlwind", ret => Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8)),
                         Spell.Cast("Mortal Strike"),
                         Spell.Cast("Colossus Smash", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Colossus Smash")),
                         Spell.Cast("Overpower")
@@ -320,7 +303,7 @@ namespace Singular.ClassSpecific.Warrior
                     )
                 );
         }
-        
+
         private static Composite CreateDiagnosticOutputBehavior(string context = null)
         {
             if (!SingularSettings.Debug)

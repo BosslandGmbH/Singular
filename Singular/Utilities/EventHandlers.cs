@@ -222,13 +222,15 @@ namespace Singular.Utilities
                 + " or args[2] == 'RANGE_MISSED'"
                 + " or args[2] == 'SWING_MISSED'"
                 + " or args[2] == 'SPELL_CAST_FAILED'"
+                + " or args[2] == 'SPELL_CAST_SUCCESS'"
+                + " or args[2] == 'SPELL_AURA_APPLIED'"
                 + " )"
                 + " )";
 
 
             return filterCriteria;
         }
-        
+
         private static void DetachCombatLogEvent()
         {
             if (_combatLogAttached)
@@ -277,7 +279,7 @@ namespace Singular.Utilities
                     {
                         if (itWasDamage)
                             Logger.WriteDebug("HandleCombatLog(Damage): {0} = {1}", e.EventName, damageAmount);
-                        else 
+                        else
                             LogUndesirableEvent("On Character", e);
 
                         if (damageAmount > 0)
@@ -317,8 +319,6 @@ namespace Singular.Utilities
                         }
                     }
                 }
-
-                return;
             }
 
             // Logger.WriteDebug("[CombatLog] " + e.Event + " - " + e.SourceName + " - " + e.SpellName);
@@ -376,7 +376,7 @@ namespace Singular.Utilities
                         if (!StyxWoW.Me.GotTarget())
                             Logger.WriteFile("[CombatLog] cast failed - no path available to current target");
                         else
-                            Logger.WriteFile("[CombatLog] cast failed - no path available to {0}, heightOffGround={1}, pos={2}", 
+                            Logger.WriteFile("[CombatLog] cast failed - no path available to {0}, heightOffGround={1}, pos={2}",
                                 StyxWoW.Me.CurrentTarget.SafeName(),
                                 StyxWoW.Me.CurrentTarget.HeightOffTheGround(),
                                 StyxWoW.Me.CurrentTarget.Location
@@ -401,7 +401,6 @@ namespace Singular.Utilities
                     }
                     break;
 
-#if SOMEONE_USES_LAST_SPELL_AT_SOME_POINT
                 case "SPELL_AURA_APPLIED":
                 case "SPELL_CAST_SUCCESS":
                     if (e.SourceGuid != StyxWoW.Me.Guid)
@@ -411,7 +410,7 @@ namespace Singular.Utilities
 
                     // Update the last spell we cast. So certain classes can 'switch' their logic around.
                     Spell.LastSpellCast = e.SpellName;
-                    //Logger.WriteDebug("Successfully cast " + Spell.LastSpellCast);
+                    Logger.WriteDebug("Storing {0} as last spell cast.", Spell.LastSpellCast);
 
                     // following commented block should not be needed since rewrite of Pet summon
                     //
@@ -421,7 +420,6 @@ namespace Singular.Utilities
                     //    StyxWoW.SleepForLagDuration();
                     //}
                     break;
-#endif
 
                 case "SWING_MISSED":
                     if (e.Args[11].ToString() == "EVADE")
@@ -481,13 +479,16 @@ namespace Singular.Utilities
                     break;
 
                 case "UNIT_DIED":
-                    try 
-                    { 
+                    if (StyxWoW.Me.CurrentTarget != null && e.DestGuid == StyxWoW.Me.CurrentTarget.Guid)
+                        Spell.LastSpellCast = "";
+
+                    try
+                    {
                         WoWUnit corpse = e.SourceUnit;
                         WoWPartyMember pm = Unit.GroupMemberInfos.First( m => m.Guid == corpse.Guid);
-                        Logger.WriteDiagnostic( "Combat Log: UNIT_DIED - Role={0} {1}", pm.Role & (~WoWPartyMember.GroupRole.Leader), corpse.SafeName());                    
+                        Logger.WriteDiagnostic( "Combat Log: UNIT_DIED - Role={0} {1}", pm.Role & (~WoWPartyMember.GroupRole.Leader), corpse.SafeName());
                     }
-                    catch 
+                    catch
                     {
                     }
                     break;
@@ -599,7 +600,7 @@ namespace Singular.Utilities
                     {
                         foreach (var target in Targeting.Instance.TargetList)
                         {
-                            if ( Unit.ValidUnit(target) 
+                            if ( Unit.ValidUnit(target)
                                 && !Blacklist.Contains(target.Guid, BlacklistFlags.Pull | BlacklistFlags.Combat)
                                 && unit.EvadedAttacksCount() < SingularSettings.Instance.EvadedAttacksAllowed
                                )
@@ -757,7 +758,7 @@ namespace Singular.Utilities
             Logger.WriteDiagnostic("END_BOUND_TRADEABLE: confirm with \"{0}\"", cmd);
             Lua.DoString(cmd);
         }
-        
+
         /// <summary>
         /// gets the damage occuring in the last maxage seconds.  removes damage
         /// entries from queue older than maxage
@@ -768,7 +769,7 @@ namespace Singular.Utilities
         {
             DateTime since = DateTime.UtcNow - TimeSpan.FromSeconds(maxage);
             while (DamageHistory.Any())
-            { 
+            {
                 Damage next = DamageHistory.Peek();
                 if (next.Time >= since)
                     break;
@@ -790,7 +791,7 @@ namespace Singular.Utilities
             }
             return DamageHistory.Sum( v => v.Amount);
         }
-    
+
         /// <summary>
         /// gets the damage occuring in the last maxage seconds.  removes damage
         /// entries from queue older than maxage.  additionally calculates damage

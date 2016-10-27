@@ -129,18 +129,6 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <Reference Include="GreyMagic">
-          <HintPath>..\Honorbuddy\GreyMagic.dll</HintPath>
-        </Reference>
-        <Reference Include="Honorbuddy">
-          <HintPath>..\Honorbuddy\Honorbuddy.exe</HintPath>
-        </Reference>
-        <Reference Include="Tripper.RecastManaged">
-          <HintPath>..\Honorbuddy\Tripper.RecastManaged.dll</HintPath>
-        </Reference>
-        <Reference Include="Tripper.Tools">
-          <HintPath>..\Honorbuddy\Tripper.Tools.dll</HintPath>
-        </Reference>
         <Reference Include="PresentationCore" />
         <Reference Include="System" />
         <Reference Include="System.Core" />
@@ -312,6 +300,15 @@
       <DependentUpon>ConfigurationForm.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="GreyMagic">
+      <HintPath>..\Honorbuddy\GreyMagic.dll</HintPath>
+    </Reference>
+    <Reference Include="Honorbuddy">
+      <HintPath>..\Honorbuddy\Honorbuddy.exe</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>if $(ConfigurationName) == Jim (
@@ -338,7 +335,7 @@ ECHO Copied</PostBuildEvent>
   <PropertyGroup>
     <PreBuildEvent>if $(ConfigurationName) == Raphus (
 SubWCRev.exe $(ProjectDir) $(ProjectDir)SingularRoutine.Version.tmpl $(ProjectDir)SingularRoutine.Version.cs
-$(SolutionDir)\FilecheckGenerator\bin\Debug\FilecheckGenerator.exe
+$(SolutionDir)FilecheckGenerator\bin\Debug\FileCheckListGenerator.exe
 )</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

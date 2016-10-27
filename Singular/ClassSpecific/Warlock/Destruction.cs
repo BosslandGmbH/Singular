@@ -23,7 +23,7 @@ using System.Drawing;
 
 namespace Singular.ClassSpecific.Warlock
 {
-    // wowraids.org 
+    // wowraids.org
     public class Destruction
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
@@ -68,10 +68,10 @@ namespace Singular.ClassSpecific.Warlock
                                 // instant spells
                                 Spell.Cast("Conflagrate"),
                                 Spell.CastOnGround(
-                                    "Rain of Fire", 
-                                    on => Me.CurrentTarget, 
-                                    req => Spell.UseAOE 
-                                        && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => u.Guid != Me.CurrentTargetGuid && (!u.Aggro || u.IsCrowdControlled())), 
+                                    "Rain of Fire",
+                                    on => Me.CurrentTarget,
+                                    req => Spell.UseAOE
+                                        && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => u.Guid != Me.CurrentTargetGuid && (!u.Aggro || u.IsCrowdControlled())),
                                     false
                                     ),
                                 new Action( r => {
@@ -136,10 +136,10 @@ namespace Singular.ClassSpecific.Warlock
                         new Decorator(
                             ret => WarlockSettings.UseArtifactOnlyInAoE && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1,
                             new PrioritySelector(
-                                Spell.Cast("Reap Souls", ret => WarlockSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None)
+                                Spell.Cast("Dimensional Rift", ret => WarlockSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None)
                             )
                         ),
-                        Spell.Cast("Reap Souls", ret => !WarlockSettings.UseArtifactOnlyInAoE && WarlockSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
+                        Spell.Cast("Dimensional Rift", ret => !WarlockSettings.UseArtifactOnlyInAoE && WarlockSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
 
                         Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => Spell.UseAOE && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire") && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => !u.Aggro || u.IsCrowdControlled()), false),
 
@@ -151,10 +151,10 @@ namespace Singular.ClassSpecific.Warlock
                 );
 
         }
-		
+
         public static Composite CreateAoeBehavior()
         {
-            return new Decorator( 
+            return new Decorator(
                 ret => Spell.UseAOE && _mobCount > 1,
                 new PrioritySelector(
 
@@ -175,9 +175,9 @@ namespace Singular.ClassSpecific.Warlock
                         new PrioritySelector(
                             new PrioritySelector(
                                 ctx => Clusters.GetBestUnitForCluster( Unit.NearbyUnfriendlyUnits.Where(u => Me.IsSafelyFacing(u)), ClusterType.Radius, 8f),
-                                Spell.CastOnGround( "Rain of Fire", 
-                                    on => (WoWUnit)on, 
-                                    req => req != null 
+                                Spell.CastOnGround( "Rain of Fire",
+                                    on => (WoWUnit)on,
+                                    req => req != null
                                         && !Me.HasAura( "Rain of Fire")
                                         && 3 <= Unit.UnfriendlyUnitsNearTarget((WoWUnit)req, 8).Count()
                                         && !Unit.UnfriendlyUnitsNearTarget((WoWUnit)req, 8).Any(u => !u.Aggro || u.IsCrowdControlled())
@@ -193,7 +193,7 @@ namespace Singular.ClassSpecific.Warlock
 
 
         #endregion
-		
+
         static double ImmolateTime(WoWUnit u = null)
         {
             return (u ?? Me.CurrentTarget).GetAuraTimeLeft("Immolate", true).TotalSeconds;

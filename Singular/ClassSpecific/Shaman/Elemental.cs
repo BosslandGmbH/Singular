@@ -111,7 +111,7 @@ namespace Singular.ClassSpecific.Shaman
 
                 Spell.WaitForCastOrChannel(),
 
-                new Decorator( 
+                new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
@@ -176,7 +176,7 @@ namespace Singular.ClassSpecific.Shaman
 
                 Spell.WaitForCastOrChannel(),
 
-                new Decorator( 
+                new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
@@ -192,11 +192,15 @@ namespace Singular.ClassSpecific.Shaman
                         Common.CreateShamanDpsShieldBehavior(),
 
                         Spell.BuffSelf("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Count( u => u.Distance < 10f ) >= 3),
-						
+
                         Common.CastElementalBlast(),
 
-                        Spell.Cast("Lightning Surge Totem", ret => ShamanSettings.UseLightningSurgeTotem && SingularRoutine.CurrentWoWContext == WoWContext.Normal
-                                                                    && Unit.UnfriendlyUnits(8).Count() >= ShamanSettings.LightningSurgeTotemCount),
+                        Spell.CastOnGround("Lightning Surge Totem",
+                            on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location,
+                            ret => ShamanSettings.UseLightningSurgeTotem
+                                && SingularRoutine.CurrentWoWContext == WoWContext.Normal
+                                && Unit.UnfriendlyUnits(8).Count() >= ShamanSettings.LightningSurgeTotemCount),
+                        Spell.BuffSelf("Earth Elemental", ret => ShamanSettings.EarthElementalHealthPercent <= Me.HealthPercent),
                         Spell.BuffSelf("Totem Mastery", req => !Me.HasAura("Ember Totem")), // Only one buff should need to be checked.
                         Spell.Buff("Flame Shock", true, req => !Me.CurrentTarget.HasMyAura("Flame Shock") && Me.CurrentTarget.TimeToDeath(int.MaxValue) > 6),
                         Spell.Cast("Fire Elemental"),
@@ -204,11 +208,11 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Ascendance"),
 						Spell.BuffSelf("Elemental Mastery"),
                         Spell.Cast("Lava Burst"),
-						Spell.CastOnGround("Earthquake",
-							on => Me.CurrentTarget,
-							req => Spell.UseAOE 
+						Spell.CastOnGround("Earthquake Totem",
+							on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location,
+							req => Spell.UseAOE
 								&& Me.CurrentTarget.Distance < 34
-								&& (Me.ManaPercent > ShamanSettings.EarthquakeManaPercent || Me.GetAuraTimeLeft("Lucidity") > TimeSpan.Zero)
+								&& (Me.ManaPercent > ShamanSettings.EarthquakeMaelPercent || Me.GetAuraTimeLeft("Lucidity") > TimeSpan.Zero)
 								&& Unit.UnfriendlyUnitsNearTarget(10f).Count() >= ShamanSettings.EarthquakeCount - 1),
 						Spell.Cast("Earth Shock", req => Me.CurrentMaelstrom >= 90),
 
@@ -264,7 +268,7 @@ namespace Singular.ClassSpecific.Shaman
                     else
                     {
                         aura = Me.GetAuraByName("Water Shield");
-                        if (aura == null ) 
+                        if (aura == null )
                         {
                             aura = Me.GetAuraByName("Earth Shield");
                             if (aura != null)
@@ -273,7 +277,7 @@ namespace Singular.ClassSpecific.Shaman
                     }
 
                     shield = aura == null ? "(null)" : aura.Name;
-                        
+
                     string line = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, shield={3}, stks={4}, moving={5}",
                         CompositeBuilder.CurrentBehaviorType.ToString(),
                         Me.HealthPercent,
@@ -296,7 +300,7 @@ namespace Singular.ClassSpecific.Shaman
                             (long)target.GetAuraTimeLeft("Flame Shock").TotalMilliseconds
                             );
 
-                    
+
                     if (Totems.Exist(WoWTotemType.Fire))
                         line += ", fire=" + Totems.GetTotem(WoWTotemType.Fire).Name;
 

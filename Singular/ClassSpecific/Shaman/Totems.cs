@@ -19,6 +19,8 @@ using Styx.TreeSharp;
 using CommonBehaviors.Actions;
 using Action = Styx.TreeSharp.Action;
 using System.Drawing;
+using System.Numerics;
+using Styx.Common;
 using Styx.CommonBot.Routines;
 
 namespace Singular.ClassSpecific.Shaman
@@ -90,13 +92,13 @@ namespace Singular.ClassSpecific.Shaman
                 {
                     if ( !Me.GotTarget() )
                         return false;
-                    
+
                     if ( Me.CurrentTarget.IsMoving )
                         return false;
-                    
+
                     if (Me.SpellDistance(Me.CurrentTarget) > Totems.GetTotemRange(WoWTotem.Searing))
                         return false;
-                    
+
                     return true;
                 }
 
@@ -125,11 +127,11 @@ namespace Singular.ClassSpecific.Shaman
             if (Dynamics.CompositeBuilder.CurrentBehaviorType != BehaviorType.Pull)
                 return new ActionAlwaysFail();
 
-            return new PrioritySelector(              
+            return new PrioritySelector(
                 // check in case more sophisticated totem cast needed
                 CreateTotemsNormalBehavior(),
 
-                // otherwise drop the DPS totem 
+                // otherwise drop the DPS totem
                 Spell.BuffSelf("Searing Totem", ret => ShouldWeDropPullTotems && AllowDpsTotems && !Exist(WoWTotemType.Fire))
                 );
 
@@ -143,7 +145,7 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.Buff(WoWTotem.FireElemental.ToSpellId(),
                     req => Common.StressfulSituation
                         && Totems.AllowElementalTotems
-                        && !Exist(WoWTotem.EarthElemental) 
+                        && !Exist(WoWTotem.EarthElemental)
                         && !Spell.CanCastHack("Earth Elemental Totem")
 
                     )
@@ -164,13 +166,13 @@ namespace Singular.ClassSpecific.Shaman
             {
                 fireTotemBehavior = new PrioritySelector(
                     new Decorator(
-                        ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget() && !Unit.NearbyGroupMembers.Any(), 
+                        ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget() && !Unit.NearbyGroupMembers.Any(),
                         fireTotemBehavior
                         )
                     );
             }
 
-            // now 
+            // now
             return new PrioritySelector(
 
                 new Throttle(1,
@@ -218,7 +220,7 @@ namespace Singular.ClassSpecific.Shaman
                     new PrioritySelector(
 
                         // check for stress - enemy player or elite within 8 levels nearby
-                // .. dont use NearbyUnitsInCombatWithMe since it checks .Tagged and we only care if we are being attacked 
+                // .. dont use NearbyUnitsInCombatWithMe since it checks .Tagged and we only care if we are being attacked
                         ctx => Common.StressfulSituation,
 
                         // earth totems
@@ -302,7 +304,7 @@ namespace Singular.ClassSpecific.Shaman
 
             fireTotemBehavior.AddChild(
                     Spell.Buff(
-                       "Fire Elemental Totem", 
+                       "Fire Elemental Totem",
                        req => Me.CurrentTarget.IsBoss()
                            && AllowElementalTotems
                        )
@@ -318,7 +320,7 @@ namespace Singular.ClassSpecific.Shaman
             if (TalentManager.CurrentSpec == WoWSpec.ShamanRestoration)
                 fireTotemBehavior = new PrioritySelector(
                     new Decorator(
-                        ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget() && !HealerManager.Instance.TargetList.Any(m => m.IsAlive), 
+                        ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget() && !HealerManager.Instance.TargetList.Any(m => m.IsAlive),
                         fireTotemBehavior
                         )
                     );
@@ -328,7 +330,7 @@ namespace Singular.ClassSpecific.Shaman
                     );
 
 
-            // now 
+            // now
             return new PrioritySelector(
 
                 Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
@@ -381,7 +383,7 @@ namespace Singular.ClassSpecific.Shaman
                                     if ( ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Any( o => o.Entry == 15352))
                                         return false;
 
-                                    // we are okay if nothing in combat with our group 
+                                    // we are okay if nothing in combat with our group
                                     if (!Unit.NearbyUnitsInCombatWithUsOrOurStuff.Any())
                                         return false;
                                 }
@@ -580,9 +582,9 @@ namespace Singular.ClassSpecific.Shaman
 
         #region Helper stuff
 
-        public static bool NeedToRecallTotems 
-        { 
-            get 
+        public static bool NeedToRecallTotems
+        {
+            get
             {
                 int cntTotemsInRange = 0;
                 int cntTotems = 0;
@@ -620,7 +622,7 @@ namespace Singular.ClassSpecific.Shaman
                 }
 
                 return wantToRecall;
-            } 
+            }
         }
 
         public static bool TotemIsKnown(WoWTotem totem)
@@ -688,7 +690,7 @@ namespace Singular.ClassSpecific.Shaman
         /// <param name="pt"></param>
         /// <param name="tt"></param>
         /// <returns></returns>
-        public static bool ExistInRange(WoWPoint pt, WoWTotem tt)
+        public static bool ExistInRange(Vector3 pt, WoWTotem tt)
         {
             if ( !Exist(tt))
                 return false;
@@ -703,7 +705,7 @@ namespace Singular.ClassSpecific.Shaman
         /// <param name="pt"></param>
         /// <param name="awt"></param>
         /// <returns></returns>
-        public static bool ExistInRange(WoWPoint pt, params WoWTotem[] awt)
+        public static bool ExistInRange(Vector3 pt, params WoWTotem[] awt)
         {
             return awt.Any(t => ExistInRange(pt, t));
         }
@@ -714,7 +716,7 @@ namespace Singular.ClassSpecific.Shaman
         /// <param name="pt"></param>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static bool ExistInRange(WoWPoint pt, WoWTotemType type)
+        public static bool ExistInRange(Vector3 pt, WoWTotemType type)
         {
             WoWTotemInfo ti = GetTotem(type);
             return Exist(ti) && ti.Unit != null && ti.Unit.Location.Distance(pt) < GetTotemRange(ti.WoWTotem);
@@ -748,9 +750,9 @@ namespace Singular.ClassSpecific.Shaman
         /// <summary>
         /// check if all totems are within range of Shaman's location
         /// </summary>
-        public static int TotemsInRange 
-        { 
-            get 
+        public static int TotemsInRange
+        {
+            get
             {
                 return TotemsInRangeOf(StyxWoW.Me);
             }
@@ -826,7 +828,7 @@ namespace Singular.ClassSpecific.Shaman
                     return 40f;
 
                 case WoWTotem.SpiritLink:
-                    return 10f;
+                    return 40f;
             }
 
             return 0f;
@@ -844,15 +846,15 @@ namespace Singular.ClassSpecific.Shaman
         }
 
 
-        static WoWTotem[] totemsWeDontRecall = new WoWTotem[] 
+        static WoWTotem[] totemsWeDontRecall = new WoWTotem[]
         {
-            WoWTotem.FireElemental , 
-            WoWTotem.EarthElemental  , 
-            WoWTotem.HealingTide , 
-            WoWTotem.ManaTide 
+            WoWTotem.FireElemental ,
+            WoWTotem.EarthElemental  ,
+            WoWTotem.HealingTide ,
+            WoWTotem.ManaTide
         };
 
-        static WoWTotem[] totemsThatAggro = new WoWTotem[] 
+        static WoWTotem[] totemsThatAggro = new WoWTotem[]
         {
             WoWTotem.FireElemental,
             WoWTotem.Searing,
@@ -873,7 +875,7 @@ namespace Singular.ClassSpecific.Shaman
             WoWTotem.Capacitor,
             // Windwalk,
             // DummyAir,
-            // Stormlash         
+            // Stormlash
         };
 
         #endregion

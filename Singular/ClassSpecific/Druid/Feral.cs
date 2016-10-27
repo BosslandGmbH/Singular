@@ -112,7 +112,7 @@ namespace Singular.ClassSpecific.Druid
                                 && Spell.GetSpellCooldown("Wild Charge", 999).TotalSeconds > 1
                             ),
 
-                        Spell.Buff("Rake", req => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.Distance < (Me.CurrentTarget.CombatReach + 2))
+                        Spell.Buff("Rake")
                         )
                     ),
 
@@ -299,26 +299,43 @@ namespace Singular.ClassSpecific.Druid
                                 || (DruidSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.HasActiveAura("Tiger's Fury")) )
                         ),
 
+                        Spell.BuffSelf("Healing Touch", ret => Me.HasActiveAura("Predatory Swiftness")),
+
+                        // AoE
+                        new Decorator(
+                            ret => Spell.UseAOE && Unit.UnfriendlyUnits(8).Count() > 2,
+                            new PrioritySelector(
+                                Spell.Cast("Thrash", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => u.GetAuraTimeLeft("Thrash").TotalSeconds < RakeAndThrashRefresh)),
+                                Spell.Cast("Rake", on => Unit.UnfriendlyUnits(8).OrderBy(u => u.GetAuraTimeLeft("Rake")).
+                                    FirstOrDefault(u => Me.IsSafelyFacing(u) && (Me.HasActiveAura("Bloodtalons") || u.GetAuraTimeLeft("Rake").TotalSeconds < RakeAndThrashRefresh))),
+                                Spell.Cast("Rip",
+                                    on => Unit.UnfriendlyUnits(8).FirstOrDefault(
+                                                u => u.HealthPercent >= 25 && Me.IsSafelyFacing(u) && u.TimeToDeath(int.MaxValue) > 18 && u.GetAuraTimeLeft("Rip").TotalSeconds < RipRefresh),
+                                    ret => Me.ComboPoints >= 4),
+                                Spell.Cast("Swipe"),
+                                Spell.BuffSelf("Tiger's Fury"),
+                                Spell.BuffSelf("Berserk")
+                                )
+                            ),
 
                         //Single target
                         CreateFeralFaerieFireBehavior(),
 
                         Spell.Cast("Elune's Guidance", ret => Me.ComboPoints <= 0 && Me.CurrentEnergy >= 50),
-                        Spell.BuffSelf("Healing Touch", ret => Me.HasActiveAura("Predatory Swiftness") && Me.ComboPoints >= 4),
-                        new Decorator(ret => Me.ComboPoints >= 5,
+                        new Decorator(ret => Me.ComboPoints >= 5 || (Me.ComboPoints >= 3 && Me.CurrentTarget.IsTrivial()),
                             new PrioritySelector(
                                 Spell.Cast("Ferocious Bite",
                                     on => Unit.UnfriendlyUnits(8).FirstOrDefault(
-                                                u => (u.HealthPercent < 25 || Common.HasTalent(DruidTalents.Sabertooth)) && u.HasMyAura("Rip") ||
-                                                        u.TimeToDeath(int.MaxValue) < 18 || u.GetAuraTimeLeft("Rip").TotalSeconds >= RipRefresh),
+                                                u => Me.IsSafelyFacing(u) && ((u.HealthPercent < 25 || Common.HasTalent(DruidTalents.Sabertooth)) && u.HasMyAura("Rip") ||
+                                                        u.TimeToDeath(int.MaxValue) < 18 || u.GetAuraTimeLeft("Rip").TotalSeconds >= RipRefresh)),
                                     ret => (!Common.HasTalent(DruidTalents.SavageRoar) || Me.GetAuraTimeLeft("Savage Roar").TotalSeconds > 12) && Me.CurrentEnergy >= 50),
                                 Spell.Cast("Rip",
                                     on => Unit.UnfriendlyUnits(8).FirstOrDefault(
-                                                u => u.HealthPercent >= 25 && u.TimeToDeath(int.MaxValue) > 18 && u.GetAuraTimeLeft("Rip").TotalSeconds < RipRefresh)),
+                                                u => Me.IsSafelyFacing(u) && u.HealthPercent >= 25 && u.TimeToDeath(int.MaxValue) > 18 && u.GetAuraTimeLeft("Rip").TotalSeconds < RipRefresh)),
                                 Spell.Cast("Savage Roar"))),
 
                         Spell.Cast("Moonfire",
-                            on => Unit.NearbyUnitsInCombatWithUsOrOurStuff.FirstOrDefault(u => u.GetAuraTimeLeft("Moonfire").TotalSeconds < 4.2),
+                            on => Unit.NearbyUnitsInCombatWithUsOrOurStuff.FirstOrDefault(u => u.GetAuraTimeLeft("Moonfire").TotalSeconds < 2.5),
                             ret => Common.HasTalent(DruidTalents.LunarInspiration)),
                         Spell.Cast("Tiger's Fury", ret => EnergyDecifit > 65),
                         Spell.Cast("Berserk", ret => Me.HasActiveAura("Tiger's Fury") && Me.CurrentTarget.IsStressful()),
@@ -326,7 +343,7 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Cast("Rake",
                             on => Unit.UnfriendlyUnits(8).OrderBy(u => u.GetAuraTimeLeft("Rake")).
                                         FirstOrDefault(
-                                            u => Me.HasActiveAura("Bloodtalons") || u.GetAuraTimeLeft("Rake").TotalSeconds < RakeAndThrashRefresh)),
+                                            u => Me.IsSafelyFacing(u) && (Me.HasActiveAura("Bloodtalons") || u.GetAuraTimeLeft("Rake").TotalSeconds < RakeAndThrashRefresh))),
                         Spell.Cast("Thrash", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => u.GetAuraTimeLeft("Thrash").TotalSeconds < RakeAndThrashRefresh)),
                         Spell.Cast("Brutal Slash"),
                         Spell.Cast("Shred", ret => Unit.UnfriendlyUnitsNearTarget(8).Count() <= 1),

@@ -17,6 +17,7 @@ using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using Styx.CommonBot.POI;
 using System.Drawing;
+using Styx.Common;
 using Styx.WoWInternals.DBC;
 using Styx.Patchables;
 
@@ -238,7 +239,7 @@ namespace Singular.ClassSpecific.Warlock
                     req => !Unit.IsTrivial(Me.CurrentTarget),
                     new PrioritySelector(
                         // need combat healing?  check here since mix of buffs and abilities
-                        // heal / shield self as needed
+                // heal / shield self as needed
                         Spell.BuffSelf("Dark Regeneration", ret => Me.HealthPercent < 45),
 
                         new ThrottlePasses(
@@ -935,7 +936,7 @@ namespace Singular.ClassSpecific.Warlock
             }
         }
         
-        const string BURNING_RUSH = "Burning Rush";
+            const string BURNING_RUSH = "Burning Rush";
         private static DateTime timeNextBurningRush = DateTime.MinValue;
         private static DateTime lastCancelBurningRush = DateTime.MinValue;
         private static DateTime lastStopInitiated = DateTime.MaxValue;
@@ -1106,7 +1107,7 @@ namespace Singular.ClassSpecific.Warlock
                 return false;
             }
         }
-    }
+        }
 
 
     #region Locals - SimC Synonyms

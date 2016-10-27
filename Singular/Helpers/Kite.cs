@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using Styx.Pathing;
 using CommonBehaviors.Actions;
 using System.Drawing;
+using System.Numerics;
 using Styx.WoWInternals;
 using Styx.Helpers;
 using Styx.Common;
@@ -181,9 +182,9 @@ namespace Singular.Helpers
         }
 
         public static State bstate = State.None;
-        public static WoWPoint locSafeSpot = WoWPoint.Empty;
+        public static Vector3 locSafeSpot = Vector3.Zero;
         public static DateTime timeOut = DateTime.UtcNow;
-        public static WoWPoint locKiteBegin = WoWPoint.Empty;
+        public static Vector3 locKiteBegin = Vector3.Zero;
 
         // private static Composite _SlowAttackBehavior;
 
@@ -473,7 +474,7 @@ namespace Singular.Helpers
             }
 
             locSafeSpot = sa.FindLocation();
-            if (locSafeSpot == WoWPoint.Empty)
+            if (locSafeSpot == Vector3.Zero)
             {
                 return false;
             }
@@ -717,7 +718,7 @@ namespace Singular.Helpers
         }
 
         static JumpTurnState state;
-        static WoWPoint bpwjDest;
+        static Vector3 bpwjDest;
         static DateTime movementCheck;
         static DateTime stopKiting;
         static DateTime stopJump;
@@ -871,7 +872,7 @@ namespace Singular.Helpers
             sa.MinSafeDistance = 15;
 
             bpwjDest = sa.FindLocation();
-            if (bpwjDest != WoWPoint.Empty)
+            if (bpwjDest != Vector3.Empty)
             {
                 state = JumpTurnState.RunAway;
                 Logger.WriteDebug( Color.Cyan,  "Back peddling");
@@ -1073,7 +1074,7 @@ namespace Singular.Helpers
             }
         }
 
-        public List<WoWPoint> AllEnemyMobLocationsToCheck
+        public List<Vector3> AllEnemyMobLocationsToCheck
         {
             get
             {
@@ -1104,12 +1105,12 @@ namespace Singular.Helpers
             }
         }
 
-        public static WoWPoint NearestMobLoc(WoWPoint p, IEnumerable<WoWPoint> mobLocs)
+        public static Vector3 NearestMobLoc(Vector3 p, IEnumerable<Vector3> mobLocs)
         {
             if (!mobLocs.Any())
-                return WoWPoint.Empty;
+                return Vector3.Zero;
 
-            return mobLocs.OrderBy(u => u.Distance2DSqr(p)).First();
+            return mobLocs.OrderBy(u => u.Distance2DSquared(p)).First();
         }
 
         /// <summary>
@@ -1117,12 +1118,12 @@ namespace Singular.Helpers
         /// </summary>
         /// <param name="minSafeDist">min distance to be safe</param>
         /// <returns></returns>
-        public WoWPoint FindLocation()
+        public Vector3 FindLocation()
         {
             return FindLocation(Me.GetTraceLinePos());
         }
 
-        public WoWPoint FindLocation(WoWPoint ptOrigin)
+        public Vector3 FindLocation(Vector3 ptOrigin)
         {
             DateTime startFind = DateTime.UtcNow;
             int countPointsChecked = 0;
@@ -1136,15 +1137,15 @@ namespace Singular.Helpers
             TimeSpan spanTrace = TimeSpan.Zero;
             TimeSpan spanNav = TimeSpan.Zero;
             double furthestNearMobDistSqr = 0f;
-            WoWPoint ptFurthest = WoWPoint.Empty;
+            Vector3 ptFurthest = Vector3.Zero;
             float facingFurthest = 0f;
 
             bool reallyCheckRangeToLineOfSightMob = CheckRangeToLineOfSightMob && Me.GotTarget();
-            WoWPoint ptAdjOrigin = ptOrigin;
+            Vector3 ptAdjOrigin = ptOrigin;
             // ptAdjOrigin.Z += 1f;   // comment out origin adjustment since using GetTraceLinePos()
 
-            WoWPoint ptDestination = new WoWPoint();
-            List<WoWPoint> mobLocations = new List<WoWPoint>();
+            Vector3 ptDestination = new Vector3();
+            List<Vector3> mobLocations = new List<Vector3>();
             float arcIncrement = ((float)Math.PI * 2) / RaysToCheck;
             
             mobLocations = AllEnemyMobLocationsToCheck;
@@ -1185,8 +1186,6 @@ namespace Singular.Helpers
 
                     ptDestination = ptOrigin.RayCast(checkFacing, distFromOrigin);
 
-                    Logger.WriteDebug("SafeArea: checking {0:F1} degrees at {1:F1} yds", WoWMathHelper.RadiansToDegrees(checkFacing), distFromOrigin);
-
                     DateTime start = DateTime.UtcNow;
                     bool failTrace = Movement.MeshTraceline(Me.Location, ptDestination);
                     spanTrace += DateTime.UtcNow - start;
@@ -1200,7 +1199,10 @@ namespace Singular.Helpers
                     else
                     {
                         start = DateTime.UtcNow;
-                        failNav = !Navigator.CanNavigateFully(Me.Location, ptDestination);
+                        // TODO: FIXME: CanNavigateFully
+                        // This whole thing can be replaced by mesh sampling.
+                        failNav = false;
+//                        failNav = !Navigator.CanNavigateFully(Me.Location, ptDestination);
                         spanNav += DateTime.UtcNow - start;
                     }
 
@@ -1217,8 +1219,8 @@ namespace Singular.Helpers
                         continue;
                     }
 
-                    WoWPoint ptNearest = NearestMobLoc(ptDestination, mobLocations);
-                    if (ptNearest == WoWPoint.Empty)
+                    Vector3 ptNearest = NearestMobLoc(ptDestination, mobLocations);
+                    if (ptNearest == Vector3.Zero)
                     {
                         if (furthestNearMobDistSqr < minSafeDistSqr)
                         {
@@ -1229,7 +1231,7 @@ namespace Singular.Helpers
                     }
                     else
                     {
-                        double mobDistSqr = ptDestination.Distance2DSqr(ptNearest);
+                        double mobDistSqr = ptDestination.Distance2DSquared(ptNearest);
                         if (furthestNearMobDistSqr < mobDistSqr)
                         {
                             furthestNearMobDistSqr = mobDistSqr;
@@ -1251,7 +1253,7 @@ namespace Singular.Helpers
 
                     if (CheckLineOfSightToSafeLocation)
                     {
-                        WoWPoint ptAdjDest = ptDestination;
+                        Vector3 ptAdjDest = ptDestination;
                         ptAdjDest.Z += 1f;
                         if (!Styx.WoWInternals.World.GameWorld.IsInLineOfSight(ptAdjOrigin, ptAdjDest))
                         {
@@ -1283,17 +1285,17 @@ namespace Singular.Helpers
             }
 
             Logger.WriteDebug(Color.Cyan, "SafeArea: No mob-free location ({0:F1} yd radius) found within {1:F1} yds ({2} checked, {3} nav, {4} not safe, {5} range, {6} pt los, {7} mob los, {8} mesh trace)", MinSafeDistance, MaxScanDistance, countPointsChecked, countFailToPointNav, countFailSafe, countFailRange, countFailToPointLoS, countFailToMobLoS, countFailTrace);
-            if (ChooseSafestAvailable && ptFurthest != WoWPoint.Empty)
+            if (ChooseSafestAvailable && ptFurthest != Vector3.Zero)
             {
                 Logger.WriteDebug(Color.Cyan, "SafeArea: choosing best available spot in {0:F1} yd radius where closest mob is {1:F1} yds", MinSafeDistance, Math.Sqrt(furthestNearMobDistSqr));
                 Logger.WriteDebug(Color.Cyan, "SafeArea: processing took {0:F0} ms", (DateTime.UtcNow - startFind).TotalMilliseconds);
                 Logger.WriteDebug(Color.Cyan, "SafeArea: meshtrace took {0:F0} ms / fullynav took {1:F0} ms", spanTrace.TotalMilliseconds, spanNav.TotalMilliseconds);
-                return ChooseSafestAvailable ? ptFurthest : WoWPoint.Empty;
+                return ChooseSafestAvailable ? ptFurthest : Vector3.Zero;
             }
 
             Logger.WriteDebug(Color.Cyan, "SafeArea: processing took {0:F0} ms", (DateTime.UtcNow - startFind).TotalMilliseconds);
             Logger.WriteDebug(Color.Cyan, "SafeArea: meshtrace took {0:F0} ms / fullynav took {1:F0} ms", spanTrace.TotalMilliseconds, spanNav.TotalMilliseconds);
-            return WoWPoint.Empty;
+            return Vector3.Zero;
         }
 
 #if DONT_USE
@@ -1303,10 +1305,10 @@ namespace Singular.Helpers
         /// <param name="ptOrigin">start point for search</param>
         /// <param name="minSafeDist">min distance to be safe</param>
         /// <returns></returns>
-        public WoWPoint FindLocationOriginal(WoWPoint ptOrigin)
+        public Vector3 FindLocationOriginal(Vector3 ptOrigin)
         {
-            WoWPoint destinationLocation = new WoWPoint();
-            List<WoWPoint> mobLocations = new List<WoWPoint>();
+            Vector3 destinationLocation = new Vector3();
+            List<Vector3> mobLocations = new List<Vector3>();
             int arcIncrement = 360 / RaysToCheck;
 
             mobLocations = AllEnemyMobLocations;
@@ -1361,7 +1363,7 @@ namespace Singular.Helpers
             }
 
             Logger.WriteDebug(Color.Cyan, "No mob-free location ({0:F1} yd radius) found within {1:F1} yds", MinSafeDistance, MaxScanDistance );
-            return WoWPoint.Empty;
+            return Vector3.Empty;
         }
 #endif
 
@@ -1377,7 +1379,7 @@ namespace Singular.Helpers
             return diff < SafeArea.ONE_DEGREE_AS_RADIAN;
         }
 
-        public static bool IsDirectlyFacing(this WoWUnit u, WoWPoint pt)
+        public static bool IsDirectlyFacing(this WoWUnit u, Vector3 pt)
         {
             return WoWMathHelper.IsFacing(u.Location, u.RenderFacing, pt, SafeArea.ONE_DEGREE_AS_RADIAN);
         }
@@ -1398,8 +1400,8 @@ namespace Singular.Helpers
         private static WoWUnit Target { get { return StyxWoW.Me.CurrentTarget; } }
 
         private static WoWUnit mobToGetAwayFrom;
-        private static WoWPoint origSpot;
-        private static WoWPoint safeSpot;
+        private static Vector3 origSpot;
+        private static Vector3 safeSpot;
         private static float needFacing;
         public static DateTime NextDisengageAllowed = DateTime.MinValue;
 
@@ -1424,7 +1426,7 @@ namespace Singular.Helpers
                     new Action(r => Logger.WriteDebug("face {0} safespot as needed", dir == Direction.Frontwards ? "towards" : "away from")),
                     new Action(ret =>
                     {
-                        origSpot = new WoWPoint(Me.Location.X, Me.Location.Y, Me.Location.Z);
+                        origSpot = new Vector3(Me.Location.X, Me.Location.Y, Me.Location.Z);
                         if (dir == Direction.Frontwards)
                             needFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(origSpot, safeSpot);
                         else
@@ -1520,7 +1522,7 @@ namespace Singular.Helpers
             sa.DirectPathOnly = true;
 
             safeSpot = sa.FindLocation();
-            if (safeSpot == WoWPoint.Empty)
+            if (safeSpot == Vector3.Zero)
             {
                 Logger.WriteDebug(Color.Cyan, "DIS: no safe landing spots found for {0}", spell);
                 return false;

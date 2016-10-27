@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Numerics;
 using CommonBehaviors.Actions;
 using Singular.Dynamics;
 using Singular.Helpers;
@@ -15,6 +16,7 @@ using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using Singular.Settings;
+using Styx.Common;
 using Styx.Common.Helpers;
 
 
@@ -143,8 +145,8 @@ namespace Singular.ClassSpecific.Monk
                                     Spell.CastOnGround(
                                         "Summon Jade Serpent Statue",
                                         loc => {
-                                            WoWPoint locTank = (loc as WoWUnit).Location;
-                                            WoWPoint locMe = Me.Location;
+                                            Vector3 locTank = (loc as WoWUnit).Location;
+                                            Vector3 locMe = Me.Location;
                                             float dist = (float) locMe.Distance(locTank) * 2f / 3f;
                                             dist = Math.Min(dist, 35f);
                                             if (dist < 10)
@@ -228,7 +230,7 @@ namespace Singular.ClassSpecific.Monk
 							Spell.Cast("Rising Sun Kick"),
 							Spell.Cast("Blackout Kick", req => Me.GetAuraStacks("Teachings of the Monastery") >= 3),
 							Spell.Cast("Tiger Palm")
-							)
+                            )
                         ),
 
                     // Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > minDistRollAllowed)
@@ -283,9 +285,9 @@ namespace Singular.ClassSpecific.Monk
 
                                     Spell.Cast("Rising Sun Kick"),
 									Spell.Cast("Blackout Kick", req => Me.GetAuraStacks("Teachings of the Monastery") >= 3),
-                                    Spell.Cast("Tiger Palm")
-                                )
-							),
+                                            Spell.Cast("Tiger Palm")
+                                            )
+                                        ),
 
                             Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > minDistRollAllowed)
                             )
@@ -409,8 +411,8 @@ namespace Singular.ClassSpecific.Monk
 										Spell.Cast("Rising Sun Kick"),
 										Spell.Cast("Blackout Kick", req => Me.GetAuraStacks("Teachings of the Monastery") >= 3),
 										Spell.Cast("Tiger Palm")
-										)
-									),
+                                        )
+                                    ),
 
                                 Spell.Cast("Roll", 
                                     req => MovementManager.IsClassMovementAllowed
@@ -511,7 +513,7 @@ namespace Singular.ClassSpecific.Monk
         {
             CreateMistweaverHealingWowhead(selfOnly, behavs);
         }
-		private static void CreateMistweaverHealingWowhead(bool selfOnly, PrioritizedBehaviorList behavs)
+        private static void CreateMistweaverHealingWowhead(bool selfOnly, PrioritizedBehaviorList behavs)
         {
             // save a group
             if (!selfOnly)
@@ -569,7 +571,7 @@ namespace Singular.ClassSpecific.Monk
                     new Decorator(
                         req => (Me.Combat && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid)),
                         Spell.Cast("Thunder Focus Tea", on => Me)
-                        )
+                            )
                     );
 
                 behavs.AddBehavior(
@@ -603,7 +605,7 @@ namespace Singular.ClassSpecific.Monk
                     )
                 );
 
-            behavs.AddBehavior(
+                behavs.AddBehavior(
                 HealthToPriority(MonkSettings.MistHealSettings.Effuse),
                 String.Format("Effuse @ {0}%", MonkSettings.MistHealSettings.Effuse),
 				"Effuse",

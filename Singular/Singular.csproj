@@ -288,6 +288,7 @@
   <ItemGroup>
     <Content Include="CONTRIBUTORS.txt" />
     <Content Include="Singular.xml" />
+    <None Include="packages.config" />
     <None Include="SingularRoutine.Version.tmpl" />
   </ItemGroup>
   <ItemGroup>
@@ -302,12 +303,15 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="GreyMagic">
-      <HintPath>..\Honorbuddy\GreyMagic.dll</HintPath>
+      <HintPath>..\Dependencies\GreyMagic.dll</HintPath>
     </Reference>
     <Reference Include="Honorbuddy">
-      <HintPath>..\Honorbuddy\Honorbuddy.exe</HintPath>
+      <HintPath>..\Dependencies\Honorbuddy.exe</HintPath>
     </Reference>
     <Reference Include="System.Numerics" />
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\packages\Buddy.Analyzers.1.0.6121.40770\analyzers\dotnet\cs\Buddy.Analyzers.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

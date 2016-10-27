@@ -71,8 +71,8 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        /// determines if unit is a melee toon based upon .Class.  for Shaman and Druids 
-        /// will return based upon presence of aura 
+        /// determines if unit is a melee toon based upon .Class.  for Shaman and Druids
+        /// will return based upon presence of aura
         /// </summary>
         /// <param name="unit">unit to test for melee-ness</param>
         /// <returns>true: melee toon, false: probably not</returns>
@@ -228,7 +228,7 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        ///   Gets the nearby unfriendly units within specified range.  if no range specified, 
+        ///   Gets the nearby unfriendly units within specified range.  if no range specified,
         ///   includes all unfriendly units
         /// </summary>
         /// <value>The nearby unfriendly units.</value>
@@ -248,7 +248,7 @@ namespace Singular.Helpers
 
             List<WoWUnit> list = new List<WoWUnit>();
             List<WoWObject> objectList = ObjectManager.ObjectList;
-           
+
             for (int i = 0; i < objectList.Count; i++)
             {
                 Type type = objectList[i].GetType();
@@ -314,14 +314,14 @@ namespace Singular.Helpers
         {
             return UnfriendlyUnits(maxSpellDist)
                 .Where(
-                    p => p.Aggro 
-                        || (p.Combat 
-                            && (p.TaggedByMe 
+                    p => p.Aggro
+                        || (p.Combat
+                            && (p.TaggedByMe
                                 || (p.GotTarget() && p.IsTargetingUs())
                                 || (p == EventHandlers.AttackingEnemyPlayer && EventHandlers.TimeSinceAttackedByEnemyPlayer.TotalSeconds < 15)
                                 )
                             )
-                    ); 
+                    );
         }
 
         public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithUsOrOurStuff
@@ -385,7 +385,7 @@ namespace Singular.Helpers
                 return true;
             }
 
-            // Ignore evading NPCs 
+            // Ignore evading NPCs
             if (p.IsEvading())
             {
                 if (showReason)
@@ -408,7 +408,7 @@ namespace Singular.Helpers
             WoWPlayer pOwner = GetPlayerParent(p);
 
             // ignore if owner is player, alive, and not blacklisted then ignore (since killing owner kills it)
-            // .. following .IsMe check to prevent treating quest mob summoned by us that we need to kill as invalid 
+            // .. following .IsMe check to prevent treating quest mob summoned by us that we need to kill as invalid
             if (pOwner != null && pOwner.IsAlive && !pOwner.IsMe)
             {
                 if (!ValidUnit(pOwner))
@@ -495,8 +495,8 @@ namespace Singular.Helpers
                 return false;
 
             if (unit.Elite)
-                return unit.Level <= TrivialElite;                
-            
+                return unit.Level <= TrivialElite;
+
             return unit.Level <= TrivialLevel;
         }
 
@@ -737,7 +737,7 @@ namespace Singular.Helpers
 
 				if (creator.IsMe)
 					return true;
-				
+
 				var ownedBy = creator.OwnedByRoot;
 
 				if (ownedBy != null && ownedBy.IsMe)
@@ -841,7 +841,7 @@ namespace Singular.Helpers
             if (wantedAura == null)
                 return true;
 
-            // be aware: test previously was <= and vague recollection that was needed 
+            // be aware: test previously was <= and vague recollection that was needed
             // .. but no comment and need a way to consider passive ones found with timeleft of 0 as not expired if
             // .. if we pass 0 in as the timespan
             if (wantedAura.TimeLeft < tm)
@@ -886,7 +886,7 @@ namespace Singular.Helpers
 
 
         /// <summary>
-        /// aura considered expired if aura not present or less than specified time remaining.  
+        /// aura considered expired if aura not present or less than specified time remaining.
         /// differs from HasAuraExpired since it assumes you have learned the spell which applies it already
         /// </summary>
         /// <param name="u">unit</param>
@@ -1111,17 +1111,17 @@ namespace Singular.Helpers
 #else
             return unit.Stunned
                 || unit.Rooted
-                || unit.Fleeing 
+                || unit.Fleeing
                 || unit.HasAuraWithEffect(
-                        WoWApplyAuraType.ModConfuse, 
-                        WoWApplyAuraType.ModCharm, 
-                        WoWApplyAuraType.ModFear, 
-                        // WoWApplyAuraType.ModDecreaseSpeed, 
-                        WoWApplyAuraType.ModPacify, 
-                        WoWApplyAuraType.ModPacifySilence, 
-                        WoWApplyAuraType.ModPossess, 
-                        WoWApplyAuraType.ModRoot, 
-                        WoWApplyAuraType.ModStun 
+                        WoWApplyAuraType.ModConfuse,
+                        WoWApplyAuraType.ModCharm,
+                        WoWApplyAuraType.ModFear,
+                        // WoWApplyAuraType.ModDecreaseSpeed,
+                        WoWApplyAuraType.ModPacify,
+                        WoWApplyAuraType.ModPacifySilence,
+                        WoWApplyAuraType.ModPossess,
+                        WoWApplyAuraType.ModRoot,
+                        WoWApplyAuraType.ModStun
                         );
 #endif
         }
@@ -1139,14 +1139,14 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        /// IsBoss() checks usually appear in a sequence testing same target repeatedly.  
+        /// IsBoss() checks usually appear in a sequence testing same target repeatedly.
         /// Cache the values for a fast return in that circumstanc
         /// </summary>
         private static WoWGuid _lastIsBossGuid;
         private static bool _lastIsBossResult = false;
-   
+
         /// <summary>
-        /// checks if unit is in list of bosses. cache of prior check kept for faster return in 
+        /// checks if unit is in list of bosses. cache of prior check kept for faster return in
         /// instance behaviors which repeatedly test this as part of criteria for different
         /// cooldown casts
         /// </summary>
@@ -1176,9 +1176,9 @@ namespace Singular.Helpers
         public static bool IsTrainingDummy(this WoWUnit unit)
         {
             // return Lists.BossList.TrainingDummies.Contains(unit.Entry);
-            
+
             int bannerId = StyxWoW.Me.IsHorde ? BannerOfTheAlliance : BannerOfTheHorde;
-            return unit != null && unit.Level > 1 
+            return unit != null && unit.Level > 1
                 && ((unit.CurrentHealth == 1 && unit.MaxHealth < unit.Level) || unit.HasAura(bannerId) || unit.Name.Contains("Training Dummy"));
         }
 
@@ -1189,8 +1189,8 @@ namespace Singular.Helpers
         /// <returns>true if targeting your guys, false if not</returns>
         public static bool IsTargetingMyStuff(this WoWUnit u)
         {
-            return u.IsTargetingMeOrPet 
-                || u.IsTargetingAnyMinion 
+            return u.IsTargetingMeOrPet
+                || u.IsTargetingAnyMinion
                 || (u.GotTarget() && u.CurrentTarget.IsCompanion());
         }
 
@@ -1355,7 +1355,7 @@ namespace Singular.Helpers
 
             uint sumcheck = (uint) heals
                 .Where(heal => includeMyHeals || heal.OwnerGuid != StyxWoW.Me.Guid)
-                .Sum( heal => (long) heal.HealAmount);                
+                .Sum( heal => (long) heal.HealAmount);
 
             if ( myincoming != aggcheck || aggcheck != sumcheck)
             {
@@ -1364,128 +1364,6 @@ namespace Singular.Helpers
 #endif
             return aggcheck;
         }
-
-
-        public static IncomingHeal[] LocalIncomingHeals(this WoWUnit unit)
-        {
-            // Reversing note: CGUnit_C::GetPredictedHeals
-            const int PredictedHealsCount = 0x1374;
-            const int PredictedHealsArray = 0x1378;
-
-            Debug.Assert(unit != null);
-            uint health = unit.CurrentHealth;
-            var incomingHealsCnt = StyxWoW.Memory.Read<int>(unit.BaseAddress + PredictedHealsCount);
-            if (incomingHealsCnt == 0)
-                return new IncomingHeal[0];
-
-            var incomingHealsListPtr = StyxWoW.Memory.Read<IntPtr>(unit.BaseAddress + PredictedHealsArray);
-
-            var heals = StyxWoW.Memory.ReadArray<IncomingHeal>(incomingHealsListPtr, incomingHealsCnt);
-            return heals;
-        }
-
-
-        public static uint LocalGetPredictedHealthDebug(this WoWUnit unit, bool includeMyHeals = false)
-        {
-            // Reversing note: CGUnit_C::GetPredictedHeals
-            const int PredictedHealsCount = 0x1494;
-            const int PredictedHealsArray = 0x1498;
-            uint maxHealth = unit.MaxHealth;
-
-            Debug.Assert(unit != null);
-            uint health = unit.CurrentHealth;
-            var incomingHealsCnt = StyxWoW.Memory.Read<int>(unit.BaseAddress + PredictedHealsCount);
-            if (incomingHealsCnt == 0)
-            {
-                Logger.WriteDiagnostic( "  0 incoming heals");
-                return health;
-            }
-
-            var incomingHealsListPtr = StyxWoW.Memory.Read<IntPtr>(unit.BaseAddress + PredictedHealsArray);
-            var heals = StyxWoW.Memory.ReadArray<IncomingHeal>(incomingHealsListPtr, incomingHealsCnt);
-
-            StringBuilder sb = new StringBuilder();
-            sb.Append( "\n");
-
-            uint inchealth = 0;
-            foreach ( var heal in heals)
-            {
-                if (includeMyHeals && heal.OwnerGuid == StyxWoW.Me.Guid)
-                    continue;
-                WoWUnit owner = ObjectManager.GetObjectByGuid<WoWUnit>(heal.OwnerGuid);
-                WoWSpell spell = WoWSpell.FromId(heal.spellId);
-                uint HealPct = (heal.HealAmount * 100) / maxHealth;
-
-                sb.Append(
-                    string.Format("  {0} {1}% {2} {3} {4} {5}\r\n", 
-                        heal.IsHealOverTime.ToYN(),
-                        HealPct.ToString().PadLeft(3),
-                        heal.HealAmount.ToString().PadLeft(6),
-                        spell.Name.PadLeft(15).Substring(0, 15),
-                        spell.Id,
-                        owner.Name
-                        )
-                    );
-
-                inchealth += heal.HealAmount;
-            }
-
-            sb.Append( "   Total Incoming Heals = ");
-            sb.Append( (inchealth * 100 / maxHealth).ToString().PadLeft(3));
-            sb.Append( "% ");
-            sb.Append( inchealth.ToString().PadLeft(6));
-            sb.Append("  Predicted Health Pct = ");
-            sb.Append( (((float) health + inchealth) * 100 / unit.MaxHealth).ToString("F1"));
-            sb.Append( "%\r\n");
-
-            Logger.WriteDiagnostic( sb.ToString());
-
-            return health + inchealth;
-        }
-
-        public static float LocalGetPredictedHealthPercentDebug(this WoWUnit unit, bool includeMyHeals = false)
-        {
-             return (float)unit.LocalGetPredictedHealth(includeMyHeals) * 100 / unit.MaxHealth;
-        }
-
-        public static uint LocalGetPredictedHealth(this WoWUnit unit, bool includeMyHeals = false)
-        {
-            // Reversing note: CGUnit_C::GetPredictedHeals
-            const int PredictedHealsCount = 0x1374;
-            const int PredictedHealsArray = 0x1378;
-
-            Debug.Assert(unit != null);
-            uint health = unit.CurrentHealth;
-            var incomingHealsCnt = StyxWoW.Memory.Read<int>(unit.BaseAddress + PredictedHealsCount);
-            if (incomingHealsCnt == 0)
-                return health;
-
-            var incomingHealsListPtr = StyxWoW.Memory.Read<IntPtr>(unit.BaseAddress + PredictedHealsArray);
-
-            var heals = StyxWoW.Memory.ReadArray<IncomingHeal>(incomingHealsListPtr, incomingHealsCnt);
-            return heals.Where(heal => includeMyHeals || heal.OwnerGuid != StyxWoW.Me.Guid)
-                .Aggregate(health, (current, heal) => current + heal.HealAmount);
-        }
-
-        public static float LocalGetPredictedHealthPercent(this WoWUnit unit, bool includeMyHeals = false)
-        {
-            return (float)unit.LocalGetPredictedHealth(includeMyHeals) * 100 / unit.MaxHealth;
-        }
-
-		[StructLayout(LayoutKind.Sequential)]
-		internal struct IncomingHeal
-		{
-			public WoWGuid OwnerGuid;
-			public int spellId;
-			private int _dword_C;
-			public uint HealAmount;
-			private byte _isHealOverTime; // includes chaneled spells.
-			private byte _byte_15; // unknown value
-			private byte _byte_16; // unused
-			private byte _byte_17; // unused
-
-			public bool IsHealOverTime { get { return _isHealOverTime == 1; } }
-		}
 
         /// <summary>
         /// unit is located behind or along the side of target
@@ -1501,7 +1379,7 @@ namespace Singular.Helpers
         /// <summary>
         /// basic check if mob is running away from you.  true for any mob moving
         /// that has their back to you.  be aware will return true for one you
-        /// approach from the rear even if they are backing up towards you 
+        /// approach from the rear even if they are backing up towards you
         /// </summary>
         /// <param name="unit">unit</param>
         /// <returns>true: mob moving and you are safely behind it</returns>
@@ -1600,7 +1478,7 @@ namespace Singular.Helpers
                 if (SingularRoutine.CurrentWoWContext != WoWContext.Normal)
                     return true;
 
-                // skip test if not a player 
+                // skip test if not a player
                 if (!unit.IsPlayer)
                     return true;
 
@@ -1679,7 +1557,7 @@ namespace Singular.Helpers
 
     public class CombatScenario
     {
-        
+
         /// <summary>
         /// spell distance from Me to check
         /// </summary>
@@ -1739,7 +1617,7 @@ namespace Singular.Helpers
         public long RecentDamage { get; set; }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public float GcdTime { get; set; }
 
@@ -1753,7 +1631,7 @@ namespace Singular.Helpers
             BaseGcd = basegcd;
             Area = area;
             MaxAgeForDamage = maxdmgtime;
-            Mobs = new List<WoWUnit>();                
+            Mobs = new List<WoWUnit>();
         }
 
         public void Update(WoWUnit origin )
@@ -1791,7 +1669,7 @@ namespace Singular.Helpers
 
                         if (u.IsCrowdControlled())
                             CcCount++;
-                        else 
+                        else
                         {
                             if (u.IsPlayer)
                                 PlayerCount++;
@@ -1834,7 +1712,7 @@ namespace Singular.Helpers
     }
 
 
-    // following class should probably be in Unit, but made a separate 
+    // following class should probably be in Unit, but made a separate
     // .. extension class to separate the private property names.
     // --
     // credit to Handnavi.  the following is a wrapping of his code
@@ -1889,7 +1767,7 @@ namespace Singular.Helpers
                 * The longer the timespan the more precise the prediction
                 * time_diff/hp_diff = x/first_life_max
                 * x = time_diff*first_life_max/hp_diff
-                * 
+                *
                 * For those that forgot, http://mathforum.org/library/drmath/view/60822.html
                 */
                 long fullTime = timeDiff * _firstLifeMax / hpDiff;
@@ -1953,10 +1831,10 @@ namespace Singular.Helpers
                         if (timeNow != lastReportedTime || guid != StyxWoW.Me.CurrentTargetGuid )
                         {
                             lastReportedTime = timeNow;
-                            Logger.WriteFile( "TimeToDeath: {0} (GUID: {1}, Entry: {2}) dies in {3}", 
+                            Logger.WriteFile( "TimeToDeath: {0} (GUID: {1}, Entry: {2}) dies in {3}",
                                 StyxWoW.Me.CurrentTarget.SafeName(),
                                 StyxWoW.Me.CurrentTarget.Guid,
-                                StyxWoW.Me.CurrentTarget.Entry, 
+                                StyxWoW.Me.CurrentTarget.Entry,
                                 lastReportedTime);
                         }
                     }

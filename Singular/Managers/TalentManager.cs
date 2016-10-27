@@ -39,16 +39,16 @@ namespace Singular.Managers
             }
         }
 
-        public static WoWSpec CurrentSpec 
-        { 
-            get; 
-            private set; 
+        public static WoWSpec CurrentSpec
+        {
+            get;
+            private set;
         }
 
         public static List<Talent> Talents { get; private set; }
 
         private static int[] TalentId { get; set; }
-        
+
         private static uint SpellCount = 0;
         private static uint SpellBookSignature = 0;
 
@@ -56,9 +56,9 @@ namespace Singular.Managers
         private static WaitTimer SpecChangeTestTimer = new WaitTimer(TimeSpan.FromSeconds(3));
 
         private static bool _Rebuild = false;
-        private static bool RebuildNeeded 
+        private static bool RebuildNeeded
         {
-            get 
+            get
             {
                 return _Rebuild;
             }

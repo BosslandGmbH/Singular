@@ -20,6 +20,7 @@ using Styx.WoWInternals.WoWObjects;
 using Rest = Singular.Helpers.Rest;
 using System.Drawing;
 using CommonBehaviors.Actions;
+using Styx.Common;
 using Styx.CommonBot.POI;
 
 namespace Singular.ClassSpecific.Shaman
@@ -31,7 +32,7 @@ namespace Singular.ClassSpecific.Shaman
 
         private static bool NeedFeralSpirit
         {
-            get 
+            get
             {
                 return ShamanSettings.FeralSpiritCastOn == CastOn.All
                     || (ShamanSettings.FeralSpiritCastOn == CastOn.Bosses && StyxWoW.Me.CurrentTarget.Elite)
@@ -41,7 +42,7 @@ namespace Singular.ClassSpecific.Shaman
 
         #region Common
 
-        [Behavior(BehaviorType.PreCombatBuffs|BehaviorType.CombatBuffs, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Instances | WoWContext.Normal)]
+        [Behavior(BehaviorType.PreCombatBuffs | BehaviorType.CombatBuffs, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Instances | WoWContext.Normal)]
         public static Composite CreateShamanEnhancementPreCombatBuffs()
         {
             return new PrioritySelector(
@@ -52,7 +53,7 @@ namespace Singular.ClassSpecific.Shaman
                 );
         }
 
-        [Behavior(BehaviorType.PreCombatBuffs|BehaviorType.CombatBuffs, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.PreCombatBuffs | BehaviorType.CombatBuffs, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Battlegrounds)]
         public static Composite CreateShamanEnhancementPvpPreCombatBuffs()
         {
             return new PrioritySelector(
@@ -90,8 +91,8 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 Spell.CastOnGround("Rainfall", on => Me, ret => Me.HealthPercent < ShamanSettings.Rainfall),
-                Spell.Cast("Healing Surge", on => Me, 
-                    ret => Me.PredictedHealthPercent(true) < ShamanSettings.MaelHealingSurge && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
+                Spell.Cast("Healing Surge", on => Me,
+                    ret => Me.PredictedHealthPercent(true) < ShamanSettings.MaelHealingSurge && StyxWoW.Me.CurrentMaelstrom > ShamanSettings.MaelPercentHealingSurge),
 
                 Common.CreateShamanDpsHealBehavior()
                 );
@@ -107,7 +108,7 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanEnhancementHealPvp()
         {
             return new PrioritySelector(
-                new Decorator(ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5),
+                new Decorator(ret => StyxWoW.Me.CurrentMaelstrom > ShamanSettings.MaelPercentHealingSurge,
                     new PrioritySelector(
                         Spell.Cast("Healing Surge", ret => StyxWoW.Me, ret => StyxWoW.Me.PredictedHealthPercent() < ShamanSettings.MaelHealingSurge),
                         Spell.Cast("Healing Surge", ret => (WoWPlayer)Unit.GroupMembers.Where(p => p.IsAlive && p.PredictedHealthPercent() < ShamanSettings.MaelPvpOffHeal && p.Distance < 40).FirstOrDefault())
@@ -116,7 +117,7 @@ namespace Singular.ClassSpecific.Shaman
 
                 new Decorator(
                     ret => !StyxWoW.Me.Combat || (!Me.IsMoving && !Unit.NearbyUnfriendlyUnits.Any()),
-                    Common.CreateShamanDpsHealBehavior( )
+                    Common.CreateShamanDpsHealBehavior()
                     )
                 );
         }
@@ -148,20 +149,20 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Feral Lunge", ret => ShamanSettings.UseFeralLunge),
 
                         Spell.Cast("Lightning Bolt", ret => !ShamanSettings.AvoidMaelstromDamage && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
-                        Spell.Cast("Unleash Elements", 
-                            ret => StyxWoW.Me.Inventory.Equipped.OffHand != null 
+                        Spell.Cast("Unleash Elements",
+                            ret => StyxWoW.Me.Inventory.Equipped.OffHand != null
                                 && StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id == 5),
                         new Decorator(
                             req => Spell.UseAOE,
                             new PrioritySelector(
                                 Spell.Cast("Flame Shock", req => StyxWoW.Me.HasAura("Unleash Flame")),
-                                Spell.Buff("Flame Shock", true, req => Me.CurrentTarget.Elite || (!Me.CurrentTarget.IsTrivial() && Unit.UnfriendlyUnits(12).Count() > 1) )
+                                Spell.Buff("Flame Shock", true, req => Me.CurrentTarget.Elite || (!Me.CurrentTarget.IsTrivial() && Unit.UnfriendlyUnits(12).Count() > 1))
                                 )
                             ),
 
                         Spell.Cast("Frost Shock"),
 
-                        Spell.Cast("Lightning Bolt", ret => Me.Level < 20 || Me.CurrentTarget.IsFlying || !Styx.Pathing.Navigator.CanNavigateFully(Me.Location, Me.CurrentTarget.Location))
+                        Spell.Cast("Lightning Bolt", ret => Me.Level < 20 || Me.CurrentTarget.IsFlying || !Movement.CanNavigateToMelee(Me.CurrentTarget))
                         )
                     )
                 );
@@ -204,7 +205,7 @@ namespace Singular.ClassSpecific.Shaman
                         new Decorator(
                             req => AttackEvenIfGhostWolf,
                             new PrioritySelector(
-                               
+
                                 Dispelling.CreatePurgeEnemyBehavior("Purge"),
 
                                 Common.CreateShamanDpsShieldBehavior(),
@@ -212,25 +213,28 @@ namespace Singular.ClassSpecific.Shaman
 
                                 // pull more logic (use instants first, then ranged pulls if possible)
 
+                                Spell.CastOnGround("Lightning Surge Totem", on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location,
+                                                                    ret => ShamanSettings.UseLightningSurgeTotem && SingularRoutine.CurrentWoWContext == WoWContext.Normal
+                                                                    && Unit.UnfriendlyUnits(8).Count() >= ShamanSettings.LightningSurgeTotemCount),
                                 Spell.Cast("Ascendance", req => Me.HealthPercent <= ShamanSettings.AscendanceHealthPercent),
                                 Spell.Cast("Lava Lash", req => Me.HasActiveAura("Hot Hand")),
                                 Spell.Cast("Windsong"),
-                                Spell.Cast("Rockbiter", 
-									req => (Common.HasTalent(ShamanTalents.Boulderfist) && !Me.HasActiveAura("Boulderfist")) || 
-											(Common.HasTalent(ShamanTalents.Landslide) && !Me.HasActiveAura("Landslide"))),
+                                Spell.Cast("Rockbiter",
+                                    req => (Common.HasTalent(ShamanTalents.Boulderfist) && !Me.HasActiveAura("Boulderfist")) ||
+                                            (Common.HasTalent(ShamanTalents.Landslide) && !Me.HasActiveAura("Landslide"))),
                                 Spell.Cast("Frostbrand", req => Common.HasTalent(ShamanTalents.Hailstorm) && !Me.HasActiveAura("Frostbrand")),
-								Spell.Cast("Boulderfist", req => Me.CurrentMaelstrom < 130 && Spell.GetCharges("Boulderfist") >= 2),
+                                Spell.Cast("Boulderfist", req => Me.CurrentMaelstrom < 130 && Spell.GetCharges("Boulderfist") >= 2),
                                 Spell.Cast("Flametongue", req => !Me.HasActiveAura("Flametongue")),
                                 Spell.Cast("Feral Spirit"),
                                 Spell.Cast("Earthen Spike"),
                                 Spell.Cast("Crash Lightning", when => Unit.UnfriendlyUnitsNearTarget(10).Count(u => u.TaggedByMe || !u.TaggedByOther) >= 2),
                                 Spell.Cast("Stormstrike"),
-								Spell.Cast("Crash Ligthning", req => Common.HasTalent(ShamanTalents.CrashingStorm)),
+                                Spell.Cast("Crash Ligthning", req => Common.HasTalent(ShamanTalents.CrashingStorm)),
                                 Spell.Cast("Lava Lash", req => Me.CurrentMaelstrom > 110),
                                 Spell.Cast("Sundering", req => SingularRoutine.CurrentWoWContext != WoWContext.Instances),
                                 Spell.Cast("Rockbiter"),
                                 Spell.Cast("Lightning Bolt", req => !Me.CurrentTarget.IsWithinMeleeRange),
-                                // won't happen often, but if at range and no abilities enter ghost wolf 
+                                // won't happen often, but if at range and no abilities enter ghost wolf
                                 CreateInCombatGapCloser()
                                 )
                             )
@@ -294,7 +298,7 @@ namespace Singular.ClassSpecific.Shaman
                             && !Me.CurrentTarget.IsRooted()
                             && !Me.CurrentTarget.IsStunned(),
                         new PrioritySelector(
-							// quick single spell root
+                            // quick single spell root
                             Spell.Cast("Frost Shock")
 
                             )
@@ -307,7 +311,7 @@ namespace Singular.ClassSpecific.Shaman
                             ret => MovementManager.IsClassMovementAllowed
                                 && !Me.HasAura("Ghost Wolf")
                                 && Me.IsMoving // (DateTime.UtcNow - GhostWolfRequest).TotalMilliseconds < 1000
-                                && !Me.OnTaxi && !Me.InVehicle 
+                                && !Me.OnTaxi && !Me.InVehicle
                                 && !Utilities.EventHandlers.IsShapeshiftSuppressed,
 
                             Spell.BuffSelfAndWait("Ghost Wolf")
@@ -328,14 +332,14 @@ namespace Singular.ClassSpecific.Shaman
                     new Action(ret =>
                     {
                         uint maelStacks = 0;
-                        WoWAura aura = Me.ActiveAuras.Where( a => a.Key == "Maelstrom Weapon").Select( d => d.Value ).FirstOrDefault();
+                        WoWAura aura = Me.ActiveAuras.Where(a => a.Key == "Maelstrom Weapon").Select(d => d.Value).FirstOrDefault();
                         if (aura != null)
                         {
                             maelStacks = aura.StackCount;
                             if (maelStacks == 0)
                                 Logger.WriteDebug(Color.MediumVioletRed, "Inconsistancy Error:  Maelstrom Weapon buff exists with 0 stacks !!!!");
-                            else if ( !Me.HasAura("Maelstrom Weapon", (int)maelStacks))
-                                Logger.WriteDebug(Color.MediumVioletRed, "Inconsistancy Error:  Me.HasAura('Maelstrom Weapon', {0}) was False!!!!", maelStacks );
+                            else if (!Me.HasAura("Maelstrom Weapon", (int)maelStacks))
+                                Logger.WriteDebug(Color.MediumVioletRed, "Inconsistancy Error:  Me.HasAura('Maelstrom Weapon', {0}) was False!!!!", maelStacks);
                         }
 
                         string line = string.Format(".... h={0:F1}%/m={1:F1}%, mov={2}, mael={3}",
@@ -349,15 +353,15 @@ namespace Singular.ClassSpecific.Shaman
                         if (target == null)
                             line += ", target=(null)";
                         else
-                            line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, tmelee={3}, tface={4}, tloss={5}, flame={6}, frost={7}", 
-                                target.SafeName(), 
-                                target.SpellDistance(), 
+                            line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, tmelee={3}, tface={4}, tloss={5}, flame={6}, frost={7}",
+                                target.SafeName(),
+                                target.SpellDistance(),
                                 target.HealthPercent,
-                                target.IsWithinMeleeRange.ToYN(), 
-                                Me.IsSafelyFacing(target,180).ToYN(),
+                                target.IsWithinMeleeRange.ToYN(),
+                                Me.IsSafelyFacing(target, 180).ToYN(),
                                 target.InLineOfSpellSight.ToYN(),
-                                (long) target.GetAuraTimeLeft("Flame Shock").TotalMilliseconds,
-                                (long) target.GetAuraTimeLeft("Frost Shock").TotalMilliseconds
+                                (long)target.GetAuraTimeLeft("Flame Shock").TotalMilliseconds,
+                                (long)target.GetAuraTimeLeft("Frost Shock").TotalMilliseconds
                                 );
 
                         Logger.WriteDebug(line);

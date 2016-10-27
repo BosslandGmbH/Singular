@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Numerics;
 using CommonBehaviors.Actions;
 using Singular.Dynamics;
 using Singular.Helpers;
@@ -14,7 +15,9 @@ using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using Singular.Settings;
 using Singular.Managers;
+using Styx.Common;
 using Styx.Common.Helpers;
+using Styx.Pathing;
 
 namespace Singular.ClassSpecific.Monk
 {
@@ -23,7 +26,8 @@ namespace Singular.ClassSpecific.Monk
     {
         Chi = 3145,     // created by After Life
         Life = 3319,    // created by After Life
-        Healing = 2866  // created by Healing Sphere spell
+        Healing = 2866,  // created by Healing Sphere spell
+        Ox = 3282       // Brewmaster Healing Orb
     }
 
     public class Common
@@ -64,13 +68,13 @@ namespace Singular.ClassSpecific.Monk
                 onunitRop = on => Unit.UnfriendlyUnits(8).Count(u => u.CurrentTargetGuid == Me.Guid) > 1 ? Me : null;
 
             return new PrioritySelector(
-                
+
                 PartyBuff.BuffGroup( "Legacy of the White Tiger", req => Me.Specialization == WoWSpec.MonkBrewmaster || Me.Specialization == WoWSpec.MonkWindwalker),
                 PartyBuff.BuffGroup("Legacy of the Emperor", req => Me.Specialization == WoWSpec.MonkMistweaver),
 
                 new Decorator(
                     req => !Unit.IsTrivial(Me.CurrentTarget),
-                    new PrioritySelector(               
+                    new PrioritySelector(
                         // check our individual buffs here
                         Spell.Buff("Disable", ret => Me.GotTarget() && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile && !Me.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModDecreaseSpeed)),
                         Spell.Buff("Ring of Peace", onunitRop)
@@ -166,15 +170,15 @@ namespace Singular.ClassSpecific.Monk
                             // add buff / shield here
                             Spell.HandleOffGCD(
                                 new Throttle(
-                                    1, 
+                                    1,
                                     Spell.BuffSelf("Dampen Harm", req => Me.HealthPercent < MonkSettings.DampenHarmPct || MonkSettings.DampenHarmCount <= Unit.UnfriendlyUnits(40).Count( u => u.IsAlive && u.CurrentTargetGuid == Me.Guid && !u.IsTrivial()))
                                     )
                                 ),
-                            
+
                             // save myself if possible
                             new Decorator(
                                 ret => (!Me.IsInGroup() || Battlegrounds.IsInsideBattleground)
-                                    && !Me.IsMoving 
+                                    && !Me.IsMoving
                                     && Me.HealthPercent < MonkSettings.Effuse
                                     && Me.PredictedHealthPercent(includeMyHeals: true) < MonkSettings.Effuse,
                                 new PrioritySelector(
@@ -293,7 +297,7 @@ namespace Singular.ClassSpecific.Monk
                     )
                 );
         }
-		
+
 		public static Composite CreateAttackFlyingOrUnreachableMobs()
 		{
 			return new Decorator(
@@ -323,8 +327,8 @@ namespace Singular.ClassSpecific.Monk
 						return true;
 					}
 
-					WoWPoint dest = Me.CurrentTarget.Location;
-					if (!Me.CurrentTarget.IsWithinMeleeRange && !Styx.Pathing.Navigator.CanNavigateFully(Me.Location, dest))
+					if (!Me.CurrentTarget.IsWithinMeleeRange &&
+						Navigator.LookupPathInfo(Me.CurrentTarget, Me.CurrentTarget.MeleeRange).Navigability == PathNavigability.Unnavigable)
 					{
 						Logger.Write(LogColor.Hilite, "{0} is not Fully Pathable! trying ranged attack....", Me.CurrentTarget.SafeName());
 						return true;
@@ -426,7 +430,7 @@ namespace Singular.ClassSpecific.Monk
         }
 
         /// <summary>
-        /// a SpellManager.CanCast replacement to allow checking whether a spell can be cast 
+        /// a SpellManager.CanCast replacement to allow checking whether a spell can be cast
         /// without checking if another is in progress, since Monks need to cast during
         /// a channeled cast already in progress
         /// </summary>
@@ -520,7 +524,7 @@ namespace Singular.ClassSpecific.Monk
                                 Spell.CastPrimative(name, onUnit(ret));
                             }),
                             // if spell was in progress before cast (we queued this one) then wait in progress one to finish
-                            new WaitContinue( 
+                            new WaitContinue(
                                 new TimeSpan(0, 0, 0, 0, (int) SingularRoutine.Latency << 1),
                                 ret => !wasMonkSpellQueued || !(Spell.GcdActive || Me.IsCasting || Me.ChanneledSpell != null),
                                 new ActionAlwaysSucceed()
@@ -536,7 +540,7 @@ namespace Singular.ClassSpecific.Monk
                     )
                 );
         }
-         
+
         private static bool wasMonkSpellQueued = false;
 
         // delay casting instant ranged abilities if we just cast Roll/FSK
@@ -595,15 +599,15 @@ namespace Singular.ClassSpecific.Monk
                             },
                         new PrioritySelector(
                             Spell.BuffSelf(
-                                "Tiger's Lust", 
-                                req => hasTigersLust 
+                                "Tiger's Lust",
+                                req => hasTigersLust
                                     && !Me.HasAuraWithEffect(WoWApplyAuraType.ModIncreaseSpeed)
                                     && Me.HasAuraWithEffect(WoWApplyAuraType.ModRoot, WoWApplyAuraType.ModDecreaseSpeed)
                                 ),
 
-                            new Sequence( 
+                            new Sequence(
                                 Spell.Cast(
-                                    "Flying Serpent Kick", 
+                                    "Flying Serpent Kick",
                                     on => (WoWUnit) on,
                                     ret => TalentManager.CurrentSpec == WoWSpec.MonkWindwalker
                                         && !Me.Auras.ContainsKey("Flying Serpent Kick")
@@ -623,7 +627,7 @@ namespace Singular.ClassSpecific.Monk
                                     ),
 
                                 /* cancel when in range */
-                                new Wait( 
+                                new Wait(
                                     TimeSpan.FromMilliseconds(2500),
                                     until => {
                                         if (!Me.Auras.ContainsKey("Flying Serpent Kick"))
@@ -694,7 +698,7 @@ namespace Singular.ClassSpecific.Monk
                                 Spell.Cast("Roll", on => (WoWUnit)on, req => !MonkSettings.DisableRoll && MovementManager.IsClassMovementAllowed),
                                 new PrioritySelector(
                                     new Wait(
-                                        TimeSpan.FromMilliseconds(500), 
+                                        TimeSpan.FromMilliseconds(500),
                                         until => Me.Auras.ContainsKey("Roll"),
                                         new Action(r => Logger.WriteDebug("CloseDistance: Roll in progress"))
                                         ),
@@ -704,7 +708,7 @@ namespace Singular.ClassSpecific.Monk
                                         })
                                     ),
                                 new Wait(
-                                    TimeSpan.FromMilliseconds(950), 
+                                    TimeSpan.FromMilliseconds(950),
                                     until => !Me.Auras.ContainsKey("Roll"),
                                     new Action(r => Logger.WriteDebug("CloseDistance: Roll has ended"))
                                     )
@@ -740,9 +744,9 @@ namespace Singular.ClassSpecific.Monk
         {
 	        return FindSpheres(typ, range).Any();
         }
-		
+
         private static WoWGuid guidSphere = WoWGuid.Empty;
-        private static WoWPoint locSphere = WoWPoint.Empty;
+        private static Vector3 locSphere = Vector3.Zero;
         private static DateTime timeAbortSphere = DateTime.UtcNow;
 
         public static Composite CreateMoveToSphereBehavior(SphereType typ, float range)
@@ -753,9 +757,9 @@ namespace Singular.ClassSpecific.Monk
                 new PrioritySelector(
 
                     // check we haven't gotten out of range due to fall / pushback / port / etc
-                    new Decorator( 
+                    new Decorator(
                         ret => guidSphere.IsValid&& Me.Location.Distance(locSphere) > range,
-                        new Action(ret => { guidSphere = WoWGuid.Empty; locSphere = WoWPoint.Empty; })
+                        new Action(ret => { guidSphere = WoWGuid.Empty; locSphere = Vector3.Zero; })
                         ),
 
                     // validate the sphere we are moving to
@@ -764,7 +768,7 @@ namespace Singular.ClassSpecific.Monk
                         WoWObject sph = FindClosestSphere(typ, range);
                         if (sph == null)
                         {
-                            guidSphere = WoWGuid.Empty; locSphere = WoWPoint.Empty;
+                            guidSphere = WoWGuid.Empty; locSphere = Vector3.Zero;
                             return RunStatus.Failure;
                         }
 
@@ -778,8 +782,8 @@ namespace Singular.ClassSpecific.Monk
                         return RunStatus.Failure;
                     }),
 
-                    new Decorator( 
-                        ret => DateTime.UtcNow > timeAbortSphere, 
+                    new Decorator(
+                        ret => DateTime.UtcNow > timeAbortSphere,
                         new Action( ret => {
                             Logger.WriteDebug("MoveToSphere: blacklisting timed out {0} sphere {1} at {2}", typ, guidSphere, locSphere);
                             Blacklist.Add(guidSphere, BlacklistFlags.Combat, TimeSpan.FromMinutes(5));
@@ -789,22 +793,22 @@ namespace Singular.ClassSpecific.Monk
                     // move to the sphere if out of range
                     new Decorator(
                         ret => guidSphere.IsValid && Me.Location.Distance(locSphere) > 1,
-                        Movement.CreateMoveToLocationBehavior(ret => locSphere, true, ret => 0f)
+                        Movement.CreateMoveToLocationBehavior(ret => locSphere, true, ret => 3f)
                         ),
 
                     // pause briefly until its consumed
-                    new Wait( 
-                        1, 
-                        ret => {  
+                    new Wait(
+                        1,
+                        ret => {
                             WoWObject sph = FindClosestSphere(typ, range);
                             return sph == null || sph.Guid != guidSphere ;
                             },
                         new Action( r => { return RunStatus.Failure; } )
                         ),
-                        
+
                     // still exist?  black list it then
-                    new Decorator( 
-                        ret => {  
+                    new Decorator(
+                        ret => {
                             WoWObject sph = FindClosestSphere(typ, range);
                             return sph != null && sph.Guid == guidSphere ;
                             },
@@ -824,15 +828,15 @@ namespace Singular.ClassSpecific.Monk
             return new Sequence(
                 Spell.CastOnGround("Healing Sphere",
                     on => Me,
-                    ret => Me.HealthPercent < sphereBelowHealth 
+                    ret => Me.HealthPercent < sphereBelowHealth
                         && (Me.PowerType != WoWPowerType.Mana)
                         && !Common.AnySpheres(SphereType.Healing, 1f),
                     false),
                 new WaitContinue( TimeSpan.FromMilliseconds(500), ret => Spell.GetPendingCursorSpell != null, new ActionAlwaysSucceed()),
                 new Action(ret => Lua.DoString("SpellStopTargeting()")),
-                new WaitContinue( 
-                    TimeSpan.FromMilliseconds(750), 
-                    ret => Me.Combat || (Spell.GetSpellCooldown("Healing Sphere") == TimeSpan.Zero && !Common.AnySpheres(SphereType.Healing, 1f)), 
+                new WaitContinue(
+                    TimeSpan.FromMilliseconds(750),
+                    ret => Me.Combat || (Spell.GetSpellCooldown("Healing Sphere") == TimeSpan.Zero && !Common.AnySpheres(SphereType.Healing, 1f)),
                     new ActionAlwaysSucceed()
                     )
                 );
@@ -859,7 +863,7 @@ namespace Singular.ClassSpecific.Monk
             }
 
             return new Decorator(
-                req => Me.GotTarget() && !Spell.IsSpellOnCooldown("Chi Burst") && !Me.CurrentTarget.IsBoss() 
+                req => Me.GotTarget() && !Spell.IsSpellOnCooldown("Chi Burst") && !Me.CurrentTarget.IsBoss()
                     && 3 <= Clusters.GetPathToPointCluster( Me.Location.RayCast(Me.RenderFacing, 40f), Unit.NearbyUnfriendlyUnits.Where( m => Me.IsSafelyFacing(m,25)), 5f).Count(),
                 Spell.Cast("Chi Burst",
                     mov => true,
@@ -914,7 +918,7 @@ namespace Singular.ClassSpecific.Monk
 
 		ZenPulse = EyeOfTheTiger,
 		MistWalk = ChiWave,
-		
+
 		ChiTorpedo = 4,
 		TigersLust,
 		Celerity,
@@ -938,7 +942,7 @@ namespace Singular.ClassSpecific.Monk
 		SongOfChiJi = SummonBlackOxStatue,
 
 		DizzyingKicks = SummonBlackOxStatue,
-		
+
 		HealingElixir = 13,
 		DiffuseMagic,
 		DampenHarm,

@@ -21,6 +21,7 @@ using Action = Styx.TreeSharp.Action;
 using Styx.CommonBot.POI;
 using Singular.Dynamics;
 using Singular.Utilities;
+using Styx.Common;
 
 namespace Singular.ClassSpecific.Shaman
 {
@@ -569,7 +570,7 @@ namespace Singular.ClassSpecific.Shaman
                     && BotPoi.Current.Type != PoiType.None
                     && BotPoi.Current.Type != PoiType.Hotspot
                     && BotPoi.Current.Location.Distance(Me.Location) > 10
-                    && (BotPoi.Current.Location.Distance(Me.Location) < Styx.Helpers.CharacterSettings.Instance.MountDistance || (Me.IsIndoors && !Mount.CanMount()) || (Me.GetSkill(SkillLine.Riding).CurrentValue == 0))
+                    && (BotPoi.Current.Location.Distance(Me.Location) < 60 || (Me.IsIndoors && !Mount.CanMount()) || (Me.GetSkill(SkillLine.Riding).CurrentValue == 0))
                     && !Me.IsAboveTheGround(),
 
                 new Sequence(
@@ -638,11 +639,11 @@ namespace Singular.ClassSpecific.Shaman
 		GracefulSpirit = AncestralGuidanceElemental,
 		
 		LightningSurgeTotem = 7,
-		EarthgrabTotem,
+        EarthgrabTotem,
 		VoodooTotem,
 
 		ElementalBlast = 10,
-		AncestralSwiftness,
+        AncestralSwiftness,
 		EchoOfTheElementsElemental,
 
 		LightningShield = ElementalBlast,
@@ -653,7 +654,7 @@ namespace Singular.ClassSpecific.Shaman
 		Deluge = EchoOfTheElementsElemental,
 
 		ElementalFusion = 13,
-		PrimalElementalist,
+        PrimalElementalist,
 		Icefury,
 
 		Tempest = ElementalFusion,

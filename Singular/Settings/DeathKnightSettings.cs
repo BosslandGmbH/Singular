@@ -17,7 +17,7 @@ namespace Singular.Settings
         }
 
         #region Common
-		
+
         [Setting]
         [DefaultValue(false)]
         [Category("Common")]
@@ -56,6 +56,13 @@ namespace Singular.Settings
         [Description("Cast when our Health % falls below this")]
         public int VampiricBloodPercent { get; set; }
 
+		[Setting]
+        [DefaultValue(50)]
+        [Category("Blood")]
+        [DisplayName("Dancing Rune Weapon Percent")]
+        [Description("Cast when our Health % falls below this")]
+        public int DancingRuneWeaponPercent { get; set; }
+
         [Setting]
         [DefaultValue(false)]
         [Category("Blood")]
@@ -83,7 +90,7 @@ namespace Singular.Settings
 		[DisplayName("Tombstone Percent")]
 		[Description("Cast when our Health % falls below this")]
 		public int TombstonePercent { get; set; }
-		
+
 		[Setting]
 		[DefaultValue(3)]
 		[Category("Blood")]
@@ -107,8 +114,35 @@ namespace Singular.Settings
 
 		#endregion
 
-		#region Category: Frost
+		#region Category: Defensives
 
+		[Setting]
+		[DefaultValue(50)]
+		[Category("Defensives")]
+		[DisplayName("Death Strike")]
+		[Description("Cast when our Health % is at or below this")]
+		public int DeathStrikePercent { get; set; }
+
+		[Setting]
+		[DefaultValue(100)]
+		[Category("Defensives")]
+		[DisplayName("Death Strike (Dark Succor)")]
+		[Description("When Dark Succor is procced, cast Death Strike when our Health % is at or below this")]
+		public int DeathStrikeSuccorPercent { get; set; }
+
+		[Setting]
+		[DefaultValue(50)]
+		[Category("Defensives")]
+		[DisplayName("Icebound Fortitude")]
+		[Description("Cast when our Health % is at or below this")]
+		public int IceboundFortitudePercent { get; set; }
+
+		[Setting]
+		[DefaultValue(50)]
+		[Category("Defensives")]
+		[DisplayName("Unholy: Corpse Shield")]
+		[Description("Cast when our Health % is at or below this")]
+		public int CorpseShieldPercent { get; set; }
 
         #endregion
 
@@ -123,7 +157,7 @@ namespace Singular.Settings
 
 		[Setting]
 		[DefaultValue(2)]
-		[Category("Common")]
+		[Category("Unholy")]
 		[DisplayName("Epidemic Add Count")]
 		[Description("Will use Epidemic when agro mob count is equal to or higher then this value.")]
 		public int EpidemicCount { get; set; }

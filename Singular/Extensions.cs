@@ -6,6 +6,7 @@ using Styx.CommonBot;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using System.Collections.Generic;
+using System.Numerics;
 using Styx.Pathing;
 using Singular.Helpers;
 using Singular.Settings;
@@ -140,11 +141,6 @@ namespace Singular
             return name + "." + UnitID(obj.Guid);
         }
 
-        public static bool IsWanding(this LocalPlayer me)
-        {
-            return StyxWoW.Me.AutoRepeatingSpellId == 5019;
-        }
-
         private static HashSet<int> _AddtlHealSpells = new HashSet<int>()
         {
             33076,  // Prayer of Mending
@@ -225,7 +221,7 @@ namespace Singular
         /// <returns>float.MinValue if can't determine, otherwise distance off ground</returns>
         public static float HeightOffTheGround(this WoWUnit u)
         {
-            var unitLoc = new WoWPoint(u.Location.X, u.Location.Y, u.Location.Z);
+            var unitLoc = new Vector3(u.Location.X, u.Location.Y, u.Location.Z);
             float zBelow = u.FindGroundBelow();
             if (zBelow == float.MaxValue)
                 return float.MaxValue;
@@ -240,15 +236,18 @@ namespace Singular
         /// <returns>float.MaxValue if non-deterministic, otherwise Z of ground</returns>
         public static float FindGroundBelow(this WoWUnit unit)
         {
-            var unitLoc = new WoWPoint(unit.Location.X, unit.Location.Y, unit.Location.Z);
-            var listMeshZ = Navigator.FindHeights(unitLoc.X, unitLoc.Y);
-            if (listMeshZ != null)
-            {
-                listMeshZ = listMeshZ.Where(h => h <= unitLoc.Z + 2f).ToList();
-                if (listMeshZ.Any())
-                    return listMeshZ.Max();
-            }
-            return float.MaxValue;
+            var unitLoc = unit.Location;
+            return unitLoc.Z;
+            // TODO: FindHeights
+            // This can use mesh sampling with HighlyConnected or Any
+//            var listMeshZ = Navigator.FindHeights(unitLoc.X, unitLoc.Y);
+//            if (listMeshZ != null)
+//            {
+//                listMeshZ = listMeshZ.Where(h => h <= unitLoc.Z + 2f).ToList();
+//                if (listMeshZ.Any())
+//                    return listMeshZ.Max();
+//            }
+//            return float.MaxValue;
         }
 
         //private static string _lastGetPredictedError;

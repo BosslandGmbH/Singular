@@ -22,7 +22,7 @@ namespace Singular.ClassSpecific.Rogue
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
-        private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); } 
+        private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); }
 
         #region Normal Rotation
 
@@ -38,7 +38,7 @@ namespace Singular.ClassSpecific.Rogue
                 Common.CreateRogueMoveBehindTarget(),
                 Common.RogueEnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
-                    
+
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown() && Me.GotTarget() && Me.IsSafelyFacing(Me.CurrentTarget),
                     new PrioritySelector(
@@ -85,18 +85,18 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Cast("Shadow Blades"),
 						Spell.Cast("Shadowstrike"),
 						Spell.Buff("Nightblade", req => Me.ComboPoints >= 5),
-                        
+
                         Spell.Cast("Shadow Dance",
                             ret => !Common.AreStealthAbilitiesAvailable
                                 && Spell.GetCharges("Shadow Dance") >= 2),
-						
-						Spell.Cast("Eviscerate", req => Me.ComboPoints >= 5),
+                        Spell.Cast("Goremaw's Bite", ret => RogueSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
+                        Spell.Cast("Eviscerate", req => Me.ComboPoints >= 5),
 						Spell.Cast("Shuriken Storm", req => Common.AoeCount >= 2),
                         Spell.Cast("Backstab"),
 
                         // lets try a big hit if stealthed and behind before anything
                         Spell.Cast(sp => "Ambush", chkMov => false, on => Me.CurrentTarget, req => Common.IsAmbushNeeded(), canCast: Common.RogueCanCastOpener),
-                        
+
                         Common.CheckThatDaggersAreEquippedIfNeeded()
                         )
                     )
@@ -104,7 +104,7 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         #endregion
-        
+
 
         [Behavior(BehaviorType.Heal, WoWClass.Rogue, WoWSpec.RogueSubtlety, priority: 99)]
         public static Composite CreateRogueHeal()

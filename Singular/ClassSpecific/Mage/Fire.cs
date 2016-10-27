@@ -90,27 +90,32 @@ namespace Singular.ClassSpecific.Mage
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
-						
-                        Common.CreateMageAvoidanceBehavior(),
+
+                        // Uncomment when MeshTrace is working.
+                        //
+                        //Common.CreateMageAvoidanceBehavior(),
 
                         Helpers.Common.CreateInterruptBehavior(),
-						
-                        new PrioritySelector(
-                            ctx => Unit.UnfriendlyUnits(12)
-                                .FirstOrDefault(
-                                    u => u.IsTargetingMeOrPet
-                                    && (u.IsStressful() || (u.Guid == Me.CurrentTargetGuid && u.TimeToDeath() > 6))
-                                    && !u.IsCrowdControlled()
-                                    ),
-                            Common.CreateSlowMeleeBehavior()
-                            ),
+
+                        // Uncomment when MeshTrace is working.
+                        //
+                        //
+                        // new PrioritySelector(
+                        //     ctx => Unit.UnitsInCombatWithMeOrMyStuff(12)
+                        //         .FirstOrDefault(
+                        // u => u.IsTargetingMeOrPet
+                        // && (u.IsStressful() || (u.Guid == Me.CurrentTargetGuid && u.TimeToDeath() > 6))
+                        // && !u.IsCrowdControlled()
+                        //  ),
+                        // Common.CreateSlowMeleeBehavior()
+                        // ),
 
                         Spell.Cast("Flame On", ret => Spell.GetCharges("Fire Blast") <= 0 && !Me.HasActiveAura("Heating Up") && !Me.HasActiveAura("Hot Streak!")),
-                        Spell.HandleOffGCD(Spell.Cast("Fire Blast", ret => Me.HasActiveAura("Heating Up"))), // Add HandleWhileCasting support?  
+                        Spell.HandleOffGCD(Spell.Cast("Fire Blast", ret => Me.HasActiveAura("Heating Up"))), // Add HandleWhileCasting support?
                         Spell.BuffSelf("Mirror Image", ret => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= MageSettings.MirrorImageCount),
 						Spell.BuffSelf("Combustion"),
-						Spell.CastOnGround("Flamestrike", 
-							on => Me.CurrentTarget, 
+						Spell.CastOnGround("Flamestrike",
+							on => Me.CurrentTarget,
 							ret => Me.HasActiveAura("Hot Streak!") && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3),
 						Spell.Cast("Pyroblast", ret => Me.HasActiveAura("Hot Streak!")),
 
@@ -135,8 +140,8 @@ namespace Singular.ClassSpecific.Mage
 
                         Spell.CastOnGround("Meteor", on => Me.CurrentTarget.Location),
                         Spell.Cast("Cinderstorm", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count(u => u.HasAura("Ignite")) > MageSettings.CinderstormCount),
-						Spell.Cast("Dragon's Breath", 
-							ret => Me.GetAuraTimeLeft("Combustion") < Spell.GetSpellCastTime("Fireball") && 
+						Spell.Cast("Dragon's Breath",
+							ret => Me.GetAuraTimeLeft("Combustion") < Spell.GetSpellCastTime("Fireball") &&
 									Unit.UnfriendlyUnits(12).Any(u => Me.IsSafelyFacing(u))),
 						Spell.Cast("Living Bomb", ret => Me.CurrentTarget.TimeToDeath() > 12 && Unit.UnfriendlyUnitsNearTarget(10).Count(u => u.TimeToDeath() > 12) >= 2),
 						Spell.Cast("Dragon's Breath", ret => Unit.UnfriendlyUnits(12).Any(u => Me.IsSafelyFacing(u))),
@@ -150,7 +155,7 @@ namespace Singular.ClassSpecific.Mage
         }
 
         #endregion
-		
+
         #region Diagnostics
 
         private static Composite CreateFireDiagnosticOutputBehavior()

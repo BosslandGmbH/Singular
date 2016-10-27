@@ -4,6 +4,9 @@ using Styx;
 using Styx.CommonBot;
 using Styx.WoWInternals;
 using System.Linq;
+using System.Numerics;
+using Styx.Common;
+
 namespace Singular.Managers
 {
     // This class is here to deal with Ghost Wolf/Travel Form usage for shamans and druids
@@ -22,7 +25,7 @@ namespace Singular.Managers
                 return;
             }
 
-            if (e.Destination == WoWPoint.Zero)
+            if (!e.MoveDistance.HasValue)
                 return;
 
             if (Spell.GcdActive || StyxWoW.Me.IsCasting || StyxWoW.Me.ChanneledSpell != null )
@@ -30,7 +33,7 @@ namespace Singular.Managers
 
             if ((!Battlegrounds.IsInsideBattleground || !PVP.IsPrepPhase) && !Utilities.EventHandlers.IsShapeshiftSuppressed)
             {
-                if (e.Destination.Distance(StyxWoW.Me.Location) < Styx.Helpers.CharacterSettings.Instance.MountDistance)
+                if (e.MoveDistance.Value < 60)
                 {
                     if (StyxWoW.Me.Class == WoWClass.Shaman && SpellManager.HasSpell("Ghost Wolf") && SingularSettings.Instance.Shaman().UseGhostWolf)
                     {

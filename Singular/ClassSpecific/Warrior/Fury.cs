@@ -24,6 +24,8 @@ namespace Singular.ClassSpecific.Warrior
         private static WarriorSettings WarriorSettings => SingularSettings.Instance.Warrior();
         private static CombatScenario Scenario { get; set; }
 
+		const int MASSACRE_PROC = 206316;
+
         [Behavior(BehaviorType.Initialize, WoWClass.Warrior, WoWSpec.WarriorFury)]
         public static Composite CreateFuryInitialize()
         {
@@ -119,14 +121,6 @@ namespace Singular.ClassSpecific.Warrior
 
                     Spell.Cast("Storm Bolt"),  // in normal rotation
 
-                    Spell.Cast("Berserker Rage", ret => {
-                        if (Me.CurrentTarget.HealthPercent <= 20)
-                            return true;
-                        if (!Me.ActiveAuras.ContainsKey("Enrage") && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 6)
-                            return true;
-                        return false;
-                        }),
-
                     Spell.BuffSelf(Common.SelectedShoutAsSpellName)
 
                     )
@@ -188,35 +182,36 @@ namespace Singular.ClassSpecific.Warrior
 
                         //Interupts
                         Helpers.Common.CreateInterruptBehavior(),
+                        Common.CreateSpellReflectBehavior(),
 
                         // Heal up in melee
                         Common.CreateVictoryRushBehavior(),
 
                         Common.CreateExecuteOnSuddenDeath(),
 
-                        // AOE 
+                        // AOE
                         // -- check melee dist+3 rather than 8 so works for large hitboxes (8 is range of DR and WW)
 
                         // Artifact Weapon
                         new Decorator(  // Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3,
-                            ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() < Common.DistanceWindAndThunder(8)) >= 3,                       
+                            ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() < Common.DistanceWindAndThunder(8)) >= 3,
                             new PrioritySelector(
                                 new Decorator(
                                     ret => WarriorSettings.UseArtifactOnlyInAoE,
                                         new PrioritySelector(
-                                            Spell.Cast("Warbreaker", ret => WarriorSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None)
+                                            Spell.Cast("Odyn's Fury", ret => WarriorSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && Me.CurrentTarget.IsWithinMeleeRange)
                                         )
                                 ),
                                 Spell.BuffSelf("Avatar", ret => WarriorSettings.AvatarOnCooldownAOE),
                                 Spell.BuffSelf("Bladestorm"),
                                 Spell.Cast("Shockwave"),
 
-                                Spell.Cast("Whirlwind", ret => !Me.HasAura("Meat Cleaver")),
+                                Spell.Cast("Whirlwind", ret => !Me.HasAura("Meat Cleaver") && Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8)),
                                 Spell.Cast("Rampage", ret => !Me.HasAura("Enrage")),
                                 Spell.Cast("Bloodthirst"),
                                 Spell.Cast("Raging Blow", ret => Scenario.MobCount < 3 && Me.HasAura("Raging Blow", 1)),
                                 Spell.Cast("Bloodthirst"),
-                                Spell.Cast("Whirlwind"),
+                                Spell.Cast("Whirlwind", ret => Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8)),
 
                                 // do some AOE prior to learning BT
                                 Spell.Cast("Thunder Clap", req => !SpellManager.HasSpell("Whirlwind"))
@@ -243,17 +238,29 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     req => Me.CurrentTarget.HealthPercent > 20,
                     new PrioritySelector(
-                        Spell.Cast("Warbreaker", ret => !WarriorSettings.UseArtifactOnlyInAoE && WarriorSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
+                        Spell.Cast("Odyn's Fury",
+                            ret =>
+                                !WarriorSettings.UseArtifactOnlyInAoE &&
+                                WarriorSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None &&
+                                Me.CurrentTarget.IsWithinMeleeRange),
                         Spell.BuffSelf("Avatar", ret => WarriorSettings.AvatarOnCooldownSingleTarget),
-                        new Decorator(req => (!Common.IsEnraged || Me.RagePercent >= 100) && SpellManager.CanCast("Rampage"),
+                        Spell.BuffSelf("Berserker Rage",
+                            ret =>
+                                !Common.IsEnraged && Common.HasTalent(WarriorTalents.Outburst) &&
+                                StyxWoW.Me.CurrentTarget.IsWithinMeleeRange),
+                        new Decorator(
+                            req =>
+                                (!Common.IsEnraged || Me.RagePercent >= 85 ||
+                                 Common.HasTalent(WarriorTalents.Carnage) && Me.RagePercent >= 70) &&
+                                SpellManager.CanCast("Rampage"),
                             new PrioritySelector(
                                 Spell.Cast("Dragon Roar"),
                                 Spell.Cast("Battle Cry"),
                                 Spell.Cast("Rampage")
-                        )),
+                            )),
                         Spell.Cast("Bloodthirst", ret => !Common.IsEnraged),
                         Spell.Cast("Raging Blow", ret => Common.HasTalent(WarriorTalents.InnerRage)), // Could || IsEnraged check here, but DPS is higher if we prioritize Whirlwind
-                        Spell.Cast("Whirlwind", ret => Me.HasActiveAura("Wrecking Ball") /* || Me.Name == "Miley Cyrus"*/),
+                        Spell.Cast("Whirlwind", ret => Spell.UseAOE && Me.HasActiveAura("Wrecking Ball") && Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8)),
                         Spell.Cast("Raging Blow"),
                         Spell.Cast("Bloodthirst"),
                         Spell.Cast("Furious Slash")
@@ -268,7 +275,9 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Execute", req => Me.RagePercent >= 75),
 
                         //Bloodthirst on cooldown when not Enraged. Procs Bloodsurge.
-                        Spell.Cast("Bloodthirst", ret => !Common.IsEnraged),
+						Spell.Cast("Rampage", ret => !Common.IsEnraged && Me.HasAura (MASSACRE_PROC)),
+                        Spell.Cast("Bloodthirst", ret => !Common.IsEnraged || Me.RagePercent < 25),
+						Spell.Cast("Raging Blow", ret => Me.RagePercent < 25),
 
                         //Execute while Enraged or with >= 25 Rage.
                         Spell.Cast("Execute", req => Me.RagePercent >= 25)
@@ -293,15 +302,13 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Shockwave")
                         )
                     ),
-                
-                Spell.Cast("Storm Bolt"),
 
-                Spell.BuffSelf("Berserker Rage", ret => !Common.IsEnraged && StyxWoW.Me.CurrentTarget.IsWithinMeleeRange)
+                Spell.Cast("Storm Bolt")
                 );
         }
 
         #endregion
-        
+
         private static Composite _checkWeapons = null;
 
         public static Composite CheckThatWeaponsAreEquipped()
@@ -330,7 +337,7 @@ namespace Singular.ClassSpecific.Warrior
             return hand != null && hand.ItemInfo.ItemClass == WoWItemClass.Weapon;
         }
 
-        #region Diagnostics 
+        #region Diagnostics
 
         private static Composite CreateDiagnosticOutputBehavior(string context = null)
         {

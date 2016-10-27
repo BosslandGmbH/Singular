@@ -16,6 +16,7 @@ using Styx.CommonBot;
 using System.Drawing;
 
 using CommonBehaviors.Actions;
+using Styx.Common;
 using Action = Styx.TreeSharp.Action;
 
 
@@ -30,10 +31,9 @@ namespace Singular.ClassSpecific.Shaman
         private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman(); } }
 
         private static int ChainHealCastTime { get; set; }
-        private static float ChainHealHopDistance { get; set; }
+        private static float ChainHealHopDistance = 15;
 
         //private static WoWGuid guidLastHealTarget;
-        private static WoWGuid guidLastEarthShield;
 
         #region INIT
 
@@ -53,117 +53,9 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateRestoShamanRest()
         {
             return new PrioritySelector(
-                new Decorator(
-                    ret => !Helpers.Rest.IsEatingOrDrinking,
-                    CreateRestoShamanCombatBuffs()    // call here so any Earth Shield done before we drink
-                    ),
                 Singular.Helpers.Rest.CreateDefaultRestBehaviour("Healing Surge", "Ancestral Spirit"),
                 CreateRestoShamanHealingOnlyBehavior(selfOnly: false)
                 );
-        }
-
-        #endregion
-
-        #region BUFFS
-
-        /// <summary>
-        /// written as a single method to simplify reference by multi-context Rest behavior
-        /// </summary>
-        /// <returns></returns>
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Shaman, WoWSpec.ShamanRestoration)]
-        public static Composite CreateRestoShamanCombatBuffs()
-        {
-            if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-            {
-                return new PrioritySelector(
-                    Spell.BuffSelf("Earth Shield", ret => Me.ManaPercent >= ShamanSettings.TwistDamageShield) // Now a PvP talent.
-                    );
-            }
-
-            if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
-            {
-                return new PrioritySelector(
-                    new Throttle(10,
-                        new PrioritySelector(
-                            Spell.Buff("Earth Shield", on => GetBestEarthShieldTargetInstance())
-                            )
-                        )
-                    );
-            }
-
-            // Normal
-            return new Decorator(
-                req => !((SingularRoutine.IsBgBotActive || SingularRoutine.IsDungeonBuddyActive) && !Me.Combat && Me.IsInsideSanctuary),
-                new PrioritySelector(
-                    Spell.BuffSelf("Earth Shield", ret => Me.ManaPercent >= ShamanSettings.TwistDamageShield)
-                    )
-                );
-        }
-
-        /// <summary>
-        /// selects best Earth Shield target
-        /// </summary>
-        /// <returns></returns>
-        private static WoWUnit GetBestEarthShieldTargetInstance()
-        {
-            WoWUnit target = null;
-
-            if (HealerManager.Instance.TargetList.Any(m => m.HasMyAura("Earth Shield")))
-                return null;
-
-            if (IsValidEarthShieldTarget(RaFHelper.Leader))
-                target = RaFHelper.Leader;
-            else
-            {
-                target = Group.Tanks.FirstOrDefault(t => IsValidEarthShieldTarget(t));
-                if (Me.Combat && target == null)
-                {
-                    target = HealerManager.Instance.TargetList.Where(u => u.Combat && IsValidEarthShieldTarget(u))
-                        .OrderByDescending(u => u.MaxHealth)
-                        .FirstOrDefault();
-                }
-            }
-
-            guidLastEarthShield = target != null ? target.Guid : WoWGuid.Empty;
-            return target;
-        }
-
-        /// <summary>
-        /// selects best Earth Shield target
-        /// </summary>
-        /// <returns></returns>
-        private static WoWUnit GetBestEarthShieldTargetBattlegrounds()
-        {
-#if SUPPORT_MOST_IN_NEED_EARTHSHIELD_LOGIC
-            var target = Unit.NearbyGroupMembers
-                .Where(u => IsValidEarthShieldTarget(u.ToUnit()))
-                .Select(u => new { Unit = u, Health = u.HealthPercent, EnemyCount = Unit.NearbyUnfriendlyUnits.Count(e => e.CurrentTargetGuid == u.Guid)})
-                .OrderByDescending(v => v.EnemyCount)
-                .ThenBy(v => v.Health )
-                .FirstOrDefault();
-
-            if (target == null)
-            {
-                guidLastEarthShield = Me.Guid;
-            }
-            else if (guidLastEarthShield != target.Unit.Guid)
-            {
-                guidLastEarthShield = target.Unit.Guid;
-                Logger.WriteDebug("Best Earth Shield Target appears to be: {0} @ {1:F0}% with {2} attackers", target.Unit.SafeName(), target.Health, target.EnemyCount);
-            }
-
-            return target == null ? Me : target.Unit;
-#else
-            return Me;
-#endif
-        }
-
-        private static bool IsValidEarthShieldTarget(WoWUnit unit)
-        {
-            if (unit == null || !unit.IsValid || !unit.IsAlive || !Unit.GroupMembers.Any(g => g.Guid == unit.Guid) || unit.Distance > 99)
-                return false;
-
-            return unit.HasMyAura("Earth Shield");
         }
 
         #endregion
@@ -403,9 +295,6 @@ namespace Singular.ClassSpecific.Shaman
                 moveInRange = (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds);
 
             Logger.WriteDebugInBehaviorCreate("Shaman Healing: will cancel cast of direct heal if health reaches {0:F1}%", cancelHeal);
-			
-            if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
-                behavs.AddBehavior(9999, "Earth Shield", "Earth Shield", Spell.Buff("Earth Shield", on => GetBestEarthShieldTargetInstance()));
 
             int dispelPriority = (SingularSettings.Instance.DispelDebuffs == RelativePriority.HighPriority) ? 999 : -999;
             if (SingularSettings.Instance.DispelDebuffs != RelativePriority.None)
@@ -416,10 +305,10 @@ namespace Singular.ClassSpecific.Shaman
             behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.RestoHealSettings.SpiritLinkTotem) + 600, "Spirit Link Totem", "Spirit Link Totem",
                 new Decorator(
                     ret => Me.Combat && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid),
-                    Spell.Cast(
-                        "Spirit Link Totem", ret => (WoWUnit)ret,
-                        ret => HealerManager.Instance.TargetList.Count(
-                            p => p.PredictedHealthPercent() < ShamanSettings.RestoHealSettings.SpiritLinkTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.SpiritLink)) >= ShamanSettings.RestoHealSettings.MinSpiritLinkCount
+                    Spell.CastOnGround("Spirit Link Totem",
+                            on => (WoWUnit)on,
+                            ret => HealerManager.Instance.TargetList.Count(
+                                p => p.PredictedHealthPercent() < ShamanSettings.RestoHealSettings.SpiritLinkTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.SpiritLink)) >= ShamanSettings.RestoHealSettings.MinSpiritLinkCount
                         )
                     )
                 );
@@ -472,6 +361,19 @@ namespace Singular.ClassSpecific.Shaman
 
                             return unit;
                         }
+                        )
+                    )
+                );
+
+            behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.RestoHealSettings.GiftoftheQueen) + 300, "Gift of the Queen", "Gift of the Queen",
+                new Decorator(
+                    ret => Me.Combat && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid),
+                    new PrioritySelector(
+                        context => GetBestGiftoftheQueenTarget(),
+                        new Decorator(
+                            ret => ret != null,
+                            Spell.CastOnGround("Gift of the Queen", on => (WoWUnit)on, req => true, false)
+                            )
                         )
                     )
                 );
@@ -529,9 +431,9 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.RestoHealSettings.ChainHeal) + 100, "Chain Heal", "Chain Heal",
+            behavs.AddBehavior(HealerManager.HealthToPriority(ShamanSettings.RestoHealSettings.ChainHeal) + 150, "Chain Heal", "Chain Heal",
                 new Decorator(
-                    ret => Me.Combat && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid),
+                    ret => Me.Combat  && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid),
                     new PrioritySelector(
                         ctx => GetBestChainHealTarget(),
                         new Decorator(
@@ -629,13 +531,7 @@ namespace Singular.ClassSpecific.Shaman
 
                                 Totems.CreateTotemsBehavior(),
 
-                                /*
-                                                            Spell.Cast("Earth Shield",
-                                                                ret => (WoWUnit)ret,
-                                                                ret => ret is WoWUnit && Group.Tanks.Contains((WoWUnit)ret) && Group.Tanks.All(t => !t.HasMyAura("Earth Shield"))),
-                                */
-
-                                // roll Riptide on Tanks otherwise                               
+                                // roll Riptide on Tanks otherwise
                                 new Sequence(
                                     Spell.Cast("Riptide", on =>
                                     {
@@ -650,12 +546,15 @@ namespace Singular.ClassSpecific.Shaman
                                     new Action(r => TidalWaveRefresh())
                                     ),
 
-                                // cast Riptide if we need Tidal Waves -- skip if Ancestral Swiftness is 
+                                // cast Riptide if we are a low level
+                                CreateRestoShamanBuffRiptideLowLevel(),
+
+                                // cast Riptide if we need Tidal Waves -- skip if Ancestral Swiftness is
                                 CreateRestoShamanBuffTidalWaves(),
 
                                 behavs.GenerateBehaviorTree(),
 
-                                // cast Riptide if we need Tidal Waves -- skip if Ancestral Swiftness is 
+                                // cast Riptide if we need Tidal Waves -- skip if Ancestral Swiftness is
                                 new Decorator(
                                     ret =>
                                     {
@@ -664,7 +563,7 @@ namespace Singular.ClassSpecific.Shaman
                                                 u => u.IsAlive && u.HasMyAura("Riptide"));
                                         // Logger.WriteDebug("GetBestRiptideTarget:  currently {0} group members have my Riptide", rollCount);
                                         return rollCount < ShamanSettings.RestoHealSettings.RollRiptideCount;
-                                    },
+                                        },
                                     new Sequence(
                                         Spell.Cast("Riptide", on =>
                                         {
@@ -684,7 +583,7 @@ namespace Singular.ClassSpecific.Shaman
                                         )
                                     ),
 
-                                new Decorator(
+                            new Decorator(
                                     ret => moveInRange,
                                     new Sequence(
                                         new Action(r => _moveToHealUnit = (WoWUnit) r),
@@ -712,8 +611,24 @@ namespace Singular.ClassSpecific.Shaman
                         if (unit != null)
                             Logger.WriteDebug(Color.White, "BUFFING TIDAL WAVES with Riptide on: {0}", unit.SafeName());
                         return unit;
-                    }),
+                        }),
                     new Action(r => TidalWaveRefresh())
+                    )
+                );
+        }
+
+        private static Composite CreateRestoShamanBuffRiptideLowLevel()
+        {
+            return new Decorator(
+                ret => Me.Level < 50,
+                new Sequence(
+                    Spell.Cast("Riptide", on =>
+                    {
+                        WoWUnit unit = GetBestRiptideTarget();
+                        if (unit != null)
+                            Logger.WriteDebug(Color.White, "BUFFING Riptide on: {0}", unit.SafeName());
+                        return unit;
+                    })
                     )
                 );
         }
@@ -802,8 +717,7 @@ namespace Singular.ClassSpecific.Shaman
 
         private static WoWUnit GetBestRiptideTankTarget()
         {
-            WoWUnit ripTarget = null;
-            ripTarget = Group.Tanks.Where(u => u.IsAlive && u.Combat && u.DistanceSqr < 40 * 40 && !u.HasMyAura("Riptide") && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
+            WoWUnit ripTarget = Group.Tanks.Where(u => u.IsAlive && u.Combat && u.DistanceSqr < 40 * 40 && u.GetAuraTimeLeft("Riptide").TotalSeconds < 6 && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
             if (ripTarget != null)
                 Logger.WriteDebug("GetBestRiptideTarget: found tank {0}, hasmyaura={1} with {2} ms left", ripTarget.SafeName(), ripTarget.HasMyAura("Riptide"), (int)ripTarget.GetAuraTimeLeft("Riptide").TotalMilliseconds);
             return ripTarget;
@@ -811,7 +725,9 @@ namespace Singular.ClassSpecific.Shaman
 
         private static WoWUnit GetBestRiptideTarget()
         {
-            WoWUnit ripTarget = Clusters.GetBestUnitForCluster(ChainHealPlayers, ClusterType.Chained, ChainHealHopDistance);
+            // Chain heal no longer benefits from Riptide.
+            // WoWUnit ripTarget = Clusters.GetBestUnitForCluster(ChainHealPlayers, ClusterType.Chained, ChainHealHopDistance);
+            WoWUnit ripTarget = Group.Dps.Where(u => u.IsAlive && u.Combat && u.DistanceSqr < 40 * 40 && u.GetAuraTimeLeft("Riptide").TotalSeconds < 3 && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
             if (ripTarget != null)
                 Logger.WriteDebug("GetBestRiptideTarget: found optimal target {0}, hasmyaura={1} with {2} ms left", ripTarget.SafeName(), ripTarget.HasMyAura("Riptide"), (int)ripTarget.GetAuraTimeLeft("Riptide").TotalMilliseconds);
 
@@ -829,27 +745,13 @@ namespace Singular.ClassSpecific.Shaman
                 return null;
             }
 
-            // search players with Riptide first
-            var targetInfo = ChainHealRiptidePlayers
-                .Select(p => new { Unit = p, Count = Clusters.GetClusterCount(p, ChainHealPlayers, ClusterType.Chained, ChainHealHopDistance) })
-                .OrderByDescending(v => v.Count)
-                .ThenByDescending(v => Group.Tanks.Any(t => t.Guid == v.Unit.Guid))
-                .DefaultIfEmpty(null)
-                .FirstOrDefault();
-
-            WoWUnit target = targetInfo == null ? null : targetInfo.Unit;
-            int count = targetInfo == null ? 0 : targetInfo.Count;
-
-            // too few hops? then search any group member
-            if (count < ShamanSettings.RestoHealSettings.MinChainHealCount)
+            WoWUnit target = Clusters.GetBestUnitForCluster(ChainHealPlayers, ClusterType.Chained, ChainHealHopDistance);
+            int count = 0;
+            if (target != null)
             {
-                target = Clusters.GetBestUnitForCluster(ChainHealPlayers, ClusterType.Chained, ChainHealHopDistance);
-                if (target != null)
-                {
-                    count = Clusters.GetClusterCount(target, ChainHealPlayers, ClusterType.Chained, ChainHealHopDistance);
-                    if (count < ShamanSettings.RestoHealSettings.MinChainHealCount)
-                        target = null;
-                }
+                count = Clusters.GetClusterCount(target, ChainHealPlayers, ClusterType.Chained, ChainHealHopDistance);
+                if (count < ShamanSettings.RestoHealSettings.MinChainHealCount)
+                    target = null;
             }
 
             if (target != null)
@@ -889,12 +791,10 @@ namespace Singular.ClassSpecific.Shaman
                 {
                     Player = p,
                     Count = coveredRainTargets
-                        .Where(pp => pp.Location.DistanceSqr(p.Location) < 12 * 12)
-                        .Count(),
+                        .Count(pp => pp.Location.DistanceSquared(p.Location) < 12 * 12),
                     Covered = coveredTargets
-                        .Where(pp => pp.Location.DistanceSqr(p.Location) < 12 * 12)
-                        .Count()
-                })
+                        .Count(pp => pp.Location.DistanceSquared(p.Location) < 12 * 12)
+                    })
                 .OrderByDescending(v => v.Count)
                 .ThenByDescending(v => v.Covered)
                 .DefaultIfEmpty(null)
@@ -908,6 +808,52 @@ namespace Singular.ClassSpecific.Shaman
 
             return null;
 #endif
+        }
+
+        public static WoWUnit GetBestGiftoftheQueenTarget()
+        {
+            if (!Me.IsInGroup() || !Me.Combat)
+                return null;
+
+            if (!Spell.CanCastHack("Gift of the Queen", Me, skipWowCheck: true))
+            {
+                // Logger.WriteDebug("GetBestGiftoftheQueenTarget: CanCastHack says NO to Gift of the Queen");
+                return null;
+            }
+
+            // note: expensive, but worth it to optimize placement of Gift of theQueen by
+            // finding location with most heals, but if tied one with most living targets also
+            // build temp list of targets that could use heal and are in range + radius
+            List<WoWUnit> coveredTargets = HealerManager.Instance.TargetList
+                .Where(u => u.IsAlive && u.DistanceSqr < 50 * 50)
+                .ToList();
+            List<WoWUnit> coveredRainTargets = coveredTargets
+                .Where(u => u.HealthPercent < ShamanSettings.RestoHealSettings.GiftoftheQueen)
+                .ToList();
+
+            // search all targets to find best one in best location to use as anchor for cast on ground
+            var t = coveredTargets
+                .Where(u => u.DistanceSqr < 40 * 40)
+                .Select(p => new
+                {
+                    Player = p,
+                    Count = coveredRainTargets
+                        .Count(pp => pp.Location.DistanceSquared(p.Location) < 13 * 13),
+                    Covered = coveredTargets
+                        .Count(pp => pp.Location.DistanceSquared(p.Location) < 13 * 13)
+                    })
+                .OrderByDescending(v => v.Count)
+                .ThenByDescending(v => v.Covered)
+                .DefaultIfEmpty(null)
+                .FirstOrDefault();
+
+            if (t != null && t.Count >= ShamanSettings.RestoHealSettings.MinGiftoftheQueenCount)
+            {
+                Logger.WriteDebug("Gift of the Queen Target:  found {0} with {1} nearby under {2}%", t.Player.SafeName(), t.Count, ShamanSettings.RestoHealSettings.GiftoftheQueen);
+                return t.Player;
+            }
+
+            return null;
         }
 
         private static int NumTier12Pieces
@@ -946,26 +892,14 @@ namespace Singular.ClassSpecific.Shaman
                                 actvstks = 1;
                         }
 
-                        string shield;
-
-                        if (Me.HasAura("Earth Shield"))
-                            shield = string.Format("EARTH[{0}]", Me.GetAuraStacks("Earth Shield"));
-                        else if (Me.HasAura("Water Shield"))
-                            shield = string.Format("WATER[{0}]", (long)Me.GetAuraTimeLeft("Water Shield").TotalMinutes);
-                        else if (Me.HasAura("Lightning Shield"))
-                            shield = string.Format("LHTNG[{0}]", Me.GetAuraStacks("Lightning Shield"));
-                        else
-                            shield = "-none-";
-
-                        string line = string.Format("[{0}] h={1:F1}%/m={2:F1}%,combat={3},move={4},twaves={5},audtwaves={6},shield={7}",
+                        string line = string.Format("[{0}] h={1:F1}%/m={2:F1}%,combat={3},move={4},twaves={5},audtwaves={6}",
                             Dynamics.CompositeBuilder.CurrentBehaviorType.ToString(),
                             Me.HealthPercent,
                             Me.ManaPercent,
                             Me.Combat.ToYN(),
                             Me.IsMoving.ToYN(),
                             actvstks,
-                            _tidalWaveStacksAudit,
-                            shield
+                            _tidalWaveStacksAudit
                             );
 
                         WoWUnit healTarg = onHealUnit(ret);
@@ -976,14 +910,13 @@ namespace Singular.ClassSpecific.Shaman
                             else if (!healTarg.IsValid)
                                 line += ", heal=(invalid)";
                             else
-                                line += string.Format(",heal={0} hh={1:F1}% @ {2:F1} yds,hcombat={3},hph={4:F1}%,htloss={5},eshield={6},riptide={7}",
+                                line += string.Format(",heal={0} hh={1:F1}% @ {2:F1} yds,hcombat={3},hph={4:F1}%,htloss={5},riptide={6}",
                                     healTarg.SafeName(),
                                     healTarg.HealthPercent,
                                     healTarg.Distance,
                                     healTarg.Combat.ToYN(),
                                     healTarg.PredictedHealthPercent(),
                                     healTarg.InLineOfSpellSight,
-                                    (healTarg.GetAuraStacks("Earth Shield") > 0).ToYN(),
                                     (long)healTarg.GetAuraTimeLeft("Riptide").TotalMilliseconds
                                     );
 

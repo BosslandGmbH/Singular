@@ -6,7 +6,7 @@ using System.Linq;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
-namespace Singular
+namespace Singular.Utilities
 {
     internal class CombatLogEventArgs : LuaEventArgs
     {
@@ -15,15 +15,15 @@ namespace Singular
         {
         }
 
-        public double Timestamp { get { return (double)Args[0]; } }
+        public double Timestamp => (double)Args[0];
 
-        public string Event { get { return Args[1].ToString(); } }
+        public string Event => Args[1].ToString();
 
         // Is this a string? bool? what? What the hell is it even used for?
         // it's a boolean, and it doesn't look like it has any real impact codewise apart from maybe to break old addons? - exemplar 4.1
-        public string HideCaster { get { return Args[2].ToString(); } }
+        public string HideCaster => Args[2].ToString();
 
-        public WoWGuid SourceGuid { get { return ArgToGuid(Args[3]); } }
+        public WoWGuid SourceGuid => ArgToGuid(Args[3]);
 
         public WoWUnit SourceUnit
         {
@@ -36,11 +36,11 @@ namespace Singular
             }
         }
 
-        public string SourceName { get { return Args[4].ToString(); } }
+        public string SourceName => Args[4].ToString();
 
-        public int SourceFlags { get { return (int)(double)Args[5]; } }
+        public int SourceFlags => (int)(double)Args[5];
 
-        public WoWGuid DestGuid { get { return ArgToGuid(Args[7]); } }
+        public WoWGuid DestGuid => ArgToGuid(Args[7]);
 
         public WoWUnit DestUnit
         {
@@ -53,17 +53,17 @@ namespace Singular
             }
         }
 
-        public string DestName { get { return Args[8].ToString(); } }
+        public string DestName => Args[8].ToString();
 
-        public int DestFlags { get { return (int)(double)Args[9]; } }
+        public int DestFlags => (int)(double)Args[9];
 
-        public int SpellId { get { return (int)(double)Args[11]; } }
+        public int SpellId => (int)(double)Args[11];
 
-        public WoWSpell Spell { get { return WoWSpell.FromId(SpellId); } }
+        public WoWSpell Spell => WoWSpell.FromId(SpellId);
 
-        public string SpellName { get { return Args[12].ToString(); } }
+        public string SpellName => Args[12].ToString();
 
-        public WoWSpellSchool SpellSchool { get { return (WoWSpellSchool)(int)(double)Args[13]; } }
+        public WoWSpellSchool SpellSchool => (WoWSpellSchool)(int)(double)Args[13];
 
         public object[] SuffixParams
         {

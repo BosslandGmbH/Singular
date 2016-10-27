@@ -16,7 +16,8 @@ namespace Singular.ClassSpecific.Rogue
         None    = 0,
         Auto,
         Deadly  = 2823,
-        Wound   = 8679       
+        Wound   = 8679,
+        Agonizing = 200802
     }
 
     public enum NonLethalPoisonType
@@ -34,7 +35,7 @@ namespace Singular.ClassSpecific.Rogue
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
-        private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); } 
+        private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); }
 
         private const int RefreshAtMinutesLeft = 30;
 
@@ -73,6 +74,8 @@ namespace Singular.ClassSpecific.Rogue
             {
                 if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && SpellManager.HasSpell((int)LethalPoisonType.Wound))
                     poison = LethalPoisonType.Wound;
+                else if (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds && SpellManager.HasSpell((int)LethalPoisonType.Agonizing))
+                    poison = LethalPoisonType.Agonizing;
                 else if (SpellManager.HasSpell((int)LethalPoisonType.Deadly))
                     poison = LethalPoisonType.Deadly;
                 else

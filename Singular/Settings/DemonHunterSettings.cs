@@ -189,7 +189,7 @@ namespace Singular.Settings
         [DefaultValue(false)]
         [Category("Artifact Weapon Usage")]
         [DisplayName("Use Only In AoE")]
-        [Description("If set to true, this will make the artifact waepon only be used when more than one mob is attacking us.")]
+        [Description("If set to true, this will make the artifact weapon only be used when more than one mob is attacking us.")]
         public bool UseArtifactOnlyInAoE { get; set; }
         #endregion
 

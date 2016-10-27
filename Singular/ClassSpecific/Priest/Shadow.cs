@@ -16,7 +16,9 @@ using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Numerics;
 using Singular.Utilities;
+using Styx.Common;
 using Styx.CommonBot.Profiles;
 
 namespace Singular.ClassSpecific.Priest
@@ -28,7 +30,7 @@ namespace Singular.ClassSpecific.Priest
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static PriestSettings PriestSettings { get { return SingularSettings.Instance.Priest(); } }
 
-        private static bool InVoidform => VoidformStacks > 0;
+        public static bool InVoidform => VoidformStacks > 0;
 
 	    private static uint VoidformStacks => Me.GetAllAuras().Where(a => a.Name == "Voidform").Select(a => a.StackCount).DefaultIfEmpty(0u).Max();
 
@@ -86,20 +88,20 @@ namespace Singular.ClassSpecific.Priest
                 Spell.BuffSelf("Power Word: Shield", ret => Me.HealthPercent < PriestSettings.PowerWordShield && !Me.HasAura("Weakened Soul")),
 
                 Common.CreatePsychicScreamBehavior(),
-                Spell.Cast(
+                        Spell.Cast(
                     "Shadow Mend",
-                    ctx => Me,
-                    ret => {
-                        if (Me.HealthPercent > PriestSettings.ShadowHeal)
-                            return false;
+                            ctx => Me,
+                            ret => {
+                                if (Me.HealthPercent > PriestSettings.ShadowHeal)
+                                    return false;
 
-                        if (Unit.UnitsInCombatWithMeOrMyStuff(40).Any(u => !u.IsCrowdControlled()))
-                            return false;
+                                if (Unit.UnitsInCombatWithMeOrMyStuff(40).Any(u => !u.IsCrowdControlled()))
+                                    return false;
 
-                        return true;
-                    }
-                )
-            );
+                                return true;
+                                }
+                            )
+                );
         }
 
         #region Normal Rotation
@@ -113,9 +115,10 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                // grinding or questing, if target meets either of these cast instant if possible
-                // 1. mob is less than 12 yds, so no benefit from delay in Lightning Bolt missile arrival
-                // 2. area has another player competing for mobs (we want to tag the mob quickly)
+                        // grinding or questing, if target meets either of these cast instant if possible
+                        // 1. mob is less than 12 yds, so no benefit from delay in Lightning Bolt missile arrival
+                        // 2. area has another player competing for mobs (we want to tag the mob quickly)
+
                         new Decorator(
                             ret =>
                             {
@@ -140,10 +143,10 @@ namespace Singular.ClassSpecific.Priest
                             ),
 
                         Spell.BuffSelf("Power Word: Shield", ret => PriestSettings.UseShieldPrePull && !Me.HasAura("Weakened Soul")),
-                        
+
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
-                        
+
                         Spell.Buff("Vampiric Touch", true),
                         Spell.Buff("Shadow Word: Pain", true)
 
@@ -171,7 +174,7 @@ namespace Singular.ClassSpecific.Priest
             Cast Shadowfiend Icon Shadowfiend if available at higher Voidform stacks.
             Re-apply Shadow Word: Pain Icon Shadow Word: Pain and Vampiric Touch Icon Vampiric Touch if they fall off of your target.
             Cast Mind Flay Icon Mind Flay as your filler spell.
-         * 
+         *
          **/
 
         [Behavior(BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestShadow)]
@@ -187,7 +190,7 @@ namespace Singular.ClassSpecific.Priest
 
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
-                        
+
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Movement.WaitForFacing(),
@@ -255,12 +258,28 @@ namespace Singular.ClassSpecific.Priest
                                     },
                                     cancel => Me.HealthPercent < PriestSettings.ShadowHeal
                                     ),
-                                
+
                                 Spell.Buff("Shadow Word: Pain", true),      // no multi message for current target
+                                Spell.Buff("Vampiric Touch", true),      // no multi message for current target
                                 Spell.Buff(                                 // multi-dot others w/ message
-                                    "Shadow Word: Pain", 
-                                    true, 
-                                    on => 
+                                    "Vampiric Touch",
+                                    true,
+                                    on =>
+                                    {
+                                        WoWUnit dotTarget = AoeTargets.FirstOrDefault(u => u != Me.CurrentTarget && !u.HasMyAura("Vampiric Touch") && u.InLineOfSpellSight && !Spell.DoubleCastContains(u, "Vampiric Touch"));
+                                        if (dotTarget != null && Spell.CanCastHack("Vampiric Touch", dotTarget))
+                                        {
+                                            Logger.Write(LogColor.Hilite, "^Multi-DoT: cast Vampiric Touch on {0}", dotTarget.SafeName());
+                                            return dotTarget;
+                                        }
+                                        return null;
+                                    },
+                                    req => true
+                                    ),
+                                Spell.Buff(                                 // multi-dot others w/ message
+                                    "Shadow Word: Pain",
+                                    true,
+                                    on =>
                                     {
                                         WoWUnit dotTarget = AoeTargets.FirstOrDefault(u => u != Me.CurrentTarget && !u.HasMyAura("Shadow Word: Pain") && u.InLineOfSpellSight && !Spell.DoubleCastContains(u, "Shadow Word: Pain"));
                                         if (dotTarget != null && Spell.CanCastHack("Shadow Word: Pain", dotTarget))
@@ -269,10 +288,10 @@ namespace Singular.ClassSpecific.Priest
                                             return dotTarget;
                                         }
                                         return null;
-                                    }, 
+                                    },
                                     req => true
                                     ),
-                                
+
                                 // When we enter void form, even if AOE, we use our single target rotation after maintaining debuffs.
                                 new Decorator(ret => InVoidform,
                                     CreateMaintainVoidformBehaviour()),
@@ -295,7 +314,7 @@ namespace Singular.ClassSpecific.Priest
                                 CastMindFlay(on => (WoWUnit)on, req => cntAoeTargets < 4)
                                 )
                             ),
-                        
+
 
                         new Decorator(ret => InVoidform,
                             CreateMaintainVoidformBehaviour()),
@@ -310,6 +329,7 @@ namespace Singular.ClassSpecific.Priest
         private static Composite CreateBuildVoidformBehaviour()
         {
             return new PrioritySelector(
+				Spell.Cast("Shadow Word: Death", req => Me.CurrentTarget.HealthPercent <= 35),
                 Spell.Cast("Void Eruption"),
                 Spell.Cast("Mind Blast"),
                 Spell.Buff("Shadow Word: Pain", on => Me.CurrentTarget),
@@ -343,13 +363,13 @@ namespace Singular.ClassSpecific.Priest
 
                 Spell.Cast("Void Eruption", when => InVoidform), // This is for casting Void Bolt, but something is causing Singular to fail casting it.
                 Spell.Cast("Shadowfiend", when => VoidformStacks < 20),
-                Spell.Cast("Shadow Word: Death", when => Me.GetAuraStacks("Shadow Word: Death") == 2 || (VoidformStacks < 10 && !Spell.CanCastHack("Mind Blast"))),
+                Spell.Cast("Shadow Word: Death", req => Me.CurrentTarget.HealthPercent <= 35),
                 Spell.Cast("Mind Blast"),
                 Spell.Cast("Shadowfiend"),
                 Spell.Cast("Mind Flay", when => AoeTargets.Count <= 2)
                 );
         }
-        
+
         #endregion
 
         static int cntAoeTargets { get; set; }
@@ -359,7 +379,7 @@ namespace Singular.ClassSpecific.Priest
         static List<WoWUnit> AoeTargets { get; set; }
 
         /// <summary>
-        /// creates a behavior which will populate list AoeTargets that we 
+        /// creates a behavior which will populate list AoeTargets that we
         /// can safely attack.  will also populate cntAoeTargets, cntCC,
         /// and cntAvoid appropriately.  if avoid mob or cc detected, then
         /// AoeTargets will contain list of mobs we can attack, but cntAoeTargtets
@@ -413,7 +433,7 @@ namespace Singular.ClassSpecific.Priest
                 return RunStatus.Failure;
             });
         }
-		
+
         static Composite CastMindFlay( UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate requirements = null)
         {
             UnitSelectionDelegate o = onUnit ?? (on => Me.CurrentTarget);
@@ -424,9 +444,9 @@ namespace Singular.ClassSpecific.Priest
             else
                 r = req => Me.ManaPercent > PriestSettings.MindFlayManaPct && requirements(req);
 
-            return Spell.Cast("Mind Flay", 
-                mov => true, 
-                o, 
+            return Spell.Cast("Mind Flay",
+                mov => true,
+                o,
                 r,
                 cancel =>
                 {
@@ -451,7 +471,7 @@ namespace Singular.ClassSpecific.Priest
 
         /// <summary>
         /// checks for chained cascade targets.  this is expensive as the theoretical linked distance is 200 yds
-        /// if all 4 hops occur and mobs are in straight line.  regardless, this ability can easily aggro the 
+        /// if all 4 hops occur and mobs are in straight line.  regardless, this ability can easily aggro the
         /// entire countryside while questing, so we will be conservative in our assessment of whether it can
         /// be used or not while still maximizing the number of mobs hit based upon the initial targets proximity
         /// to linked mobs
@@ -490,7 +510,7 @@ namespace Singular.ClassSpecific.Priest
 
         /// <summary>
         /// checks for chained cascade targets.  this is expensive as the theoretical linked distance is 200 yds
-        /// if all 4 hops occur and mobs are in straight line.  regardless, this ability can easily aggro the 
+        /// if all 4 hops occur and mobs are in straight line.  regardless, this ability can easily aggro the
         /// entire countryside while questing, so we will be conservative in our assessment of whether it can
         /// be used or not while still maximizing the number of mobs hit based upon the initial targets proximity
         /// to linked mobs
@@ -503,7 +523,7 @@ namespace Singular.ClassSpecific.Priest
                 return false;
             }
 
-            WoWPoint endPoint = WoWPoint.RayCast( Me.Location, Me.RenderFacing, 26);
+            Vector3 endPoint = Me.Location.RayCast(Me.RenderFacing, 26);
             List<WoWUnit> hitByDS = Clusters.GetPathToPointCluster(endPoint, Unit.UnfriendlyUnits(26), 4).ToList();
 
             if (hitByDS == null || !hitByDS.Any())
@@ -516,7 +536,7 @@ namespace Singular.ClassSpecific.Priest
             if (avoid != null)
             {
                 Logger.WriteDiagnostic(
-                    "UseDivineStar: skipping to avoid hitting {0} - aggr:{1} cc:{2} avdmob:{3}", 
+                    "UseDivineStar: skipping to avoid hitting {0} - aggr:{1} cc:{2} avdmob:{3}",
                     avoid.SafeName(),
                     (avoid.Aggro || avoid.PetAggro).ToYN(),
                     avoid.IsCrowdControlled().ToYN(),
@@ -537,7 +557,7 @@ namespace Singular.ClassSpecific.Priest
 
             List<WoWUnit> hitByHalo = Unit.NearbyUnfriendlyUnits.Where(u => Me.SpellDistance(u) < 34).ToList();
 
-            if (hitByHalo == null || !hitByHalo.Any()) 
+            if (hitByHalo == null || !hitByHalo.Any())
             {
                 Logger.WriteDiagnostic("UseHalo:  0 mobs hit");
                 return false;
@@ -547,7 +567,7 @@ namespace Singular.ClassSpecific.Priest
             if (avoid != null)
             {
                 Logger.WriteDiagnostic(
-                    "UseHalo: skipping to avoid hitting {0} - aggr:{1} cc:{2} avdmob:{3}", 
+                    "UseHalo: skipping to avoid hitting {0} - aggr:{1} cc:{2} avdmob:{3}",
                     avoid.SafeName(),
                     (avoid.Aggro || avoid.PetAggro).ToYN(),
                     avoid.IsCrowdControlled().ToYN(),
@@ -579,7 +599,7 @@ namespace Singular.ClassSpecific.Priest
                     return true;
                 return false;
             }
-                
+
             return true;
         }
 
@@ -601,7 +621,7 @@ namespace Singular.ClassSpecific.Priest
                         Me.Shapeshift,
                         (long)Me.GetAuraTimeLeft(SURGE_OF_DARKNESS, true).TotalMilliseconds,
                         (long)Me.GetAuraTimeLeft("Divine Insight", true).TotalMilliseconds,
-                        cntAoeTargets 
+                        cntAoeTargets
                         );
 
                     WoWUnit target = Me.CurrentTarget;

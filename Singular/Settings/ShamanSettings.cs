@@ -107,9 +107,9 @@ namespace Singular.Settings
         [Category("Common")]
         [DisplayName("Twist Lghtng/Earth Shield % Mana")]
         [Description("Lightning (DPS) or Earth (Resto) Shield above this % Mana.  Note: muat be minimum of Water Shield % + 10")]
-        public int TwistDamageShield 
-        { 
-            get { return Math.Max( _TwistDamageShield, TwistWaterShield + 10); }
+        public int TwistDamageShield
+        {
+            get { return Math.Max(_TwistDamageShield, TwistWaterShield + 10); }
             set { _TwistDamageShield = value; }
         }
 
@@ -126,41 +126,27 @@ namespace Singular.Settings
         #region Category: Elemental
 
         [Setting]
-        [DefaultValue(true)]
+        [DefaultValue(40)]
         [Category("Elemental")]
-        [DisplayName("Use Lightning Surge Totem")]
-        [Description("Setting this to true will make the bot use Lightning Surge Totem while in solo and during AoE combat.")]
-        public bool UseLightningSurgeTotem { get; set; }
+        [DisplayName("Earth Elemental Health %")]
+        [Description("Cast Earth Elemental if our health falls at or below this percent.")]
+        public int EarthElementalHealthPercent { get; set; }
 
         [Setting]
         [DefaultValue(3)]
-        [Category("Elemental")]
-        [DisplayName("Lightning Surge Totem AoE Count")]
-        [Description("How many mobs must be attacking us before we consider using Lightning Surge Totem.")]
-        public int LightningSurgeTotemCount { get; set; }
-
-        [Setting]
-        [DefaultValue(6)]
         [Category("Elemental")]
         [DisplayName("Earthquake Count")]
-        [Description("If NOT instant, cast Earthquake on CurrentTarget if this many enemies at that location")]
-        public int EarthquakeCountInstant { get; set; }
-
-        [Setting]
-        [DefaultValue(3)]
-        [Category("Elemental")]
-        [DisplayName("Earthquake Count (Instant)")]
-        [Description("If instant, cast Earthquake on CurrentTarget if this many enemies at that location")]
+        [Description("Cast Earthquake on CurrentTarget if this many enemies at that location")]
         public int EarthquakeCount { get; set; }
 
         [Setting]
         [DefaultValue(50)]
         [Category("Elemental")]
-        [DisplayName("Earthquake Mana %")]
-        [Description("Do not cast Earthquake if Mana below this percent and cast is not free")]
-        public int EarthquakeManaPercent { get; set; }
+        [DisplayName("Earthquake Maelstrom %")]
+        [Description("Do not cast Earthquake if Maelstrom below this percent and cast is not free")]
+        public int EarthquakeMaelPercent { get; set; }
 
-        #endregion 
+        #endregion
 
 
         #region Category: Enhancement
@@ -183,14 +169,21 @@ namespace Singular.Settings
         [Category("Enhancement")]
         [DisplayName("Feral Spirit")]
         [Description("Selecet on what type of fight you would like to cast Feral Spirit")]
-        public CastOn FeralSpiritCastOn  { get; set; }
+        public CastOn FeralSpiritCastOn { get; set; }
 
         [Setting]
-        [DefaultValue(75)]
+        [DefaultValue(80)]
         [Category("Enhancement")]
-        [DisplayName("Maelstrom Healing Surge %")]
+        [DisplayName("Maelstrom Healing Surge (Health%)")]
         [Description("Health % to cast this ability at. Set to 100 to cast on cooldown, Set to 0 to disable.")]
         public int MaelHealingSurge { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Enhancement")]
+        [DisplayName("Maelstrom Healing Surge (Maelstrom%)")]
+        [Description("Maelstrom % to cast this ability at.")]
+        public int MaelPercentHealingSurge { get; set; }
 
         [Setting]
         [DefaultValue(false)]
@@ -256,6 +249,20 @@ namespace Singular.Settings
         [Description("Mana % to cast this ability at. Set to 0 to disable.")]
         public int ManaTideTotemPercent { get; set; }
 
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Totems")]
+        [DisplayName("Use Lightning Surge Totem")]
+        [Description("Setting this to true will make the bot use Lightning Surge Totem while in solo and during AoE combat.")]
+        public bool UseLightningSurgeTotem { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Totems")]
+        [DisplayName("Lightning Surge Totem AoE Count")]
+        [Description("How many mobs must be attacking us before we consider using Lightning Surge Totem.")]
+        public int LightningSurgeTotemCount { get; set; }
+
         #endregion
 
         #region Category: Artifact Weapon
@@ -313,6 +320,7 @@ namespace Singular.Settings
                 {
                     ChainHeal = 90;
                     HealingRain = 93;
+					GiftoftheQueen = 90;
                     HealingWave = 0;
                     Ascendance = 49;
                     SpiritLinkTotem = 50;
@@ -324,6 +332,7 @@ namespace Singular.Settings
 
                     RollRiptideCount = 0;
                     MinHealingRainCount = 4;
+					MinGiftoftheQueenCount = 2;
                     MinChainHealCount = 3;
                     MinHealingTideCount = 2;
                 }
@@ -331,6 +340,7 @@ namespace Singular.Settings
                 {
                     ChainHeal = 92;
                     HealingRain = 91;
+					GiftoftheQueen = 90;
                     HealingWave = 90;
                     Ascendance = 50;
                     SpiritLinkTotem = 49;
@@ -342,6 +352,7 @@ namespace Singular.Settings
 
                     RollRiptideCount = 1;
                     MinHealingRainCount = 2;
+					MinGiftoftheQueenCount = 2;
                     MinChainHealCount = 3;
                     MinHealingTideCount = 2;
                 }
@@ -349,6 +360,7 @@ namespace Singular.Settings
                 {
                     ChainHeal = 90;
                     HealingRain = 95;
+					GiftoftheQueen = 90;
                     HealingWave = 50;
                     Ascendance = 50;
                     SpiritLinkTotem = 48;
@@ -360,17 +372,18 @@ namespace Singular.Settings
 
                     RollRiptideCount = 5;
                     MinHealingRainCount = 3;
+					MinGiftoftheQueenCount = 5;
                     MinChainHealCount = 2;
                     MinHealingTideCount = 4;
                 }
                 // omit case for WoWContext.Normal and let it use DefaultValue() values
             }
 
-            // adjust Healing Surge if we have not previously 
+            // adjust Healing Surge if we have not previously
             if (!HealingSurgeAdjusted && StyxWoW.Me.Level >= 60 && (ctx == HealingContext.Instances || ctx == HealingContext.Raids))
             {
                 if (SavedToFile)
-                    Logger.Write( LogColor.Hilite, "Healing Surge % changed from {0} to {1} for {2}.  Visit Class Config and Save to make permanent.", HealingSurge, AncestralSwiftness + 1, ctx.ToString());
+                    Logger.Write(LogColor.Hilite, "Healing Surge % changed from {0} to {1} for {2}.  Visit Class Config and Save to make permanent.", HealingSurge, AncestralSwiftness + 1, ctx.ToString());
 
                 HealingSurge = AncestralSwiftness + 1;
                 HealingSurgeAdjusted = true;
@@ -402,6 +415,13 @@ namespace Singular.Settings
         [DisplayName("% Healing Rain")]
         [Description("Health % to cast this ability at. Must heal Min of 3 people in party, 4 in a raid. Set to 0 to disable.")]
         public int HealingRain { get; set; }
+		
+		[Setting]
+        [DefaultValue(90)]
+        [Category("Restoration")]
+        [DisplayName("% Gift of the Queen")]
+        [Description("Health % to cast this ability at. Must heal Min of 3 people in party, 4 in a raid. Set to 0 to disable.")]
+        public int GiftoftheQueen { get; set; }
 
         [Setting]
         [DefaultValue(60)]
@@ -472,6 +492,13 @@ namespace Singular.Settings
         [DisplayName("Healing Rain Min Count")]
         [Description("Min number of players below Healing Rain % in area")]
         public int MinHealingRainCount { get; set; }
+		
+		[Setting]
+        [DefaultValue(3)]
+        [Category("Restoration")]
+        [DisplayName("Gift of the Queen Min Count")]
+        [Description("Min number of players below Healing Rain % in area")]
+        public int MinGiftoftheQueenCount { get; set; }
 
         [Setting]
         [DefaultValue(3)]
@@ -536,21 +563,25 @@ namespace Singular.Settings
                 if (ctx == Singular.HealingContext.Battlegrounds)
                 {
                     HealingRain = 93;
+					GiftoftheQueen = 90;
                     HealingSurge = 85;
                     AncestralSwiftness = 40;
                     HealingStreamTotem = 90;
 
                     MinHealingRainCount = 3;
+					MinGiftoftheQueenCount = 2;
                     MinHealingTideCount = 2;
                 }
                 else // use group/companion healing
                 {
                     HealingRain = 93;
+					GiftoftheQueen = 90;
                     HealingSurge = 80;
                     AncestralSwiftness = 35;
                     HealingStreamTotem = 90;
 
                     MinHealingRainCount = 4;
+					MinGiftoftheQueenCount = 2;
                     MinHealingTideCount = 2;
                 }
             }
@@ -569,6 +600,13 @@ namespace Singular.Settings
         [DisplayName("% Healing Rain")]
         [Description("Health % to cast this ability at. Must heal Min of 3 people in party. Set to 0 to disable.")]
         public int HealingRain { get; set; }
+		
+		[Setting]
+        [DefaultValue(90)]
+        [Category("OffHeal")]
+        [DisplayName("% Gift of the Queen")]
+        [Description("Health % to cast this ability at. Must heal Min of 3 people in party, 4 in a raid. Set to 0 to disable.")]
+        public int GiftoftheQueen { get; set; }
 
         [Setting]
         [DefaultValue(16)]
@@ -597,6 +635,13 @@ namespace Singular.Settings
         [DisplayName("Healing Rain Min Count")]
         [Description("Min number of players below Healing Rain % in area")]
         public int MinHealingRainCount { get; set; }
+		
+		[Setting]
+        [DefaultValue(3)]
+        [Category("OffHeal")]
+        [DisplayName("Gift of the Queen Min Count")]
+        [Description("Min number of players below Healing Rain % in area")]
+        public int MinGiftoftheQueenCount { get; set; }
 
         [Setting]
         [DefaultValue(4)]

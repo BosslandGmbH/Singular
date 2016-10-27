@@ -17,6 +17,7 @@ using Styx.Common;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Numerics;
 using Styx.CommonBot.Routines;
 using Singular.Utilities;
 
@@ -57,12 +58,12 @@ namespace Singular.ClassSpecific.Mage
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        // Defensive 
+                        // Defensive
                         Spell.BuffSelf("Slow Fall", req => MageSettings.UseSlowFall && Me.IsFalling),
 
                         PartyBuff.BuffGroup("Dalaran Brilliance", "Arcane Brilliance"),
                         PartyBuff.BuffGroup("Arcane Brilliance", "Dalaran Brilliance"),
-						
+
                         Spell.BuffSelf("Conjure Refreshment", ret => !Gotfood && !StyxWoW.Me.GroupInfo.IsInParty)
                         )
                     )
@@ -188,7 +189,7 @@ namespace Singular.ClassSpecific.Mage
                 req => !Me.CurrentTarget.IsTrivial(),
                 new PrioritySelector(
 
-                    // Defensive 
+                    // Defensive
                     CastAlterTime(),
 
                     // new Wait( 1, until => !HasTalent(MageTalents.Invocation) || Me.HasAura("Invoker's Energy"), new ActionAlwaysSucceed())
@@ -197,7 +198,7 @@ namespace Singular.ClassSpecific.Mage
                     // CreateMageSpellstealBehavior(),
 
                     CreateMageRuneOfPowerBehavior(),
-					
+
                     Spell.BuffSelf("Time Warp", ret => MageSettings.UseTimeWarp && NeedToTimeWarp)
                     )
                 );
@@ -213,10 +214,10 @@ namespace Singular.ClassSpecific.Mage
                                                              43523,
                                                              65499, //Conjured Mana Cake - Pre Cata Level 85
                                                              80610, //Conjured Mana Pudding - MoP Lvl 85+
-                                                             80618  //Conjured Mana Buns 
+                                                             80618  //Conjured Mana Buns
                                                              //This is where i made a change.
                                                          };
-		
+
         /// <summary>
         /// True if config allows conjuring tables, we have the spell, are not moving, group members
         /// are within 15 yds, and no table within 40 yds
@@ -225,15 +226,15 @@ namespace Singular.ClassSpecific.Mage
         {
             get
             {
-                return MageSettings.SummonTableIfInParty 
-                    && SpellManager.HasSpell("Conjure Refreshment Table") 
+                return MageSettings.SummonTableIfInParty
+                    && SpellManager.HasSpell("Conjure Refreshment Table")
                     && !StyxWoW.Me.IsMoving
                     && MageTable == null
                     && Unit.GroupMembers.Any(p => !p.IsMe && p.DistanceSqr < 15 * 15);
             }
         }
 
-       static readonly Dictionary<uint, uint> RefreshmentTableIds = new Dictionary<uint,uint>() 
+       static readonly Dictionary<uint, uint> RefreshmentTableIds = new Dictionary<uint,uint>()
                                          {
                                              { 186812, 70 }, //Level 70
                                              { 207386, 80 }, //Level 80
@@ -251,8 +252,8 @@ namespace Singular.ClassSpecific.Mage
                 return
                     ObjectManager.GetObjectsOfType<WoWGameObject>()
                         .Where(
-                            i => RefreshmentTableIds.ContainsKey(i.Entry) 
-                                && RefreshmentTableIds[i.Entry] <= Me.Level 
+                            i => RefreshmentTableIds.ContainsKey(i.Entry)
+                                && RefreshmentTableIds[i.Entry] <= Me.Level
                                 && (StyxWoW.Me.PartyMembers.Any(p => p.Guid == i.CreatedByGuid) || StyxWoW.Me.Guid == i.CreatedByGuid)
                                 && i.Distance <= SingularSettings.Instance.TableDistance
                             )
@@ -260,13 +261,13 @@ namespace Singular.ClassSpecific.Mage
                         .FirstOrDefault();
             }
         }
-        
-   
+
+
         public static bool Gotfood { get { return StyxWoW.Me.BagItems.Any(item => MageFoodIds.Contains(item.Entry)); } }
 
         public static Composite CreateUseManaGemBehavior(SimpleBooleanDelegate requirements)
         {
-            return new Throttle( 2, 
+            return new Throttle( 2,
                 new PrioritySelector(
                     ctx => StyxWoW.Me.BagItems.FirstOrDefault(i => i.Entry == 36799 || i.Entry == 81901),
                     new Decorator(
@@ -283,15 +284,15 @@ namespace Singular.ClassSpecific.Mage
         public static Composite CreateStayAwayFromFrozenTargetsBehavior()
         {
             return Avoidance.CreateAvoidanceBehavior(
-                "Blink", 
-                TalentManager.HasGlyph("Blink") ? 28 : 20, 
-                Disengage.Direction.Frontwards, 
+                "Blink",
+                TalentManager.HasGlyph("Blink") ? 28 : 20,
+                Disengage.Direction.Frontwards,
                 crowdControl: CreateSlowMeleeBehavior(),
                 needDisengage: nd => Me.GotTarget() && Me.CurrentTarget.IsCrowdControlled() && Me.CurrentTarget.SpellDistance() < SingularSettings.Instance.KiteAvoidDistance,
                 needKiting: nk => Me.GotTarget() && (Me.CurrentTarget.IsCrowdControlled() || Me.CurrentTarget.IsSlowed(60)) && Me.CurrentTarget.SpellDistance() < SingularSettings.Instance.KiteAvoidDistance
                 );
         }
-		
+
         public static Composite CreateMagePolymorphOnAddBehavior()
         {
             if (!MageSettings.UsePolymorphOnAdds)
@@ -300,7 +301,7 @@ namespace Singular.ClassSpecific.Mage
             return new Decorator(
                 req => !Unit.NearbyUnfriendlyUnits.Any(u => u.HasMyAura("Polymorph")),
                 Spell.Buff(
-                    "Polymorph", 
+                    "Polymorph",
                     on => Unit.UnfriendlyUnits()
                         .Where(IsViableForPolymorph)
                         .OrderByDescending(u => u.CurrentHealth)
@@ -410,11 +411,11 @@ namespace Singular.ClassSpecific.Mage
             }
         }
 
-        public static bool NeedTableForBattleground 
+        public static bool NeedTableForBattleground
         {
             get
             {
-                return SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds 
+                return SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds
                     && PVP.PrepTimeLeft < SecsBeforeBattle && Me.HasAnyAura("Preparation", "Arena Preparation");
             }
         }
@@ -433,9 +434,9 @@ namespace Singular.ClassSpecific.Mage
         {
             int distBlink = TalentManager.HasGlyph("Blink") ? 28 : 20;
             return Avoidance.CreateAvoidanceBehavior(
-                "Blink", 
-                distBlink, 
-                Disengage.Direction.Frontwards, 
+                "Blink",
+                distBlink,
+                Disengage.Direction.Frontwards,
                 crowdControl: CreateSlowMeleeBehavior(),
                 needDisengage: nd => false,
                 needKiting: nk => Me.GotTarget() && Me.CurrentTarget.IsFrozen() && Me.CurrentTarget.SpellDistance() < 8
@@ -445,17 +446,18 @@ namespace Singular.ClassSpecific.Mage
         public static Composite CreateSlowMeleeBehavior()
         {
             return new PrioritySelector(
-                ctx => SafeArea.NearestEnemyMobAttackingMe,
-                new Action( ret => {
-                    if (SingularSettings.Debug)
-                    {
-                        if (ret == null)
-                            Logger.WriteDebug("SlowMelee: no nearest mob found");
-                        else
-                            Logger.WriteDebug("SlowMelee: crowdcontrolled: {0}, slowed: {1}", ((WoWUnit)ret).IsCrowdControlled(), ((WoWUnit)ret).IsSlowed());
-                    }
-                    return RunStatus.Failure;
-                    }),
+                // Uncomment when MeshTrace is working
+                //ctx => SafeArea.NearestEnemyMobAttackingMe,
+                //new Action( ret => {
+                //    if (SingularSettings.Debug)
+                //    {
+                //        if (ret == null)
+                //            Logger.WriteDebug("SlowMelee: no nearest mob found");
+                //        else
+                //            Logger.WriteDebug("SlowMelee: crowdcontrolled: {0}, slowed: {1}", ((WoWUnit)ret).IsCrowdControlled(), ((WoWUnit)ret).IsSlowed());
+                //    }
+                //    return RunStatus.Failure;
+                //    }),
                 new Decorator(
                     // ret => ret != null && !((WoWUnit)ret).Stunned && !((WoWUnit)ret).Rooted && !((WoWUnit)ret).IsSlowed(),
                     ret => ret != null,
@@ -478,9 +480,9 @@ namespace Singular.ClassSpecific.Mage
 
         #endregion
 
-        public static bool NeedEvocation 
-        { 
-            get 
+        public static bool NeedEvocation
+        {
+            get
             {
                 if (!Spell.CanCastHack("Evoation"))
                     return false;
@@ -508,10 +510,10 @@ namespace Singular.ClassSpecific.Mage
                     1,
                     TimeSpan.FromSeconds(6),
                     RunStatus.Failure,
-                    Spell.CastOnGround("Rune of Power", 
-						on => Me, 
-						req => !Me.IsMoving && !Me.InVehicle && 
-								!Me.HasAura("Rune of Power") && Spell.IsSpellOnCooldown("Combustion") && 
+                    Spell.CastOnGround("Rune of Power",
+						on => Me,
+						req => !Me.IsMoving && !Me.InVehicle &&
+								!Me.HasAura("Rune of Power") && Spell.IsSpellOnCooldown("Combustion") &&
 								EventHandlers.LastNoPathFailure.AddSeconds(15) < DateTime.UtcNow, false)
                     );
             }
@@ -531,7 +533,7 @@ namespace Singular.ClassSpecific.Mage
                     ctx => Me.HasAura("Alter Time"),
                     new Sequence(
                         Spell.BuffSelf(
-                            "Alter Time", 
+                            "Alter Time",
                             req =>
                             {
                                 if ((bool) req)
@@ -565,7 +567,7 @@ namespace Singular.ClassSpecific.Mage
                 );
         }
 
-        private static WoWPoint _locAlterTime { get; set; }
+        private static Vector3 _locAlterTime { get; set; }
         private static int _healthAlterTime { get; set; }
 
     }

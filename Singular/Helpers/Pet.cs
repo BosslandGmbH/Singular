@@ -6,6 +6,7 @@ using Styx.CommonBot;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using System;
+using Styx.Common;
 using Styx.Helpers;
 using Styx.WoWInternals.World;
 using Styx.WoWInternals;

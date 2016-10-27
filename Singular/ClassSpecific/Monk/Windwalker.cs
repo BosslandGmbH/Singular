@@ -29,7 +29,7 @@ namespace Singular.ClassSpecific.Monk
 		public static Composite CreateWindwalkerMonkCombatBuffs()
 		{
 			return new PrioritySelector(
-				Spell.BuffSelf("Energizing Elixir", req => Me.CurrentChi <= 0 && Me.CurrentEnergy < 10)
+				Spell.BuffSelf("Energizing Elixir", req => Me.CurrentChi <= 1 && Me.CurrentEnergy < 25)
 				);
 
 		}
@@ -85,10 +85,14 @@ namespace Singular.ClassSpecific.Monk
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
 
+                        Helpers.Common.CreateInterruptBehavior(),
+
+                        Spell.Cast("Healing Elixir", ret => Me.HealthPercent <= 70 && Spell.GetCharges("Healing Elixir") > 1),
 						Spell.BuffSelf("Serenity", req => Me.CurrentTarget.IsStressful()),
 						Spell.Cast("Touch of Death", req => Me.CurrentTarget.TimeToDeath() > 8),
 						Spell.Cast("Storm, Earth, and Fire", req => MonkSettings.UseSef && !Me.HasActiveAura("Storm, Earth, and Fire") && Me.CurrentTarget.IsStressful()),
-						
+						Spell.Cast("Touch of Karma", req => Me.CurrentTarget.IsStressful() && Me.CurrentTarget.IsTargetingMeOrPet),
+
                         // Multiple Target
 						new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >= 2,
 							new PrioritySelector(
@@ -103,26 +107,28 @@ namespace Singular.ClassSpecific.Monk
 										Spell.Cast("Chi Burst")
 										)),
 								Spell.Cast("Chi Burst"),
+								Spell.Cast("Leg Sweep", ret => MonkSettings.StunMobsWhileSolo && Me.CurrentTarget.IsWithinMeleeRange),
 								Spell.Cast("Spinning Crane Kick"),
-								Spell.Cast("Blackout Kick", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => !u.HasMyAura("Mark of the Crane"))),
-								Spell.Cast("Blackout Kick"),
-								Spell.Cast("Tiger Palm", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => !u.HasMyAura("Mark of the Crane"))),
-								Spell.Cast("Tiger Palm")
+								Spell.Cast("Blackout Kick", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => !u.HasMyAura("Mark of the Crane")), req => Spell.LastSpellCast != "Blackout Kick"),
+								Spell.Cast("Blackout Kick", req => Spell.LastSpellCast != "Blackout Kick"),
+								Spell.Cast("Tiger Palm", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => !u.HasMyAura("Mark of the Crane")), req => Spell.LastSpellCast != "Tiger Palm"),
+								Spell.Cast("Tiger Palm", req => Spell.LastSpellCast != "Tiger Palm")
 								)),
 
                         // Single Target
 						Spell.Cast("Strike of the Windlord", ret => !MonkSettings.UseArtifactOnlyInAoE && MonkSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
                         Spell.Cast("Fists of Fury"),
 						Spell.Cast("Whirling Dragon Punch"),
-						Spell.Cast("Tiger Palm", req => Me.CurrentChi < 4 && EnergyDeficit < 10),
+						Spell.Cast("Leg Sweep", ret => MonkSettings.StunMobsWhileSolo && Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.IsCasting && Spell.IsSpellOnCooldown("Spear Hand Strike")),
+						Spell.Cast("Tiger Palm", req => Me.CurrentChi < 4 && EnergyDeficit < 10 && Spell.LastSpellCast != "Tiger Palm"),
 						Spell.Cast("Rising Sun Kick"),
 						Spell.Cast("Chi Wave"),
-						Spell.Cast("Blackout Kick"),
-						Spell.Cast("Tiger Palm")
+						Spell.Cast("Blackout Kick", req => Spell.LastSpellCast != "Blackout Kick"),
+						Spell.Cast("Tiger Palm", req => Spell.LastSpellCast != "Tiger Palm")
                         )
                     ),
-				
-				Common.CreateCloseDistanceBehavior()             
+
+				Common.CreateCloseDistanceBehavior()
                 );
         }
 

@@ -20,6 +20,7 @@ using Singular.Settings;
 using Singular.Managers;
 using Styx.Helpers;
 using System.Drawing;
+using System.Numerics;
 using Styx.Patchables;
 using Styx.Common;
 
@@ -53,7 +54,7 @@ namespace Singular.Helpers
     public delegate string SimpleStringDelegate(object context);
     public delegate int SimpleIntDelegate(object context);
     public delegate float SimpleFloatDelegate(object context);
-    
+
     public delegate TimeSpan SimpleTimeSpanDelegate(object context);
 
     internal static class Spell
@@ -237,7 +238,7 @@ namespace Singular.Helpers
         public static float SafeMeleeRange { get { return Math.Max(MeleeRange - 1f, 5f); } }
 
         /// <summary>
-        /// get the effective distance between two mobs accounting for their 
+        /// get the effective distance between two mobs accounting for their
         /// combat reaches (hitboxes)
         /// </summary>
         /// <param name="unitOrigin">toon originating spell/ability.  If no destination specified then assume 'Me' originates and 'unit' is the target</param>
@@ -262,7 +263,7 @@ namespace Singular.Helpers
                 unitOrigin = StyxWoW.Me;
             }
 
-            // only use CombatReach of destination target 
+            // only use CombatReach of destination target
             float dist = unitTarget.Location.Distance(unitOrigin.Location) - unitTarget.CombatReach;
             return Math.Max(0, dist);
         }
@@ -289,7 +290,7 @@ namespace Singular.Helpers
                 target = unit;
                 unit = StyxWoW.Me;
             }
-           
+
             return baseSpellRange + target.CombatReach;
         }
 
@@ -337,7 +338,7 @@ namespace Singular.Helpers
         }
 
         public static bool IsSpellOnCooldown(WoWSpell spell)
-        {           
+        {
             if (spell == null)
                 return true;
 
@@ -371,7 +372,7 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        ///  Returns maximum spell range based on hitbox of unit. 
+        ///  Returns maximum spell range based on hitbox of unit.
         /// </summary>
         /// <param name="spell"></param>
         /// <param name="unit"></param>
@@ -396,7 +397,7 @@ namespace Singular.Helpers
 
 
         /// <summary>
-        /// Returns minimum spell range based on hitbox of unit. 
+        /// Returns minimum spell range based on hitbox of unit.
         /// </summary>
         /// <param name="spell"></param>
         /// <param name="unit"></param>
@@ -419,9 +420,9 @@ namespace Singular.Helpers
             double ER_Rate;
 
 
-            playerEnergy = Lua.GetReturnVal<int>("return UnitMana(\"player\");", 0); // current Energy 
+            playerEnergy = Lua.GetReturnVal<int>("return UnitMana(\"player\");", 0); // current Energy
             ER_Rate = EnergyRegen();
-            timetoEnergyCap = (100 - playerEnergy) * (1.0 / ER_Rate); // math 
+            timetoEnergyCap = (100 - playerEnergy) * (1.0 / ER_Rate); // math
 
             return timetoEnergyCap;
         }
@@ -676,12 +677,12 @@ namespace Singular.Helpers
 
             uint latency = SingularRoutine.Latency * 2;
             TimeSpan castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
-            if (allow == LagTolerance.Yes // && castTimeLeft != TimeSpan.Zero 
+            if (allow == LagTolerance.Yes // && castTimeLeft != TimeSpan.Zero
                 && StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < latency)
                 return false;
 
             /// -- following code does nothing since the behaviors created are not linked to execution tree
-            /// 
+            ///
             // if (faceDuring && StyxWoW.Me.ChanneledSpell == null) // .ChanneledCastingSpellId == 0)
             //    Movement.CreateFaceTargetBehavior();
 
@@ -856,7 +857,7 @@ namespace Singular.Helpers
 
 
         /// <summary>
-        ///   Creates a behavior to cast a spell by name resolved during tree execution (rather than creation) on the current target.  
+        ///   Creates a behavior to cast a spell by name resolved during tree execution (rather than creation) on the current target.
         ///   Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
         /// </summary>
         /// <remarks>
@@ -870,7 +871,7 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        ///   Creates a behavior to cast a spell by name resolved during tree execution (rather than creation) on a specific unit. 
+        ///   Creates a behavior to cast a spell by name resolved during tree execution (rather than creation) on a specific unit.
         ///   Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
         /// </summary>
         /// <remarks>
@@ -885,7 +886,7 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        ///   Creates a behavior to cast a spell by name resolved during tree execution (rather than creation), with special requirements, 
+        ///   Creates a behavior to cast a spell by name resolved during tree execution (rather than creation), with special requirements,
         ///   on the current target. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
         /// </summary>
         /// <remarks>
@@ -900,7 +901,7 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        ///   Creates a behavior to cast a spell by name resolved during tree execution (rather than creation), with special requirements, 
+        ///   Creates a behavior to cast a spell by name resolved during tree execution (rather than creation), with special requirements,
         ///   on a specific unit. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
         /// </summary>
         /// <remarks>
@@ -1308,7 +1309,7 @@ namespace Singular.Helpers
                     _buffName = spell.Name;
                     if (DoubleCastContains(_buffUnit, _buffName))
                         return false;
-                    
+
                     if (!spell.CanCast && (sfr.Override == null || !sfr.Original.CanCast))
                     {
                         if (SingularSettings.DebugSpellCasting)
@@ -1462,7 +1463,7 @@ namespace Singular.Helpers
                 until = u => StyxWoW.Me.HasAura(u as string);
 
             return new PrioritySelector(
-                ctx => 
+                ctx =>
                 {
                     string spellName = name(ctx);
                     SpellFindResults sfr;
@@ -1588,7 +1589,7 @@ namespace Singular.Helpers
         {
             return new Decorator(
                 req => onUnit(req) != null && onUnit(req).Auras.Values.All(a => a.SpellId != spellId(req)),
-                Cast(spellId, onUnit, requirements) 
+                Cast(spellId, onUnit, requirements)
                 );
         }
 
@@ -1648,7 +1649,7 @@ namespace Singular.Helpers
 
         // private static WoWSpell _spell;
 
-        // used by Spell.Cast() - save fact we are queueing this Heal spell if a spell cast/gcd is in progress already.  this could only occur during 
+        // used by Spell.Cast() - save fact we are queueing this Heal spell if a spell cast/gcd is in progress already.  this could only occur during
         // .. the period of latency at the end of a cast where Singular allows you to begin the next one
 
         /// <summary>
@@ -1692,7 +1693,7 @@ namespace Singular.Helpers
         /// <param name="cancel">The cancel cast in progress delegate</param>
         /// <param name="allow">allow next spell to queue before this one completes</param>
         /// <returns>.</returns>
-/*        
+/*
         public static Composite Cast(SimpleStringDelegate name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
             SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel = null, LagTolerance allow = LagTolerance.Yes, bool skipWowCheck = false)
         {
@@ -1763,7 +1764,7 @@ namespace Singular.Helpers
                         CastContext cctx = ret.CastContext();
 
                         if (cctx.spell == null)
-                            return RunStatus.Failure;   
+                            return RunStatus.Failure;
 
                         if (cctx.unit == null)
                             return RunStatus.Failure;
@@ -1792,16 +1793,16 @@ namespace Singular.Helpers
 
                         const int PENANCE = 047540;
                         LogCast(
-                            cctx.spell.Name, 
-                            cctx.unit, 
-                            cctx.health, 
+                            cctx.spell.Name,
+                            cctx.unit,
+                            cctx.health,
                             cctx.distance,
                             cctx.spell.IsHeal() ? true : (cctx.spell.Id == PENANCE && cctx.unit.IsFriendly)
                             );
 
                         if (SingularSettings.DebugSpellCasting)
                             Logger.WriteDebug("Cast('{0}'): dist:{1:F3}, need({2}), hitbox:{3:F3}",
-                                cctx.spell.Name, 
+                                cctx.spell.Name,
                                 cctx.unit.Distance,
                                 cctx.spell.IsMeleeSpell
                                     ? "Melee"
@@ -1925,7 +1926,7 @@ namespace Singular.Helpers
                                 CastContext cctx = until.CastContext();
                                 SingularRoutine.UpdateDiagnosticCastingState();
 
-                                // Interrupted or finished casting. 
+                                // Interrupted or finished casting.
                                 if (!Spell.IsCastingOrChannelling(allow))
                                 {
                                     Logger.WriteDebug("Spell.Cast(\"{0}\"): complete, iscasting=false", cctx.spell.Name);
@@ -1976,9 +1977,9 @@ namespace Singular.Helpers
                 );
 
             // when no cancel method in place, we will return immediately so.....
-            // .. throttle attempts at casting this spell.  note: this only limits this 
+            // .. throttle attempts at casting this spell.  note: this only limits this
             // .. instance of the spell.cast behavior.  in other words, if this is for a cast
-            // .. of flame shock, it would only throttle this behavior tree instance, not any 
+            // .. of flame shock, it would only throttle this behavior tree instance, not any
             // .. other trees which also call Spell.Cast("flame shock")
             if (cancel == null)
                 comp = new Throttle( TimeSpan.FromMilliseconds(SingularSettings.Instance.SameSpellThrottle), comp);
@@ -1996,7 +1997,7 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        /// checked if the spell has an instant cast, the spell is one which can be cast while moving, or we have an aura active which allows moving without interrupting casting.  
+        /// checked if the spell has an instant cast, the spell is one which can be cast while moving, or we have an aura active which allows moving without interrupting casting.
         /// does not check whether you are presently moving, only whether you could cast if you are moving
         /// </summary>
         /// <param name="spell">spell to cast</param>
@@ -2086,9 +2087,9 @@ namespace Singular.Helpers
 
             if (SingularSettings.DebugSpellCasting && found != null)
                 Logger.WriteFile(
-                    "MoveWhileCasting[{0}]: true, since we found move buff {1} #{2}", 
-                    spell == null ? "(null)" : spell.Name, 
-                    found.Name, 
+                    "MoveWhileCasting[{0}]: true, since we found move buff {1} #{2}",
+                    spell == null ? "(null)" : spell.Name,
+                    found.Name,
                     found.SpellId
                     );
 
@@ -2209,7 +2210,7 @@ namespace Singular.Helpers
             return new Decorator(
                 req => {
                     CogContext cog = req.CogContext();
-                    if (cog.spell == null || cog.loc == WoWPoint.Empty || !requirements(cog.context))
+                    if (cog.spell == null || cog.loc == Vector3.Zero || !requirements(cog.context))
                         return false;
 
                     if (!Spell.CanCastHack(cog.sfr, null, skipWowCheck:true))
@@ -2222,8 +2223,8 @@ namespace Singular.Helpers
                         return false;
 
                     return true;
-                    },    
-           
+                    },
+
                 new Sequence(
                     // if wait requested, wait for spell in progress to be clear
                     new DecoratorContinue(
@@ -2234,7 +2235,7 @@ namespace Singular.Helpers
                                 until => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                                 new Action(r => Logger.WriteDebug("CastOnGround: waitForSpell - beginning"))
                                 ),
-                            new Action( r => 
+                            new Action( r =>
                             {
                                 Logger.WriteDebug("CastOnGround: waitForSpell - failed! other spell in progress?");
                                 return RunStatus.Failure;
@@ -2246,7 +2247,7 @@ namespace Singular.Helpers
                     new Action( ret => {
                         CogContext cog = ret.CogContext();
                         Logger.Write( cog.spell.IsHeal() ? LogColor.SpellHeal : LogColor.SpellNonHeal, "*{0} {1}at {2:F1} yds {3}", cog.name, cog.targetDesc, cog.loc.Distance(StyxWoW.Me.Location), cog.loc);
-                        return Spell.CastPrimative(cog.spell) ? RunStatus.Success : RunStatus.Failure; 
+                        return Spell.CastPrimative(cog.spell) ? RunStatus.Success : RunStatus.Failure;
                         }),
 
                     // confirm spell is on cursor requiring targeting
@@ -2265,7 +2266,7 @@ namespace Singular.Helpers
                         ),
 
                     // click on ground
-                    new Action(ret => 
+                    new Action(ret =>
                     {
                         if (!SpellManager.ClickRemoteLocation(ret.CogContext().loc))
                         {
@@ -2282,8 +2283,8 @@ namespace Singular.Helpers
                             req => !waitForSpell,
                             new ActionAlwaysSucceed()
                             ),
-                        new Wait( 
-                            TimeSpan.FromMilliseconds(500), 
+                        new Wait(
+                            TimeSpan.FromMilliseconds(500),
                             until => Spell.IsGlobalCooldown() || Spell.IsCastingOrChannelling() || Me.CurrentPendingCursorSpell == null,
                             new Action(r => Logger.WriteDebug("CastOnGround: click successful"))
                             ),
@@ -2316,7 +2317,7 @@ namespace Singular.Helpers
                             new Action(r => Logger.WriteDebug("CastOnGround({0}): detected cast in progress", r.CogContext().name))
                             ),
 
-                        new Action( ret => 
+                        new Action( ret =>
                             Logger.WriteDebug("CastOnGround({0}): at {1} did not detect spell cast, will assume success -- distance={2:F1} yds, loss={3}, face={4}",
                                 ret.CogContext().name,
                                 ret.CogContext().loc,
@@ -2330,9 +2331,9 @@ namespace Singular.Helpers
                 );
         }
 
-        private static bool LocationInRange(string spellName, WoWPoint loc)
+        private static bool LocationInRange(string spellName, Vector3 loc)
         {
-            if (loc != WoWPoint.Empty)
+            if (loc != Vector3.Zero)
             {
                 SpellFindResults sfr;
                 if (SpellManager.FindSpell(spellName, out sfr))
@@ -2387,7 +2388,7 @@ namespace Singular.Helpers
         public static bool CanCastHack(SpellFindResults sfr, WoWUnit unit, bool skipWowCheck = false)
         {
             WoWSpell spell = sfr.Override ?? sfr.Original;
-            
+
             // check range
             if (!CanCastHackInRange( spell, unit))
                 return false;
@@ -2460,7 +2461,7 @@ namespace Singular.Helpers
                             }
                         }
                     }
-                    
+
                     if (ret.Count() > 1 && ret[1] == "1")
                         Logger.WriteFile( "CanCast[{0}]: insufficient power ({1} cost={2} have={3})", spell.Name, ptype, spell.PowerCost, currentPower);
                     else
@@ -2556,7 +2557,7 @@ namespace Singular.Helpers
 
                 if (sTarget != null)
                 {
-                    // 
+                    //
                     string lua = string.Format("return IsSpellInRange(\"{0}\",\"{1}\")", spell.Name, sTarget);
                     string inRange = Lua.GetReturnVal<string>(lua, 0);
                     if (inRange != "1")
@@ -2566,7 +2567,7 @@ namespace Singular.Helpers
                         return false;
                     }
                 }
-                else 
+                else
 #endif
                 {
                     if (spell.IsMeleeSpell && !unit.IsWithinMeleeRange)
@@ -2705,7 +2706,7 @@ namespace Singular.Helpers
                 new Decorator(
                     ctx => ctx != null && SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds,
                     new Sequence(
-                        Cast(spellName, mov => true, ctx => (WoWUnit)ctx, req => true, cancel => 
+                        Cast(spellName, mov => true, ctx => (WoWUnit)ctx, req => true, cancel =>
                             {
                                 try
                                 {
@@ -2867,7 +2868,7 @@ namespace Singular.Helpers
                 name = spell.Name;
                 context = ctx;
                 unit = onUnit(ctx);
-                    
+
                 // health/dist change quickly, so grab these now where
                 // .. we check requirements so the log message we output
                 // .. later reflects what they were when we were testing
@@ -2892,7 +2893,7 @@ namespace Singular.Helpers
         internal string name;
         internal SpellFindResults sfr;
         internal WoWSpell spell;
-        internal WoWPoint loc;
+        internal Vector3 loc;
         internal string targetDesc;
         internal object context;
 
@@ -2906,7 +2907,7 @@ namespace Singular.Helpers
                 name = spell.Name;
                 context = ctx;
 
-                loc = WoWPoint.Empty;
+                loc = Vector3.Zero;
                 targetDesc = "";
                 if (locrtrv != null)
                 {

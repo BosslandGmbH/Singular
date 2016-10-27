@@ -19,6 +19,8 @@ using System.Drawing;
 using Styx.CommonBot.POI;
 using Styx.Common.Helpers;
 using System.Collections.Generic;
+using System.Numerics;
+using Styx.Common;
 using Styx.CommonBot.Routines;
 
 using LocationRetriever = Singular.Helpers.SimpleLocationRetriever;
@@ -60,7 +62,7 @@ namespace Singular.ClassSpecific.Hunter
                             return 2;
                         case 83243:
                             return 3;
-                        case 83244: 
+                        case 83244:
                             return 4;
                         case 83245:
                             return 5;
@@ -127,7 +129,7 @@ namespace Singular.ClassSpecific.Hunter
             return new PrioritySelector(
                 Spell.WaitForCastOrChannel(),
 
-                new Decorator( 
+                new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         new Decorator(
@@ -140,7 +142,7 @@ namespace Singular.ClassSpecific.Hunter
 
                         Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
 
-                        new Decorator(ctx => (SingularSettings.Instance.DisablePetUsage || Me.Specialization == WoWSpec.HunterMarksmanship && HasTalent(HunterTalents.LoneWolf)) && Me.GotAlivePet,
+                        new Decorator(ctx => (SingularSettings.Instance.DisablePetUsage || Me.Specialization == WoWSpec.HunterMarksmanship && HasTalent(HunterTalents.LoneWolf)) && Me.GotAlivePet && !Me.InVehicle,
                             new Sequence(
                                 new Action( ctx => Logger.Write( "/dismiss Pet")),
                                 Spell.Cast("Dismiss Pet", on => Me.Pet, req => true, cancel => false),
@@ -208,7 +210,7 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new PrioritySelector(
                 Spell.WaitForCastOrChannel(),
-                new Decorator( 
+                new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         Spell.BuffSelf("Track Hidden"),
@@ -290,8 +292,8 @@ namespace Singular.ClassSpecific.Hunter
                         new Wait(
                             1,
                             until => Me.HasAura("Camouflage"),
-                            new Action(r => 
-                            { 
+                            new Action(r =>
+                            {
                                 camouflageStart = DateTime.UtcNow;
                                 WoWAura aura = Me.GetAllAuras().FirstOrDefault(a => a.Name == "Camouflage");
                                 if (aura != null)
@@ -340,10 +342,10 @@ namespace Singular.ClassSpecific.Hunter
 
                             // Buffs - don't stack Bestial Wrath and Rapid Fire
                             Spell.Buff(
-                                "Bestial Wrath", 
+                                "Bestial Wrath",
                                 on => Me,
-                                req => Spell.GetSpellCooldown("Kill Command") == TimeSpan.Zero && !Me.HasActiveAura("Rapid Fire"), 
-                                HasGcd.No, 
+                                req => Spell.GetSpellCooldown("Kill Command") == TimeSpan.Zero && !Me.HasActiveAura("Rapid Fire"),
+                                HasGcd.No,
                                 "The Beast Within"
                                 ),
 
@@ -367,7 +369,7 @@ namespace Singular.ClassSpecific.Hunter
                                     if (!Me.GotTarget())
                                         return null;
 
-                                    WoWPoint loc = WoWPoint.RayCast(Me.Location, WoWMathHelper.CalculateNeededFacing(Me.Location, Target.Location), 40f);
+                                    Vector3 loc = Me.Location.RayCast(WoWMathHelper.CalculateNeededFacing(Me.Location, Target.Location), 40f);
                                     IEnumerable<WoWUnit> ienum = Clusters.GetPathToPointCluster(loc, Unit.UnfriendlyUnits(44), 44);
                                     int cntCC = 0;
                                     int cntTarget = 0;
@@ -416,7 +418,7 @@ namespace Singular.ClassSpecific.Hunter
                                         return null;
 
                                     int dist = (int)Target.Distance + 4;
-                                    WoWPoint loc = WoWPoint.RayCast(Me.Location, WoWMathHelper.CalculateNeededFacing(Me.Location, Target.Location), 40f);
+                                    Vector3 loc = Me.Location.RayCast(WoWMathHelper.CalculateNeededFacing(Me.Location, Target.Location), 40f);
                                     IEnumerable<WoWUnit> ienum = Clusters.GetPathToPointCluster(loc, Unit.UnfriendlyUnits(dist), dist);
                                     int cntCC = 0;
                                     int cntTarget = 0;
@@ -462,7 +464,6 @@ namespace Singular.ClassSpecific.Hunter
                                 on =>
                                 {
                                     // Does not require CurrentTarget to be non=null
-                                    WoWPoint loc = WoWPoint.RayCast(Me.Location, Me.RenderFacing, 30f);
                                     IEnumerable<WoWUnit> ienum = Clusters.GetConeCluster(100f, 46f, Unit.UnfriendlyUnits(50));
                                     int cntCC = 0;
                                     int cntTarget = 0;
@@ -504,7 +505,7 @@ namespace Singular.ClassSpecific.Hunter
                                 }
                                 ),
 
-                            // for long cooldowns, spend only when worthwhile                      
+                            // for long cooldowns, spend only when worthwhile
                             new Decorator(
                                 ret => Pet != null && Target != null && Target.IsAlive
                                     && (Target.IsBoss() || Target.IsPlayer || ScaryNPC || 3 <= Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet)),
@@ -522,7 +523,7 @@ namespace Singular.ClassSpecific.Hunter
                 // CreateHunterTrapBehavior("Freezing Trap", true, on => Target, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null),
                                     new PrioritySelector(
                                         ctx => WoWMathHelper.CalculatePointFrom(Me.Location, Target.Location, 12f + Target.CombatReach),
-                                        CreateHunterTrapBehavior("Ice Trap", loc => (WoWPoint)loc, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null)
+                                        CreateHunterTrapBehavior("Ice Trap", loc => (Vector3)loc, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null)
                                         )
                                     )
                                 )
@@ -659,7 +660,7 @@ namespace Singular.ClassSpecific.Hunter
 
                         new Action(ret => Logger.WriteDebug("Trap: use trap launcher requested: {0}", useLauncher)),
 
-                        // add or remove trap launcher based upon parameter 
+                        // add or remove trap launcher based upon parameter
                         new PrioritySelector(
                             new Decorator(ret => useLauncher && Me.HasAura("Trap Launcher"), new ActionAlwaysSucceed()),
                             Spell.BuffSelf("Trap Launcher", req => useLauncher),
@@ -688,7 +689,7 @@ namespace Singular.ClassSpecific.Hunter
                                 }
                                 }
                             catch {}
-                            
+
                             Logger.WriteDebug("Trap: launcher aura present = {0}", Me.HasAura("Trap Launcher"));
                             Logger.WriteDebug("Trap: cancast = {0}", Spell.CanCastHack(trapName, onUnit(ret)));
                             Logger.Write(Color.PowderBlue, "^{0} trap: {1} on {2}", useLauncher ? "Launch" : "Set", trapName, onUnit(ret).SafeName());
@@ -710,11 +711,11 @@ namespace Singular.ClassSpecific.Hunter
                                 else
                                 {
                                     bool b = false;
-                                    try 
+                                    try
                                     {
                                         b = SpellManager.ClickRemoteLocation(unit.Location);
                                     }
-                                    catch 
+                                    catch
                                     {
                                         Logger.WriteDiagnostic("Trap: exception in ClickRemote");
                                     }
@@ -747,7 +748,7 @@ namespace Singular.ClassSpecific.Hunter
             return new PrioritySelector(
                 new Decorator(
                     ret => require(ret)
-                        && Me.Location.DistanceSqr(locrtrv(ret)) < (40 * 40)
+                        && Me.Location.DistanceSquared(locrtrv(ret)) < (40 * 40)
                         && SpellManager.HasSpell(trapName) && Spell.GetSpellCooldown(trapName) == TimeSpan.Zero
                         && Me.HasAura("Trap Launcher"),
                     new Sequence(
@@ -761,8 +762,8 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateHunterTrapOnAddBehavior(string trapName)
         {
             return new PrioritySelector(
-                ctx => Unit.NearbyUnfriendlyUnits.OrderBy(u => u.DistanceSqr)
-                    .FirstOrDefault( u => u.Combat && u != Target && (!u.IsMoving || u.IsPlayer) && u.DistanceSqr < 40 * 40 && !u.IsCrowdControlled()),
+                ctx => Unit.NearbyUnitsInCombatWithUsOrOurStuff.OrderBy(u => u.DistanceSqr)
+                    .FirstOrDefault( u => u.Combat && u != Target && (!u.IsMoving || u.IsPlayer) && !u.IsCrowdControlled()),
                 new Decorator(
                     ret => ret != null && SpellManager.HasSpell(trapName) && Spell.GetSpellCooldown(trapName) == TimeSpan.Zero ,
                     new Sequence(
@@ -786,7 +787,7 @@ namespace Singular.ClassSpecific.Hunter
                                     Logger.WriteDebug("AddTrap: cast of trap failed");
                                 }
                             }
-                            catch { 
+                            catch {
                                 Logger.WriteDebug("AddTrap: unit targeted went invalid before cast");
                             }
                             return RunStatus.Failure;
@@ -830,21 +831,22 @@ namespace Singular.ClassSpecific.Hunter
                     ret =>  PetManager.IsPetSummonAllowed
 						&& (Me.Specialization != WoWSpec.HunterMarksmanship || !HasTalent(HunterTalents.LoneWolf))
                         && (!Me.GotAlivePet || (ActivePetNumber != PetWeWant && ActivePetNumber != 0))
-                        && PetManager.PetSummonAfterDismountTimer.IsFinished 
-                        && !Me.Mounted 
-                        && !Me.OnTaxi,
+                        && PetManager.PetSummonAfterDismountTimer.IsFinished
+                        && !Me.Mounted
+                        && !Me.OnTaxi
+                        && !Me.InVehicle,
 
                     new PrioritySelector(
 
                         Spell.WaitForCastOrChannel(),
 
                         new Action( r => {
-                            string line = string.Format("CreateHunterCallPetBehavior({0}):  ", reviveInCombat); 
+                            string line = string.Format("CreateHunterCallPetBehavior({0}):  ", reviveInCombat);
                             if ( Pet == null )
                                 line += "no pet currently";
                             else if ( !Pet.IsAlive )
                                 line += "pet is dead";
-                            else 
+                            else
                                 line += string.Format( "have pet {0} but want pet {1}", ActivePetNumber, PetWeWant );
 
                             Logger.WriteDebug(line);
@@ -973,10 +975,10 @@ namespace Singular.ClassSpecific.Hunter
         #endregion
 
         /// <summary>
-        /// creates composite that buffs Misdirection on appropriate target.  always cast on Pet for Normal, never cast at all in PVP, 
+        /// creates composite that buffs Misdirection on appropriate target.  always cast on Pet for Normal, never cast at all in PVP,
         /// conditionally cast in Instances based upon parameter value
         /// </summary>
-        /// <param name="buffForPull">applies to Instances only.  true = call is for pull behavior so allow use in instances; 
+        /// <param name="buffForPull">applies to Instances only.  true = call is for pull behavior so allow use in instances;
         /// false = disabled in instances</param>
         /// <returns></returns>
         public static Composite CreateMisdirectionBehavior()
@@ -985,7 +987,7 @@ namespace Singular.ClassSpecific.Hunter
             if ( SingularRoutine.CurrentWoWContext == WoWContext.Normal )
             {
                 return new ThrottlePasses( 5,
-                    new Decorator( 
+                    new Decorator(
                         ret => Me.GotAlivePet && !Me.HasAura("Misdirection"),
                         Spell.HandleOffGCD( Spell.Cast("Misdirection", on => Me.Pet, req => Me.GotAlivePet && Pet.Distance < 100, gcd: HasGcd.No))
                         )
@@ -1095,13 +1097,13 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CastSteadyShot(UnitSelectionDelegate onUnit, SimpleBooleanDelegate req = null)
         {
             return new Throttle(
-                TimeSpan.FromMilliseconds(500), 
+                TimeSpan.FromMilliseconds(500),
                 new Decorator(
                     ret => onUnit(ret) != null
                         && (req == null || req(ret))
                         && onUnit(ret).SpellDistance() < 40
                         && SpellManager.HasSpell("Steady Shot"),
-                
+
                     new Sequence(
                         new Action(ret => Spell.LogCast("Steady Shot", onUnit(ret))),
                         new Action(ret => Spell.CastPrimative("Steady Shot", onUnit(ret)))
@@ -1123,7 +1125,7 @@ namespace Singular.ClassSpecific.Hunter
                 new Action(ret =>
                 {
                     if (!HunterSettings.CrowdControlFocus)
-                        ccUnit = Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => NeedsNormalCrowdControl(u));
+                        ccUnit = Unit.NearbyUnfriendlyUnits.FirstOrDefault(NeedsNormalCrowdControl);
                     else if (Me.FocusedUnit != null && Unit.ValidUnit(Me.FocusedUnit) && NeedsNormalCrowdControl(Me.FocusedUnit))
                         ccUnit = Me.FocusedUnit;
                     else
@@ -1181,13 +1183,13 @@ namespace Singular.ClassSpecific.Hunter
         //
         private static bool NeedsNormalCrowdControl(WoWUnit u)
         {
-            bool good = u.Combat 
-                && u.IsTargetingMyPartyMember 
-                && u.Distance <= 40 
+            bool good = u.Combat
+                && u.IsTargetingMyPartyMember
+                && u.Distance <= 40
                 && !u.IsCrowdControlled()
                 // && !u.HasAnyAura("Explosive Trap", "Ice Trap", "Freezing Trap", "Snake Trap")
                 && u.Guid != TargetGuid
-                && !Blacklist.Contains(u.Guid, BlacklistFlags.Combat)                   
+                && !Blacklist.Contains(u.Guid, BlacklistFlags.Combat)
                 && !Unit.NearbyFriendlyPlayers.Any( g => g.CurrentTargetGuid == u.Guid);
             return good;
         }
@@ -1288,7 +1290,7 @@ namespace Singular.ClassSpecific.Hunter
 
 		StickyBomb = BindingShot,
 		RangersNet = WyvernString,
-		
+
         AMurderOfCrowsBeastMastery = 16,
         Barrage,
         Volley,
@@ -1307,5 +1309,5 @@ namespace Singular.ClassSpecific.Hunter
 
 		SpittingCobra = Stampede,
 		ExpertTrapper = KillerCobra,
-	}
+    }
 }

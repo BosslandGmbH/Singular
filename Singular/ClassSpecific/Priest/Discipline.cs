@@ -19,7 +19,7 @@ using Styx.WoWInternals;
 using CommonBehaviors.Actions;
 using System.Collections.Generic;
 using System.Drawing;
-using Singular.ClassSpecific.DemonHunter;
+using Styx.Common;
 
 namespace Singular.ClassSpecific.Priest
 {
@@ -50,7 +50,7 @@ namespace Singular.ClassSpecific.Priest
 
         private static bool HasReflectiveShield = false;
 
-        
+
         private static bool SkipForSpiritShell(WoWUnit u)
         {
             if (IsSpiritShellEnabled())
@@ -63,7 +63,7 @@ namespace Singular.ClassSpecific.Priest
             return unit != null && (!unit.HasAura("Weakened Soul") || Me.HasAura("Divine Insight"));
         }
 
-        #endregion 
+        #endregion
 
         [Behavior(BehaviorType.Initialize, WoWClass.Priest, WoWSpec.PriestDiscipline)]
         public static Composite CreateDiscInitialize()
@@ -136,7 +136,7 @@ namespace Singular.ClassSpecific.Priest
                     )
                 );
 
-            #endregion  
+            #endregion
 
             #region Keep Up Borrowed Time
 
@@ -179,7 +179,7 @@ namespace Singular.ClassSpecific.Priest
                     Spell.Cast("Pain Suppression",
                         mov => false,
                         on => (WoWUnit) on,
-                        req => ((WoWUnit)req).IsPlayer 
+                        req => ((WoWUnit)req).IsPlayer
                             && ((WoWUnit)req).HealthPercent < PriestSettings.DiscHeal.PainSuppression
                         )
                     )
@@ -212,8 +212,8 @@ namespace Singular.ClassSpecific.Priest
                                             Logger.WriteDebug("PW:B - FAILED - Power Word: Barrier is on cooldown");
                                         else
                                             Logger.WriteDebug("PW:B - Something FAILED with Power Word: Barrier cast sequence (target={0}, h={1:F1}%, d={2:F1} yds, spellmax={3:F1} yds, cooldown={4})",
-                                                ((WoWUnit)ret).SafeName(), 
-                                                ((WoWUnit)ret).HealthPercent, 
+                                                ((WoWUnit)ret).SafeName(),
+                                                ((WoWUnit)ret).HealthPercent,
                                                 ((WoWUnit)ret).Distance,
                                                 Spell.ActualMaxRange("Power Word: Barrier", (WoWUnit)ret),
                                                 Spell.IsSpellOnCooldown("Power Word: Barrier")
@@ -231,7 +231,7 @@ namespace Singular.ClassSpecific.Priest
             #endregion
 
             #region Tank Buffing
-            
+
             if (PriestSettings.DiscHeal.PrayerOfHealing != 0)
                 behavs.AddBehavior(HealthToPriority(99) + PriHighBase, "Spirit Shell - Group MinCount: " + PriestSettings.DiscHeal.CountPrayerOfHealing, "Prayer of Healing",
                     new Decorator(
@@ -275,7 +275,7 @@ namespace Singular.ClassSpecific.Priest
                         )
                     )
                 );
-            
+
 
             #endregion
 
@@ -337,7 +337,7 @@ namespace Singular.ClassSpecific.Priest
                                 )
                             )
                         )
-                    );                   
+                    );
             }
 
             #endregion
@@ -345,7 +345,7 @@ namespace Singular.ClassSpecific.Priest
             #region AoE Heals
 
             int maxDirectHeal = Math.Max(PriestSettings.DiscHeal.FlashHeal, PriestSettings.DiscHeal.Heal);
-            
+
             if (PriestSettings.DiscHeal.DiscLevel90Talent != 0)
                 behavs.AddBehavior(HealthToPriority(PriestSettings.DiscHeal.DiscLevel90Talent) + PriAoeBase, "Halo @ " + PriestSettings.DiscHeal.DiscLevel90Talent + "% MinCount: " + PriestSettings.DiscHeal.CountLevel90Talent, "Halo",
                     new Decorator(
@@ -383,8 +383,8 @@ namespace Singular.ClassSpecific.Priest
                     new Decorator(
                         req => Me.Combat && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid) && Me.IsMoving,
                         Spell.Cast(
-                            "Holy Nova", 
-                            on => (WoWUnit)on, 
+                            "Holy Nova",
+                            on => (WoWUnit)on,
                             req => PriestSettings.DiscHeal.CountHolyNova <= HealerManager.Instance.TargetList.Count( u => u.HealthPercent.Between(1, PriestSettings.DiscHeal.HolyNova) && u.SpellDistance() < 12)
                             )
                         )
@@ -453,7 +453,7 @@ namespace Singular.ClassSpecific.Priest
                 );
 
             #endregion
-            
+
             behavs.OrderBehaviors();
 
             if (selfOnly == false && CompositeBuilder.CurrentBehaviorType == BehaviorType.Combat)
@@ -551,7 +551,7 @@ namespace Singular.ClassSpecific.Priest
                 ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
                 new PrioritySelector(
                     Spell.BuffSelf("Power Word: Shield", ret => Me.Combat && Me.HealthPercent < PriestSettings.PowerWordShield && CanWePwsUnit( Me)),
-                    
+
                     Common.CreatePsychicScreamBehavior(),
 
                     Spell.Cast("Plea",
@@ -573,9 +573,9 @@ namespace Singular.ClassSpecific.Priest
                     req => !Unit.IsTrivial(Me.CurrentTarget),
                     new PrioritySelector(
                         Common.CreateFadeBehavior(),
-                        
-                        Spell.BuffSelf("Power Word: Shield", 
-                            req => HasReflectiveShield 
+
+                        Spell.BuffSelf("Power Word: Shield",
+                            req => HasReflectiveShield
                                 && SingularRoutine.CurrentWoWContext == WoWContext.Normal
                             ),
 
@@ -615,9 +615,9 @@ namespace Singular.ClassSpecific.Priest
 
                         // slow pull if no aggro and not competing for mobs
                         Spell.Cast(
-                            "Smite", 
-                            mov => true, 
-                            on => Me.CurrentTarget, 
+                            "Smite",
+                            mov => true,
+                            on => Me.CurrentTarget,
                             req => !ObjectManager.GetObjectsOfType<WoWUnit>(true,false).Any( u => u.Aggro || (u.IsPlayer && !u.IsMe && u.DistanceSqr < 60 * 60))
                             ),
 
@@ -670,10 +670,10 @@ namespace Singular.ClassSpecific.Priest
                         {
                             WoWUnit unit = Unit.NearbyUnfriendlyUnits
                                 .FirstOrDefault(
-                                    u => (u.TaggedByMe || u.Aggro) 
-                                        && u.Guid != Me.CurrentTargetGuid 
-                                        && u.IsTargetingMeOrPet 
-                                        && !u.HasMyAura("Shadow Word: Pain") 
+                                    u => (u.TaggedByMe || u.Aggro)
+                                        && u.Guid != Me.CurrentTargetGuid
+                                        && u.IsTargetingMeOrPet
+                                        && !u.HasMyAura("Shadow Word: Pain")
                                         && !u.IsCrowdControlled()
                                     );
                             return unit;
@@ -756,7 +756,7 @@ namespace Singular.ClassSpecific.Priest
         private static Composite CreateDiscAtonementMovement()
         {
             // return Helpers.Common.EnsureReadyToAttackFromMediumRange();
-            
+
             if (SingularSettings.Instance.StayNearTank)
                 return Movement.CreateFaceTargetBehavior();
 

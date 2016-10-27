@@ -24,7 +24,7 @@ namespace Singular.ClassSpecific.DeathKnight
 	    private static DeathKnightSettings Settings => SingularSettings.Instance.DeathKnight();
 	    public static long RunicPowerDeficit => Me.MaxRunicPower - Me.CurrentRunicPower;
 	    public static bool HasTalent(DeathKnightTalents talent) => TalentManager.IsSelected((int)talent);
-		
+
 		#region Pull
 
 		// All DKs should be throwing death grip when not in intances. It just speeds things up, and makes a mess for PVP :)
@@ -43,7 +43,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
-						
+
                         Common.CreateDeathGripBehavior()
                     )
                 )
@@ -80,27 +80,43 @@ namespace Singular.ClassSpecific.DeathKnight
         }
 
         #endregion
-	
+
         #region Death Grip
-		
+
         public static Composite CreateDeathGripBehavior()
         {
             return new Sequence(
-                Spell.Cast("Death Grip", 
-                    req => !MovementManager.IsMovementDisabled 
+                Spell.Cast("Death Grip",
+                    req => !MovementManager.IsMovementDisabled
                         && (SingularRoutine.CurrentWoWContext != WoWContext.Instances || !Me.GroupInfo.IsInParty || Me.IsTank)
-                        && Me.CurrentTarget.DistanceSqr > 10 * 10 
+                        && Me.CurrentTarget.DistanceSqr > 10 * 10
                         && (((Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TaggedByMe) && !Me.CurrentTarget.IsMovingTowards() ) || (!Me.CurrentTarget.TaggedByOther && Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull))
                     ),
                 new DecoratorContinue( req => Me.IsMoving, new Action(req => StopMoving.Now())),
                 new WaitContinue( 1, until => !Me.GotTarget() || Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
                 );
         }
-		
+
 		#endregion
 
+		public static Composite CreateAntiMagicShellBehavior()
+        {
+            return Spell.Cast(
+                "Anti-Magic Shell",
+                on =>
+                {
+                    bool isMindFreezeOnCD = Spell.IsSpellOnCooldown("Mind Freeze");
+                    return Unit.UnitsInCombatWithUsOrOurStuff(40)
+                        .FirstOrDefault(u =>
+                            (u.IsCasting)
+                            && u.CurrentTargetGuid == StyxWoW.Me.Guid
+                            && (!u.CanInterruptCurrentSpellCast || isMindFreezeOnCD || !Spell.CanCastHack("Mind Freeze", u))
+                    );
+                });
+        }
+
         /// <summary>
-        /// invoke on CurrentTarget if not tagged. use ranged instant casts if possible.  this  
+        /// invoke on CurrentTarget if not tagged. use ranged instant casts if possible.  this
         /// is a blend of abilities across all specializations
         /// </summary>
         /// <returns></returns>

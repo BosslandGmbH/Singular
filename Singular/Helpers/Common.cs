@@ -43,7 +43,7 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public static bool UseLongCoolDownAbility
         {
@@ -137,14 +137,14 @@ namespace Singular.Helpers
             {
                 aaprio.AddChild(
                     new Decorator(
-                        ret => 
+                        ret =>
                         {
                             if (StyxWoW.Me.IsAutoAttacking)
                                 return false;
                             if (!Me.GotTarget())
                                 return false;
                             return Me.CurrentTarget.SpellDistance() < 40;
-                        },                                
+                        },
                         new Action(ret =>
                         {
                             WoWUnit unit = Me.CurrentTarget;
@@ -185,7 +185,7 @@ namespace Singular.Helpers
                         1,
                         TimeSpan.FromMilliseconds(500),
                         RunStatus.Failure,
-                        new Action( r => 
+                        new Action( r =>
                         {
                             if (Me.GotAlivePet)
                             {
@@ -203,7 +203,7 @@ namespace Singular.Helpers
                                     {
                                         PetManager.Attack(Me.CurrentTarget);
                                     }
-                                }                                
+                                }
                             }
 
                             return RunStatus.Failure;
@@ -238,9 +238,9 @@ namespace Singular.Helpers
                                         // pickup aggroed mobs I'm not attacking (grab easy agro first)
                                         WoWUnit aggroedOnMe = Unit.NearbyUnfriendlyUnits
                                             .Where(u => u.CurrentTargetGuid == Me.Guid && u.Combat && !u.IsCrowdControlled())
-                                            .OrderBy(u => u.Location.DistanceSqr(Me.Pet.Location))
+                                            .OrderBy(u => u.Location.DistanceSquared(Me.Pet.Location))
                                             .FirstOrDefault();
-                                        
+
                                         // otherwise, pickup My CurrentTarget
                                         if (aggroedOnMe == null)
                                             aggroedOnMe = Me.CurrentTarget;
@@ -261,7 +261,7 @@ namespace Singular.Helpers
                                             PetManager.Attack(aggroedOnMe);
                                         }
                                     }
-                                }                                
+                                }
                             }
 
                             return RunStatus.Failure;
@@ -305,7 +305,7 @@ namespace Singular.Helpers
 
         private static WoWUnit _unitInterrupt = null;
 
-        /// <summary>Creates an interrupt spell cast composite. This attempts to use spells in order of range (shortest to longest).  
+        /// <summary>Creates an interrupt spell cast composite. This attempts to use spells in order of range (shortest to longest).
         /// behavior consists only of spells that apply to current toon based upon class, spec, and race
         /// </summary>
         public static Composite CreateInterruptBehavior()
@@ -315,7 +315,7 @@ namespace Singular.Helpers
 
             Composite actionSelectTarget;
             if (SingularSettings.Instance.InterruptTarget == CheckTargets.Current)
-                actionSelectTarget = new Action( 
+                actionSelectTarget = new Action(
                     ret => {
                         _unitInterrupt = null;
                         if (Me.Class == WoWClass.Shaman && ClassSpecific.Shaman.Totems.Exist(WoWTotem.Grounding))
@@ -331,7 +331,7 @@ namespace Singular.Helpers
                     );
             else // if ( SingularSettings.Instance.InterruptTarget == InterruptType.All )
             {
-                actionSelectTarget = new Action( 
+                actionSelectTarget = new Action(
                     ret => {
                         _unitInterrupt = null;
                         if (Me.Class == WoWClass.Shaman && ClassSpecific.Shaman.Totems.Exist(WoWTotem.Grounding))
@@ -353,15 +353,15 @@ namespace Singular.Helpers
             if (Me.Class == WoWClass.Warlock)
             {
                 // this will be either a Optical Blast or Spell Lock
-                prioSpell.AddChild( 
-                    Spell.Cast( 
-                        "Command Demon", 
-                        on => _unitInterrupt, 
-                        ret => _unitInterrupt != null 
-                            && _unitInterrupt.Distance < 40 
+                prioSpell.AddChild(
+                    Spell.Cast(
+                        "Command Demon",
+                        on => _unitInterrupt,
+                        ret => _unitInterrupt != null
+                            && _unitInterrupt.Distance < 40
                             && (
-                                Singular.ClassSpecific.Warlock.Common.GetCurrentPet() == WarlockPet.Felhunter 
-                                || Singular.ClassSpecific.Warlock.Common.GetCurrentPet() == WarlockPet.Doomguard 
+                                Singular.ClassSpecific.Warlock.Common.GetCurrentPet() == WarlockPet.Felhunter
+                                || Singular.ClassSpecific.Warlock.Common.GetCurrentPet() == WarlockPet.Doomguard
                                )
                         )
                     );
@@ -420,10 +420,7 @@ namespace Singular.Helpers
             if (Me.Class == WoWClass.Paladin)
                 prioSpell.AddChild( Spell.Cast("Hammer of Justice", ctx => _unitInterrupt));
 
-            if (TalentManager.CurrentSpec == WoWSpec.DruidBalance )
-                prioSpell.AddChild( Spell.Cast("Hammer of Justice", ctx => _unitInterrupt));
-
-            if (Me.Class == WoWClass.Warrior) 
+            if (Me.Class == WoWClass.Warrior)
                 prioSpell.AddChild( Spell.Cast("Disrupting Shout", ctx => _unitInterrupt));
 
             #endregion
@@ -455,7 +452,7 @@ namespace Singular.Helpers
                 // Gag Order only works on non-bosses due to it being a silence, not an interrupt!
                 prioSpell.AddChild( Spell.Cast("Heroic Throw", ctx => _unitInterrupt, ret =>  !_unitInterrupt.IsBoss()));
 
-            if ( Me.Class == WoWClass.Priest ) 
+            if ( Me.Class == WoWClass.Priest )
                 prioSpell.AddChild( Spell.Cast("Silence", ctx => _unitInterrupt));
 
             if (Me.Class == WoWClass.DeathKnight)
@@ -463,6 +460,9 @@ namespace Singular.Helpers
 
             if (Me.Class == WoWClass.Mage)
                 prioSpell.AddChild(Spell.Cast("Frostjaw", ctx => _unitInterrupt));
+
+            if (Me.Class == WoWClass.DemonHunter)
+                prioSpell.AddChild(Spell.CastOnGround("Sigil of Silence", on => _unitInterrupt, req => Me.IsSafelyFacing(_unitInterrupt) && !_unitInterrupt.IsMoving));
 
             #endregion
 
@@ -480,16 +480,13 @@ namespace Singular.Helpers
             if (Me.Class == WoWClass.Druid)
                 prioSpell.AddChild( Spell.Cast("Solar Beam", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Moonkin));
 
-            if (TalentManager.CurrentSpec == WoWSpec.ShamanElemental || TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement )
-                prioSpell.AddChild( Spell.Cast("Solar Beam", ctx => _unitInterrupt, ret => true));
-
             #endregion
 
-            return new ThrottlePasses( 2, TimeSpan.FromMilliseconds(500),  
+            return new ThrottlePasses( 2, TimeSpan.FromMilliseconds(500),
                 new Sequence(
-                    actionSelectTarget,               
+                    actionSelectTarget,
                     // majority of these are off GCD, so throttle all to avoid most fail messages
-                    prioSpell 
+                    prioSpell
                     )
                 );
         }
@@ -542,8 +539,8 @@ namespace Singular.Helpers
             const int SPELL_FROSTWOLF_WAR_WOLF = 164222;
 
             return new Decorator(
-                ret => StyxWoW.Me.Mounted 
-                    && !MovementManager.IsMovementDisabled 
+                ret => StyxWoW.Me.Mounted
+                    && !MovementManager.IsMovementDisabled
                     && (StyxWoW.Me.ZoneId != ZONE_NAGRAND || !Me.HasAura( Me.IsHorde ? SPELL_FROSTWOLF_WAR_WOLF : SPELL_TELAARI_TALBUK)),
                 new Sequence(
                     new DecoratorContinue(ret => StyxWoW.Me.IsFlying,
@@ -562,13 +559,13 @@ namespace Singular.Helpers
                                 new Action( ret => Logger.WriteDebug( "warning -- tried to descend but IsMoving == false ....!"))
                                 ),
                             new WaitContinue(30, ret => !StyxWoW.Me.IsFlying, new ActionAlwaysSucceed()),
-                            new DecoratorContinue( 
-                                ret => StyxWoW.Me.IsFlying, 
+                            new DecoratorContinue(
+                                ret => StyxWoW.Me.IsFlying,
                                 new Action( ret => Logger.WriteDebug( "error -- still flying -- descend appears to have failed....!"))
                                 ),
                             new Action(ret => WoWMovement.MoveStop(WoWMovement.MovementDirection.Descend))
                             )
-                        ), // and finally dismount. 
+                        ), // and finally dismount.
                     new Action(r => {
                         Logger.WriteDebug( "Dismounting..." + (!string.IsNullOrEmpty(reason) ? (" Reason: " + reason) : string.Empty));
                         ShapeshiftForm shapeshift = StyxWoW.Me.Shapeshift;
@@ -588,7 +585,7 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite CreateStopAndDismount(string reason)
         {
-            return new Decorator( 
+            return new Decorator(
                 ret => !MovementManager.IsMovementDisabled,
                 new PrioritySelector(
                     new Decorator(
@@ -708,7 +705,7 @@ namespace Singular.Helpers
                 Safers.EnsureTarget(),
                 Helpers.Common.CreatePetAttack(),
                 Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior( 180, false),
+                Movement.CreateFaceTargetBehavior(70, false),
                 new Decorator(
                     req => Me.GotTarget() && Me.CurrentTarget.Distance < SingularSettings.Instance.MeleeDismountRange,
                     Helpers.Common.CreateDismount( Dynamics.CompositeBuilder.CurrentBehaviorType.ToString())   // should be Pull or Combat 99% of the time
@@ -882,16 +879,16 @@ namespace Singular.Helpers
                         req => (req as WoWGameObject) != null && (SingularSettings.Instance.SoulwellDistance == 0 || (req as WoWGameObject).Distance < SingularSettings.Instance.SoulwellDistance),
                         new PrioritySelector(
                             new Throttle(
-                                TimeSpan.FromMilliseconds(500), 
-                                new Action( r => 
-                                { 
-                                    Logger.WriteDebug("Soulwell: moving towards @ {0:F1} yds", (r as WoWGameObject).Distance); 
-                                    return RunStatus.Failure; 
+                                TimeSpan.FromMilliseconds(500),
+                                new Action( r =>
+                                {
+                                    Logger.WriteDebug("Soulwell: moving towards @ {0:F1} yds", (r as WoWGameObject).Distance);
+                                    return RunStatus.Failure;
                                 })
                                 ),
                             Movement.CreateMoveToLocationBehavior( loc => (loc as WoWGameObject).Location, true, range => (range as WoWGameObject).InteractRange - 0.5f),
                             new Sequence(
-                                new Action( r=> 
+                                new Action( r=>
                                 {
                                     Logger.Write( LogColor.Hilite, "^Interact with Soulwell");
                                     (r as WoWGameObject).Interact();
@@ -912,8 +909,8 @@ namespace Singular.Helpers
             }
         }
 
-        public static bool DoWeNeedBiscuits 
-        { 
+        public static bool DoWeNeedBiscuits
+        {
             get
             {
                 if (!SingularSettings.Instance.UseTable)
@@ -936,7 +933,7 @@ namespace Singular.Helpers
             }
         }
 
-       
+
 
         private static DateTime timeMoveToTable = DateTime.MinValue;
 
@@ -950,8 +947,8 @@ namespace Singular.Helpers
 
             // throttle to minimize the impact of the list searches to once every interval
             return new Decorator(
-                req => !MovementManager.IsMovementDisabled 
-                    && !ClassSpecific.Mage.Common.Gotfood 
+                req => !MovementManager.IsMovementDisabled
+                    && !ClassSpecific.Mage.Common.Gotfood
                     && (CharacterSettings.Instance.DrinkAmount + CharacterSettings.Instance.FoodAmount) > 0
                     && requirements(req),
                 new Sequence(
@@ -986,7 +983,7 @@ namespace Singular.Helpers
                                     Logger.Write( LogColor.Hilite, "Mage Table: only {0} bag slots free - reducing amount we pickup", slotsToFill);
                                     slotsNeeded = slotsToFill;
                                 }
-                            
+
                                 return true;
                             },
                             new PrioritySelector(

@@ -125,13 +125,41 @@ namespace Singular.Settings
         public bool AllowPickPocketInCombat { get; set; }
         #endregion
 
-        #region Outlaw HonorTalents
+        #region Outlaw
         [Setting]
         [DefaultValue(true)]
-        [Category("Outlaw - Honor Talents")]
+        [Category("Outlaw")]
         [DisplayName("Use Dismantle")]
         [Description("True: use Dismantle on cooldown; False: do not cast")]
         public bool UseDimantle { get; set; }
+
+		[Setting]
+        [DefaultValue(3)]
+        [Category("Outlaw")]
+        [DisplayName("Roll the Bones buff count - Burst")]
+        [Description("If we can cast Adrenaline Rush: Re-Roll the Bones untill we have this many buffs.")]
+        public int RollTheBonesBurstCount { get; set; }
+
+		[Setting]
+        [DefaultValue(2)]
+        [Category("Outlaw")]
+        [DisplayName("Roll the Bones buff count - Normal")]
+        [Description("If Adrenaline Rush is on cooldown: Re-Roll the Bones untill we have this many buffs.")]
+        public int RollTheBonesNormalCount { get; set; }
+
+		[Setting]
+        [DefaultValue(50)]
+        [Category("Outlaw")]
+        [DisplayName("Riposte - Health%")]
+        [Description("Health % to use Riposte at during Combat and enemy in melee, 0 to disable.")]
+        public int RiposteHealth { get; set; }
+
+		[Setting]
+        [DefaultValue(4)]
+        [Category("Outlaw")]
+        [DisplayName("Riposte - enemy Count")]
+        [Description("Use Riposte when this many enemies attacking us in melee.")]
+        public int RiposteCount { get; set; }
         #endregion
 
         #region Assassination
@@ -156,6 +184,23 @@ namespace Singular.Settings
         [Description("Use FoK as Combo Point builder at this enemy count")]
         public int FanOfKnivesCount { get; set; }
         #endregion
+
+        #region Category: Artifact Weapon
+        [Setting]
+        [DefaultValue(UseDPSArtifactWeaponWhen.OnCooldown)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Use When...")]
+        [Description("Toggle when the artifact weapon ability should be used.")]
+        public UseDPSArtifactWeaponWhen UseDPSArtifactWeaponWhen { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Artifact Weapon Usage")]
+        [DisplayName("Use Only In AoE")]
+        [Description("If set to true, this will make the artifact waepon only be used when more than one mob is attacking us.")]
+        public bool UseArtifactOnlyInAoE { get; set; }
+        #endregion
+
 
     }
 }

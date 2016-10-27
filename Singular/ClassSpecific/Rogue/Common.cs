@@ -19,6 +19,7 @@ using Styx.CommonBot.POI;
 using System.Collections.Generic;
 using Styx.Helpers;
 using System.Drawing;
+using System.Numerics;
 using Styx.Common;
 using Singular.Utilities;
 using Styx.CommonBot.Frames;
@@ -35,7 +36,7 @@ namespace Singular.ClassSpecific.Rogue
         /// checks if we are stealthed or an ability granting use of stealth only abilities is active
         /// </summary>
         public static bool AreStealthAbilitiesAvailable { get { return Me.HasAnyAura("Stealth", "Shadow Dance", "Vanish"); } }
-        
+
         /// <summary>
         /// checks if we are stealthed.  does not include buffs which grant use of stealth abilities
         /// while not stealthed
@@ -45,7 +46,7 @@ namespace Singular.ClassSpecific.Rogue
         [Behavior(BehaviorType.Initialize, WoWClass.Rogue)]
         public static Composite CreateRogueInitialize()
         {
-            // describe configured Stealth Behavior           
+            // describe configured Stealth Behavior
             if (RogueSettings.Stealth == StealthMode.Always || RogueSettings.Stealth == StealthMode.Never)
             {
                 Logger.Write(LogColor.Init, "Stealth: will stealth '{0}'", RogueSettings.Stealth);
@@ -72,12 +73,12 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         /// <summary>
-        /// determines if we should use Cloak and Dagger ability.  this allows encapsulating check for 
+        /// determines if we should use Cloak and Dagger ability.  this allows encapsulating check for
         /// pick pocket mode, etc
         /// </summary>
         /// <param name="unit"></param>
         /// <returns></returns>
-        /// 
+        ///
         [Behavior(BehaviorType.Rest, WoWClass.Rogue)]
         public static Composite CreateRogueRest()
         {
@@ -86,7 +87,7 @@ namespace Singular.ClassSpecific.Rogue
 
                 CreateStealthBehavior(ret => RogueSettings.StealthIfEating && Helpers.Rest.IsEatingOrDrinking),
                 Rest.CreateDefaultRestBehaviour( ),
-                CreateStealthBehavior(ret => RogueSettings.Stealth == StealthMode.Always),
+                CreateStealthBehavior(ret => RogueSettings.Stealth == StealthMode.Always && !Me.Mounted),
 
                 CheckThatDaggersAreEquippedIfNeeded()
                 );
@@ -125,7 +126,7 @@ namespace Singular.ClassSpecific.Rogue
             return new Decorator(
                 ret => !Spell.IsCastingOrChannelling() & !Spell.IsGlobalCooldown() && !AreStealthAbilitiesAvailable && !Group.AnyHealerNearby,
                 new PrioritySelector(
-                    Spell.HandleOffGCD(Spell.Cast("Crimson Vail", ret => Me.HealthPercent <= RogueSettings.CrimsonVialHealth)),
+                    Spell.HandleOffGCD(Spell.Cast("Crimson Vial", ret => Me.HealthPercent <= RogueSettings.CrimsonVialHealth)),
                     Movement.CreateFaceTargetBehavior(),
                     new Decorator(
                         ret => SingularSettings.Instance.UseBandages
@@ -157,8 +158,8 @@ namespace Singular.ClassSpecific.Rogue
                             new WaitContinue(TimeSpan.FromMilliseconds(1500), ret => !Spell.IsGlobalCooldown(), new ActionAlwaysSucceed()),
                             Item.CreateUseBandageBehavior()
                             )
+                            )
                         )
-                    )
                 );
 
         }
@@ -169,7 +170,7 @@ namespace Singular.ClassSpecific.Rogue
             return new PrioritySelector(
 
                 CreateStealthBehavior(
-                    ret => RogueSettings.Stealth == StealthMode.Always 
+                    ret => RogueSettings.Stealth == StealthMode.Always
                         && BotPoi.Current.Type != PoiType.Loot
                         && BotPoi.Current.Type != PoiType.Skin
                         && !ObjectManager.GetObjectsOfType<WoWUnit>().Any(u => u.IsDead && ((CharacterSettings.Instance.LootMobs && u.CanLoot && u.Lootable) || (CharacterSettings.Instance.SkinMobs && u.Skinnable && u.CanSkin)) && u.Distance < CharacterSettings.Instance.LootRadius)
@@ -197,7 +198,7 @@ namespace Singular.ClassSpecific.Rogue
                         req => Me.CurrentTarget.IsTrivial() && (!RogueSettings.UsePickPocket || !IsMobPickPocketable(Me.CurrentTarget)),
                         new PriDbg(3, LogColor.Hilite, s => string.Format("^Stealth: suppressed for trivial level {0} mob {1}", Me.CurrentTarget.Level, !RogueSettings.UsePickPocket ? "" : "we cannot Pick Pocket"))
                         ),
-                    CreateStealthBehavior( 
+                    CreateStealthBehavior(
                         ret => {
                             float dist = Me.CurrentTarget.SpellDistance();
 
@@ -270,7 +271,7 @@ namespace Singular.ClassSpecific.Rogue
                             if (Me.CurrentTarget.TimeToDeath() < 30)
                                 return false;
 
-                            return true; 
+                            return true;
                             }),
 
                         Common.CreateRogueBlindOnAddBehavior(),
@@ -306,7 +307,7 @@ namespace Singular.ClassSpecific.Rogue
                         // Pick Pocket? for those that favor coin over combat, try here in case we restealth
                         CreateRoguePickPocket(),
 
-                        // DPS Boost               
+                        // DPS Boost
                         new Sequence(
                             new Throttle(TimeSpan.FromSeconds(2),
                                 new Decorator(
@@ -359,13 +360,13 @@ namespace Singular.ClassSpecific.Rogue
                 );
         }
 
-        
+
         public static Composite CreatePullMobMovingAwayFromMe()
         {
             return new Throttle( 2,
                 new Decorator(
-                    ret => Me.GotTarget() 
-                        && Me.CurrentTarget.IsMoving && Me.IsMoving 
+                    ret => Me.GotTarget()
+                        && Me.CurrentTarget.IsMoving && Me.IsMoving
                         && Me.CurrentTarget.MovementInfo.CurrentSpeed >= Me.MovementInfo.CurrentSpeed
                         && Me.IsSafelyBehind( Me.CurrentTarget),
                     new Sequence(
@@ -422,7 +423,7 @@ namespace Singular.ClassSpecific.Rogue
                     )
                 );
         }
-       
+
         public static WoWGuid lastSapTarget { get; set; }
 
         private static WoWUnit GetBestSapTarget()
@@ -444,7 +445,7 @@ namespace Singular.ClassSpecific.Rogue
 
             if (RogueSettings.SapAddDistance > 0 && (!RogueSettings.PickPocketOnlyPull || !RogueSettings.UsePickPocket || SingularRoutine.CurrentWoWContext != WoWContext.Normal))
             {
-                // stick with our target if we thought it was a good choice previously 
+                // stick with our target if we thought it was a good choice previously
                 // ... (to avoid zig zag back and forth at boundary distance conditions)
                 if (lastSapTarget.IsValid && Me.CurrentTargetGuid == lastSapTarget && IsUnitViableForSap(Me.CurrentTarget))
                     closestTarget = Me.CurrentTarget;
@@ -452,7 +453,7 @@ namespace Singular.ClassSpecific.Rogue
                 {
                     closestTarget = Unit.UnfriendlyUnitsNearTarget(RogueSettings.SapAddDistance)
                          .Where(u => u.Guid != Me.CurrentTargetGuid && !u.IsSensitiveDamage() && IsUnitViableForSap(u))
-                         .OrderBy(u => u.Location.DistanceSqr(Me.CurrentTarget.Location))
+                         .OrderBy(u => u.Location.DistanceSquared(Me.CurrentTarget.Location))
                          .ThenBy(u => u.DistanceSqr)
                          .FirstOrDefault();
 
@@ -538,14 +539,14 @@ namespace Singular.ClassSpecific.Rogue
                     // for Subterfuge, wait up to 2500 secs then cast Ambush (we hope)
                     // for non-Subterfuge, melee swings on target building up energy
                     new Sequence(
-                        Spell.Cast("Cheap Shot", 
+                        Spell.Cast("Cheap Shot",
                             mov => false,
                             on => Me.CurrentTarget,
                             ret => Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull && (!Me.CurrentTarget.IsStunned() || Me.CurrentTarget.HasAura("Sap") ),
                             cancel => false // only to make sure GCD has started
                             ),
                         new Wait( TimeSpan.FromMilliseconds(300), until => Me.CurrentTarget.HasAura("Cheap Shot"), new ActionAlwaysSucceed()),
-                        new WaitContinue( 
+                        new WaitContinue(
                             TimeSpan.FromMilliseconds( 3700),
                             until => {
                                 if (Common.AoeCount > 1)
@@ -640,7 +641,7 @@ namespace Singular.ClassSpecific.Rogue
             {
                 if (!StyxWoW.Me.GroupInfo.IsInParty && !StyxWoW.Me.GroupInfo.IsInRaid)
                     return null;
-                
+
                 // If the player has a focus target set, use it instead. TODO: Add Me.FocusedUnit to the HB API.
                 if (StyxWoW.Me.FocusedUnitGuid.IsValid)
                     return StyxWoW.Me.FocusedUnit;
@@ -692,7 +693,7 @@ namespace Singular.ClassSpecific.Rogue
             return TalentManager.IsSelected((int)rogueTalents);
         }
 
-         
+
         internal static Composite CreateAttackFlyingOrUnreachableMobs()
         {
             return new Decorator(
@@ -722,8 +723,7 @@ namespace Singular.ClassSpecific.Rogue
                         return true;
                     }
 
-                    WoWPoint dest = Me.CurrentTarget.Location;
-                    if ( !Me.CurrentTarget.IsWithinMeleeRange && !Styx.Pathing.Navigator.CanNavigateFully( Me.Location, dest))
+                    if ( !Me.CurrentTarget.IsWithinMeleeRange && !Movement.CanNavigateToMelee(Me.CurrentTarget))
                     {
                         Logger.Write( LogColor.Hilite, "{0} is not Fully Pathable! trying ranged attack....", Me.CurrentTarget.SafeName());
                         return true;
@@ -732,8 +732,9 @@ namespace Singular.ClassSpecific.Rogue
                     return false;
                     },
                 new PrioritySelector(
-                    Spell.Cast("Deadly Throw", req => Me.ComboPoints > 0),
                     Spell.Cast("Shuriken Toss"),
+                    Spell.Cast("Pistol Shot"),
+                    Spell.Cast("Poisoned Knife"),
                     Spell.Cast("Throw"),
 
                     // nothing else worked, so cancel stealth so we can proximity aggro
@@ -757,8 +758,8 @@ namespace Singular.ClassSpecific.Rogue
             requirements = requirements ?? (req => true);
 
             BehaviorType createdByBehavior = Dynamics.CompositeBuilder.CurrentBehaviorType;
-            SimpleBooleanDelegate needStealth = 
-                req => 
+            SimpleBooleanDelegate needStealth =
+                req =>
                 {
                     bool isStealthAllowed = false;
                     if (RogueSettings.Stealth == StealthMode.Always)
@@ -796,8 +797,8 @@ namespace Singular.ClassSpecific.Rogue
                 //    ),
 
                 Spell.BuffSelf(
-                    "Stealth", 
-                    req => 
+                    "Stealth",
+                    req =>
                     {
                         bool need = (bool) req;
                         if (!need)
@@ -821,7 +822,7 @@ namespace Singular.ClassSpecific.Rogue
             {
                 return new ActionAlwaysFail();
             }
-            
+
             // don't create behavior if pick pocket in combat not enabled
             if (!RogueSettings.AllowPickPocketInCombat && (Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Combat || Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.CombatBuffs))
             {
@@ -848,7 +849,7 @@ namespace Singular.ClassSpecific.Rogue
                         && (Me.CurrentTarget.IsWithinMeleeRange || (TalentManager.HasGlyph("Pick Pocket") && Me.CurrentTarget.SpellDistance() < 10))
                         && IsMobPickPocketable(Me.CurrentTarget),
                     new Sequence(
-                        ctx => Me.CurrentTarget, 
+                        ctx => Me.CurrentTarget,
                         new Action( r => { StopMoving.Now(); } ),
                         new Wait( TimeSpan.FromMilliseconds(500), until => !Me.IsMoving, new ActionAlwaysSucceed()),
                         new WaitContinue(TimeSpan.FromMilliseconds(RogueSettings.PrePickPocketPause), req => false, new ActionAlwaysSucceed()),
@@ -910,11 +911,11 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueOpenBoxes()
         {
             return new Decorator(
-                ret => RogueSettings.UsePickLock 
-                    && !Me.IsFlying 
-                    && !Me.Mounted 
-                    && !AreStealthAbilitiesAvailable 
-                    && SpellManager.HasSpell("Pick Lock") 
+                ret => RogueSettings.UsePickLock
+                    && !Me.IsFlying
+                    && !Me.Mounted
+                    && !AreStealthAbilitiesAvailable
+                    && SpellManager.HasSpell("Pick Lock")
                     && AutoLootIsEnabled()
                     && !MerchantFrame.Instance.IsVisible,
 
@@ -1026,7 +1027,7 @@ namespace Singular.ClassSpecific.Rogue
 
         /// <summary>
         /// following collection added to work around bugs in return values for Lockboxes
-        /// currently, Titanium Lockbox returns it requires Level 78.  Its lockpick 
+        /// currently, Titanium Lockbox returns it requires Level 78.  Its lockpick
         /// skill level required is 400, which a rogue gets at 80.  Since the Skill Level
         /// reported for this item is 0, this prevents spamming picklock attempts on
         /// a box that a 78-79 rogue cannot open
@@ -1185,7 +1186,7 @@ namespace Singular.ClassSpecific.Rogue
                 new PrioritySelector(
                     ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HasAnyOfMyAuras("Blind", "Sap")),
                     new Decorator(
-                        req => !Unit.NearbyUnitsInCombatWithUsOrOurStuff.Any(),
+                        req => req != null && !Unit.NearbyUnitsInCombatWithUsOrOurStuff.Any(),
                         new Action(r =>
                         {
                             Logger.Write(LogColor.Hilite, "^Break Crowd Control: time to kill {0} @ {1:F1} yds", ((WoWUnit)r).SafeName(), ((WoWUnit)r).SpellDistance());

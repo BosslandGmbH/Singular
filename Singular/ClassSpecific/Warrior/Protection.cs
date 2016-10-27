@@ -32,6 +32,9 @@ namespace Singular.ClassSpecific.Warrior
         static LocalPlayer Me => StyxWoW.Me;
         static WarriorSettings WarriorSettings => SingularSettings.Instance.Warrior();
 
+        const int ULTIMATUM_PROC = 122510;
+        const int FOCUSED_PROC = 202573;
+        const int IGNORE_PROC = 202574;
 
         //[Behavior(BehaviorType.Initialize, WoWClass.Warrior, WoWSpec.WarriorProtection)]
 
@@ -69,25 +72,14 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Heroic Throw", ret => WarriorSettings.ThrowPull == ThrowPull.HeroicThrow || WarriorSettings.ThrowPull == ThrowPull.Auto),
                         Common.CreateChargeBehavior(),
 
-                        //Buff up
-                        new Throttle( TimeSpan.FromSeconds(2),
-                            new PrioritySelector(
-                                PartyBuff.BuffGroup(Common.SelectedShoutAsSpellName)
-                                // Spell.Cast("Battle Shout", ret => !Me.HasAura("Battle Shout") && !Me.HasMyAura("Commanding Shout") && !Me.HasPartyBuff(PartyBuffType.AttackPower)),
-                                // Spell.Cast("Commanding Shout", ret => !Me.HasAura("Battle Shout") && !Me.HasMyAura("Battle Shout") && !Me.HasPartyBuff(PartyBuffType.Stamina))
-                                )
-                            ),
-
-                        Spell.Cast( "Shield Slam", req => HasShieldInOffHand ),
+                        Spell.Cast("Shield Slam", req => HasShieldInOffHand),
 
                         // just in case user botting a Prot Warrior without a shield
                         Spell.Cast("Revenge"),
-                        Spell.Cast("Devastate", ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
                         Spell.Cast("Thunder Clap", ret => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < Common.DistanceWindAndThunder(8) && !Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
 
                         // filler to try and do something more than auto attack at this point
                         Spell.Cast("Devastate"),
-                        Spell.Cast("Heroic Strike"),
 
                         CheckThatShieldIsEquippedIfNeeded()
                         )
@@ -107,44 +99,17 @@ namespace Singular.ClassSpecific.Warrior
                 new Throttle(    // throttle these because most are off the GCD
                     new PrioritySelector(
 
-                        Spell.Cast(
-                            "Intimidating Shout",
-                            on => Me.CurrentTarget,
-                            req =>
-                            {
-                                if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
-                                    return false;
-                                if (EventHandlers.TimeSinceAttackedByEnemyPlayer.TotalSeconds > 10 && SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds)
-                                    return false;
-                                if (!Spell.IsSpellOnCooldown("Pummel"))
-                                    return false;
-                                WoWUnit melee = Unit.UnfriendlyUnits(8).FirstOrDefault(u => u.IsPlayer && u.IsCasting && u.IsTargetingMyStuff() && Spell.CanCastHack("Intimidating Shout", u));
-                                if (melee == null)
-                                    return false;
-
-                                int countRanged = Unit.UnfriendlyUnits().Where(u => u.IsPlayer && u.SpellDistance().Between(8, 42)).Count(u => u.IsTargetingMyStuff());
-                                if (countRanged > 1)
-                                    return false;
-
-                                Logger.Write(LogColor.Hilite, "^Intimidating Shout: control {0} attempting to cast [{1}]", melee.SafeName(), melee.CastingSpell == null ? "n/a" : melee.CastingSpell.Name);
-                                return true;
-                            }
-                            ),
-
-                        Spell.HandleOffGCD(Spell.Cast("Demoralizing Shout", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(m => m.SpellDistance() < 10), req => true, gcd: HasGcd.No)),
-
                         Spell.HandleOffGCD(
                             new PrioritySelector(
                                 Spell.BuffSelf("Shield Wall", ret => Me.HealthPercent < WarriorSettings.WarriorShieldWallHealth, gcd: HasGcd.No),
                                 Spell.BuffSelf("Shield Barrier", ret => Me.HealthPercent < WarriorSettings.WarriorShieldBarrierHealth, gcd: HasGcd.No),
-                                Spell.BuffSelf("Shield Block", ret => Me.HealthPercent < WarriorSettings.WarriorShieldBlockHealth, gcd: HasGcd.No)
+                                Spell.BuffSelf("Shield Block", ret => Me.HealthPercent < WarriorSettings.WarriorShieldBlockHealth && !Me.HasAura("Shield Block"), gcd: HasGcd.No)
                                 )
                             ),
 
                         Spell.HandleOffGCD(
                             new PrioritySelector(
-                                Spell.HandleOffGCD(Spell.BuffSelf("Last Stand", ret => Me.HealthPercent < WarriorSettings.WarriorLastStandHealth, gcd: HasGcd.No)),
-                                Spell.HandleOffGCD(Common.CreateWarriorEnragedRegeneration())
+                                Spell.HandleOffGCD(Spell.BuffSelf("Last Stand", ret => Me.HealthPercent < WarriorSettings.WarriorLastStandHealth, gcd: HasGcd.No))
                                 )
                             ),
 
@@ -154,30 +119,15 @@ namespace Singular.ClassSpecific.Warrior
                                 new Decorator(
                                     ret => Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (!Me.IsInGroup() && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3),
                                     new PrioritySelector(
+                                        Spell.HandleOffGCD(Spell.Cast("Demoralizing Shout", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(m => m.SpellDistance() < 10), req => true, gcd: HasGcd.No)),
                                         Spell.HandleOffGCD(Spell.BuffSelf("Battle Cry", req => true, 0, HasGcd.No)),
                                         Spell.HandleOffGCD(Spell.BuffSelf("Avatar", req => true, 0, HasGcd.No))
                                         )
                                     ),
 
-                                Spell.BuffSelfAndWait(
-                                    "Berserker Rage",
-                                    req =>
-                                    {
-                                        if (!Me.CurrentTarget.IsPlayer && EventHandlers.TimeSinceAttackedByEnemyPlayer > TimeSpan.FromSeconds(20))
-                                            return true;
-                                        if (Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing, WoWSpellMechanic.Sapped, WoWSpellMechanic.Incapacitated, WoWSpellMechanic.Turned))
-                                            return true;
-                                        if (Me.CurrentTarget.TimeToDeath(99) < 6)
-                                            return true;
-                                        return false;
-                                    },
-                                    gcd: HasGcd.No
-                                    )
-                                )
+                                Spell.BuffSelfAndWait("Berserker Rage", req => Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing, WoWSpellMechanic.Sapped, WoWSpellMechanic.Incapacitated, WoWSpellMechanic.Turned), gcd: HasGcd.No)
+								)
                             )
-
-                // new Action(ret => { UseTrinkets(); return RunStatus.Failure; }),
-                // Spell.Cast("Deadly Calm", ret => TalentManager.HasGlyph("Incite") || Me.CurrentRage >= RageDump)
                         )
                     )
                 );
@@ -188,7 +138,7 @@ namespace Singular.ClassSpecific.Warrior
         [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorProtection)]
         public static Composite CreateProtectionCombat()
         {
-	        TankManager.NeedTankTargeting = SingularRoutine.CurrentWoWContext == WoWContext.Instances;
+            TankManager.NeedTankTargeting = SingularRoutine.CurrentWoWContext == WoWContext.Instances;
             EventHandlers.TrackDamage = true;
 
             return new PrioritySelector(
@@ -250,18 +200,10 @@ namespace Singular.ClassSpecific.Warrior
                     ),
 
                 CreateProtectionInterrupt(),
+				Common.CreateSpellReflectBehavior(),
 
                 // special "in combat" pull logic for mobs not tagged and out of melee range
                 Common.CreateWarriorCombatPullMore(),
-
-                // Artifact Weapon
-                new Decorator(
-                    ret => WarriorSettings.UseArtifactOnlyInAoE && Clusters.GetConeClusterCount(90f, Unit.UnfriendlyUnits(12), 100f) > 1,
-                    new PrioritySelector(
-                        Spell.Cast("Neltharion's Fury", ret => WarriorSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None)
-                    )
-                ),
-                Spell.Cast("Neltharion's Fury", ret => !WarriorSettings.UseArtifactOnlyInAoE && WarriorSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
 
                 // Multi-target?  get the debuff on them
                 new Decorator(
@@ -273,12 +215,40 @@ namespace Singular.ClassSpecific.Warrior
                     ),
 
                 Spell.BuffSelf("Avatar", ret => WarriorSettings.AvatarOnCooldownSingleTarget),
-                Spell.Cast("Ignore Pain", when => Me.RagePercent > 70 && !Me.HasAura("Ignore Pain")),
-                Spell.Cast("Shield Block"),
+
+                Spell.HandleOffGCD(Spell.Cast("Focused Rage", ret => Me.HasAura(ULTIMATUM_PROC) || Me.RagePercent > 45 && Me.HasAura(FOCUSED_PROC) && !Me.HasAura("Focused Rage") || Me.RagePercent > 90)),
+                Spell.HandleOffGCD(Spell.Cast("Ignore Pain",
+                    ret =>
+                        Me.RagePercent > 70 && Me.HasAura(IGNORE_PROC)
+                        || (Me.RagePercent > 40 && Me.HasAura(IGNORE_PROC) && !Me.HasAura("Ignore Pain"))
+                        || (Me.RagePercent > 70 && !Me.HasAura("Ignore Pain")))
+                ),
+                Spell.Cast("Shield Block", ret => Spell.GetCharges("Shield Block") > 1),
 
                 // Generate Rage
+                SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+
+                Movement.WaitForFacing(),
+                Movement.WaitForLineOfSpellSight(),
+
                 Spell.Cast("Shield Slam", ret => Me.CurrentRage < RageBuild && HasShieldInOffHand),
                 Spell.Cast("Revenge"),
+
+                // Artifact Weapon
+                new Decorator(
+                    ret => WarriorSettings.UseArtifactOnlyInAoE && Clusters.GetConeClusterCount(90f, Unit.UnfriendlyUnits(12), 100f) > 1,
+                    new PrioritySelector(
+                        Spell.HandleOffGCD(Spell.BuffSelf("Battle Cry", req => true, 0, HasGcd.No)),
+                        Spell.Cast("Neltharion's Fury", movement => false, target => Me.CurrentTarget, ret => WarriorSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None)
+                    )
+                ),
+                Spell.HandleOffGCD(Spell.BuffSelf("Battle Cry", req => true, 0, HasGcd.No)),
+                Spell.Cast("Neltharion's Fury",
+                    movement => false,
+                    target => Me.CurrentTarget,
+                    ret => !WarriorSettings.UseArtifactOnlyInAoE && WarriorSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && Clusters.GetConeClusterCount(90f, Unit.UnfriendlyUnits(12), 100f) >= 1
+                ),
 
                 // Filler
                 Spell.Cast("Devastate"),
@@ -304,22 +274,18 @@ namespace Singular.ClassSpecific.Warrior
         {
             // limit all taunt attempts to 1 per second max since Mocking Banner and Taunt have no GCD
             // .. it will keep us from casting both for the same mob we lost aggro on
-            return new Throttle( 1, 1,
+            return new Throttle(1, 1,
                 new PrioritySelector(
                     ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
-
-                    Spell.CastOnGround("Mocking Banner",
-                        on => (WoWUnit) on,
-                        ret => TankManager.Instance.NeedToTaunt.Any() && Clusters.GetCluster(TankManager.Instance.NeedToTaunt.FirstOrDefault(), TankManager.Instance.NeedToTaunt, ClusterType.Radius, 15f).Count() >= 2),
 
                     Spell.Cast("Taunt", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault()),
 
                     Spell.Cast("Storm Bolt", ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(i => i.SpellDistance() < 30 && Me.IsSafelyFacing(i))),
 
-                    Spell.Cast("Intervene",
+                    Spell.Cast("Intercept",
                         ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(
                             mob => Group.Healers.Any(healer => mob.CurrentTargetGuid == healer.Guid && healer.Distance < 25)),
-                        ret => MovementManager.IsClassMovementAllowed && Group.Healers.Count( h => h.IsAlive && h.Distance < 40) == 1
+                        ret => MovementManager.IsClassMovementAllowed && Group.Healers.Count(h => h.IsAlive && h.Distance < 40) == 1
                         )
                     )
                 );
@@ -336,14 +302,6 @@ namespace Singular.ClassSpecific.Warrior
                     }),
 
                     Spell.Cast("Pummel", ctx => intTarget),
-
-                    new Action(ret =>
-                    {
-                        intTarget = Unit.NearbyUnfriendlyUnits.FirstOrDefault(i => i.IsCasting && i.CanInterruptCurrentSpellCast && i.Distance < 10);
-                        return RunStatus.Failure;
-                    }),
-
-                    Spell.Cast("Disrupting Shout", ctx => intTarget),
 
                     new Action(ret =>
                     {
@@ -429,9 +387,9 @@ namespace Singular.ClassSpecific.Warrior
             return new ThrottlePasses(
                 1, TimeSpan.FromMilliseconds(1500), RunStatus.Failure,
                 new Action(ret =>
-                    {
+                {
                     string log =
-                        $"... [prot] h={Me.HealthPercent:F1}%/r={Me.CurrentRage:F1}%, stnc={(WarriorStance) Me.Shapeshift}, Ultim={HasUltimatum}";
+                        $"... [prot] h={Me.HealthPercent:F1}%/r={Me.CurrentRage:F1}%, stnc={(WarriorStance)Me.Shapeshift}, Ultim={HasUltimatum}";
 
                     WarriorTalents tier6 = Common.GetTierTalent(6);
                     string tier6spell = "";
@@ -462,7 +420,7 @@ namespace Singular.ClassSpecific.Warrior
                             );
                     Logger.WriteDebug(Color.AntiqueWhite, log);
                     return RunStatus.Failure;
-                    })
+                })
                 );
         }
 

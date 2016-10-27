@@ -57,7 +57,10 @@ namespace Singular.ClassSpecific.Warlock
 
                         // even though AOE spell, keep on CD for single target unless AoE turned off
                         new Decorator(
-                            ret => Spell.UseAOE && WarlockSettings.FelstormMobCount > 0 && Common.GetCurrentPet() == WarlockPet.Felguard && !Spell.IsSpellOnCooldown("Command Demon") && Me.Pet.GotTarget(),
+                            ret =>
+                                Spell.UseAOE && WarlockSettings.FelstormMobCount > 0 &&
+                                Common.GetCurrentPet() == WarlockPet.Felguard &&
+                                !Spell.IsSpellOnCooldown("Command Demon") && Me.Pet.GotTarget(),
                             new Sequence(
                                 new PrioritySelector(
                                     ctx =>
@@ -68,36 +71,47 @@ namespace Singular.ClassSpecific.Warlock
                                             // try not to waste Felstorm if mob will die soon anyway
                                             if (mobCount == 1)
                                             {
-                                                if (Me.Pet.CurrentTargetGuid == Me.CurrentTargetGuid && !Me.CurrentTarget.IsPlayer && Me.CurrentTarget.TimeToDeath() < 6)
+                                                if (Me.Pet.CurrentTargetGuid == Me.CurrentTargetGuid &&
+                                                    !Me.CurrentTarget.IsPlayer && Me.CurrentTarget.TimeToDeath() < 6)
                                                 {
-                                                    Logger.WriteDebug("Felstorm: found {0} mobs within 8 yds of Pet, but saving Felstorm since it will die soon", mobCount, !Me.Pet.GotTarget() ? -1f : Me.Pet.SpellDistance(Me.Pet.CurrentTarget));
+                                                    Logger.WriteDebug(
+                                                        "Felstorm: found {0} mobs within 8 yds of Pet, but saving Felstorm since it will die soon",
+                                                        mobCount,
+                                                        !Me.Pet.GotTarget()
+                                                            ? -1f
+                                                            : Me.Pet.SpellDistance(Me.Pet.CurrentTarget));
                                                     return 0;
                                                 }
                                             }
 
                                             if (SingularSettings.Debug)
-                                                Logger.WriteDebug("Felstorm: found {0} mobs within 8 yds of Pet; Pet is {1:F1} yds from its target", mobCount, !Me.Pet.GotTarget() ? -1f : Me.Pet.SpellDistance(Me.Pet.CurrentTarget));
+                                                Logger.WriteDebug(
+                                                    "Felstorm: found {0} mobs within 8 yds of Pet; Pet is {1:F1} yds from its target",
+                                                    mobCount,
+                                                    !Me.Pet.GotTarget()
+                                                        ? -1f
+                                                        : Me.Pet.SpellDistance(Me.Pet.CurrentTarget));
                                         }
                                         return mobCount;
                                     },
-                                    Spell.Cast("Wrathstorm", req => ((int)req) >= WarlockSettings.FelstormMobCount),
-                                    Spell.Cast("Felstorm", req => ((int)req) >= WarlockSettings.FelstormMobCount)
-                /*
-                                                    ,
-                                                    new Decorator(
-                                                        req => Me.Pet.GotTarget() && !Me.Pet.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModHealingReceived),
-                                                        new PrioritySelector(
-                                                            Spell.Cast( "Mortal Cleave", req => (int)req < WarlockSettings.FelstormMobCount || Spell.IsSpellOnCooldown("Felstorm")),
-                                                            Spell.Cast( "Legion Strike", req => (int) req < WarlockSettings.FelstormMobCount || Spell.IsSpellOnCooldown("Felstorm"))
-                                                            )
-                                                        )
-                */
-                                    ),
-                                new ActionAlwaysFail()  // no GCD on Felstorm, allow to fall through
-                                )
-                            ),
+                                    Spell.Cast("Wrathstorm", req => ((int) req) >= WarlockSettings.FelstormMobCount),
+                                    Spell.Cast("Felstorm", req => ((int) req) >= WarlockSettings.FelstormMobCount)
+                                    /*
+                                                                        ,
+                                                                        new Decorator(
+                                                                            req => Me.Pet.GotTarget() && !Me.Pet.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModHealingReceived),
+                                                                            new PrioritySelector(
+                                                                                Spell.Cast( "Mortal Cleave", req => (int)req < WarlockSettings.FelstormMobCount || Spell.IsSpellOnCooldown("Felstorm")),
+                                                                                Spell.Cast( "Legion Strike", req => (int) req < WarlockSettings.FelstormMobCount || Spell.IsSpellOnCooldown("Felstorm"))
+                                                                                )
+                                                                            )
+                                    */
+                                ),
+                                new ActionAlwaysFail() // no GCD on Felstorm, allow to fall through
+                            )
+                        ),
 
-            #region Felguard Use
+                        #region Felguard Use
 
                         new ThrottlePasses(
                             1,
@@ -106,26 +120,31 @@ namespace Singular.ClassSpecific.Warlock
                             Spell.HandleOffGCD(
                                 new Decorator(
                                     ret => Me.GotTarget()
-                                        && Common.GetCurrentPet() == WarlockPet.Felguard
-                                        && Me.CurrentTarget.SpellDistance() < 30
-                                        && ((WarlockSettings.StunWhileSolo && Me.CurrentTarget.CurrentTargetGuid == Me.Guid) || Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsMovingAway()) 
-                                        && !Me.CurrentTarget.IsCrowdControlled(),
+                                           && Common.GetCurrentPet() == WarlockPet.Felguard
+                                           && Me.CurrentTarget.SpellDistance() < 30
+                                           &&
+                                           ((WarlockSettings.StunWhileSolo &&
+                                             Me.CurrentTarget.CurrentTargetGuid == Me.Guid) || Me.CurrentTarget.IsPlayer ||
+                                            Me.CurrentTarget.IsMovingAway())
+                                           && !Me.CurrentTarget.IsCrowdControlled(),
                                     Pet.CastPetAction("Axe Toss")
-                                    )
                                 )
-                            ),
+                            )
+                        ),
 
-            #endregion
+                        #endregion
 
 
-            #region CurrentTarget DoTs
+                        #region CurrentTarget DoTs
 
                         Common.CastCataclysm(),
 
 
                         // Artifact Weapon
                         new Decorator(
-                            ret => WarlockSettings.UseArtifactOnlyInAoE && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1,
+                            ret =>
+                                WarlockSettings.UseArtifactOnlyInAoE &&
+                                Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1,
                             new PrioritySelector(
                                 Spell.Cast("Thal'kiel's Consumption",
                                     ret =>
@@ -141,12 +160,13 @@ namespace Singular.ClassSpecific.Warlock
                         ),
 
                         Spell.Buff("Doom", req => !Me.CurrentTarget.HasAura("Doom")),
+                        Spell.Cast("Shadowflame", req => Me.CurrentTarget.GetAuraTimeLeft("Shadowflame").TotalSeconds < 2.4),
                         Spell.Cast("Summon Darkglare"),
                         Spell.Cast("Call Dreadstalkers"),
-                        Spell.Cast("Summon Doomguard"),
+                        Spell.Cast("Summon Doomguard", ret => !Common.HasTalent(WarlockTalents.GrimoireOfSupremacy)),
                         Spell.Cast("Hand of Gul'dan", movement => false, target => Me.CurrentTarget, req => SoulShardCount >= 4),
                         Spell.Cast("Grimoire: Felguard"),
-                        Spell.Cast("Demonic Empowerment", req => Me.Minions.Count(min => !min.HasAura(193396)) >= 3 && Spell.LastSpellCast != "Demonic Empowerment"),
+                        Spell.BuffSelf("Demonic Empowerment", req => Spell.LastSpellCast != "Demonic Empowerment" && Me.Minions.Count(min => !min.HasMyAura(193396)) >= 3),
                         Spell.Cast("Soul Harvest"),
                         Spell.Cast("Command Demon"),
                         Spell.Cast("Felstorm"),
@@ -170,13 +190,13 @@ namespace Singular.ClassSpecific.Warlock
                             Spell.Cast("Soul Fire", mov => true, on => Me.CurrentTarget, req => ((uint)req) > 0, cancel => false),
                             new Action(r => _lastSoulFire = DateTime.UtcNow)
                             )
-                        
+
             #endregion
 )
                     )
                 );
         }
-        
+
         #endregion
 
         private static Composite CreateWarlockDiagnosticOutputBehavior(string s)

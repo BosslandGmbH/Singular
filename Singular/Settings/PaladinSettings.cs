@@ -83,7 +83,7 @@ namespace Singular.Settings
         [Description("Flash of Light will be used at this value")]
         public int SelfFlashOfLightHealth { get; set; }
 
-        #endregion  
+        #endregion
 
         #region Holy
 
@@ -116,6 +116,20 @@ namespace Singular.Settings
         public int LightOfDawnHealth { get; set; }
 
         [Setting]
+        [DefaultValue(80)]
+        [Category("Holy")]
+        [DisplayName("Tyr's Deliverance Health %")]
+        [Description("Tyr's Deliverance will be used at this value")]
+        public int TyrsDeliveranceHealth { get; set; }
+
+		[Setting]
+        [DefaultValue(3)]
+        [Category("Holy")]
+        [DisplayName("Tyr's Deliverance Count")]
+        [Description("Tyr's Deliverance will be used when there are more then that many players with lower health then LoD Health setting")]
+        public int TyrsDeliveranceCount { get; set; }
+
+		[Setting]
         [DefaultValue(2)]
         [Category("Holy")]
         [DisplayName("Light of Dawn Count")]
@@ -136,9 +150,58 @@ namespace Singular.Settings
         [Description("Holy Shock will be used at this value")]
         public int HolyShockHealth { get; set; }
 
+		[Setting]
+        [DefaultValue(80)]
+        [Category("Holy")]
+        [DisplayName("Beacon of Virtue Health %")]
+        [Description("Beacon of Virtue will be used at this value")]
+        public int BeaconVirtueHealth { get; set; }
+
+		[Setting]
+        [DefaultValue(3)]
+        [Category("Holy")]
+        [DisplayName("Beacon of Virtue Count")]
+        [Description("Beacon of Virtue will be used when there are more then that many players with lower health then BoV Health setting")]
+        public int BeaconVirtueCount { get; set; }
+
+        [Setting]
+        [DefaultValue(65)]
+        [Category("Holy")]
+        [DisplayName("Avenging Wrath Health %")]
+        [Description("Beacon of Virtue will be used at this value")]
+        public int AvengingHealth { get; set; }
+
+		[Setting]
+        [DefaultValue(3)]
+        [Category("Holy")]
+        [DisplayName("Avenging Wrath Count")]
+        [Description("Beacon of Virtue will be used when there are more then that many players with lower health then AW Health setting")]
+        public int AvengingCount { get; set; }
+
+		[Setting]
+        [DefaultValue(55)]
+        [Category("Holy")]
+        [DisplayName("Aura Mastery Health %")]
+        [Description("Aura Mastery will be used at this value")]
+        public int AuraMasteryHealth { get; set; }
+
+		[Setting]
+        [DefaultValue(3)]
+        [Category("Holy")]
+        [DisplayName("Aura Mastery Count")]
+        [Description("Aura Mastery will be used when there are more then that many players with lower health then AM Health setting")]
+        public int AuraMasteryCount { get; set; }
+
         #endregion
 
         #region Protection
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Protection")]
+        [DisplayName("Use Divine Steed")]
+        [Description("Toggle if we should use Divine Steed or not.")]
+        public bool UseDivineSteed { get; set; }
+
         [Setting]
         [DefaultValue(40)]
         [Category("Protection")]

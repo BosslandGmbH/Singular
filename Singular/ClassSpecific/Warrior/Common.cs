@@ -14,10 +14,12 @@ using Singular.Dynamics;
 using Styx.CommonBot;
 using CommonBehaviors.Actions;
 using System.Drawing;
+using System.Numerics;
 using Styx.Pathing;
 using Action = Styx.TreeSharp.Action;
 using Styx.WoWInternals;
 using Singular.Utilities;
+using Styx.Common;
 
 namespace Singular.ClassSpecific.Warrior
 {
@@ -152,7 +154,6 @@ namespace Singular.ClassSpecific.Warrior
             return new Decorator(
                 req => Me.HealthPercent < WarriorSettings.WarriorEnragedRegenerationHealth && !Spell.IsSpellOnCooldown("Enraged Regeneration"),
                 new PrioritySelector(
-                    Spell.HandleOffGCD( Spell.BuffSelf("Berserker Rage", req => true, 0, HasGcd.No) ),
                     Spell.BuffSelf("Enraged Regeneration", req => true, 0, HasGcd.No)
                     )
                 );
@@ -205,13 +206,13 @@ namespace Singular.ClassSpecific.Warrior
         }
 
         public static Composite CreateChargeCloser()
-		{
-			// note: use Distance here -- even though to a WoWUnit, hitbox does not come into play for all mobs
+        {
+                    // note: use Distance here -- even though to a WoWUnit, hitbox does not come into play for all mobs
 	        return
 		        Spell.Cast("Charge",
 			        req =>
 				        Me.CurrentTarget.IsGapCloserAllowed() && Me.CurrentTarget.Distance.Between(8, DistanceChargeBehavior));
-		}
+        }
         
         public static Composite CreateHeroicLeapCloser()
         {
@@ -233,7 +234,7 @@ namespace Singular.ClassSpecific.Warrior
                             WoWUnit unit = loc as WoWUnit;
                             if (unit != null)
                             {
-                                WoWPoint pt = unit.Location;
+                                Vector3 pt = unit.Location;
                                 float distToMob = Me.Location.Distance(pt);
                                 float distToMobReach = distToMob - unit.CombatReach;
                                 float distToJump = distToMobReach;
@@ -245,7 +246,7 @@ namespace Singular.ClassSpecific.Warrior
                                     distToJump = distToMob;
                                     if (distToJump < JUMP_MIN)
                                     {
-                                        return WoWPoint.Empty;
+                                        return Vector3.Zero;
                                     }
                                 }
 
@@ -255,27 +256,27 @@ namespace Singular.ClassSpecific.Warrior
                                     comment = "too far, now 7 yds before hitbox of";
                                     if (distToJump >= HeroicLeapDistance)
                                     {
-                                        return WoWPoint.Empty;
+                                        return Vector3.Zero;
                                     }
                                 }
 
                                 float neededFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(Me.Location, pt);
-                                WoWPoint ptJumpTo = WoWPoint.RayCast(Me.Location, neededFacing, distToJump);
+                                Vector3 ptJumpTo = Me.Location.RayCast(neededFacing, distToJump);
                                 Logger.WriteDiagnostic("HeroicLeap: jump target is {0} {1}", comment, unit.SafeName());
                                 float h = unit.HeightOffTheGround();
                                 float m = unit.MeleeDistance();
                                 if (h > m)
                                 {
                                     Logger.WriteDiagnostic("HeroicLeap: aborting, target is {0:F3} off ground and melee is {1:F3}", h, m);
-                                    return WoWPoint.Empty;
+                                    return Vector3.Zero;
                                 }
                                 else if (h < -1)
                                 {
                                     Logger.WriteDiagnostic("HeroicLeap: aborting, target appears to be {0:F3} off ground @ {1}", h, ptJumpTo);
-                                    return WoWPoint.Empty;
+                                    return Vector3.Zero;
                                 }
 
-                                WoWPoint ptNew = new WoWPoint();
+                                Vector3 ptNew = new Vector3();
                                 ptNew.X = ptJumpTo.X;
                                 ptNew.Y = ptJumpTo.Y;
                                 ptNew.Z = ptJumpTo.Z - h;
@@ -285,7 +286,7 @@ namespace Singular.ClassSpecific.Warrior
                                 return ptNew;
                             }
 
-                            return WoWPoint.Empty;
+                            return Vector3.Zero;
                         },
                         req =>
                         {
@@ -314,7 +315,7 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateSpellReflectBehavior()
         {
             return Spell.Cast(
-                "Spell Reflect",
+                "Spell Reflection",
                 on =>
                 {
                     bool isPummelOnCD = Spell.IsSpellOnCooldown("Pummel");
@@ -473,7 +474,7 @@ namespace Singular.ClassSpecific.Warrior
         ShockwaveProtection = Dauntless,
         StormBoltProtection = Overpower,
         Warbringer = SweepingStrikes,
-        
+
 
         Shockwave = 4,
         StormBolt,

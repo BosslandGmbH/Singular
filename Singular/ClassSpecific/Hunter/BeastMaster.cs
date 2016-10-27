@@ -31,9 +31,9 @@ namespace Singular.ClassSpecific.Hunter
             return new PrioritySelector(
 
                 Common.CreateHunterEnsureReadyToAttackFromLongRange(),
-                
+
                 Spell.WaitForCastOrChannel(),
-            
+
                 new Decorator(
 
                     ret => !Spell.IsGlobalCooldown(),
@@ -57,42 +57,40 @@ namespace Singular.ClassSpecific.Hunter
                         Common.CreateHunterNormalCrowdControl(),
 
                         Spell.Buff("Concussive Shot",
-                            ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid 
+                            ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
                                 && Me.CurrentTarget.Distance > Spell.MeleeRange),
 
                         // Defensive Stuff
-                        Spell.Cast("Intimidation", 
-                            ret => Me.GotTarget() 
-                                && Me.CurrentTarget.IsAlive 
-                                && Me.GotAlivePet 
+                        Spell.Cast("Intimidation",
+                            ret => Me.GotTarget()
+                                && Me.CurrentTarget.IsAlive
+                                && Me.GotAlivePet
                                 && (!Me.CurrentTarget.GotTarget() || Me.CurrentTarget.CurrentTarget == Me)),
-						
+
+                        // Cooldowns - should be used as much as possible.
+                        Spell.Cast("Bestial Wrath", ret => Spell.GetSpellCooldown("Kill Command").TotalSeconds < 3),
+                        Spell.Cast("Aspect of the Wild", ret => Me.HasAura("Bestial Wrath")),
+						Spell.Cast("A Murder of Crows", ret => Me.CurrentTarget.TimeToDeath(int.MaxValue) < 14),
+						Spell.Cast("Stampede", ret => Me.CurrentTarget.TimeToDeath(int.MaxValue) > 6),
+
 						new Decorator(
-							ret => Me.CurrentTarget.IsStressful() || PartyBuff.WeHaveBloodlust,
-							new PrioritySelector(
-								Spell.Cast("Aspect of the Wild", ret => Me.HasAura("Bestial Wrath")),
-								Spell.Cast("Bestial Wrath", ret => Me.CurrentFocus > 90 && Spell.GetSpellCooldown("Kill Command").TotalSeconds < 3),
-								Spell.Cast("A Murder of Crows"),
-								Spell.Cast("Stampede"))),
-						
-						new Decorator(
-							ret => Unit.NearbyUnfriendlyUnits.Count() > 1,
+							ret => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Count() > 1,
 							new PrioritySelector(
 								new Throttle(1, Spell.BuffSelf("Volley")),
-								Spell.Cast("Multi Shot", ret => Me.GotAlivePet && Me.Pet.GetAuraTimeLeft("Beast Cleave", false).TotalSeconds < 1.5),
+								Spell.Cast("Multi-Shot", ret => Me.GotAlivePet && Me.Pet.GetAuraTimeLeft("Beast Cleave", false).TotalSeconds < 1.5),
 								Spell.Cast("Barrage"),
 								Spell.Cast("Kill Command"),
-                                new Decorator(ret => Spell.GetSpellCooldown("Bestial Wrath").TotalSeconds > 15, 
+                                new Decorator(ret => Spell.GetSpellCooldown("Bestial Wrath").TotalSeconds > 15,
                                     new PrioritySelector(
 								        Spell.Cast("Dire Beast", ret => !Common.HasTalent(HunterTalents.DireFrenzy)),
                                         Spell.Cast("Dire Frenzy", ret => Me.GotAlivePet)
                                     )),
                                 Spell.Cast("Cobra Shot", ret => Me.CurrentFocus > 90 && Me.GotAlivePet && Me.Pet.GetAuraTimeLeft("Beast Cleave", false).TotalSeconds > 1.5),
-								Spell.Cast("Multi Shot")
+								Spell.Cast("Multi-Shot")
 								)),
-							
+
 						new Decorator(
-							ret => Me.HasActiveAura("Volley"), 
+							ret => Me.HasActiveAura("Volley"),
 							new Throttle(1, new Action(ret => Me.CancelAura("Volley")))),
 
 						Spell.Cast("Kill Command"),

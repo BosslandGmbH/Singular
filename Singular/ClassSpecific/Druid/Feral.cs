@@ -44,11 +44,11 @@ namespace Singular.ClassSpecific.Druid
                         && (Me.PredictedHealthPercent(includeMyHeals: true) < 95),
                     new PrioritySelector(
                         new Action(r => { Logger.WriteDebug("Druid Rest Swift Heal @ {0:F1}% and moving:{1} in form:{2}", Me.HealthPercent, Me.IsMoving, Me.Shapeshift); return RunStatus.Failure; }),
-                        Spell.Cast("Healing Touch",
+                        Spell.Cast("Regrowth",
                             mov => true,
                             on => Me,
                             req => true,
-                            cancel => Me.HealthPercent > 95 )
+                            cancel => Me.HealthPercent > 90 )
                         )
                     ),
 
@@ -196,7 +196,7 @@ namespace Singular.ClassSpecific.Druid
                 Spell.BuffSelf("Survival Instincts", req => Me.HealthPercent < DruidSettings.SurvivalInstinctsHealth),
 
                 Spell.Cast(
-                    "Healing Touch",
+                    "Regrowth",
                     on =>
                     {
                         int pstime = (int) Me.GetAuraTimeLeft("Predatory Swiftness").TotalMilliseconds;
@@ -207,11 +207,11 @@ namespace Singular.ClassSpecific.Druid
                         if (Common.HasTalent(DruidTalents.Bloodtalons) && (Me.ComboPoints >= 4 || pstime < 1650))
                         {
                             unit = Unit.GroupMembers
-                                .Where( u => u.IsAlive && Spell.CanCastHack("Healing Touch", u))
+                                .Where( u => u.IsAlive && Spell.CanCastHack("Regrowth", u))
                                 .OrderBy( u => (int) u.HealthPercent )
                                 .FirstOrDefault();
 
-                            if (unit == null && Spell.CanCastHack("Healing Touch", Me))
+                            if (unit == null && Spell.CanCastHack("Regrowth", Me))
                                 unit = Me;
 
                             if (unit != null)
@@ -228,7 +228,7 @@ namespace Singular.ClassSpecific.Druid
                         unit = HealerManager.NeedHealTargeting
                             ? HealerManager.FindHighestPriorityTarget()
                             : Unit.GroupMembers
-                                .Where( u => u.IsAlive && Spell.CanCastHack("Healing Touch", u))
+                                .Where( u => u.IsAlive && Spell.CanCastHack("Regrowth", u))
                                 .OrderBy( u => (int) u.HealthPercent )
                                 .FirstOrDefault();
 
@@ -299,7 +299,8 @@ namespace Singular.ClassSpecific.Druid
                                 || (DruidSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.HasActiveAura("Tiger's Fury")) )
                         ),
 
-                        Spell.BuffSelf("Healing Touch", ret => Me.HasActiveAura("Predatory Swiftness")),
+                        Spell.BuffSelf("Regrowth", ret => Me.HasActiveAura("Predatory Swiftness")),
+                        Spell.HandleOffGCD(Spell.Cast("Tiger's Fury", ret => Common.HasTalent(DruidTalents.Predator) && Me.CurrentTarget.HasBleedDebuff() && Me.CurrentTarget.TimeToDeath() < 3 && (!Me.HasActiveAura("Tiger's Fury") || Me.CurrentEnergy < 70))),
 
                         // AoE
                         new Decorator(
@@ -313,7 +314,7 @@ namespace Singular.ClassSpecific.Druid
                                                 u => u.HealthPercent >= 25 && Me.IsSafelyFacing(u) && u.TimeToDeath(int.MaxValue) > 18 && u.GetAuraTimeLeft("Rip").TotalSeconds < RipRefresh),
                                     ret => Me.ComboPoints >= 4),
                                 Spell.Cast("Swipe"),
-                                Spell.BuffSelf("Tiger's Fury"),
+                                Spell.HandleOffGCD(Spell.BuffSelf("Tiger's Fury")),
                                 Spell.BuffSelf("Berserk")
                                 )
                             ),
@@ -337,7 +338,7 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Cast("Moonfire",
                             on => Unit.NearbyUnitsInCombatWithUsOrOurStuff.FirstOrDefault(u => u.GetAuraTimeLeft("Moonfire").TotalSeconds < 2.5),
                             ret => Common.HasTalent(DruidTalents.LunarInspiration)),
-                        Spell.Cast("Tiger's Fury", ret => EnergyDecifit > 65),
+                        Spell.HandleOffGCD(Spell.Cast("Tiger's Fury", ret => EnergyDecifit > 65)),
                         Spell.Cast("Berserk", ret => Me.HasActiveAura("Tiger's Fury") && Me.CurrentTarget.IsStressful()),
 
                         Spell.Cast("Rake",

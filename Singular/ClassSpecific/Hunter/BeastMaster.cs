@@ -78,7 +78,6 @@ namespace Singular.ClassSpecific.Hunter
 							new PrioritySelector(
 								new Throttle(1, Spell.BuffSelf("Volley")),
 								Spell.Cast("Multi-Shot", ret => Me.GotAlivePet && Me.Pet.GetAuraTimeLeft("Beast Cleave", false).TotalSeconds < 1.5),
-								Spell.Cast("Barrage"),
 								Spell.Cast("Kill Command"),
                                 new Decorator(ret => Spell.GetSpellCooldown("Bestial Wrath").TotalSeconds > 15,
                                     new PrioritySelector(
@@ -96,7 +95,6 @@ namespace Singular.ClassSpecific.Hunter
 						Spell.Cast("Kill Command"),
 						Spell.Cast("Chimaera Shot"),
 						Spell.Cast("Dire Beast", ret => Spell.GetSpellCooldown("Bestial Wrath").TotalSeconds > 15),
-						Spell.Cast("Barrage"),
 						Spell.Cast("Cobra Shot", ret => Me.CurrentFocus > 90)
                         )
                     )

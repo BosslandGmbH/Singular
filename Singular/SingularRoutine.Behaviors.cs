@@ -25,6 +25,7 @@ using Styx.WoWInternals;
 using Styx.Common.Helpers;
 using System.Collections.Generic;
 using System.Numerics;
+using Singular.ClassSpecific.Druid;
 using Singular.ClassSpecific.Monk;
 //using Bots.Quest.QuestOrder;
 //using Styx.CommonBot.Profiles.Quest.Order;
@@ -1012,40 +1013,50 @@ namespace Singular
             switch (TalentManager.CurrentSpec)
             {
                 case WoWSpec.DeathKnightBlood:
-                    PullMoreNeedSpell = "Death's Caress";       // 56
+                    PullMoreNeedSpell = "Death's Caress"; // 58
                     break;
                 case WoWSpec.DeathKnightFrost:
-                    PullMoreNeedSpell = "Howling Blast";       // 55
+                    PullMoreNeedSpell = "Howling Blast"; // 55
                     break;
 
                 case WoWSpec.DeathKnightUnholy:
-                    PullMoreNeedSpell = "Outbreak";       // 56
+                    PullMoreNeedSpell = "Outbreak"; // 55
                     break;
 
                 case WoWSpec.DemonHunterVengeance:
                 case WoWSpec.DemonHunterHavoc:
-                    PullMoreNeedSpell = "Throw Glaive";       // 56
+                    PullMoreNeedSpell = "Throw Glaive"; // 98
                     break;
 
                 case WoWSpec.DruidBalance:
-                    PullMoreNeedSpell = "Moonkin Form";     // 16
+                    PullMoreNeedSpell = "Moonkin Form"; // 16
                     break;
 
-                case WoWSpec.DruidFeral:
                 case WoWSpec.DruidGuardian:
-                    PullMoreNeedSpell = "Thrash";            // 14
+                case WoWSpec.DruidFeral:
+                    if (TalentManager.IsSelected((int)DruidTalents.LunarInspiration) && Me.Specialization == WoWSpec.DruidFeral)
+                        // Guardian doesn't have Lunar Insirpation.
+                        PullMoreNeedSpell = "Moonfire"; // 15 for talent
+
+                    if (TalentManager.IsSelected((int) DruidTalents.DisplacerBeast))
+                        PullMoreNeedSpell = "Displacer Beast"; // 30 for talent
+                    else if (TalentManager.IsSelected((int) DruidTalents.WildCharge))
+                        PullMoreNeedSpell = "Wild Charge"; // 30 for talent
+                    else
+                        PullMoreNeedSpell = "Trash"; // 18
                     break;
 
                 case WoWSpec.DruidRestoration:
-                    // needSpell = "Hurricane";        // 42
+                    PullMoreNeedSpell = "Moonfire"; // 10
                     break;
 
                 case WoWSpec.HunterBeastMastery:
                 case WoWSpec.HunterMarksmanship:
-                    PullMoreNeedSpell = "Multi-Shot";       // 24
+                    PullMoreNeedSpell = "Multi-Shot"; // 28
                     break;
+
                 case WoWSpec.HunterSurvival:
-                    PullMoreNeedSpell = "Hatchet Toss";       // 19
+                    PullMoreNeedSpell = "Hatchet Toss"; // 19
                     break;
 
                 case WoWSpec.MageArcane:
@@ -1055,19 +1066,19 @@ namespace Singular
                     break;
 
                 case WoWSpec.MonkBrewmaster:
-                    PullMoreNeedSpell = "Breath of Fire";   // 18
+                    PullMoreNeedSpell = "Breath of Fire"; // 18
                     break;
 
                 case WoWSpec.MonkMistweaver:
-                    // needSpell = "Spinning Crane Kick";  // 46
+                    PullMoreNeedSpell = "Spinning Crane Kick"; // 40
                     break;
 
                 case WoWSpec.MonkWindwalker:
-                    PullMoreNeedSpell = "Fists of Fury";  // 10
+                    PullMoreNeedSpell = "Fists of Fury"; // 10
                     break;
 
                 case WoWSpec.PaladinHoly:
-                    // needSpell = "Holy Prism";   // 90
+                    PullMoreNeedSpell = "Consecration"; // 90
                     break;
 
                 case WoWSpec.PaladinProtection:
@@ -1075,57 +1086,64 @@ namespace Singular
                     break;
 
                 case WoWSpec.PaladinRetribution:
-                    PullMoreNeedSpell = "Hammer of the Righteous";  // 20
+                    PullMoreNeedSpell = "Divine Storm"; // 20
                     break;
 
                 case WoWSpec.PriestDiscipline:
-                    PullMoreNeedSpell = "Mind Sear";    // 28
+                    PullMoreNeedSpell = "Shadow Word: Pain"; // 28
                     break;
 
                 case WoWSpec.PriestHoly:
-                    // none
+                    PullMoreNeedSpell = "Holy Fire"; // 12
                     break;
 
                 case WoWSpec.PriestShadow:
-                    PullMoreNeedSpell = "Shadow Word: Pain";    // 3 (effectively 10 since specialization needed)
+                    PullMoreNeedSpell = "Shadow Word: Pain"; // 3 (effectively 10 since specialization needed)
                     break;
 
                 case WoWSpec.RogueOutlaw:
-                    PullMoreNeedSpell = "Blade Flurry"; // 10
+                    PullMoreNeedSpell = "Pistol Shot"; // 12
+                    break;
+
+                case WoWSpec.RogueSubtlety:
+                    PullMoreNeedSpell = "Shuriken Toss"; // 10
                     break;
 
                 case WoWSpec.RogueAssassination:
-                case WoWSpec.RogueSubtlety:
-                    PullMoreNeedSpell = "Fan of Knives";    // 66
+                    PullMoreNeedSpell = "Poisoned Knife"; // 10
                     break;
 
                 case WoWSpec.ShamanElemental:
-                    PullMoreNeedSpell = "Chain Lightning";  // 28
+                    PullMoreNeedSpell = "Chain Lightning"; // 28
                     break;
 
                 case WoWSpec.ShamanRestoration:
-                    // none
+                    PullMoreNeedSpell = "Chain Lightning"; // 28
                     break;
 
                 case WoWSpec.ShamanEnhancement:
-                    PullMoreNeedSpell = "Flame Shock";  // 12 (this comes after Lava Lash)
+                    PullMoreNeedSpell = "Rockbiter";  // 10
                     break;
 
                 case WoWSpec.WarlockAffliction:
                     PullMoreNeedSpell = "Corruption";   // 3 (10 since specialization needed)
                     break;
-                case WoWSpec.WarlockDemonology:
+
                 case WoWSpec.WarlockDestruction:
-                    PullMoreNeedSpell = "Shadow Bolt";   // 3 (10 since specialization needed)
+                    PullMoreNeedSpell = "Conflagrate";   // 10
+                    break;
+
+                case WoWSpec.WarlockDemonology:
+                    PullMoreNeedSpell = "Doom";   // 26
+                    break;
+
+                case WoWSpec.WarriorProtection:
+                    PullMoreNeedSpell = "Thunder Clap"; // 16
                     break;
 
                 case WoWSpec.WarriorArms:
-                case WoWSpec.WarriorProtection:
-                    PullMoreNeedSpell = "Thunder Clap"; // 20
-                    break;
-
                 case WoWSpec.WarriorFury:
-                    PullMoreNeedSpell = "Whirlwind";    // 26
+                    PullMoreNeedSpell = "Heroic Throw"; // 22
                     break;
             }
 

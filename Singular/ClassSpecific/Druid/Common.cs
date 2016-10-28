@@ -293,62 +293,8 @@ namespace Singular.ClassSpecific.Druid
 									return true;
 
 								return false;
-							}),
+							})
 
-						Spell.Cast(
-							"Healing Touch",
-							on =>
-							{
-								WoWUnit target = null;
-								TimeSpan timeLeft = TimeSpan.Zero;
-
-								if (StyxWoW.Me.Specialization == WoWSpec.DruidFeral)
-									timeLeft = Me.GetAuraTimeLeft(PREDATORY_SWIFTNESS_PROC);
-
-								if (timeLeft > TimeSpan.Zero)
-								{
-									// pvp: heal as needed
-									if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-										target =
-											HealerManager.Instance.TargetList.FirstOrDefault(
-												p =>
-													p.IsAlive && p.PredictedHealthPercent() < DruidSettings.PredSwiftnessPvpHeal &&
-													Spell.CanCastHack("Healing Touch", p));
-									// pve: about to expire? heal anyone that needs it
-									else if (timeLeft.TotalMilliseconds < 2000)
-										target =
-											HealerManager.Instance.TargetList.FirstOrDefault(
-												p =>
-													p.IsAlive && p.HealthPercent < DruidSettings.PredSwiftnessHealingTouchHealth &&
-													Spell.CanCastHack("Healing Touch", p));
-									// otherwise save until i need it
-									else if (Me.HealthPercent < DruidSettings.PredSwiftnessHealingTouchHealth && Spell.CanCastHack("Healing Touch", Me) && Me.HasActiveAura("Predatory Swiftness"))
-										target = Me;
-
-									if (target != null)
-									{
-										Logger.Write(LogColor.Hilite, "^Instant Heal: proc with {0:F1} secs used for {1} @ {2:F1}%",
-											timeLeft.TotalSeconds, target.SafeName(), target.HealthPercent);
-									}
-								}
-								return target;
-							}),
-
-						// for Balance or a lowbie Feral or a Bear not serving as Tank in a group
-						new Decorator(
-							ret =>
-								Me.HealthPercent < DruidSettings.SelfHealingTouchHealth && !SpellManager.HasSpell("Predatory Swiftness") &&
-								!Group.MeIsTank && SingularRoutine.CurrentWoWContext != WoWContext.Instances,
-							new PrioritySelector(
-								Spell.BuffSelf("Rejuvenation"),
-								Spell.Cast(
-									"Healing Touch",
-									on => Me,
-									req => true,
-									cancel => Me.HealthPercent > Math.Max(90, DruidSettings.SelfHealingTouchHealth + 10)
-									)
-								)
-							)
 						)
 					),
 

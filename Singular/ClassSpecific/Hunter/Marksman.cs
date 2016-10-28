@@ -106,7 +106,6 @@ namespace Singular.ClassSpecific.Hunter
 							    (Me.GetPowerRegenInterrupted(WoWPowerType.Focus)*
 							     (Me.CurrentTarget.GetAuraTimeLeft("Vulnerable").TotalSeconds)) < 50),
 					    Spell.Cast("Piercing Shot", ret => Me.CurrentFocus >= 100),
-					    Spell.Cast("Barrage"),
 					    // Fire the missile
 					    Spell.Cast("Explosive Shot",
 						    ret =>

@@ -144,7 +144,7 @@ namespace Singular.ClassSpecific.Rogue
                     Spell.Cast("Marked for Death", req => Me.ComboPoints <= 1),
                     Spell.Cast("Curse of the Dreadblades", ret => RogueSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
                     Spell.Cast("Death from Above", req => !Me.HasActiveAura("Adrenaline Rush") && Me.ComboPoints >= 6),
-                    new Decorator(ret => !Me.HasActiveAura("True Bearing"),
+                    new Decorator(ret => !Me.CurrentTarget.IsTrivial() && !Me.HasActiveAura("True Bearing"),
                         new PrioritySelector(
                             Spell.Cast("Roll the Bones", req => !Spell.CanCastHack("Adrenaline Rush") && RollTheBonesBuffs.Count(a => Me.HasActiveAura(a)) < RogueSettings.RollTheBonesNormalCount),
                             Spell.Cast("Roll the Bones", req => Spell.CanCastHack("Adrenaline Rush") && RollTheBonesBuffs.Count(a => Me.HasActiveAura(a)) < RogueSettings.RollTheBonesBurstCount)
@@ -193,9 +193,9 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
 			CreateCombatDiagnosticOutputBehavior("Combat"),
-			
-			Spell.BuffSelf("Riposte", 
-					ret => (Me.HealthPercent <= RogueSettings.RiposteHealth && Unit.NearbyUnitsInCombatWithMe.Any(u => u.IsTargetingMeOrPet && u.MeleeDistance() < 10)) 
+
+			Spell.BuffSelf("Riposte",
+					ret => (Me.HealthPercent <= RogueSettings.RiposteHealth && Unit.NearbyUnitsInCombatWithMe.Any(u => u.IsTargetingMeOrPet && u.MeleeDistance() < 10))
 					|| Unit.NearbyUnitsInCombatWithMe.Count(u => u.IsTargetingMeOrPet && u.MeleeDistance() < 10) >= RogueSettings.RiposteCount)
 			);
         }

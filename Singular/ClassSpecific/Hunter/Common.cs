@@ -33,13 +33,13 @@ namespace Singular.ClassSpecific.Hunter
         #region Common
 
         private static LocalPlayer Me => StyxWoW.Me;
-	    private static WoWUnit Pet => StyxWoW.Me.Pet;
-	    private static WoWUnit Target => StyxWoW.Me.CurrentTarget;
-	    private static WoWGuid TargetGuid => StyxWoW.Me.CurrentTargetGuid;
-	    private static HunterSettings HunterSettings => SingularSettings.Instance.Hunter();
-	    public static bool HasTalent(HunterTalents tal) => TalentManager.IsSelected((int)tal);
+        private static WoWUnit Pet => StyxWoW.Me.Pet;
+        private static WoWUnit Target => StyxWoW.Me.CurrentTarget;
+        private static WoWGuid TargetGuid => StyxWoW.Me.CurrentTargetGuid;
+        private static HunterSettings HunterSettings => SingularSettings.Instance.Hunter();
+        public static bool HasTalent(HunterTalents tal) => TalentManager.IsSelected((int)tal);
 
-	    public static double FocusDeficit => Me.MaxFocus - Me.CurrentFocus;
+        public static double FocusDeficit => Me.MaxFocus - Me.CurrentFocus;
 
         private static uint _lastUnknownPetSpell = 0xffff;
 
@@ -502,7 +502,7 @@ namespace Singular.ClassSpecific.Hunter
                                     }
 
                                     return target;
-                                }
+                                }, req => HunterSettings.UseBarrage
                                 ),
 
                             // for long cooldowns, spend only when worthwhile
@@ -829,7 +829,7 @@ namespace Singular.ClassSpecific.Hunter
             return new PrioritySelector(
                 new Decorator(
                     ret =>  PetManager.IsPetSummonAllowed
-						&& (Me.Specialization != WoWSpec.HunterMarksmanship || !HasTalent(HunterTalents.LoneWolf))
+                        && (Me.Specialization != WoWSpec.HunterMarksmanship || !HasTalent(HunterTalents.LoneWolf))
                         && (!Me.GotAlivePet || (ActivePetNumber != PetWeWant && ActivePetNumber != 0))
                         && PetManager.PetSummonAfterDismountTimer.IsFinished
                         && !Me.Mounted
@@ -1246,68 +1246,68 @@ namespace Singular.ClassSpecific.Hunter
         WayOfTheCobra,
         DireStable,
 
-		LoneWolf = BigGameHunter,
-		SteadyFocus = WayOfTheCobra,
-		CarefulAim = DireStable,
+        LoneWolf = BigGameHunter,
+        SteadyFocus = WayOfTheCobra,
+        CarefulAim = DireStable,
 
-		AnimalInstincts = BigGameHunter,
-		ThrowingAxes = WayOfTheCobra,
-		WayOfTheMokNathal = DireStable,
+        AnimalInstincts = BigGameHunter,
+        ThrowingAxes = WayOfTheCobra,
+        WayOfTheMokNathal = DireStable,
 
         Stomp = 4,
         DireFrenzy,
         ChimaeraShot,
 
-		LockAndLoad = Stomp,
-		BlackArrow = DireFrenzy,
-		TrueAim = ChimaeraShot,
+        LockAndLoad = Stomp,
+        BlackArrow = DireFrenzy,
+        TrueAim = ChimaeraShot,
 
-		AMurderOfCrowsSurvial = Stomp,
-		MortalWound = DireFrenzy,
-		SnakeHunter = ChimaeraShot,
+        AMurderOfCrowsSurvial = Stomp,
+        MortalWound = DireFrenzy,
+        SnakeHunter = ChimaeraShot,
 
         Posthaste = 7,
         Farstrider,
         Dash,
 
-		OneWithThePack = 10,
+        OneWithThePack = 10,
         BestialFury,
         BlinkStrikes,
 
-		ExplosiveShot = OneWithThePack,
-		Sentinel = BestialFury,
-		PatientSniper = BlinkStrikes,
+        ExplosiveShot = OneWithThePack,
+        Sentinel = BestialFury,
+        PatientSniper = BlinkStrikes,
 
-		Caltrops = OneWithThePack,
-		ImprovedTraps = BestialFury,
-		SteelTrap = BlinkStrikes,
+        Caltrops = OneWithThePack,
+        ImprovedTraps = BestialFury,
+        SteelTrap = BlinkStrikes,
 
         BindingShot = 13,
         WyvernString,
         Intimidation,
 
-		Camouflage = Intimidation,
+        Camouflage = Intimidation,
 
-		StickyBomb = BindingShot,
-		RangersNet = WyvernString,
+        StickyBomb = BindingShot,
+        RangersNet = WyvernString,
 
         AMurderOfCrowsBeastMastery = 16,
         Barrage,
         Volley,
 
-		Butchery = AMurderOfCrowsBeastMastery,
-		DragonsFireGrenade = Barrage,
-		SerpentString = Volley,
+        Butchery = AMurderOfCrowsBeastMastery,
+        DragonsFireGrenade = Barrage,
+        SerpentString = Volley,
 
         Stampede = 19,
         KillerCobra,
         AspectOfTheBeast,
 
-		Sidewinders = Stampede,
-		PiercingShot = KillerCobra,
-		TrickShot = AspectOfTheBeast,
+        Sidewinders = Stampede,
+        PiercingShot = KillerCobra,
+        TrickShot = AspectOfTheBeast,
 
-		SpittingCobra = Stampede,
-		ExpertTrapper = KillerCobra,
+        SpittingCobra = Stampede,
+        ExpertTrapper = KillerCobra,
     }
 }

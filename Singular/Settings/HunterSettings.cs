@@ -62,6 +62,13 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
+        [DisplayName("Use Barrage")]
+        [Description("True: Will cast barrage; False: don't cast.")]
+        public bool UseBarrage { get; set; }
+
+		[Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
         [DisplayName("Use Misdirection in Instances")]
         [Description("Cast Misdirection on Tank during Pull in Instances, and on Pet if all Tanks dead and Hunter gets aggro")]
         public bool UseMisdirectionInInstances { get; set; }

@@ -160,7 +160,7 @@ namespace Singular.Settings
         public bool UseShieldPrePull { get; set; }
 
         [Setting]
-        [DefaultValue(60)]
+        [DefaultValue(90)]
         [Category("Common")]
         [DisplayName("Shield Health Percent")]
         [Description("Use PW:Shield below this %")]
@@ -264,7 +264,7 @@ namespace Singular.Settings
                         [DefaultValue(50)]
                         [Category("Common")]
                         [DisplayName("Mindbender Mana")]
-                        [Description("Mindbender will be used at this value")] 
+                        [Description("Mindbender will be used at this value")]
                         public int MindbenderMana { get; set; }
                 */
         [Setting]
@@ -273,7 +273,7 @@ namespace Singular.Settings
         [DisplayName("Desperate Prayer Health %")]
         [Description("Desperate Prayer used at this Health %")]
         public int DesperatePrayerHealth { get; set; }
-                       
+
 
         //[Setting]
         //[DefaultValue(false)]
@@ -540,7 +540,7 @@ namespace Singular.Settings
                 // omit case for WoWContext.Normal and let it use DefaultValue() values
             }
 
-            // adjust Flash Heal if we have not previously 
+            // adjust Flash Heal if we have not previously
             if (!FlashHealAdjusted && StyxWoW.Me.Level >= 34 && (ctx == HealingContext.Instances || ctx == HealingContext.Raids))
             {
                 if (SavedToFile)

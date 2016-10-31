@@ -22,11 +22,11 @@ namespace Singular.Managers
 {
     /*
      * Targeting works like so, in order of being called
-     * 
+     *
      * GetInitialObjectList - Return a list of initial objects for the targeting to use.
      * RemoveTargetsFilter - Remove anything that doesn't belong in the list.
      * IncludeTargetsFilter - If you want to include units regardless of the remove filter
-     * WeighTargetsFilter - Weigh each target in the list.     
+     * WeighTargetsFilter - Weigh each target in the list.
      *
      */
 
@@ -241,8 +241,8 @@ namespace Singular.Managers
                     }
 
                     // If we have movement turned off, ignore people who aren't in range.
-                    // Almost all healing is 40 yards, so we'll use that. If in Battlegrounds use a slightly larger value to expane our 
-                    // healing range, but not too large that we are running all over the bg zone 
+                    // Almost all healing is 40 yards, so we'll use that. If in Battlegrounds use a slightly larger value to expane our
+                    // healing range, but not too large that we are running all over the bg zone
                     // note: reordered following tests so only one floating point distance comparison done due to evalution of DisableAllMovement
                     if (unit.Location.DistanceSquared(myLoc) > maxHealRangeSqr)
                     {
@@ -397,7 +397,7 @@ namespace Singular.Managers
 
         private static readonly WaitTimer SavingHealTimer = new WaitTimer(TimeSpan.FromMilliseconds(1500));
         /// <summary>
-        /// finds the lowest health target in HealerManager.  HealerManager updates the list over multiple pulses, resulting in 
+        /// finds the lowest health target in HealerManager.  HealerManager updates the list over multiple pulses, resulting in
         /// the .FirstUnit entry often being at higher health than later entries.  This method dynamically searches the current
         /// list and returns the lowest at this moment.
         /// </summary>
@@ -432,7 +432,7 @@ namespace Singular.Managers
         }
 
         /// <summary>
-        /// finds the lowest health target in HealerManager.  HealerManager updates the list over multiple pulses, resulting in 
+        /// finds the lowest health target in HealerManager.  HealerManager updates the list over multiple pulses, resulting in
         /// the .FirstUnit entry often being at higher health than later entries.  This method dynamically searches the current
         /// list and returns the lowest at this moment.
         /// </summary>
@@ -617,7 +617,7 @@ namespace Singular.Managers
 
         /// <summary>
         /// selects the Tank we should stay near.  Priority is RaFHelper.Leader, then First Role.Tank either
-        /// in combat or 
+        /// in combat or
         /// </summary>
         public static WoWUnit TankToStayNear
         {
@@ -766,7 +766,7 @@ namespace Singular.Managers
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="gapCloser"></param>
         /// <returns></returns>
@@ -812,7 +812,7 @@ namespace Singular.Managers
                                 req => !Spell.IsChannelling(),
                                 Movement.CreateFaceTargetBehavior()
                                 )
-                            ),                        
+                            ),
                         new ActionAlwaysFail()
                         )
                     ),
@@ -828,7 +828,7 @@ namespace Singular.Managers
 
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="gapCloser"></param>
         /// <returns></returns>
@@ -950,7 +950,7 @@ namespace Singular.Managers
                         return true;
                     }
                 }
-                
+
                 return false;
             }
         }
@@ -974,7 +974,10 @@ namespace Singular.Managers
                 }
 
                 WoWUnit lowest = FindLowestHealthTarget();
-                if (lowest != null && lowest.HealthPercent <= SingularSettings.Instance.DpsOffHealEndPct)
+                if (lowest == null)
+                    return true;
+
+                if (lowest.HealthPercent <= SingularSettings.Instance.DpsOffHealEndPct)
                     return false;
 
                 if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
@@ -1005,7 +1008,7 @@ namespace Singular.Managers
             }
         }
 
-        #endregion  
+        #endregion
     }
 
     /// <summary>
@@ -1080,7 +1083,7 @@ namespace Singular.Managers
             {
                 if (!SingularSettings.TraceHeals)
                     pri.AddChild(pb.behavior);
-                else 
+                else
                 {
                     CallTrace ct = new CallTrace(pb.Name, pb.behavior);
                     ct.TraceActive = true;

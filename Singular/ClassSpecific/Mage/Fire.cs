@@ -53,11 +53,15 @@ namespace Singular.ClassSpecific.Mage
                         Spell.Cast("Combustion", ret => Me.CurrentTarget.HasMyAura("Ignite")),
                         Spell.Cast("Fire Blast", ret => Me.HasActiveAura("Heating Up")),
                         new Sequence(
-                            Spell.Cast("Pyroblast", req => {
+                            Spell.Cast("Pyroblast", req =>
+                            {
+                                if (Me.CurrentTarget.IsTrivial())
+                                    return false;
                                 if (Me.CurrentTarget.SpellDistance() > 18)
                                     return true;
                                 if (DateTime.UtcNow > _lastPyroPull.AddMilliseconds(3000))
                                     return true;
+
                                 return false;
                                 }),
                             new Action( r => _lastPyroPull = DateTime.UtcNow )
@@ -147,6 +151,7 @@ namespace Singular.ClassSpecific.Mage
 						Spell.Cast("Dragon's Breath", ret => Unit.UnfriendlyUnits(12).Any(u => Me.IsSafelyFacing(u))),
 						Spell.Cast("Fireball", ret => !Me.HasActiveAura("Heating Up")),
 						Spell.Cast("Scorch", ret => Me.IsMoving && (!Common.HasTalent(MageTalents.IceFloes) || Spell.GetCharges("Ice Floes") <= 0)),
+                        Spell.Cast("Fireball"), // Last resort filler to prevent bot from standing around.
 
 						new ActionAlwaysFail()
                         )

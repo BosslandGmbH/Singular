@@ -25,10 +25,9 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-						Spell.BuffSelf("Evasion", req => Me.HealthPercent < 40),
                         Helpers.Common.CreateInterruptBehavior(),
-                        Spell.Cast("Envenom", ret => Me.ComboPoints == 5 || Me.CurrentTarget.HealthPercent <= 40 && Me.ComboPoints >= 2),
-                        Spell.Cast("Mutilate")
+                        Spell.Cast("Eviscerate", ret => Me.ComboPoints > 3),
+                        Spell.Cast("Sinsiter Strike")
                         )
                     )
                 );

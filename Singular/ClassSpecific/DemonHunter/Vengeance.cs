@@ -87,7 +87,7 @@ namespace Singular.ClassSpecific.DemonHunter
                         Spell.Cast("Fel Devastation", on => (WoWUnit)on),
                         Spell.BuffSelf("Immolation Aura", ret => Unit.UnfriendlyUnits(8).Any()),
                         Spell.Cast("Soul Cleave", on => (WoWUnit)on, ret => CurrentPain >= 50),
-                        Spell.HandleOffGCD(Spell.CastOnGround("Infernal Strike", on => WoWMathHelper.CalculatePointBehind(Me.Location, Me.Rotation, 1f), ret => DemonHunterSettings.DPSInfernalStrike && Spell.GetCharges("Infernal Strike") > 1 && Me.CurrentTarget.IsWithinMeleeRange)),
+                        Spell.HandleOffGCD(Spell.CastOnGround("Infernal Strike", on => WoWMathHelper.CalculatePointInFront(Me.Location, Me.Rotation, .5f), ret => DemonHunterSettings.DPSInfernalStrike && Spell.GetCharges("Infernal Strike") > 1 && Me.CurrentTarget.IsWithinMeleeRange)),
 
                         // Average Priority AoE
                         new Decorator(

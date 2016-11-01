@@ -212,7 +212,7 @@ namespace Singular.ClassSpecific.Druid
 				// self-healing Non-Combat
 				new Decorator(
 					ret => !Me.Combat
-					       && (!Me.IsMoving || IsHealingTouchInstant() || Spell.HaveAllowMovingWhileCastingAura())
+					       && (!Me.IsMoving || Spell.HaveAllowMovingWhileCastingAura())
 					       && Me.HealthPercent <= 85 // not redundant... this eliminates unnecessary GetPredicted... checks
 					       && SpellManager.HasSpell("Healing Touch")
 					       && Me.PredictedHealthPercent(includeMyHeals: true) < 85,
@@ -307,22 +307,6 @@ namespace Singular.ClassSpecific.Druid
 				#endregion
 
 				);
-		}
-
-		private static bool IsHealingTouchInstant()
-		{
-			const int DREAM_OF_CENARIUS_GUARDIAN_PROC = 145162;
-
-			SpellFindResults sfr;
-			if (SpellManager.FindSpell("Healing Touch", out sfr))
-				return (sfr.Override ?? sfr.Original).IsInstantCast();
-
-			if (Me.GetAuraTimeLeft("Predatory Swiftness").TotalMilliseconds > 100)
-				return true;
-			if (Me.GetAuraTimeLeft(DREAM_OF_CENARIUS_GUARDIAN_PROC).TotalMilliseconds > 100)
-				return true;
-
-			return false;
 		}
 
 		#region DPS Off Heal

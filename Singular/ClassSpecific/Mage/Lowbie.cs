@@ -19,7 +19,7 @@ namespace Singular.ClassSpecific.Mage
         {
             get {
                 return Unit.UnfriendlyUnits(12).Any(u => u.IsHostile || (u.Combat && u.IsTargetingMyStuff()))
-                    && !Unit.UnfriendlyUnits(12).Any(u => !u.Combat && u.IsNeutral); 
+                    && !Unit.UnfriendlyUnits(12).Any(u => !u.Combat && u.IsNeutral);
             }
         }
 
@@ -40,6 +40,7 @@ namespace Singular.ClassSpecific.Mage
 						Movement.WaitForFacing(),
 						Movement.WaitForLineOfSpellSight(),
 
+                        Spell.Cast("Fire Blast"),
                         Spell.BuffSelf("Frost Nova", ret => LowbieNeedsFrostNova),
                         Spell.Cast("Ice Lance", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsFrozen())),
                         Spell.Cast("Frostbolt")

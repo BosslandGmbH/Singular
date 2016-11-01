@@ -345,7 +345,6 @@ namespace Singular.ClassSpecific.Druid
                             on => Unit.UnfriendlyUnits(8).OrderBy(u => u.GetAuraTimeLeft("Rake")).
                                         FirstOrDefault(
                                             u => Me.IsSafelyFacing(u) && (Me.HasActiveAura("Bloodtalons") || u.GetAuraTimeLeft("Rake").TotalSeconds < RakeAndThrashRefresh))),
-                        Spell.Cast("Thrash", on => Unit.UnfriendlyUnits(8).FirstOrDefault(u => u.GetAuraTimeLeft("Thrash").TotalSeconds < RakeAndThrashRefresh)),
                         Spell.Cast("Brutal Slash"),
                         Spell.Cast("Shred", ret => Unit.UnfriendlyUnitsNearTarget(8).Count() <= 1),
                         Spell.Cast("Swipe"),

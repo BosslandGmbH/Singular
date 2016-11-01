@@ -1,4 +1,5 @@
-﻿using Singular.Dynamics;
+﻿using System;
+using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
 using Styx;
@@ -33,7 +34,7 @@ namespace Singular.ClassSpecific.Druid
                     new PrioritySelector(
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
-						
+
 						Spell.Cast("Rake"),
 						Helpers.Common.EnsureReadyToAttackFromMelee(),
 						Spell.Cast("Shred")
@@ -48,7 +49,7 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
 
                 new Action(r => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
-				
+
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCast(),
                 new Decorator(
@@ -59,10 +60,10 @@ namespace Singular.ClassSpecific.Druid
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
-						
-                        Spell.Buff("Rake", true),
-                        Spell.Cast("Ferocious Bite", ret => StyxWoW.Me.ComboPoints >= 5 || Me.ComboPoints >= Me.CurrentTarget.TimeToDeath(99)),
-                        Spell.Cast("Shred")
+
+                        Spell.BuffSelf("Regrowth", ret => Me.HealthPercent < 60),
+                        Spell.Cast("Moonfire", ret => Me.CurrentTarget.GetAuraTimeLeft("Moonfire") < TimeSpan.FromSeconds(2)),
+                        Spell.Cast("Solar Wrath")
                         )
                     )
 				);

@@ -77,7 +77,8 @@ namespace Singular.ClassSpecific.Shaman
                         CreateLowbieDiagnosticOutputBehavior(),
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
-                        Spell.Cast("Earth Shock", req => Me.CurrentTarget.Distance < 15 || !Me.CurrentTarget.IsMoving),      // always use
+                        Spell.Cast("Earth Shock", ret => Me.CurrentMaelstrom > 30),
+                        Spell.Cast("Flame Shock", ret => Me.CurrentTarget.GetAuraTimeLeft("Flame Shock") < TimeSpan.FromSeconds(2)),
 						Spell.Cast("Lightning Bolt")
                         )
                     )

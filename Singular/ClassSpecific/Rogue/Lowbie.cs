@@ -27,7 +27,7 @@ namespace Singular.ClassSpecific.Rogue
                     new PrioritySelector(
                         Helpers.Common.CreateInterruptBehavior(),
                         Spell.Cast("Eviscerate", ret => Me.ComboPoints > 3),
-                        Spell.Cast("Sinsiter Strike")
+                        Spell.Cast("Sinister Strike")
                         )
                     )
                 );

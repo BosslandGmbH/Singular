@@ -50,7 +50,7 @@ namespace Singular.ClassSpecific.Druid
 
                 new Action(r => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
 
-                Helpers.Common.EnsureReadyToAttackFromMelee(),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
                 Spell.WaitForCast(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>11.02.2016 20:53:05</ScanTime>
+  <ScanTime>11.03.2016 06:34:05</ScanTime>
   <FileList>
     <File Hash="9714" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="7693" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -11,10 +11,10 @@
     <File Hash="10013" Name="ClassSpecific\DemonHunter\Havoc.cs" />
     <File Hash="7253" Name="ClassSpecific\DemonHunter\Vengeance.cs" />
     <File Hash="5698" Name="ClassSpecific\Druid\Balance.cs" />
-    <File Hash="43741" Name="ClassSpecific\Druid\Common.cs" />
+    <File Hash="58444" Name="ClassSpecific\Druid\Common.cs" />
     <File Hash="22657" Name="ClassSpecific\Druid\Feral.cs" />
-    <File Hash="12571" Name="ClassSpecific\Druid\Guardian.cs" />
-    <File Hash="2491" Name="ClassSpecific\Druid\Lowbie.cs" />
+    <File Hash="12700" Name="ClassSpecific\Druid\Guardian.cs" />
+    <File Hash="1434" Name="ClassSpecific\Druid\Lowbie.cs" />
     <File Hash="41271" Name="ClassSpecific\Druid\Resto.cs" />
     <File Hash="18811" Name="ClassSpecific\Generic.cs" />
     <File Hash="5308" Name="ClassSpecific\Hunter\BeastMaster.cs" />
@@ -35,17 +35,17 @@
     <File Hash="11080" Name="ClassSpecific\Paladin\Common.cs" />
     <File Hash="12711" Name="ClassSpecific\Paladin\Holy.cs" />
     <File Hash="1706" Name="ClassSpecific\Paladin\Lowbie.cs" />
-    <File Hash="12560" Name="ClassSpecific\Paladin\Protection.cs" />
+    <File Hash="12633" Name="ClassSpecific\Paladin\Protection.cs" />
     <File Hash="14810" Name="ClassSpecific\Paladin\Retribution.cs" />
     <File Hash="24722" Name="ClassSpecific\Priest\Common.cs" />
     <File Hash="41753" Name="ClassSpecific\Priest\Discipline.cs" />
-    <File Hash="25453" Name="ClassSpecific\Priest\Holy.cs" />
+    <File Hash="25397" Name="ClassSpecific\Priest\Holy.cs" />
     <File Hash="1026" Name="ClassSpecific\Priest\Lowbie.cs" />
     <File Hash="31756" Name="ClassSpecific\Priest\Shadow.cs" />
     <File Hash="8288" Name="ClassSpecific\Rogue\Assassination.cs" />
     <File Hash="94" Name="ClassSpecific\Rogue\Combat.cs" />
     <File Hash="60860" Name="ClassSpecific\Rogue\Common.cs" />
-    <File Hash="1792" Name="ClassSpecific\Rogue\Lowbie.cs" />
+    <File Hash="1077" Name="ClassSpecific\Rogue\Lowbie.cs" />
     <File Hash="11619" Name="ClassSpecific\Rogue\Outlaw.cs" />
     <File Hash="4696" Name="ClassSpecific\Rogue\Poisons.cs" />
     <File Hash="6943" Name="ClassSpecific\Rogue\Subtlety.cs" />

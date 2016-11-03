@@ -1,27 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
-using System.Text;
 using CommonBehaviors.Actions;
 using Singular.Dynamics;
 using Singular.Helpers;
+using Singular.Managers;
 using Singular.Settings;
 using Styx;
 using Styx.TreeSharp;
 using Styx.WoWInternals.WoWObjects;
-using System.Drawing;
-
 using Action = Styx.TreeSharp.Action;
-using Singular.Managers;
-using Styx.Pathing;
 
 namespace Singular.ClassSpecific.Druid
 {
     class Guardian
     {
         private static DruidSettings Settings => SingularSettings.Instance.Druid();
-		private static LocalPlayer Me => StyxWoW.Me;
-	    private static long RageDeficit => Me.MaxRage - Me.CurrentRage;
+        private static LocalPlayer Me => StyxWoW.Me;
+        private static long RageDeficit => Me.MaxRage - Me.CurrentRage;
 
         #region Common
 
@@ -46,15 +42,12 @@ namespace Singular.ClassSpecific.Druid
                             ret => Me.CurrentTarget.IsFlying || !Movement.CanNavigateToMelee(Me.CurrentTarget),
                             new PrioritySelector(
                                 Spell.Cast("Moonfire"),
-                                Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget,
-                                                                  27f, 22f)
+                                Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget, 27f, 22f)
                                 )
                             ),
 
-                        Common.CastForm(ShapeshiftForm.Bear,
-                                        req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
-                        CreateGuardianWildChargeBehavior(),
-                        Common.CreateFaerieFireBehavior(on => Me.CurrentTarget, req => true)
+                        Common.CastForm(ShapeshiftForm.Bear, req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
+                        CreateGuardianWildChargeBehavior()
                         )
                     )
                 );
@@ -66,9 +59,9 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateGuardianHeal()
         {
             return new PrioritySelector(
-                CreateGuardianDiagnosticOutputBehavior( "Combat"),
+                CreateGuardianDiagnosticOutputBehavior("Combat"),
 
-                // defensive
+            // defensive
             Spell.HandleOffGCD(Spell.BuffSelf("Survival Instincts", ret => Me.HealthPercent <= Settings.TankSurvivalInstinctsHealth)),
             Spell.HandleOffGCD(Spell.BuffSelf("Barkskin", ret => Me.HealthPercent <= Settings.TankFeralBarkskin)),
             CreateGuardianIronfurBehavior(),
@@ -90,7 +83,7 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
 
-                Common.CastForm( ShapeshiftForm.Bear, req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
+                Common.CastForm(ShapeshiftForm.Bear, req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
 
                 );
         }
@@ -99,26 +92,24 @@ namespace Singular.ClassSpecific.Druid
         {
             // Ironfur is one of the main defensive abilities now in Guardian, so it's a bit more complicated to find out if we need to use it.
             return new PrioritySelector(
-				// ironfur by health % + mob count
+                // ironfur by health % + mob count
                 Spell.HandleOffGCD(Spell.BuffSelf("Ironfur", ret =>
                     Settings.TankFeralIronfurHealth > 0 && Settings.TankFeralIronfurNormalUnits > 0 &&
                     Me.HealthPercent <= Settings.TankFeralIronfurHealth && Unit.NearbyUnitsInCombatWithMe.Count() >= Settings.TankFeralIronfurNormalUnits)),
 
                 // ironfur by health% only
                 Spell.HandleOffGCD(Spell.BuffSelf("Ironfur", ret =>
-                    Settings.TankFeralIronfurHealth > 0 &&
-                    Me.HealthPercent < Settings.TankFeralIronfurHealth)),
+                    Settings.TankFeralIronfurHealth > 0 && Me.HealthPercent < Settings.TankFeralIronfurHealth)),
 
                 // ironfur by mob count only
                 Spell.HandleOffGCD(Spell.BuffSelf("Ironfur", ret =>
-                    Settings.TankFeralIronfurNormalUnits > 0 &&
-                    Unit.NearbyUnitsInCombatWithMe.Count() >= Settings.TankFeralIronfurNormalUnits)),
+                    Settings.TankFeralIronfurNormalUnits > 0 && Unit.NearbyUnitsInCombatWithMe.Count() >= Settings.TankFeralIronfurNormalUnits)),
 
                 Spell.HandleOffGCD(Spell.BuffSelf("Ironfur", ret =>
                     Settings.TankFeralIronfurHealth > 0 && Unit.NearbyUnitsInCombatWithMe.Any(u => u.IsBoss || u.Elite))),
 
-				Spell.HandleOffGCD(Spell.Cast("Ironfur", ret =>
-                    Settings.TankFeralIronfurHealth > 0 && Me.CurrentRage > 95 && Unit.NearbyUnitsInCombatWithMe.Any(u => u.IsTargetingMeOrPet && (u.IsBoss || u.IsStressful()))))
+                Spell.HandleOffGCD(Spell.Cast("Ironfur", ret =>
+                    Settings.TankFeralIronfurHealth > 0 && Me.CurrentRage > 95 && Unit.NearbyUnitsInCombatWithMe.Any(u => u.IsBoss || u.IsStressful())))
             );
         }
 
@@ -128,6 +119,8 @@ namespace Singular.ClassSpecific.Druid
             TankManager.NeedTankTargeting = (SingularRoutine.CurrentWoWContext == WoWContext.Instances);
 
             return new PrioritySelector(
+                //Some profiles have problems pulling. Having this here reduces somewhat the delay to enter Bear Form this profiles cause.
+                Common.CastForm(ShapeshiftForm.Bear, req => !Utilities.EventHandlers.IsShapeshiftSuppressed && Me.Shapeshift != ShapeshiftForm.Bear),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 CreateGuardianWildChargeBehavior(),
 
@@ -135,7 +128,7 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-						ctx => TankManager.Instance.TargetList.FirstOrDefault(u => u.IsWithinMeleeRange) ?? Me.CurrentTarget,
+                        ctx => TankManager.Instance.TargetList.FirstOrDefault(u => u.IsWithinMeleeRange) ?? Me.CurrentTarget,
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
                         SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
@@ -144,15 +137,15 @@ namespace Singular.ClassSpecific.Druid
                         CreateGuardianTauntBehavior(),
 
                         Spell.HandleOffGCD(Spell.Cast("Rage of the Sleeper", ret => Settings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None
-																				&& Me.HealthPercent <= Settings.ArtifactHealthPercent)),
+                                                                                && Me.HealthPercent <= Settings.ArtifactHealthPercent)),
                         Spell.BuffSelf("Incarnation: Guardian of Ursoc", ret => Me.CurrentRage <= 20),
-						Spell.Cast("Moonfire", on => (WoWUnit)on, ret => Me.HasActiveAura("Galactic Guardian")),
+                        Spell.Cast("Moonfire", on => (WoWUnit)on, ret => Me.HasActiveAura("Galactic Guardian")),
                         // thrash is slightly higher priority when mob count >= 3.
                         Spell.Cast("Thrash", on => (WoWUnit)on, req => Unit.UnitsInCombatWithMe(8).Count() >= 3),
-						Spell.Cast("Mangle", on => (WoWUnit)on),
-						Spell.Cast("Thrash", on => (WoWUnit)on, req => Unit.UnitsInCombatWithMe(8).Count() >= 1),
+                        Spell.Cast("Mangle", on => (WoWUnit)on),
+                        Spell.Cast("Thrash", on => (WoWUnit)on, req => Unit.UnitsInCombatWithMe(8).Any()),
                         Spell.Cast("Moonfire", on => Unit.NearbyUnitsInCombatWithUsOrOurStuff.FirstOrDefault(u => u.GetAuraTimeLeft("Moonfire").TotalSeconds < 2.5)),
-                        Spell.Cast("Swipe", on => (WoWUnit)on, req => Unit.UnitsInCombatWithMe(8).Count() >= 1),
+                        Spell.Cast("Swipe", on => (WoWUnit)on, req => Unit.UnitsInCombatWithMe(8).Any()),
                         Spell.HandleOffGCD(Spell.Cast("Maul", on => (WoWUnit)on, ret => (!Me.HasActiveAura("Ironfur") && !Me.HasActiveAura("Mark of Ursol") && RageDeficit < 10))),
 
                         Movement.WaitForFacing(),
@@ -167,7 +160,7 @@ namespace Singular.ClassSpecific.Druid
 
         private static Composite CreateGuardianTauntBehavior()
         {
-            if ( !SingularSettings.Instance.EnableTaunting )
+            if (!SingularSettings.Instance.EnableTaunting)
                 return new ActionAlwaysFail();
 
             return new Decorator(
@@ -175,7 +168,7 @@ namespace Singular.ClassSpecific.Druid
                     && TankManager.Instance.NeedToTaunt.FirstOrDefault().InLineOfSpellSight,
                 new Throttle(TimeSpan.FromMilliseconds(1500),
                     new PrioritySelector(
-                // Direct Taunt
+                        // Direct Taunt
                         Spell.Cast("Growl",
                             ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
                             ret => true),
@@ -194,12 +187,12 @@ namespace Singular.ClassSpecific.Druid
 
         }
 
-        private static Throttle CreateGuardianWildChargeBehavior( UnitSelectionDelegate onUnit = null)
+        private static Throttle CreateGuardianWildChargeBehavior(UnitSelectionDelegate onUnit = null)
         {
             return new Throttle(7,
                 new Sequence(
-                    Spell.CastHack("Wild Charge", onUnit ?? (on => Me.CurrentTarget), ret => MovementManager.IsClassMovementAllowed && (Me.CurrentTarget.Distance + Me.CurrentTarget.CombatReach).Between( 10, 25)),
-                    new Action( ret => StopMoving.Clear() ),
+                    Spell.CastHack("Wild Charge", onUnit ?? (on => Me.CurrentTarget), ret => MovementManager.IsClassMovementAllowed && Me.Shapeshift == ShapeshiftForm.Bear && (Me.CurrentTarget.Distance + Me.CurrentTarget.CombatReach).Between(10, 25)),
+                    new Action(ret => StopMoving.Clear()),
                     new Wait(1, until => !Me.GotTarget() || Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
                     )
                 );

@@ -35,7 +35,7 @@ namespace Singular.ClassSpecific.Paladin
         {
             return new PrioritySelector(
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
-                Rest.CreateDefaultRestBehaviour( "Light of the Protector", "Redemption")
+                Rest.CreateDefaultRestBehaviour("Light of the Protector", "Redemption")
                 );
         }
 
@@ -48,13 +48,13 @@ namespace Singular.ClassSpecific.Paladin
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Spell.Cast("Divine Steed", req => PaladinSettings.UseDivineSteed && Me.CurrentTarget.Distance > 15d),
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
 
-                        Spell.Cast("Judgment"),
+                        Spell.BuffSelf("Divine Steed", req => PaladinSettings.UseDivineSteed && !Me.Mounted && Me.IsMoving && Me.CurrentTarget.SpellDistance().Between(15, 60)),
                         Spell.Cast("Avenger's Shield", ret => Spell.UseAOE),
+                        Spell.Cast("Judgment"),
                         Spell.Cast("Reckoning", ret => !Me.CurrentTarget.IsPlayer)
                         )
                     ),
@@ -69,7 +69,7 @@ namespace Singular.ClassSpecific.Paladin
             return new PrioritySelector(
                 Spell.BuffSelf("Devotion Aura", req => Me.Silenced),
 
-                Spell.Cast("Divine Steed", req => PaladinSettings.UseDivineSteed && Me.CurrentTarget.Distance > 15d),
+                Spell.BuffSelf("Divine Steed", req => PaladinSettings.UseDivineSteed && Me.CurrentTarget.SpellDistance().Between(15, 60) || (Me.HealthPercent < 80 && Common.HasTalent(PaladinTalents.KnightTemplar))),
 
                 new Decorator(
                     req => !Unit.IsTrivial(Me.CurrentTarget),
@@ -78,36 +78,33 @@ namespace Singular.ClassSpecific.Paladin
                         // Defensive
                         Spell.Cast("Eye of Tyr", ret => PaladinSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && Me.HealthPercent <= PaladinSettings.ArtifactHealthPercent),
 
-                        Spell.BuffSelf("Hand of Freedom",
-                            ret => Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
-                                                                    WoWSpellMechanic.Disoriented,
-                                                                    WoWSpellMechanic.Frozen,
-                                                                    WoWSpellMechanic.Incapacitated,
-                                                                    WoWSpellMechanic.Rooted,
-                                                                    WoWSpellMechanic.Slowed,
-                                                                    WoWSpellMechanic.Snared)),
+                        Spell.BuffSelf("Blessing of Freedom", ret =>
+                             (Me.HasAuraWithMechanic(WoWSpellMechanic.Rooted, WoWSpellMechanic.Slowed, WoWSpellMechanic.Snared) || Me.HasAuraWithEffect(WoWApplyAuraType.ModRoot, WoWApplyAuraType.ModDecreaseSpeed))
+                             && !Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed)
+                             ),
 
                         Spell.BuffSelf("Sacred Shield"),
 
                         Spell.BuffSelf("Divine Shield",
                             ret => Me.CurrentMap.IsBattleground && Me.HealthPercent <= 20 && !Me.HasAura("Forbearance")),
 
-                        Spell.BuffSelf(
+                        Spell.HandleOffGCD(Spell.BuffSelf(
                             "Guardian of Ancient Kings",
                             ret => Me.GotTarget()
                                 && Me.CurrentTarget.IsWithinMeleeRange
                                 && (Me.HealthPercent <= PaladinSettings.GoAKHealth || _aoeCount > 3)
-                            ),
+                            )),
 
-                        Spell.BuffSelf(
+                        Spell.HandleOffGCD(Spell.BuffSelf(
                             "Ardent Defender",
-                            ret => Me.HealthPercent <= PaladinSettings.ArdentDefenderHealth)
+                            ret => Me.HealthPercent <= PaladinSettings.ArdentDefenderHealth)),
+                        Spell.BuffSelf("Cleanse Toxins", ret => Me.GetAllAuras().Any(a => a.Spell.DispelType == WoWDispelType.Disease || a.Spell.DispelType == WoWDispelType.Poison))
                         )
                     ),
 
                 // Heal up after Defensive CDs used if needed
-                Spell.BuffSelf( "Lay on Hands",
-                    ret => Me.HealthPercent <= PaladinSettings.SelfLayOnHandsHealth && !Me.HasAura("Forbearance")),
+                Spell.HandleOffGCD(Spell.BuffSelf("Lay on Hands",
+                    ret => Me.HealthPercent <= PaladinSettings.SelfLayOnHandsHealth && !Me.HasAura("Forbearance"))),
 
                 Spell.Cast("Flash of Light",
                     mov => false,
@@ -120,11 +117,11 @@ namespace Singular.ClassSpecific.Paladin
                     req => !Unit.IsTrivial(Me.CurrentTarget),
                     new PrioritySelector(
 
-                        Spell.BuffSelf("Avenging Wrath",
+                        Spell.HandleOffGCD(Spell.BuffSelf("Avenging Wrath",
                             ret => Me.GotTarget()
                                 && Me.CurrentTarget.IsWithinMeleeRange
-                                && (Me.CurrentTarget.TimeToDeath() > 25 || _aoeCount > 1)
-                            )
+                                && (Me.CurrentTarget.TimeToDeath() > 20 || _aoeCount > 1)
+                            ))
                         )
                     )
                 );
@@ -153,7 +150,7 @@ namespace Singular.ClassSpecific.Paladin
                                 TankManager.Instance.TargetList.Count(
                                     u => u.SpellDistance() < 10 || u.Location.Distance(Me.CurrentTarget.Location) < 10);
                             return RunStatus.Failure;
-                            }),
+                        }),
 
                         CreateProtDiagnosticOutputBehavior(),
 
@@ -189,7 +186,7 @@ namespace Singular.ClassSpecific.Paladin
 
                         //Multi target
                         new Decorator(
-                            ret => _aoeCount >= 4 && Spell.UseAOE,
+                            ret => _aoeCount >= 3 && Spell.UseAOE,
                             new PrioritySelector(
                                 Spell.Cast("Avenger's Shield"),
                                 Spell.Cast("Consecration", req => Unit.UnfriendlyUnits(8).Any()),
@@ -202,16 +199,16 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.Cast("Blessed Hammer"),
 
                         //Single target
-                            // The buff below gives us a 20% damage reduction if we have KnightTemplar talent.
-                            // However, something is removing the buff as soon as its cast as it believes the player is using a mount.
-                            // Spell.BuffSelf("Divine Steed", req => Common.HasTalent(PaladinTalents.KnightTemplar)),
+                        // The buff below gives us a 20% damage reduction if we have KnightTemplar talent.
+                        // However, something is removing the buff as soon as its cast as it believes the player is using a mount.
+                        // Spell.BuffSelf("Divine Steed", req => Common.HasTalent(PaladinTalents.KnightTemplar)),
                         Spell.HandleOffGCD(Spell.Cast("Shield of the Righteous", req => !Me.HasAura(ShieldOfTheRighteous))),
                         Spell.HandleOffGCD(Spell.Cast("Light of the Protector", req => Me.HealthPercent <= 85)),
                         Spell.Cast("Consecration", req => Unit.UnfriendlyUnits(8).Any()),
+                        Spell.Cast("Avenger's Shield", req => Spell.UseAOE),
                         Spell.Cast("Bastion of Light", req => Spell.GetCharges("Shield of the Righteous") == 0 && !Me.HasAura(ShieldOfTheRighteous) && Me.HealthPercent <= 80),
                         Spell.Cast("Judgment"),
-                        Spell.Cast("Hammer of the Righteous"),
-                        Spell.Cast("Avenger's Shield", ret => Spell.UseAOE)
+                        Spell.Cast("Hammer of the Righteous")
                         )
                     ),
 
@@ -248,7 +245,7 @@ namespace Singular.ClassSpecific.Paladin
                                 target.SafeName(),
                                 target.HealthPercent,
                                 target.Distance,
-                                (int) target.ThreatInfo.RawPercent,
+                                (int)target.ThreatInfo.RawPercent,
                                 target.InLineOfSpellSight
                                 );
                         }

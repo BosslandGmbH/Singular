@@ -46,7 +46,7 @@ namespace Singular.ClassSpecific.Priest
                 );
         }
 
-        private static WoWUnit _lightwellTarget = null;
+        private static WoWUnit _lightwellTarget;
         //private static WoWUnit _moveToHealTarget = null;
         //private static WoWUnit _lastMoveToTarget = null;
 
@@ -57,7 +57,7 @@ namespace Singular.ClassSpecific.Priest
 
             HealerManager.NeedHealTargeting = true;
             PrioritizedBehaviorList behavs = new PrioritizedBehaviorList();
-            int cancelHeal = (int)Math.Max(SingularSettings.Instance.IgnoreHealTargetsAboveHealth, Math.Max(PriestSettings.HolyHeal.Heal, PriestSettings.HolyHeal.Renew ));
+            int cancelHeal = Math.Max(SingularSettings.Instance.IgnoreHealTargetsAboveHealth, Math.Max(PriestSettings.HolyHeal.Heal, PriestSettings.HolyHeal.Renew ));
 
             Logger.WriteDebugInBehaviorCreate("Priest Healing: will cancel cast of direct heal if health reaches {0:F1}%", cancelHeal);
 
@@ -156,8 +156,8 @@ namespace Singular.ClassSpecific.Priest
                                    HealerManager.Instance.TargetList.Count(
                                        u =>
                                            u.IsAlive && u.HealthPercent < PriestSettings.HolyHeal.HolyLevel90Talent &&
-                                           u.Distance < 30) >= PriestSettings.HolyHeal.CountLevel90Talent,
-                            Spell.CastOnGround("Halo", on => (WoWUnit) on, req => true)
+                                           u.Distance < 30) >= PriestSettings.HolyHeal.CountLevel90Talent && Unit.UnfriendlyUnits(30).Any(u => u.Combat && !u.IsCrowdControlled()),
+                            Spell.Cast("Halo", req => true)
                             )
                         )
                     );
@@ -191,7 +191,7 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     new PrioritySelector(
-                        context => HealerManager.GetBestCoverageTarget("Prayer of Healing", PriestSettings.HolyHeal.PrayerOfHealing, 40, 30, PriestSettings.HolyHeal.CountPrayerOfHealing),
+                        context => HealerManager.GetBestCoverageTarget("Prayer of Healing", PriestSettings.HolyHeal.PrayerOfHealing, 40, 20, PriestSettings.HolyHeal.CountPrayerOfHealing),
                         Spell.Cast("Prayer of Healing", on => (WoWUnit)on)
                         )
                     )
@@ -228,8 +228,8 @@ VoidShift               Void Shift
                     )
                 );
 
-            string cmt = "";
-            int flashHealHealth = PriestSettings.HolyHeal.FlashHeal;
+            var cmt = "";
+            var flashHealHealth = PriestSettings.HolyHeal.FlashHeal;
             if (!SpellManager.HasSpell("Heal"))
             {
                 flashHealHealth = Math.Max(flashHealHealth, PriestSettings.HolyHeal.Heal);
@@ -248,7 +248,7 @@ VoidShift               Void Shift
 
             if (PriestSettings.HolyHeal.Heal != 0)
                 behavs.AddBehavior(HealthToPriority(PriestSettings.HolyHeal.Heal), "Heal @ " + PriestSettings.HolyHeal.Heal + "%", "Heal",
-                    Spell.Cast( sp => Me.GetAuraStacks("Serendipity") > 2 ? "Heal" : "Flash Heal",
+                    Spell.Cast("Heal",
                     mov => true,
                     on => (WoWUnit)on,
                     req => ((WoWUnit)req).HealthPercent < PriestSettings.HolyHeal.Heal,
@@ -315,7 +315,7 @@ VoidShift               Void Shift
 
             behavs.OrderBehaviors();
 
-            if ( selfOnly == false && Singular.Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Combat)
+            if ( selfOnly == false && CompositeBuilder.CurrentBehaviorType == BehaviorType.Combat)
                 behavs.ListBehaviors();
 
             return new PrioritySelector(
@@ -457,7 +457,7 @@ VoidShift               Void Shift
             return new ThrottlePasses( 1, TimeSpan.FromSeconds(1), RunStatus.Failure,
                 new Action(ret =>
                 {
-                    WoWAura chakra = Me.GetAllAuras().Where(a => a.Name.Contains("Chakra")).FirstOrDefault();
+                    WoWAura chakra = Me.GetAllAuras().FirstOrDefault(a => a.Name.Contains("Chakra"));
 
                     string line = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, combat={3}, {4}, surge={5}, serendip={6}",
                         context,

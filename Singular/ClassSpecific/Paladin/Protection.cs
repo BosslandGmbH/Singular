@@ -23,8 +23,8 @@ namespace Singular.ClassSpecific.Paladin
 
         #region Properties & Fields
 
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static PaladinSettings PaladinSettings { get { return SingularSettings.Instance.Paladin(); } }
+        private static LocalPlayer Me => StyxWoW.Me;
+        private static PaladinSettings PaladinSettings => SingularSettings.Instance.Paladin();
         private const int ShieldOfTheRighteous = 132403;
         private static int _aoeCount;
 
@@ -35,6 +35,7 @@ namespace Singular.ClassSpecific.Paladin
         {
             return new PrioritySelector(
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
+                Spell.BuffSelf("Consecration", ret => Me.HealthPercent < 70 && SpellManager.CanCast("Light of the Protector")), // 20% Extra health boost.
                 Rest.CreateDefaultRestBehaviour("Light of the Protector", "Redemption")
                 );
         }
@@ -68,7 +69,6 @@ namespace Singular.ClassSpecific.Paladin
         {
             return new PrioritySelector(
                 Spell.BuffSelf("Devotion Aura", req => Me.Silenced),
-
                 Spell.BuffSelf("Divine Steed", req => PaladinSettings.UseDivineSteed && Me.CurrentTarget.SpellDistance().Between(15, 60) || (Me.HealthPercent < 80 && Common.HasTalent(PaladinTalents.KnightTemplar))),
 
                 new Decorator(
@@ -77,6 +77,8 @@ namespace Singular.ClassSpecific.Paladin
 
                         // Defensive
                         Spell.Cast("Eye of Tyr", ret => PaladinSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && Me.HealthPercent <= PaladinSettings.ArtifactHealthPercent),
+
+                        Spell.BuffSelf("Seraphim", ret => Me.TimeToDeath() > 7), // Eats up our defensive ability.  Don't use if we're taking severe damage.
 
                         Spell.BuffSelf("Blessing of Freedom", ret =>
                              (Me.HasAuraWithMechanic(WoWSpellMechanic.Rooted, WoWSpellMechanic.Slowed, WoWSpellMechanic.Snared) || Me.HasAuraWithEffect(WoWApplyAuraType.ModRoot, WoWApplyAuraType.ModDecreaseSpeed))

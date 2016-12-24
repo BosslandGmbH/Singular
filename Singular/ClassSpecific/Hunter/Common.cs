@@ -159,7 +159,7 @@ namespace Singular.ClassSpecific.Hunter
 
         private static Composite CreateGlyphOfFetchBehavior()
         {
-            if (!HunterSettings.UseFetch || !TalentManager.HasGlyph("Fetch"))
+            if (!HunterSettings.UseFetch || !SpellManager.HasSpell("Fetch"))
                 return new ActionAlwaysFail();
 
             return new Decorator(
@@ -308,6 +308,10 @@ namespace Singular.ClassSpecific.Hunter
 
                     feignDeathBehavior,
 
+                    // cast Self survival abilities
+                    Spell.Cast("Exhilaration", on => Me, ret => Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 20)), // There's a passive Exhilaration aura that messes with BuffSelf.
+
+
                     // cast Pet survival abilities
                     new Decorator(
                         ret => Me.GotAlivePet && (Pet.HealthPercent < 35 || Pet.HealthPercent < 60 && Unit.NearbyUnfriendlyUnits.Count(u => u.CurrentTargetGuid == Pet.Guid) >= 2),
@@ -336,7 +340,6 @@ namespace Singular.ClassSpecific.Hunter
                     new Decorator(
                         req => Me.GotTarget() && Me.IsSafelyFacing(Target) && Target.InLineOfSpellSight,
                         new PrioritySelector(
-                            Spell.BuffSelf("Exhilaration", ret => Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 20)),
 
                             Spell.Buff("Widow Venom", ret => HunterSettings.UseWidowVenom && Target.IsPlayer && Me.IsSafelyFacing(Target) && Target.InLineOfSpellSight),
 

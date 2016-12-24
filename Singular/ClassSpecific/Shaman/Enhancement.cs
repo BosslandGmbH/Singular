@@ -27,8 +27,8 @@ namespace Singular.ClassSpecific.Shaman
 {
     public class Enhancement
     {
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman(); } }
+        private static LocalPlayer Me => StyxWoW.Me;
+        private static ShamanSettings ShamanSettings => SingularSettings.Instance.Shaman();
 
         private static bool NeedFeralSpirit
         {
@@ -41,28 +41,6 @@ namespace Singular.ClassSpecific.Shaman
         }
 
         #region Common
-
-        [Behavior(BehaviorType.PreCombatBuffs | BehaviorType.CombatBuffs, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Instances | WoWContext.Normal)]
-        public static Composite CreateShamanEnhancementPreCombatBuffs()
-        {
-            return new PrioritySelector(
-
-                Common.CreateShamanDpsShieldBehavior(),
-
-                Totems.CreateRecallTotems()
-                );
-        }
-
-        [Behavior(BehaviorType.PreCombatBuffs | BehaviorType.CombatBuffs, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Battlegrounds)]
-        public static Composite CreateShamanEnhancementPvpPreCombatBuffs()
-        {
-            return new PrioritySelector(
-
-                Common.CreateShamanDpsShieldBehavior(),
-
-                Totems.CreateRecallTotems()
-                );
-        }
 
         [Behavior(BehaviorType.Rest, WoWClass.Shaman, WoWSpec.ShamanEnhancement)]
         public static Composite CreateShamanEnhancementRest()
@@ -111,7 +89,7 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator(ret => StyxWoW.Me.CurrentMaelstrom > ShamanSettings.MaelPercentHealingSurge,
                     new PrioritySelector(
                         Spell.Cast("Healing Surge", ret => StyxWoW.Me, ret => StyxWoW.Me.PredictedHealthPercent() < ShamanSettings.MaelHealingSurge),
-                        Spell.Cast("Healing Surge", ret => (WoWPlayer)Unit.GroupMembers.Where(p => p.IsAlive && p.PredictedHealthPercent() < ShamanSettings.MaelPvpOffHeal && p.Distance < 40).FirstOrDefault())
+                        Spell.Cast("Healing Surge", ret => (WoWPlayer)Unit.GroupMembers.FirstOrDefault(p => p.IsAlive && p.PredictedHealthPercent() < ShamanSettings.MaelPvpOffHeal && p.Distance < 40))
                         )
                     ),
 
@@ -225,7 +203,7 @@ namespace Singular.ClassSpecific.Shaman
                                 Spell.Cast("Frostbrand", req => Common.HasTalent(ShamanTalents.Hailstorm) && !Me.HasActiveAura("Frostbrand")),
                                 Spell.Cast("Boulderfist", req => Me.CurrentMaelstrom < 130 && Spell.GetCharges("Boulderfist") >= 2),
                                 Spell.Cast("Flametongue", req => !Me.HasActiveAura("Flametongue")),
-                                Spell.Cast("Feral Spirit"),
+                                Spell.Cast("Feral Spirit", ret => NeedFeralSpirit),
                                 Spell.Cast("Earthen Spike"),
                                 Spell.Cast("Crash Lightning", when => Unit.UnfriendlyUnitsNearTarget(10).Count(u => u.TaggedByMe || !u.TaggedByOther) >= 2),
                                 Spell.Cast("Stormstrike"),

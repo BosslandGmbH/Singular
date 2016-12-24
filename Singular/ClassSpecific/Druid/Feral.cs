@@ -299,7 +299,7 @@ namespace Singular.ClassSpecific.Druid
                                 || (DruidSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.HasActiveAura("Tiger's Fury")) )
                         ),
 
-                        Spell.BuffSelf("Regrowth", ret => Me.HasActiveAura("Predatory Swiftness")),
+                        Spell.Cast("Regrowth", on => Me, ret => Me.HasActiveAura("Predatory Swiftness") && (Me.HealthPercent < 90 || (Me.HealthPercent >= 90 && !Me.HasActiveAura("Regrowth")))),
                         Spell.HandleOffGCD(Spell.Cast("Tiger's Fury", ret => Common.HasTalent(DruidTalents.Predator) && Me.CurrentTarget.HasBleedDebuff() && Me.CurrentTarget.TimeToDeath() < 3 && (!Me.HasActiveAura("Tiger's Fury") || Me.CurrentEnergy < 70))),
 
                         // AoE

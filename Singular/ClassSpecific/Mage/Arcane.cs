@@ -1,14 +1,10 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using CommonBehaviors.Actions;
 using Singular.Dynamics;
 using Singular.Helpers;
-using Singular.Managers;
 using Styx;
 
 using Styx.CommonBot;
-using Styx.Helpers;
-
 
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
@@ -16,7 +12,6 @@ using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using Singular.Settings;
 using System.Drawing;
-using Singular.ClassSpecific.DemonHunter;
 using Styx.Common;
 
 namespace Singular.ClassSpecific.Mage
@@ -26,7 +21,8 @@ namespace Singular.ClassSpecific.Mage
         private static LocalPlayer Me => StyxWoW.Me;
 	    private static MageSettings MageSettings => SingularSettings.Instance.Mage();
 
-	    private static uint ArcaneCharges => Me.GetAllAuras().Where(a => a.Name == "Arcane Charge").Select(a => a.StackCount).DefaultIfEmpty(0u).Max();
+        private const int ArcaneChargeBuff = 36032;
+        private static uint ArcaneCharges => Me.GetAllAuras().Where(a => a.SpellId.Equals(ArcaneChargeBuff)).Select(a => a.StackCount).DefaultIfEmpty(0u).Max();
 
         #region Normal Rotation
 
@@ -116,68 +112,63 @@ namespace Singular.ClassSpecific.Mage
 
                 Spell.WaitForCastOrChannel(),
 
-                new Decorator( 
+                new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
                         Common.CreateMageAvoidanceBehavior(),
-
                         Helpers.Common.CreateInterruptBehavior(),
-
 						Common.CreateMageRuneOfPowerBehavior(),
-
-                        // Artifact Weapon
-                        new Decorator(
-                            ret => MageSettings.UseArtifactOnlyInAoE && Unit.UnfriendlyUnitsNearTarget(15).Count() > 1,
-                            new PrioritySelector(
-                                Spell.Cast("Fury of the Illidari",  ret => MageSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None)
-                            )
-                        ),
-                        Spell.Cast("Fury of the Illidari", ret => !MageSettings.UseArtifactOnlyInAoE && MageSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
-
 
                         Spell.BuffSelf("Arcane Power", ret => ArcaneCharges >= 4),
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
 
+                        // Artifact Weapon
+                        new Decorator(
+                            ret => MageSettings.UseArtifactOnlyInAoE && Unit.UnfriendlyUnitsNearTarget(15).Count() > 1,
+                            new PrioritySelector(
+                                Spell.Cast("Mark of Aluneth", ret => MageSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None)
+                            )
+                        ),
+                        Spell.Cast("Mark of Aluneth", ret => !MageSettings.UseArtifactOnlyInAoE && MageSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None),
+
                         // AoE comes first
                         new Decorator(
                             ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
+                                Spell.Cast("Nether Tempest", ret => ArcaneCharges >= 4 && Me.CurrentTarget.GetAuraTimeLeft("Nether Tempest").TotalSeconds < 4),
+                                Spell.Cast("Supernova"),
                                 Spell.Cast("Arcane Barrage", ret => ArcaneCharges >= 4),
-								Spell.Cast("Arcane Orb"),
-                                Spell.Cast(
-                                    "Arcane Explosion",
-                                    req => Unit.UnfriendlyUnits(8).Count() >= 3
-                                    )
+                                Spell.Cast("Arcane Orb"),
+                                Spell.Cast("Arcane Explosion", req => Unit.UnfriendlyUnits(8).Count() >= 3)
                                 )
                             ),
 
 						// Burn phase
-                        new Decorator(
-                            req => Me.HasAura("Arcane Power"),
+                        new Decorator(req => Me.HasAura("Arcane Power"),
                             new PrioritySelector(
 								Spell.BuffSelf("Charged Up", ret => ArcaneCharges <= 0),
                                 Spell.Cast("Arcane Missiles"),
-                        Spell.Cast("Arcane Blast"),
+                                Spell.Cast("Arcane Blast"),
 								Spell.BuffSelf("Presence of Mind", ret => Me.GetAuraTimeLeft("Arcane Power").TotalSeconds < 4.5)
-                        )
-                                    ),
+                            )
+                        ),
 
 						Spell.Cast("Arcane Orb", ret => ArcaneCharges <= 0),
 						Spell.Cast("Nether Tempest", ret => ArcaneCharges >= 4 && Me.CurrentTarget.GetAuraTimeLeft("Nether Tempest").TotalSeconds < 4),
-                        Spell.Cast("Arcane Missiles", ret => Me.GetAuraStacks("Arcane Missiles!") >= 3 || Me.ManaPercent < 100 && Me.GetAuraStacks("Arcane Missiles!") >= 2),
+                        Spell.Cast("Arcane Missiles", ret => ArcaneCharges >= 3),
 						Spell.Cast("Supernova"),
-						Spell.Cast("Arcane Barrage", ret => Me.ManaPercent < 20),
-                                Spell.Cast("Arcane Blast")
-                                )
+						Spell.Cast("Arcane Barrage", ret => Me.ManaPercent < 45),
+                        Spell.Cast("Arcane Blast")
                         )
+                    )
                 );
         }
 
         #endregion
-		
+
         #region Diagnostics
 
         private static Composite CreateArcaneDiagnosticOutputBehavior(string state = null)
@@ -209,7 +200,7 @@ namespace Singular.ClassSpecific.Mage
                             target.HealthPercent,
                             Me.IsSafelyFacing(target),
                             target.InLineOfSpellSight,
-                            target.GetAuraTimeLeft("Living Bomb").TotalMilliseconds 
+                            target.GetAuraTimeLeft("Living Bomb").TotalMilliseconds
                             );
 
                     Logger.WriteDebug(Color.Wheat, line);

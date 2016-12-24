@@ -586,6 +586,9 @@ namespace Singular.ClassSpecific.Shaman
         {
             get
             {
+                if (!Common.HasTalent(ShamanTalents.TotemMastery))
+                    return false; // Having Totem Mastery is the only situation in which we'd need to recall totems.
+
                 int cntTotemsInRange = 0;
                 int cntTotems = 0;
                 int cntTotemsAggro = 0;

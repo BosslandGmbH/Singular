@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>12.29.2016 14:22:36</ScanTime>
+  <ScanTime>01.11.2017 09:38:17</ScanTime>
   <FileList>
     <File Hash="9714" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="7693" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -23,11 +23,11 @@
     <File Hash="6901" Name="ClassSpecific\Hunter\Marksman.cs" />
     <File Hash="5810" Name="ClassSpecific\Hunter\Survival.cs" />
     <File Hash="9563" Name="ClassSpecific\Mage\Arcane.cs" />
-    <File Hash="25720" Name="ClassSpecific\Mage\Common.cs" />
+    <File Hash="26373" Name="ClassSpecific\Mage\Common.cs" />
     <File Hash="10969" Name="ClassSpecific\Mage\Fire.cs" />
     <File Hash="27655" Name="ClassSpecific\Mage\Frost.cs" />
     <File Hash="1746" Name="ClassSpecific\Mage\Lowbie.cs" />
-    <File Hash="7774" Name="ClassSpecific\Monk\Brewmaster.cs" />
+    <File Hash="8833" Name="ClassSpecific\Monk\Brewmaster.cs" />
     <File Hash="46228" Name="ClassSpecific\Monk\Common.cs" />
     <File Hash="1059" Name="ClassSpecific\Monk\Lowbie.cs" />
     <File Hash="50540" Name="ClassSpecific\Monk\Mistweaver.cs" />
@@ -36,7 +36,7 @@
     <File Hash="12711" Name="ClassSpecific\Paladin\Holy.cs" />
     <File Hash="1706" Name="ClassSpecific\Paladin\Lowbie.cs" />
     <File Hash="12915" Name="ClassSpecific\Paladin\Protection.cs" />
-    <File Hash="14810" Name="ClassSpecific\Paladin\Retribution.cs" />
+    <File Hash="14851" Name="ClassSpecific\Paladin\Retribution.cs" />
     <File Hash="24722" Name="ClassSpecific\Priest\Common.cs" />
     <File Hash="41753" Name="ClassSpecific\Priest\Discipline.cs" />
     <File Hash="25397" Name="ClassSpecific\Priest\Holy.cs" />

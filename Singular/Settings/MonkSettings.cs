@@ -35,7 +35,7 @@ namespace Singular.Settings
         public bool DisableRoll { get; set; }
 
         [Setting]
-        [DefaultValue(60)]
+        [DefaultValue(40)]
         [Category("Common")]
         [DisplayName("Fortifying Brew Percent")]
         [Description("Fortifying Brew is used when health percent is at or below this value")]

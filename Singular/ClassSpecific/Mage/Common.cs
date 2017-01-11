@@ -6,8 +6,6 @@ using Singular.Managers;
 using Singular.Settings;
 
 using Styx.CommonBot;
-using Styx.Helpers;
-using Styx.Pathing;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
@@ -18,7 +16,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
-using Styx.CommonBot.Routines;
 using Singular.Utilities;
 
 namespace Singular.ClassSpecific.Mage
@@ -59,7 +56,7 @@ namespace Singular.ClassSpecific.Mage
                     new PrioritySelector(
 
                         // Defensive
-                        Spell.BuffSelf("Slow Fall", req => MageSettings.UseSlowFall && Me.IsFalling),
+                        CreateSlowFallBehavior(),
 
                         PartyBuff.BuffGroup("Dalaran Brilliance", "Arcane Brilliance"),
                         PartyBuff.BuffGroup("Arcane Brilliance", "Dalaran Brilliance"),
@@ -145,7 +142,7 @@ namespace Singular.ClassSpecific.Mage
                         && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")
                     ),
 
-                Spell.BuffSelf("Slow Fall", req => MageSettings.UseSlowFall && Me.IsFalling),
+                CreateSlowFallBehavior(),
 
                 Spell.BuffSelf(
                     "Evanesce",
@@ -260,6 +257,21 @@ namespace Singular.ClassSpecific.Mage
                         .OrderByDescending( t => t.Level )
                         .FirstOrDefault();
             }
+        }
+
+        public static Composite CreateSlowFallBehavior()
+        {
+            return new Decorator(
+                ret => MageSettings.UseSlowFall && SingularRoutine.CurrentWoWContext != WoWContext.Instances && !Spell.IsGlobalCooldown() && Me.IsFalling && !Me.HasAura("Slow Fall"),
+                new PrioritySelector(
+                    new Sequence(
+                        new WaitContinue(TimeSpan.FromMilliseconds(1100), until => !Me.IsFalling, new ActionAlwaysFail()),
+                        // 1500ms of fall time is roughly 15% of the player's health.  1160+ is roughly when the player starts taking damage.
+                        Spell.BuffSelf("Slow Fall", req => Me.IsFalling),
+                        new ActionAlwaysFail()
+                        )
+                    )
+            );
         }
 
 

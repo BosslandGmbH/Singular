@@ -174,8 +174,9 @@ namespace Singular.ClassSpecific.Paladin
                                 // was EJ: Inq > 5HP DS > LH > HoW > Exo > HotR > Judge > 3-4HP DS (> SS)
                                 // now EJ: Inq > 5HP DS > LH > HoW (> T16 Free DS) > HotR > Judge > Exo > 3-4HP DS (> SS)
 
-								Spell.Cast("Wake of Ashes", ret => PaladinSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown
-								|| (PaladinSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.CurrentHolyPower <= 1)
+								Spell.Cast("Wake of Ashes", ret =>
+                                ( PaladinSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.OnCooldown
+								|| (PaladinSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.CurrentHolyPower <= 1) )
 								&& Clusters.GetConeClusterCount(90f, Unit.UnfriendlyUnits(10), 100f) > 1),
 
 								Spell.Cast("Judgment", ret => Me.CurrentHolyPower >= 3),
@@ -202,8 +203,8 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.BuffSelf("Divine Steed", req => !Me.Mounted && Me.IsMoving && Me.CurrentTarget.SpellDistance().Between(20, 60)),
                         Spell.Cast("Hand of Hindrance", req => Me.CurrentTarget.SpellDistance().Between(3, 27) && Me.CurrentTarget.IsMovingAway()),
                         Spell.Cast("Wake of Ashes", ret => !PaladinSettings.UseArtifactOnlyInAoE
-						&& (PaladinSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && PaladinSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity)
-						|| (PaladinSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.CurrentHolyPower <= 1)
+						&& ( (PaladinSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && PaladinSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity)
+						|| (PaladinSettings.UseDPSArtifactWeaponWhen == UseDPSArtifactWeaponWhen.AtHighestDPSOpportunity && Me.CurrentHolyPower <= 1) )
 						&& Clusters.GetConeClusterCount(90f, Unit.UnfriendlyUnits(10), 100f) >= 1),
 
 						Spell.Cast("Judgment", ret => Me.CurrentHolyPower >= 3 || Me.CurrentTarget.Distance > 20d),

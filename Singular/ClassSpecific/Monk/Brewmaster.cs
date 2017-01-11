@@ -21,7 +21,7 @@ namespace Singular.ClassSpecific.Monk
     public class Brewmaster
     {
         private static LocalPlayer Me => StyxWoW.Me;
-	    private static MonkSettings MonkSettings => SingularSettings.Instance.Monk();
+        private static MonkSettings MonkSettings => SingularSettings.Instance.Monk();
 
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, WoWSpec.MonkBrewmaster)]
@@ -32,82 +32,84 @@ namespace Singular.ClassSpecific.Monk
                 );
         }
 
-		[Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkBrewmaster)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkBrewmaster)]
         public static Composite CreateBrewmasterMonkCombatBuffs()
         {
             return new PrioritySelector(
-				Spell.BuffSelf("Fortifying Brew", req => Me.HealthPercent <= MonkSettings.FortifyingBrewPct),
+                Spell.Cast("Healing Elixir", req => Me.HealthPercent <= 80),
+                Spell.BuffSelf("Fortifying Brew", req => Me.HealthPercent <= MonkSettings.FortifyingBrewPct),
                 Spell.BuffSelf("Ironskin Brew", req => MonkSettings.UseIronskinBrew && Spell.GetCharges("Ironskin Brew") > MonkSettings.IronskinBrewCharges),
                 Spell.BuffSelf("Purifying Brew", req => Me.HasAura((int)MonkSettings.Stagger)),
-				Spell.BuffSelf("Expel Harm", req => Common.SphereCount(SphereType.Ox, 30) >= 3),
-				Spell.BuffSelf("Black Ox Brew", req => Spell.GetCharges("Ironskin Brew") <= 0)
+                Spell.BuffSelf("Expel Harm", req => Common.SphereCount(SphereType.Ox, 30) >= 3 ||
+                                                    Common.SphereCount(SphereType.Ox, 30) >= 1 && Me.HealthPercent < 20),
+                Spell.BuffSelf("Black Ox Brew", req => Spell.GetCharges("Ironskin Brew") <= 0)
                 );
         }
 
         [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkBrewmaster)]
         public static Composite CreateBrewmasterMonkCombat()
         {
-			TankManager.NeedTankTargeting = (SingularRoutine.CurrentWoWContext == WoWContext.Instances);
+            TankManager.NeedTankTargeting = (SingularRoutine.CurrentWoWContext == WoWContext.Instances);
 
             return new PrioritySelector(
-				Common.CreateAttackFlyingOrUnreachableMobs(),
+                Common.CreateAttackFlyingOrUnreachableMobs(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator(
                     req => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
-                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
+                        ctx =>
+                            TankManager.Instance.TargetList.FirstOrDefault(u => u.IsWithinMeleeRange) ??
+                            Me.CurrentTarget,
 
                         Helpers.Common.CreateInterruptBehavior(),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.CombatBuffs),
 
                         Movement.WaitForFacing(),
                         Movement.WaitForLineOfSpellSight(),
 
                         new Decorator(
-							ret => SingularRoutine.CurrentWoWContext == WoWContext.Instances && Unit.NearbyUnfriendlyUnits.Count(u => !u.IsBoss) > 2,
+                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Instances && Unit.NearbyUnfriendlyUnits.Count(u => !u.IsBoss) > 2,
                             new PrioritySelector(
-								CreateSummonBlackOxStatueBehavior(on => Me.CurrentTarget),
-								Spell.Cast("Provoke", on => FindStatue(), ret => TankManager.Instance.NeedToTaunt.Count >= 2)
-                                                )
-                                            ),
-
+                                CreateSummonBlackOxStatueBehavior(on => Me.CurrentTarget),
+                                Spell.Cast("Provoke", on => FindStatue(), ret => TankManager.Instance.NeedToTaunt.Count >= 2))
+                                ),
                         // taunt if needed
                         Spell.Cast("Provoke", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(), ret => SingularSettings.Instance.EnableTaunting),
-
+                        new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >= 2,
                             new PrioritySelector(
-							ctx => TankManager.Instance.TargetList.FirstOrDefault(u => u.IsWithinMeleeRange) ?? Me.CurrentTarget,
-                            Spell.CastOnGround("Exploding Keg", on => (WoWUnit)on, ret => MonkSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && Me.HealthPercent <= MonkSettings.ArtifactHealthPercent),
-							Spell.Cast("Keg Smash", on => (WoWUnit)on),
-							Spell.Cast("Tiger Palm", on => (WoWUnit)on, req => Common.HasTalent(MonkTalents.EyeOfTheTiger) && Me.GetAuraTimeLeft("Eye of the Tiger").TotalSeconds <= 1.8),
-							new Decorator(ret => Unit.UnfriendlyUnits(8).Count() >= 2,
-                            new PrioritySelector(
-									Spell.Cast("Blackout Strike", on => (WoWUnit)on, req => Common.HasTalent(MonkTalents.BlackoutCombo)),
-									Spell.Cast("Chi Burst", on => (WoWUnit)on),
-									Spell.Cast("Breath of Fire", on => (WoWUnit)on),
-									Spell.Cast("Rushing Jade Wind", on => (WoWUnit)on),
-									Spell.Cast("Tiger Palm", on => (WoWUnit)on, req => Me.CurrentEnergy >= 65),
-									Spell.Cast("Blackout Strike", on => (WoWUnit)on)
-									)),
+                                    Spell.CastOnGround("Exploding Keg", on => (WoWUnit)on, ret => Me.CurrentTarget.IsWithinMeleeRange &&
+                                                                              (Me.HealthPercent <= MonkSettings.ArtifactHealthPercent || Unit.NearbyUnfriendlyUnits.Count(u => !u.IsBoss) > 2)),
+                                    Spell.Cast("Keg Smash", on => (WoWUnit)on),
+                                    Spell.Cast("Breath of Fire", on => (WoWUnit)on),
+                                    Spell.Cast("Blackout Strike", on => (WoWUnit)on, req => Common.HasTalent(MonkTalents.BlackoutCombo)),
+                                    Spell.Cast("Chi Burst", on => (WoWUnit)on),
+                                    Spell.Cast("Breath of Fire", on => (WoWUnit)on),
+                                    Spell.Cast("Rushing Jade Wind", on => (WoWUnit)on),
+                                    Spell.Cast("Tiger Palm", on => (WoWUnit)on, req => Me.CurrentEnergy >= 65),
+                                    Spell.Cast("Leg Sweep", on => (WoWUnit)on, ret => ((WoWUnit)ret).IsWithinMeleeRange),
+                                    Spell.Cast("Blackout Strike", on => (WoWUnit)on)
+                                    )
+                                ),
 
-							Spell.Cast("Tiger Palm", on => (WoWUnit)on, req => Me.CurrentEnergy >= 65),
-							Spell.Cast("Blackout Strike", on => (WoWUnit)on),
-							Spell.Cast("Rushing Jade Wind", on => (WoWUnit)on),
-							Spell.Cast("Chi Wave", on => (WoWUnit)on),
-							Spell.Cast("Leg Sweep", on => (WoWUnit)on, ret => ((WoWUnit)ret).IsWithinMeleeRange),
-							Spell.Cast("Breath of Fire", on => (WoWUnit)on, req => Unit.UnfriendlyUnits(8).Any()),
-
-							Common.CreateCloseDistanceBehavior()
-                        )
+                        Spell.Cast("Blackout Strike", on => (WoWUnit)on),
+                        Spell.Cast("Tiger Palm", on => (WoWUnit)on, req => Me.CurrentEnergy >= 65),
+                        Spell.Cast("Rushing Jade Wind", on => (WoWUnit)on),
+                        Spell.Cast("Chi Wave", on => (WoWUnit)on),
+                        Spell.Cast("Leg Sweep", on => (WoWUnit)on, ret => ((WoWUnit)ret).IsWithinMeleeRange),
+                        Spell.Cast("Breath of Fire", on => (WoWUnit)on, req => (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss || Me.CurrentTarget.Elite) && Me.IsSafelyFacing(Me.CurrentTarget, 90f) && Me.CurrentTarget.SpellDistance() < 12),
+                        Spell.Cast("Breath of Fire", on => (WoWUnit)on, req => Clusters.GetConeClusterCount(90f, Unit.UnfriendlyUnits(12), 100f) > 1),
+                        SingularRoutine.MoveBehaviorInlineToCombat(BehaviorType.Heal),
+                        Common.CreateCloseDistanceBehavior()
                     )
-                                            )
-                );
+                )
+            );
         }
 
         private static WoWUnit _statue;
 
-        private static Composite CreateSummonBlackOxStatueBehavior( UnitSelectionDelegate on )
+        private static Composite CreateSummonBlackOxStatueBehavior(UnitSelectionDelegate on)
         {
             if (!SpellManager.HasSpell("Summon Black Ox Statue"))
                 return new ActionAlwaysFail();
@@ -138,7 +140,7 @@ namespace Singular.ClassSpecific.Monk
                                             Vector3 locStatue = WoWMovement.CalculatePointFrom(unit.Location, -5);
                                             if (locStatue.Distance(Me.Location) > 30)
                                             {
-                                                float needFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(Me.Location, locStatue );
+                                                float needFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(Me.Location, locStatue);
                                                 locStatue = locStatue.RayCast(needFacing, 30f);
                                             }
                                             return locStatue;

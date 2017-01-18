@@ -131,13 +131,6 @@ namespace Singular.Settings
         public int ColdSnapHealthPct { get; set; }
 
         [Setting]
-        [DefaultValue(65)]
-        [Category("Talents")]
-        [DisplayName("Evanesce %")]
-        [Description("Health % to cast this ability")]
-        public int EvanesceHealthPct { get; set; }
-
-        [Setting]
         [DefaultValue(3)]
         [Category("Talents")]
         [DisplayName("Alter Time Mob Count")]
@@ -158,7 +151,7 @@ namespace Singular.Settings
         [Description("Percentage of Health saved by Alter Time which will trigger second cast.  If Alter Time cast when health is 80% and Ratio is 40%, second cast will occur when health falls below 32% (80 * 40%)")]
         public int AlterTimeHealthPct { get; set; }
 
-        #endregion 
+        #endregion
 
         #region Category: Artifact Weapon
         [Setting]

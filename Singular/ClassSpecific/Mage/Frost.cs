@@ -99,7 +99,7 @@ namespace Singular.ClassSpecific.Mage
                         new Decorator(
                             req => Me.CurrentTarget.IsTrivial(),
                             new PrioritySelector(
-                                Spell.Cast("Cone of Cold", mov => false, on => Me.CurrentTarget, req => 
+                                Spell.Cast("Cone of Cold", mov => false, on => Me.CurrentTarget, req =>
                                 {
                                     IEnumerable<WoWUnit> coneUnits = Clusters.GetConeCluster(Unit.UnfriendlyUnits(12), 12);
                                     int count = coneUnits.Count();
@@ -123,7 +123,7 @@ namespace Singular.ClassSpecific.Mage
                                 })
                                 )
                             ),
-            #endregion  
+            #endregion
 
             #region FAST PULL SUPPORT
                         new Decorator(
@@ -150,8 +150,7 @@ namespace Singular.ClassSpecific.Mage
 
                                     Logger.Write(LogColor.Hilite, "^Fast Pull: casting Ice Lance for instant pull");
                                     return true;
-                                }),
-                                Spell.Cast("Fire Blast", req => !SpellManager.HasSpell("Ice Lance") || Me.CurrentTarget.IsImmune( WoWSpellSchool.Frost))
+                                })
                                 )
                             ),
             #endregion
@@ -163,14 +162,12 @@ namespace Singular.ClassSpecific.Mage
                         new Decorator(
                             req => !Me.CurrentTarget.IsTrivial(),
                             new PrioritySelector(
-                                Spell.Buff("Nether Tempest", 1, on => Me.CurrentTarget, req => true),
-                                Spell.Buff("Living Bomb", 0, on => Me.CurrentTarget, req => true),
+                                Spell.Buff("Ice Nova", 0, on => Me.CurrentTarget, req => true),
                                 Spell.Buff("Frost Bomb", 0, on => Me.CurrentTarget, req => true)
                                 )
                             ),
 
                         Spell.Cast("Frostbolt", ret => Me.GotTarget() && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
-                        Spell.Cast("Frostfire Bolt"),
                         Spell.Cast("Ice Lance", ret =>
                         {
                             if (Me.GotTarget && Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost))
@@ -184,9 +181,7 @@ namespace Singular.ClassSpecific.Mage
 
                             Logger.Write(LogColor.Hilite, "^Cast on the Move: Ice Lance");
                             return true;
-                        }),
-
-                        Spell.Cast("Fire Blast", req => !SpellManager.HasSpell("Ice Lance") || Me.GotTarget() && Me.CurrentTarget.IsImmune( WoWSpellSchool.Frost))
+                        })
                         )
                     ),
 
@@ -194,7 +189,7 @@ namespace Singular.ClassSpecific.Mage
                 );
         }
 
-        public class ILInfo 
+        public class ILInfo
         {
             public WoWUnit Unit;
             public uint StacksOfFOF;
@@ -307,7 +302,7 @@ namespace Singular.ClassSpecific.Mage
                              new Decorator(
                                  req =>
                                     (Me.Level < 77 || Me.HasAura("Brain Freeze"))
-                                    && (Me.Level < 24 || Me.HasAura(FINGERS_OF_FROST)) 
+                                    && (Me.Level < 24 || Me.HasAura(FINGERS_OF_FROST))
                                     && (Me.Level < 36 || Spell.CanCastHack("Icy Veins", Me, skipWowCheck: true)),
                                  new PrioritySelector(
                                      Spell.BuffSelf("Mirror Image"),
@@ -321,8 +316,8 @@ namespace Singular.ClassSpecific.Mage
                         new PrioritySelector(
                             ctx => Unit.UnfriendlyUnits(12)
                                 .FirstOrDefault(
-                                    u => u.CurrentTargetGuid == Me.Guid 
-                                    && (u.IsStressful() || (u.Guid == Me.CurrentTargetGuid && u.TimeToDeath() > 6)) 
+                                    u => u.CurrentTargetGuid == Me.Guid
+                                    && (u.IsStressful() || (u.Guid == Me.CurrentTargetGuid && u.TimeToDeath() > 6))
                                     && !u.IsCrowdControlled()
                                     ),
                             new Decorator(
@@ -330,9 +325,9 @@ namespace Singular.ClassSpecific.Mage
                                     new PrioritySelector(
                                         Spell.Buff("Frost Nova", on => (WoWUnit) on, req => !Unit.UnitsInCombatWithUsOrOurStuff(12).Any(u => u.IsCrowdControlled())),
                                     CastFreeze(
-										on => (WoWUnit)on, 
-										req => 
-											Spell.IsSpellOnCooldown("Frost Nova") && !((WoWUnit)req).IsFrozen() && 
+										on => (WoWUnit)on,
+										req =>
+											Spell.IsSpellOnCooldown("Frost Nova") && !((WoWUnit)req).IsFrozen() &&
 											!Unit.UnfriendlyUnitsNearTarget(12).Any(u => u.IsCrowdControlled()))
                                             )
                                     )
@@ -352,7 +347,7 @@ namespace Singular.ClassSpecific.Mage
 						Spell.Buff("Frost Bomb", req => Me.GetAuraStacks("Fingers of Frost") >= 2),
 						Spell.Cast("Frozen Orb"),
 						CastFreeze(
-								on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8), 
+								on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8),
 								req => Unit.UnfriendlyUnitsNearTarget((WoWUnit)req, 8).Any()),
 						Spell.Cast("Frozen Touch", req => !Me.HasActiveAura("Fingers of Frost")),
 						Spell.Cast("Ice Lance", ret => Me.GetAuraStacks("Fingers of Frost") >= 2),
@@ -360,8 +355,8 @@ namespace Singular.ClassSpecific.Mage
 						Spell.Cast("Ice Lance", req => Me.CurrentTarget.HasMyAura("Winter's Chill")),
                         Spell.HandleOffGCD(Pet.CastPetAction("Water Jet", req => !Me.HasActiveAura("Fingers of Frost"))),
 						Spell.Cast("Ice Nova"),
-						Spell.CastOnGround("Blizzard", 
-							on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8), 
+						Spell.CastOnGround("Blizzard",
+							on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8),
 							req => Unit.UnfriendlyUnitsNearTarget(((WoWUnit)req), 8).Count() >= 3),
 						Spell.Cast("Ice Lance", req => Me.GetAuraStacks("Fingers of Frost") == 1),
 						Spell.Cast("Glacial Spike"),
@@ -372,11 +367,11 @@ namespace Singular.ClassSpecific.Mage
         }
 
         #endregion
-		
+
         public static Composite CreateSummonWaterElemental()
         {
             return new Decorator(
-                ret => PetManager.IsPetSummonAllowed    
+                ret => PetManager.IsPetSummonAllowed
                     && !Common.HasTalent(MageTalents.LonelyWinter)
                     && (!Me.GotAlivePet || Me.Pet.Distance > 40)
                     && PetManager.PetSummonAfterDismountTimer.IsFinished
@@ -437,7 +432,7 @@ namespace Singular.ClassSpecific.Mage
                     )
                 );
         }
-        
+
         /// <summary>
         /// Cast "Freeze" pet ability on a target.  Uses a local store for location to
         /// avoid target position changing during cast preparation and being out of
@@ -455,9 +450,9 @@ namespace Singular.ClassSpecific.Mage
 
             return new Sequence(
                 ctx => onUnit(ctx),
-                new Decorator( 
-                    req => req != null && (req as WoWUnit).SpellDistance() < 40 && require(req), 
-                    new Action( r => 
+                new Decorator(
+                    req => req != null && (req as WoWUnit).SpellDistance() < 40 && require(req),
+                    new Action( r =>
                     {
                         _locFreeze = (r as WoWUnit).Location;
                         if (StyxWoW.Me.Location.Distance(_locFreeze) > 45)

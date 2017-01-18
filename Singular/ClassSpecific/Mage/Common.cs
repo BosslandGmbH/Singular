@@ -1,22 +1,20 @@
-﻿using System.Linq;
+﻿using System;
+using System.Drawing;
+using System.Linq;
+using System.Numerics;
 using CommonBehaviors.Actions;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
 using Singular.Settings;
-
-using Styx.CommonBot;
-using Styx.WoWInternals;
-using Styx.WoWInternals.WoWObjects;
-using Styx.TreeSharp;
-using Action = Styx.TreeSharp.Action;
+using Singular.Utilities;
 using Styx;
 using Styx.Common;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Numerics;
-using Singular.Utilities;
+using Styx.CommonBot;
+using Styx.TreeSharp;
+using Styx.WoWInternals;
+using Styx.WoWInternals.WoWObjects;
+using Action = Styx.TreeSharp.Action;
 
 namespace Singular.ClassSpecific.Mage
 {
@@ -54,14 +52,8 @@ namespace Singular.ClassSpecific.Mage
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-
-                        // Defensive
                         CreateSlowFallBehavior(),
-
-                        PartyBuff.BuffGroup("Dalaran Brilliance", "Arcane Brilliance"),
-                        PartyBuff.BuffGroup("Arcane Brilliance", "Dalaran Brilliance"),
-
-                        Spell.BuffSelf("Conjure Refreshment", ret => !Gotfood && !StyxWoW.Me.GroupInfo.IsInParty)
+                        Spell.BuffSelf("Conjure Refreshment", ret => !Gotfood || (Me.IsInGroup() && ShouldSummonTable))
                         )
                     )
                 );
@@ -108,6 +100,8 @@ namespace Singular.ClassSpecific.Mage
                 req => Me.GotTarget() && Me.CurrentTarget.SpellDistance() < 40,
                 new PrioritySelector(
 					Spell.BuffSelf("Ice Barrier"),
+                    Spell.BuffSelf("Prismatic Barrier"),
+                    Spell.BuffSelf("Blazing Barrier"),
                     CreateMageRuneOfPowerBehavior()
                     )
                 );
@@ -128,7 +122,7 @@ namespace Singular.ClassSpecific.Mage
                                 return true;
                             }),
 
-                        Spell.BuffSelf("Ice Barrier"),
+                        Spell.BuffSelf("Blazing Barrier"),
 
                         new Throttle(8, Item.CreateUsePotionAndHealthstone(100, 0))
                         )
@@ -144,27 +138,6 @@ namespace Singular.ClassSpecific.Mage
 
                 CreateSlowFallBehavior(),
 
-                Spell.BuffSelf(
-                    "Evanesce",
-                    req =>
-                    {
-                        if (EventHandlers.TimeSinceAttackedByEnemyPlayer.TotalSeconds < 3)
-                            return true;
-                        if (!Me.Combat)
-                            return false;
-                        int cntMobs = Unit.UnfriendlyUnits(40).Count(u => u.Combat && u.CurrentTargetGuid == Me.Guid);
-                        if (cntMobs == 0)
-                        {
-                            return false;
-                        }
-                        if (cntMobs < 3 && Me.HealthPercent > MageSettings.EvanesceHealthPct)
-                        {
-                            return false;
-                        }
-
-                        return true;
-                    }),
-
                 Spell.BuffSelf("Cold Snap", req => Me.Combat && Me.HealthPercent < MageSettings.ColdSnapHealthPct),
                 Spell.BuffSelf("Ice Ward"),
 
@@ -174,7 +147,9 @@ namespace Singular.ClassSpecific.Mage
                     new Throttle(3, Spell.Cast("Evocation", mov => true, on => Me, ret => NeedEvocation, cancel => false))
                     ),
 
-                Spell.BuffSelf("Ice Barrier")
+                Spell.BuffSelf("Ice Barrier"),
+                Spell.BuffSelf("Prismatic Barrier"),
+                Spell.BuffSelf("Blazing Barrier")
 
                 );
         }
@@ -201,19 +176,19 @@ namespace Singular.ClassSpecific.Mage
                 );
         }
 
-        private static readonly uint[] MageFoodIds = new uint[]
-                                                         {
-                                                             65500,
-                                                             65515,
-                                                             65516,
-                                                             65517,
-                                                             43518,
-                                                             43523,
-                                                             65499, //Conjured Mana Cake - Pre Cata Level 85
-                                                             80610, //Conjured Mana Pudding - MoP Lvl 85+
-                                                             80618  //Conjured Mana Buns
-                                                             //This is where i made a change.
-                                                         };
+        private static readonly uint[] MageFoodIds =
+        {
+            65500,
+            65515,
+            65516,
+            65517,
+            43518,
+            43523,
+            65499, //Conjured Mana Cake - Pre Cata Level 85
+            80610, //Conjured Mana Pudding - MoP Lvl 85+
+            80618,  //Conjured Mana Fritter
+            113509 // Conjured Mana Bun (For 100-110.  Also usable at any level if obtained from a level 100+ mage table)
+        };
 
         /// <summary>
         /// True if config allows conjuring tables, we have the spell, are not moving, group members
@@ -224,23 +199,23 @@ namespace Singular.ClassSpecific.Mage
             get
             {
                 return MageSettings.SummonTableIfInParty
-                    && SpellManager.HasSpell("Conjure Refreshment Table")
                     && !StyxWoW.Me.IsMoving
                     && MageTable == null
                     && Unit.GroupMembers.Any(p => !p.IsMe && p.DistanceSqr < 15 * 15);
             }
         }
 
-       static readonly Dictionary<uint, uint> RefreshmentTableIds = new Dictionary<uint,uint>()
-                                         {
-                                             { 186812, 70 }, //Level 70
-                                             { 207386, 80 }, //Level 80
-                                             { 207387, 85 }, //Level 85
-                                             { 211363, 90 }, //Level 90
-                                         };
+       private static readonly uint[] RefreshmentTableIds =
+       {
+            186812, //Level 70
+            207386, //Level 80
+            207387, //Level 85
+            211363, //Level 90
+            233282 //Level 100+
+       };
 
         /// <summary>
-        /// finds a level appropriate Mage Table if one exists.
+        /// finds an appropriate Mage Table if one exists.
         /// </summary>
         static public WoWGameObject MageTable
         {
@@ -249,12 +224,11 @@ namespace Singular.ClassSpecific.Mage
                 return
                     ObjectManager.GetObjectsOfType<WoWGameObject>()
                         .Where(
-                            i => RefreshmentTableIds.ContainsKey(i.Entry)
-                                && RefreshmentTableIds[i.Entry] <= Me.Level
+                            i => RefreshmentTableIds.Contains(i.Entry)
                                 && (StyxWoW.Me.PartyMembers.Any(p => p.Guid == i.CreatedByGuid) || StyxWoW.Me.Guid == i.CreatedByGuid)
                                 && i.Distance <= SingularSettings.Instance.TableDistance
                             )
-                        .OrderByDescending( t => t.Level )
+                        .OrderBy( t => t.DistanceSqr )
                         .FirstOrDefault();
             }
         }
@@ -482,7 +456,7 @@ namespace Singular.ClassSpecific.Mage
                         Spell.Cast("Frost Nova", mov => true, onUnit => (WoWUnit)onUnit, req => ((WoWUnit)req).SpellDistance() < 12, cancel => false),
                         new Decorator(
                             ret => TalentManager.CurrentSpec == WoWSpec.MageFrost,
-                            Mage.Frost.CastFreeze(on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.SpellDistance() < 8), ClusterType.Radius, 8))
+                            Frost.CastFreeze(on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.SpellDistance() < 8), ClusterType.Radius, 8))
                             ),
                         Spell.Cast("Frostjaw", mov => true, onUnit => (WoWUnit)onUnit, req => true, cancel => false)
                         )
@@ -513,7 +487,7 @@ namespace Singular.ClassSpecific.Mage
 
         public static Composite CreateMageRuneOfPowerBehavior()
         {
-            if (!Common.HasTalent(MageTalents.RuneOfPower))
+            if (!HasTalent(MageTalents.RuneOfPower))
                 return new ActionAlwaysFail();
 
             if (_runeOfPower == null)
@@ -642,6 +616,6 @@ namespace Singular.ClassSpecific.Mage
 
 		ThermalVoid = Overpowered,
 		GlacialSpike = Quickening,
-		CometStorm = ArcaneOrb,
+		CometStorm = ArcaneOrb
     }
 }

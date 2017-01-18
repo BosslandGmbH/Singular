@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>01.11.2017 09:38:17</ScanTime>
+  <ScanTime>01.18.2017 22:42:27</ScanTime>
   <FileList>
     <File Hash="9714" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="7693" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -23,9 +23,9 @@
     <File Hash="6901" Name="ClassSpecific\Hunter\Marksman.cs" />
     <File Hash="5810" Name="ClassSpecific\Hunter\Survival.cs" />
     <File Hash="9563" Name="ClassSpecific\Mage\Arcane.cs" />
-    <File Hash="26373" Name="ClassSpecific\Mage\Common.cs" />
+    <File Hash="24560" Name="ClassSpecific\Mage\Common.cs" />
     <File Hash="10969" Name="ClassSpecific\Mage\Fire.cs" />
-    <File Hash="27655" Name="ClassSpecific\Mage\Frost.cs" />
+    <File Hash="27142" Name="ClassSpecific\Mage\Frost.cs" />
     <File Hash="1746" Name="ClassSpecific\Mage\Lowbie.cs" />
     <File Hash="8833" Name="ClassSpecific\Monk\Brewmaster.cs" />
     <File Hash="46228" Name="ClassSpecific\Monk\Common.cs" />
@@ -111,7 +111,7 @@
     <File Hash="1029" Name="Settings\HealerSettings.cs" />
     <File Hash="4568" Name="Settings\HotkeySettings.cs" />
     <File Hash="5058" Name="Settings\HunterSettings.cs" />
-    <File Hash="5993" Name="Settings\MageSettings.cs" />
+    <File Hash="5767" Name="Settings\MageSettings.cs" />
     <File Hash="16849" Name="Settings\MonkSettings.cs" />
     <File Hash="9630" Name="Settings\PaladinSettings.cs" />
     <File Hash="35736" Name="Settings\PriestSettings.cs" />

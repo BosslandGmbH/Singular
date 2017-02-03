@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>01.18.2017 22:42:27</ScanTime>
+  <ScanTime>02.03.2017 05:35:49</ScanTime>
   <FileList>
     <File Hash="9714" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="7693" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -55,8 +55,8 @@
     <File Hash="4804" Name="ClassSpecific\Shaman\Lowbie.cs" />
     <File Hash="46807" Name="ClassSpecific\Shaman\Restoration.cs" />
     <File Hash="34463" Name="ClassSpecific\Shaman\Totems.cs" />
-    <File Hash="20264" Name="ClassSpecific\Warlock\Affliction.cs" />
-    <File Hash="61128" Name="ClassSpecific\Warlock\Common.cs" />
+    <File Hash="20292" Name="ClassSpecific\Warlock\Affliction.cs" />
+    <File Hash="60686" Name="ClassSpecific\Warlock\Common.cs" />
     <File Hash="12641" Name="ClassSpecific\Warlock\Demonology.cs" />
     <File Hash="11238" Name="ClassSpecific\Warlock\Destruction.cs" />
     <File Hash="1324" Name="ClassSpecific\Warlock\Lowbie.cs" />

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Threading;
 using System.Collections.Generic;
 using Singular.Dynamics;
 using Singular.Helpers;
@@ -15,11 +14,8 @@ using Styx.TreeSharp;
 using CommonBehaviors.Actions;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
-using Styx.CommonBot.POI;
 using System.Drawing;
 using Styx.Common;
-using Styx.WoWInternals.DBC;
-using Styx.Patchables;
 
 namespace Singular.ClassSpecific.Warlock
 {
@@ -199,7 +195,7 @@ namespace Singular.ClassSpecific.Warlock
 
         private static bool NeedToSoulstoneMyself()
         {
-            bool cast = WarlockSettings.UseSoulstone == Soulstone.Self 
+            bool cast = WarlockSettings.UseSoulstone == Soulstone.Self
                 || (WarlockSettings.UseSoulstone == Soulstone.Auto && SingularRoutine.CurrentWoWContext != WoWContext.Instances && MovementManager.IsClassMovementAllowed );
             return cast;
         }
@@ -218,7 +214,7 @@ namespace Singular.ClassSpecific.Warlock
                     )
                 );
         }
-        
+
 
         #endregion
 
@@ -266,8 +262,8 @@ namespace Singular.ClassSpecific.Warlock
                             ),
 
 
-                        // remove our banish if they are our CurrentTarget 
-                        new Throttle(2, 
+                        // remove our banish if they are our CurrentTarget
+                        new Throttle(2,
                             Spell.Cast("Banish", ret =>
                             {
                                 bool isBanished = Me.CurrentTarget.HasMyAura("Banish");
@@ -344,7 +340,7 @@ namespace Singular.ClassSpecific.Warlock
                             ),
 
                         Spell.Cast(
-                            "Summon Doomguard", 
+                            "Summon Doomguard",
                             ret => Me.CurrentTarget.IsBoss() && PartyBuff.WeHaveBloodlust && !HasTalent(WarlockTalents.GrimoireOfSupremacy)
                             ),
 
@@ -434,7 +430,7 @@ namespace Singular.ClassSpecific.Warlock
 
 
                 Spell.Cast(
-                    "Meteor Strike", 
+                    "Meteor Strike",
                     req => Spell.UseAOE
                         && GetCurrentPet() == WarlockPet.Infernal
                         && HasTalent(WarlockTalents.GrimoireOfSupremacy)
@@ -510,7 +506,7 @@ namespace Singular.ClassSpecific.Warlock
                 ret => PetManager.IsPetSummonAllowed
                     && !Me.HasAura( "Demonic Power")        // don't summon pet if this buff active
                     && GetBestPet() != GetCurrentPet()
-                    && Spell.CanCastHack( "Summon " + GetBestPet()), 
+                    && Spell.CanCastHack( "Summon " + GetBestPet()),
 
                 new Sequence(
                     // wait for possible auto-spawn if supposed to have a pet and none present
@@ -520,8 +516,8 @@ namespace Singular.ClassSpecific.Warlock
                             new Action(ret => Logger.WriteDebug("Summon Pet:  waiting {0:F0} on dismount timer for live {1} to appear", PetManager.PetSummonAfterDismountTimer.TimeLeft.TotalMilliseconds, GetBestPet().ToString())),
                             new WaitContinue(
 								// wait for up to [PetSummonAfterDismountTimer] + 1 sec tolerance
-								PetManager.PetSummonAfterDismountTimer.WaitTime + TimeSpan.FromSeconds(1), 
-                                ret => GetCurrentPet() != WarlockPet.None || GetBestPet() == WarlockPet.None || PetManager.PetSummonAfterDismountTimer.IsFinished, 
+								PetManager.PetSummonAfterDismountTimer.WaitTime + TimeSpan.FromSeconds(1),
+                                ret => GetCurrentPet() != WarlockPet.None || GetBestPet() == WarlockPet.None || PetManager.PetSummonAfterDismountTimer.IsFinished,
                                 new Sequence(
                                     new Action( ret => Logger.WriteDebug("Summon Pet:  found '{0}' after waiting", GetCurrentPet().ToString())),
                                     new Action( r => { return GetBestPet() == GetCurrentPet() ? RunStatus.Failure : RunStatus.Success ; } )
@@ -531,17 +527,17 @@ namespace Singular.ClassSpecific.Warlock
                         ),
 
                     // dismiss pet if wrong one is alive
-                    new DecoratorContinue( 
+                    new DecoratorContinue(
                         ret => GetCurrentPet() != GetBestPet() && GetCurrentPet() != WarlockPet.None,
                         new Sequence(
                             new Action(ret => Logger.WriteDebug("Summon Pet:  dismissing {0}", GetCurrentPet().ToString())),
                             new Action(ctx => Lua.DoString("PetDismiss()")),
-                            new WaitContinue( 
+                            new WaitContinue(
                                 TimeSpan.FromMilliseconds(1000),
                                 ret => GetCurrentPet() == WarlockPet.None,
                                 new Action( ret => {
                                     Logger.WriteDebug("Summon Pet:  dismiss complete", GetCurrentPet().ToString());
-                                    return RunStatus.Success; 
+                                    return RunStatus.Success;
                                     })
                                 )
                             )
@@ -560,10 +556,10 @@ namespace Singular.ClassSpecific.Warlock
                                     ),
                                 new Decorator(
                                     // need to check that no live pet here as FoX will only summon last living, so worthless if live pet (even if wrong one)
-                                    ret => TalentManager.CurrentSpec == WoWSpec.WarlockDestruction                                        
+                                    ret => TalentManager.CurrentSpec == WoWSpec.WarlockDestruction
                                         && !Me.GotAlivePet && Spell.CanCastHack("Flames of Xoroth", Me),
                                     new Sequence(
-                                        new Action(r => 
+                                        new Action(r =>
                                         {
                                             if (Me.Combat || Unit.NearbyUnfriendlyUnits.Any(u => u.IsPlayer && u.IsTargetingMyStuff()))
                                                 return RunStatus.Success;
@@ -573,7 +569,7 @@ namespace Singular.ClassSpecific.Warlock
                                         new Action(r => Logger.Write( LogColor.Hilite, "^Instant Summon Pet: Flames of Xoroth!")),
                                         new PrioritySelector(
                                             Spell.BuffSelfAndWait( s=>"Flames of Xoroth", until: u => !Me.GotAlivePet, measure: true),
-                                            new Action( r => 
+                                            new Action( r =>
                                             {
                                                 Logger.WriteDebug("Flames of Xoroth: no pet detected, assuming it failed");
                                                 return RunStatus.Failure;
@@ -604,8 +600,8 @@ namespace Singular.ClassSpecific.Warlock
                                         return false;
                                         }),
                                     new PrioritySelector(
-                                        new Wait( 
-                                            TimeSpan.FromSeconds(1), 
+                                        new Wait(
+                                            TimeSpan.FromSeconds(1),
                                             until => Me.HasAura("Soulburn"),
                                             new Sequence(
                                                 new Action(r => Logger.Write(LogColor.Hilite, "^Instant Summon Pet: Soulburn active")),
@@ -620,10 +616,10 @@ namespace Singular.ClassSpecific.Warlock
                                 new Sequence(
                                     new Action(r => Logger.WriteDebug("CreateWarlockSummonPet: summoning {0}", GetBestPet().ToString().CamelToSpaced())),
                                     new PrioritySelector(
-                                        Spell.Cast( 
-                                            n => "Summon" + GetBestPet().ToString().CamelToSpaced(), 
+                                        Spell.Cast(
+                                            n => "Summon" + GetBestPet().ToString().CamelToSpaced(),
                                             chkMov => true,
-                                            onUnit => Me, 
+                                            onUnit => Me,
                                             req => true,
                                             cncl => GetBestPet() == GetCurrentPet()
                                             )
@@ -635,7 +631,7 @@ namespace Singular.ClassSpecific.Warlock
                             // confirm we see an pet alive and fail if we don't
                             new PrioritySelector(
                                 new Wait( 1, ret => GetCurrentPet() != WarlockPet.None, new ActionAlwaysSucceed() ),
-                                new Action(r => 
+                                new Action(r =>
                                 {
                                     Logger.WriteDebug("CreateWarlockSummonPet: summon attempt failed, petalive={0}", Me.GotAlivePet.ToYN());
                                     return RunStatus.Failure;
@@ -666,7 +662,7 @@ namespace Singular.ClassSpecific.Warlock
                         && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => u.IsCrowdControlled() || !u.IsTargetingUs())
                         && (
                             Me.CurrentTarget.TimeToDeath(-1) > 10
-                            || 3 <= Unit.UnfriendlyUnitsNearTarget(8).Count()                             
+                            || 3 <= Unit.UnfriendlyUnitsNearTarget(8).Count()
                            ),
                     true
                     ),
@@ -677,9 +673,9 @@ namespace Singular.ClassSpecific.Warlock
         #region Pet Support
 
         /// <summary>
-        /// determines the best WarlockPet value to use.  Attempts to use 
-        /// user setting first, but if choice not available yet will choose Imp 
-        /// for instances and Voidwalker for everything else.  
+        /// determines the best WarlockPet value to use.  Attempts to use
+        /// user setting first, but if choice not available yet will choose Imp
+        /// for instances and Voidwalker for everything else.
         /// </summary>
         /// <returns>WarlockPet to use</returns>
         public static WarlockPet GetBestPet()
@@ -694,32 +690,22 @@ namespace Singular.ClassSpecific.Warlock
                 if (TalentManager.CurrentSpec == WoWSpec.None)
                     return WarlockPet.Imp;
 
-                if (bestPet == WarlockPet.Auto)
-                {
-                    if (HasTalent(WarlockTalents.GrimoireOfSupremacy))
-                        bestPet = WarlockPet.Doomguard;
-                    else if (TalentManager.CurrentSpec == WoWSpec.WarlockDemonology)
-                        bestPet = WarlockPet.Felguard;
-                    else if (TalentManager.CurrentSpec == WoWSpec.WarlockDestruction && Me.Level == Me.MaxLevel)
-                        bestPet = WarlockPet.Felhunter;
-                    else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-                        bestPet = WarlockPet.Succubus;
-                    else if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
-                        bestPet = WarlockPet.Felhunter;
-                    else
-                        bestPet = WarlockPet.Voidwalker;
-                }
-
                 string spellName = "Summon" + bestPet.ToString().CamelToSpaced();
                 SpellFindResults sfr;
-                if (!SpellManager.FindSpell(spellName, out sfr))
+                if (bestPet == WarlockPet.Auto || !SpellManager.FindSpell(spellName, out sfr))
                 {
                     if (HasTalent(WarlockTalents.GrimoireOfSupremacy))
                         bestPet = WarlockPet.Doomguard;
-                    else if (SingularRoutine.CurrentWoWContext != WoWContext.Instances)
-                        bestPet = WarlockPet.Voidwalker;
-                    else if (Me.Level >= 30)
+                    else if (TalentManager.CurrentSpec == WoWSpec.WarlockDemonology && Spell.CanCastHack("Summon Felguard"))
+                        bestPet = WarlockPet.Felguard;
+                    else if (TalentManager.CurrentSpec == WoWSpec.WarlockDestruction && Spell.CanCastHack("Summon Felguard"))
                         bestPet = WarlockPet.Felhunter;
+                    else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && Spell.CanCastHack("Summon Succubus"))
+                        bestPet = WarlockPet.Succubus;
+                    else if (SingularRoutine.CurrentWoWContext == WoWContext.Instances && Spell.CanCastHack("Summon Felhunter"))
+                        bestPet = WarlockPet.Felhunter;
+                    else if (SingularRoutine.CurrentWoWContext != WoWContext.Instances && Spell.CanCastHack("Summon Voidwalker"))
+                        bestPet = WarlockPet.Voidwalker;
                     else
                         bestPet = WarlockPet.Imp;
                 }
@@ -730,7 +716,7 @@ namespace Singular.ClassSpecific.Warlock
 
         /// <summary>
         /// Pet.CreatureFamily.Id values for pets while the
-        /// Grimoire of Supremecy talent is selected.  
+        /// Grimoire of Supremecy talent is selected.
         /// </summary>
         public enum WarlockGrimoireOfSupremecyPets
         {
@@ -742,10 +728,10 @@ namespace Singular.ClassSpecific.Warlock
             Terrorguard = 147,
             Abyssal = 148
         }
-       
+
         /// <summary>
-        /// return standard pet id associated with active pet. 
-        /// note: we map Grimoire of Supremecy pets so rest of 
+        /// return standard pet id associated with active pet.
+        /// note: we map Grimoire of Supremecy pets so rest of
         /// Singular can treat in talent independent fashion
         /// </summary>
         /// <returns></returns>
@@ -835,7 +821,7 @@ namespace Singular.ClassSpecific.Warlock
 
         private static bool UseSoulstoneForBattleRez()
         {
-            bool cast = Helpers.Common.CombatRezTargetSetting != CombatRezTarget.None 
+            bool cast = Helpers.Common.CombatRezTargetSetting != CombatRezTarget.None
                 && (WarlockSettings.UseSoulstone == Soulstone.Ressurect || (WarlockSettings.UseSoulstone == Soulstone.Auto && SingularRoutine.CurrentWoWContext == WoWContext.Instances));
             return cast;
         }
@@ -864,10 +850,10 @@ namespace Singular.ClassSpecific.Warlock
                     new Decorator( ret => Spell.CanCastHack( "Health Funnel", Me.Pet), new ActionAlwaysSucceed()),
 
                     Spell.Cast(
-                        ret => "Health Funnel", 
-                        mov => !TalentManager.HasGlyph("Health Funnel"), 
-                        on => Me.Pet, 
-                        req => true, 
+                        ret => "Health Funnel",
+                        mov => !TalentManager.HasGlyph("Health Funnel"),
+                        on => Me.Pet,
+                        req => true,
                         cancel => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth
                         ),
 
@@ -935,7 +921,7 @@ namespace Singular.ClassSpecific.Warlock
                 _secondsBeforeBattle = value;
             }
         }
-        
+
             const string BURNING_RUSH = "Burning Rush";
         private static DateTime timeNextBurningRush = DateTime.MinValue;
         private static DateTime lastCancelBurningRush = DateTime.MinValue;
@@ -949,7 +935,7 @@ namespace Singular.ClassSpecific.Warlock
 
             return new Decorator(
                 ret => MovementManager.IsClassMovementAllowed
-                    && DateTime.UtcNow > timeNextBurningRush 
+                    && DateTime.UtcNow > timeNextBurningRush
                     && StyxWoW.Me.IsAlive
                     && Me.IsMoving
                     && Me.HealthPercent >= SingularSettings.Instance.Warlock().BurningRushHealthCast
@@ -957,11 +943,11 @@ namespace Singular.ClassSpecific.Warlock
                     && !StyxWoW.Me.IsOnTransport
                     && !StyxWoW.Me.OnTaxi
                     && !StyxWoW.Me.HasAnyAura(BURNING_RUSH)
-                    && !StyxWoW.Me.IsAboveTheGround() 
+                    && !StyxWoW.Me.IsAboveTheGround()
                     && !StyxWoW.Me.IsSwimming
                     && !StyxWoW.Me.InVehicle
                     && ContextSituationAllowsSpeedBuff()
-                    && !Spell.IsGlobalCooldown() 
+                    && !Spell.IsGlobalCooldown()
                     && !Spell.IsCastingOrChannelling(),
                 new ThrottlePasses( 3,
                     new Sequence(
@@ -1135,7 +1121,7 @@ namespace Singular.ClassSpecific.Warlock
         public static bool dark_soul_down { get { return !dark_soul_up; } }
         public static double dark_soul_remains { get { return StyxWoW.Me.GetAuraTimeLeft(dark_soul_name).TotalSeconds; } }
         public static double dark_soul_charges { get { return Spell.GetCharges(dark_soul_name); } }
-        
+
         public static bool fire_and_brimstone_up { get { return fire_and_brimstone_remains > 0; } }
         public static bool fire_and_brimstone_down { get { return !fire_and_brimstone_up; } }
         public static double fire_and_brimstone_remains { get { return StyxWoW.Me.GetAuraTimeLeft("Fire and Brimstone").TotalSeconds; } }
@@ -1180,7 +1166,7 @@ namespace Singular.ClassSpecific.Warlock
     /*
     public static class trinket
     {
-        public static bool 
+        public static bool
                 proc.intellect_remains>cast_time
                 trinket_stacking_proc.intellect_remains>=cast_time
                 trinket.proc.crit_remains>cast_time
@@ -1258,7 +1244,7 @@ namespace Singular.ClassSpecific.Warlock
 
         SummonDarkglare = SoulEffigy,
         Demonbolt = PhantomSingularity,
- 
+
         WreakHavoc = SoulEffigy,
         ChannelDemonfire = PhantomSingularity
     }

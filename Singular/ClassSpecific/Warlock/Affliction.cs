@@ -50,7 +50,7 @@ namespace Singular.ClassSpecific.Warlock
 
         [Behavior(BehaviorType.Pull, WoWClass.Warlock, WoWSpec.WarlockAffliction)]
         public static Composite CreateWarlockAfflictionNormalPull()
-        { 
+        {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
@@ -66,7 +66,7 @@ namespace Singular.ClassSpecific.Warlock
                         }),
 
                         CreateWarlockDiagnosticOutputBehavior("Pull"),
-                        SingularRoutine.CurrentWoWContext == WoWContext.Instances 
+                        SingularRoutine.CurrentWoWContext == WoWContext.Instances
                             ? CreateApplyDotsBehaviorInstance(onUnit => Me.CurrentTarget, ret => true)
                             : CreateApplyDotsBehaviorNormal(onUnit => Me.CurrentTarget)
                         )
@@ -132,7 +132,8 @@ namespace Singular.ClassSpecific.Warlock
                         Spell.Cast("Grimoire: Felhunter"),
                         Spell.Buff("Life Tap", when => Me.ManaPercent < 50),
                         Spell.Cast("Drain Life"),
-                        Spell.Cast("Drain Soul")      
+                        Spell.Cast("Drain Soul"),
+                        Spell.Cast("Shadow Bolt")
                         )
                     )
                 );
@@ -203,7 +204,7 @@ namespace Singular.ClassSpecific.Warlock
             }
             return false;
         }
-        
+
 
         public static Composite CreateAoeBehavior()
         {
@@ -333,7 +334,7 @@ namespace Singular.ClassSpecific.Warlock
                     )
                 );
         }
-        
+
 
         delegate bool NeedSoulSwapDelegate(WoWUnit unit);
 

@@ -334,11 +334,11 @@ ECHO Copied</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>if $(ConfigurationName) == Raphus (
-SubWCRev.exe $(ProjectDir) $(ProjectDir)SingularRoutine.Version.tmpl $(ProjectDir)SingularRoutine.Version.cs
-$(SolutionDir)FilecheckGenerator\bin\Debug\FileCheckListGenerator.exe
+SubWCRev.exe "$(ProjectDir)" "$(ProjectDir)SingularRoutine.Version.tmpl" "$(ProjectDir)SingularRoutine.Version.cs"
+"$(SolutionDir)FilecheckGenerator\bin\Debug\FileCheckListGenerator.exe"
 )</PreBuildEvent>
   </PropertyGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>

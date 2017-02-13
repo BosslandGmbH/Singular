@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>02.03.2017 05:35:49</ScanTime>
+  <ScanTime>02.13.2017 14:31:22</ScanTime>
   <FileList>
-    <File Hash="9714" Name="ClassSpecific\DeathKnight\Blood.cs" />
+    <File Hash="9721" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="7693" Name="ClassSpecific\DeathKnight\Common.cs" />
     <File Hash="7589" Name="ClassSpecific\DeathKnight\Frost.cs" />
     <File Hash="3134" Name="ClassSpecific\DeathKnight\Lowbie.cs" />
@@ -11,7 +11,7 @@
     <File Hash="10013" Name="ClassSpecific\DemonHunter\Havoc.cs" />
     <File Hash="7253" Name="ClassSpecific\DemonHunter\Vengeance.cs" />
     <File Hash="5698" Name="ClassSpecific\Druid\Balance.cs" />
-    <File Hash="58444" Name="ClassSpecific\Druid\Common.cs" />
+    <File Hash="58448" Name="ClassSpecific\Druid\Common.cs" />
     <File Hash="22751" Name="ClassSpecific\Druid\Feral.cs" />
     <File Hash="12700" Name="ClassSpecific\Druid\Guardian.cs" />
     <File Hash="1434" Name="ClassSpecific\Druid\Lowbie.cs" />
@@ -38,7 +38,7 @@
     <File Hash="12915" Name="ClassSpecific\Paladin\Protection.cs" />
     <File Hash="14851" Name="ClassSpecific\Paladin\Retribution.cs" />
     <File Hash="24722" Name="ClassSpecific\Priest\Common.cs" />
-    <File Hash="41753" Name="ClassSpecific\Priest\Discipline.cs" />
+    <File Hash="41681" Name="ClassSpecific\Priest\Discipline.cs" />
     <File Hash="25397" Name="ClassSpecific\Priest\Holy.cs" />
     <File Hash="1026" Name="ClassSpecific\Priest\Lowbie.cs" />
     <File Hash="31756" Name="ClassSpecific\Priest\Shadow.cs" />
@@ -55,11 +55,11 @@
     <File Hash="4804" Name="ClassSpecific\Shaman\Lowbie.cs" />
     <File Hash="46807" Name="ClassSpecific\Shaman\Restoration.cs" />
     <File Hash="34463" Name="ClassSpecific\Shaman\Totems.cs" />
-    <File Hash="20292" Name="ClassSpecific\Warlock\Affliction.cs" />
-    <File Hash="60686" Name="ClassSpecific\Warlock\Common.cs" />
-    <File Hash="12641" Name="ClassSpecific\Warlock\Demonology.cs" />
-    <File Hash="11238" Name="ClassSpecific\Warlock\Destruction.cs" />
-    <File Hash="1324" Name="ClassSpecific\Warlock\Lowbie.cs" />
+    <File Hash="19370" Name="ClassSpecific\Warlock\Affliction.cs" />
+    <File Hash="59260" Name="ClassSpecific\Warlock\Common.cs" />
+    <File Hash="12137" Name="ClassSpecific\Warlock\Demonology.cs" />
+    <File Hash="10617" Name="ClassSpecific\Warlock\Destruction.cs" />
+    <File Hash="1276" Name="ClassSpecific\Warlock\Lowbie.cs" />
     <File Hash="18628" Name="ClassSpecific\Warrior\Arms.cs" />
     <File Hash="22277" Name="ClassSpecific\Warrior\Common.cs" />
     <File Hash="18203" Name="ClassSpecific\Warrior\Fury.cs" />
@@ -86,13 +86,13 @@
     <File Hash="38344" Name="Helpers\Safers.cs" />
     <File Hash="127683" Name="Helpers\Spell.cs" />
     <File Hash="19373" Name="Helpers\Throttle.cs" />
-    <File Hash="80857" Name="Helpers\Unit.cs" />
-    <File Hash="54183" Name="Lists\BossList.cs" />
+    <File Hash="79883" Name="Helpers\Unit.cs" />
+    <File Hash="53540" Name="Lists\BossList.cs" />
     <File Hash="1407" Name="Lists\CataHeroicDpsList.cs" />
     <File Hash="47013" Name="Managers\HealerManager.cs" />
     <File Hash="16623" Name="Managers\HotkeyManager.cs" />
     <File Hash="4257" Name="Managers\MountManager.cs" />
-    <File Hash="9260" Name="Managers\MovementManager.cs" />
+    <File Hash="9264" Name="Managers\MovementManager.cs" />
     <File Hash="21582" Name="Managers\PetManager.cs" />
     <File Hash="3010" Name="Managers\SoulstoneManager.cs" />
     <File Hash="816" Name="Managers\SpellImmunityManager.cs" />
@@ -122,7 +122,7 @@
     <File Hash="4546" Name="Settings\SpellList.cs" />
     <File Hash="1926" Name="Settings\SpellList.MageSteallist.cs" />
     <File Hash="1727" Name="Settings\SpellList.PurgeWhitelist.cs" />
-    <File Hash="8250" Name="Settings\WarlockSettings.cs" />
+    <File Hash="7432" Name="Settings\WarlockSettings.cs" />
     <File Hash="6033" Name="Settings\WarriorSettings.cs" />
     <File Hash="95630" Name="SingularRoutine.Behaviors.cs" />
     <File Hash="1809" Name="SingularRoutine.BotEvents.cs" />

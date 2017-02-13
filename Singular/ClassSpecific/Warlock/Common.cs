@@ -23,8 +23,8 @@ namespace Singular.ClassSpecific.Warlock
     {
         #region Local Helpers
 
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static WarlockSettings WarlockSettings { get { return SingularSettings.Instance.Warlock(); } }
+        private static LocalPlayer Me => StyxWoW.Me;
+        private static WarlockSettings WarlockSettings => SingularSettings.Instance.Warlock();
 
         public static bool HaveHealthStone { get { return StyxWoW.Me.BagItems.Any(i => i.Entry == 5512); } }
 
@@ -53,20 +53,16 @@ namespace Singular.ClassSpecific.Warlock
             scenario = new CombatScenario(44, 1.5f);
 
             SpellFindResults sfr;
-            if (!SpellManager.FindSpell("Dark Soul", out sfr))
-                buff.dark_soul_name = "";
-            else
-                buff.dark_soul_name = (sfr.Override ?? sfr.Original).Name;
+            buff.dark_soul_name = !SpellManager.FindSpell("Dark Soul", out sfr) ? "" : (sfr.Override ?? sfr.Original).Name;
 
             talent.grimoire_of_service_enabled = Common.HasTalent(WarlockTalents.GrimoireOfService);
             talent.cataclysm_enabled = Common.HasTalent(WarlockTalents.Cataclysm);
 
-            if (SpellManager.HasSpell("Burning Rush"))
-            {
-                Logger.Write(LogColor.Init, "Burning Rush: cast if running and health above {0}%", WarlockSettings.BurningRushHealthCast);
-                Logger.Write(LogColor.Init, "Burning Rush: cancel if health drops below {0}% or stopped for {1} ms", WarlockSettings.BurningRushHealthCancel, WarlockSettings.BurningRushStopTimeCancel);
-                Logger.Write(LogColor.Init, "Burning Rush: cast suppressed for {0} to {1} milliseconds after cancel", WarlockSettings.BurningRushMinSuspend, WarlockSettings.BurningRushMaxSuspend);
-            }
+            if (!SpellManager.HasSpell("Burning Rush")) return null;
+
+            Logger.Write(LogColor.Init, "Burning Rush: cast if running and health above {0}%", WarlockSettings.BurningRushHealthCast);
+            Logger.Write(LogColor.Init, "Burning Rush: cancel if health drops below {0}% or stopped for {1} ms", WarlockSettings.BurningRushHealthCancel, WarlockSettings.BurningRushStopTimeCancel);
+            Logger.Write(LogColor.Init, "Burning Rush: cast suppressed for {0} to {1} milliseconds after cancel", WarlockSettings.BurningRushMinSuspend, WarlockSettings.BurningRushMaxSuspend);
 
             return null;
         }
@@ -183,7 +179,7 @@ namespace Singular.ClassSpecific.Warlock
                     new Throttle(5, Spell.Cast("Create Healthstone", mov => true, on => Me, ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 25), cancel => false))
                     ),
 
-                Spell.BuffSelf("Soulstone", ret => NeedToSoulstoneMyself()),
+                Spell.Cast("Soulstone", on => Me, ret => NeedToSoulstoneMyself()),
                 PartyBuff.BuffGroup("Dark Intent"),
                 Spell.BuffSelf( "Grimoire of Sacrifice", ret => GetCurrentPet() != WarlockPet.None && GetCurrentPet() != WarlockPet.Other),
                 Spell.BuffSelf( "Unending Breath", req => Me.IsSwimming ),
@@ -195,8 +191,9 @@ namespace Singular.ClassSpecific.Warlock
 
         private static bool NeedToSoulstoneMyself()
         {
-            bool cast = WarlockSettings.UseSoulstone == Soulstone.Self
-                || (WarlockSettings.UseSoulstone == Soulstone.Auto && SingularRoutine.CurrentWoWContext != WoWContext.Instances && MovementManager.IsClassMovementAllowed );
+            bool cast = (WarlockSettings.UseSoulstone == Soulstone.Self
+                || (WarlockSettings.UseSoulstone == Soulstone.Auto && SingularRoutine.CurrentWoWContext != WoWContext.Instances && MovementManager.IsClassMovementAllowed))
+                && !Me.HasActiveAura("Soulstone");
             return cast;
         }
 
@@ -232,11 +229,10 @@ namespace Singular.ClassSpecific.Warlock
                     ),
 
                 new Decorator(
-                    req => !Unit.IsTrivial(Me.CurrentTarget),
+                    req => !Me.CurrentTarget.IsTrivial(),
                     new PrioritySelector(
-                        // need combat healing?  check here since mix of buffs and abilities
-                // heal / shield self as needed
-                        Spell.BuffSelf("Dark Regeneration", ret => Me.HealthPercent < 45),
+
+                        Spell.Cast("Mortal Coil", ret => WarlockSettings.UseFear && Me.HealthPercent <= WarlockSettings.MortalCoilHealth),
 
                         new ThrottlePasses(
                             TimeSpan.FromMilliseconds(250),
@@ -247,7 +243,7 @@ namespace Singular.ClassSpecific.Warlock
                                     new Decorator(
                                         ret => ret != null,
                                         new Sequence(
-                                            new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
+                                            new Action(ret => Logger.Write($"Using {((WoWItem) ret).Name}")),
                                             new Action(ret => ((WoWItem)ret).UseContainerItem()),
                                             Helpers.Common.CreateWaitForLagDuration())
                                         )
@@ -300,7 +296,7 @@ namespace Singular.ClassSpecific.Warlock
                                     new Decorator(
                                         req => Me.HealthPercent > 20 && Spell.CanCastHack("Blood Horror", Me),
                                         new Sequence(
-                                            new SeqLog(1, LogColor.Hilite, s => string.Format("^Blood Horror: due {0} melee attacks", ((WoWUnit)s).SafeName())),
+                                            new SeqLog(1, LogColor.Hilite, s => $"^Blood Horror: due {((WoWUnit) s).SafeName()} melee attacks"),
                                             Spell.BuffSelf("Blood Horror")
                                             )
                                         ),
@@ -318,8 +314,7 @@ namespace Singular.ClassSpecific.Warlock
                             Spell.CastOnGround("Shadowfury", on => (WoWUnit)on, ret => ret != null, true),
 
                             // treat as a heal, but we cast on what would be our fear target -- allow even when fear use disabled
-                            Spell.Buff("Mortal Coil", on => (WoWUnit)on, ret => WarlockSettings.UseFear && !((WoWUnit)ret).IsUndead && Me.HealthPercent < 50),
-                            Spell.Buff("Mortal Coil", on => Me.CurrentTarget, ret => WarlockSettings.UseFear && Me.GotTarget() && !Me.CurrentTarget.IsUndead && Me.HealthPercent < 50 && Me.HealthPercent < Me.CurrentTarget.HealthPercent),
+                            Spell.Buff("Mortal Coil", on => (WoWUnit)on, ret => WarlockSettings.UseFear && Me.HealthPercent <= WarlockSettings.MortalCoilHealth),
 
                             // Howl of Terror if too m any mobs attacking us that arent' controlled
                             Spell.Buff("Howl of Terror",
@@ -443,10 +438,7 @@ namespace Singular.ClassSpecific.Warlock
 
         #endregion
 
-
         private static WoWGuid _lastSapTarget = WoWGuid.Empty;
-
-
 
         public static WoWUnit GetBestFearTarget()
         {
@@ -469,7 +461,7 @@ namespace Singular.ClassSpecific.Warlock
                 .FirstOrDefault();
             if (closestTarget != null)
             {
-                msg = string.Format("^Fear: player {0} attacking us from {1:F1} yds", closestTarget.SafeName(), closestTarget.Distance);
+                msg = $"^Fear: player {closestTarget.SafeName()} attacking us from {closestTarget.Distance:F1} yds";
             }
             // otherwise check if over Mob count setting
             else if (WarlockSettings.UseFearCount > 0 && Unit.NearbyUnitsInCombatWithMe.Count() >= WarlockSettings.UseFearCount)
@@ -482,7 +474,8 @@ namespace Singular.ClassSpecific.Warlock
 
                 if (closestTarget != null)
                 {
-                    msg = string.Format("^Fear: {0} @ {1:F1} yds from target to avoid aggro while hitting target", closestTarget.SafeName(), closestTarget.Location.Distance(Me.CurrentTarget.Location));
+                    msg =
+                        $"^Fear: {closestTarget.SafeName()} @ {closestTarget.Location.Distance(Me.CurrentTarget.Location):F1} yds from target to avoid aggro while hitting target";
                 }
             }
 
@@ -520,7 +513,7 @@ namespace Singular.ClassSpecific.Warlock
                                 ret => GetCurrentPet() != WarlockPet.None || GetBestPet() == WarlockPet.None || PetManager.PetSummonAfterDismountTimer.IsFinished,
                                 new Sequence(
                                     new Action( ret => Logger.WriteDebug("Summon Pet:  found '{0}' after waiting", GetCurrentPet().ToString())),
-                                    new Action( r => { return GetBestPet() == GetCurrentPet() ? RunStatus.Failure : RunStatus.Success ; } )
+                                    new Action( r => GetBestPet() == GetCurrentPet() ? RunStatus.Failure : RunStatus.Success)
                                     )
                                 )
                             )
@@ -685,31 +678,29 @@ namespace Singular.ClassSpecific.Warlock
                 return currPet;
 
             WarlockPet bestPet = SingularSettings.Instance.Warlock().Pet;
-            if (bestPet != WarlockPet.None)
-            {
-                if (TalentManager.CurrentSpec == WoWSpec.None)
-                    return WarlockPet.Imp;
+            if (bestPet == WarlockPet.None) return bestPet;
 
-                string spellName = "Summon" + bestPet.ToString().CamelToSpaced();
-                SpellFindResults sfr;
-                if (bestPet == WarlockPet.Auto || !SpellManager.FindSpell(spellName, out sfr))
-                {
-                    if (HasTalent(WarlockTalents.GrimoireOfSupremacy))
-                        bestPet = WarlockPet.Doomguard;
-                    else if (TalentManager.CurrentSpec == WoWSpec.WarlockDemonology && Spell.CanCastHack("Summon Felguard"))
-                        bestPet = WarlockPet.Felguard;
-                    else if (TalentManager.CurrentSpec == WoWSpec.WarlockDestruction && Spell.CanCastHack("Summon Felguard"))
-                        bestPet = WarlockPet.Felhunter;
-                    else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && Spell.CanCastHack("Summon Succubus"))
-                        bestPet = WarlockPet.Succubus;
-                    else if (SingularRoutine.CurrentWoWContext == WoWContext.Instances && Spell.CanCastHack("Summon Felhunter"))
-                        bestPet = WarlockPet.Felhunter;
-                    else if (SingularRoutine.CurrentWoWContext != WoWContext.Instances && Spell.CanCastHack("Summon Voidwalker"))
-                        bestPet = WarlockPet.Voidwalker;
-                    else
-                        bestPet = WarlockPet.Imp;
-                }
-            }
+            if (TalentManager.CurrentSpec == WoWSpec.None)
+                return WarlockPet.Imp;
+
+            string spellName = "Summon" + bestPet.ToString().CamelToSpaced();
+            SpellFindResults sfr;
+            if (bestPet != WarlockPet.Auto && SpellManager.FindSpell(spellName, out sfr)) return bestPet;
+
+            if (HasTalent(WarlockTalents.GrimoireOfSupremacy))
+                bestPet = WarlockPet.Doomguard;
+            else if (TalentManager.CurrentSpec == WoWSpec.WarlockDemonology && Spell.CanCastHack("Summon Felguard"))
+                bestPet = WarlockPet.Felguard;
+            else if (TalentManager.CurrentSpec == WoWSpec.WarlockDestruction && Spell.CanCastHack("Summon Felhunter"))
+                bestPet = WarlockPet.Felhunter;
+            else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && Spell.CanCastHack("Summon Succubus"))
+                bestPet = WarlockPet.Succubus;
+            else if (SingularRoutine.CurrentWoWContext == WoWContext.Instances && Spell.CanCastHack("Summon Felhunter"))
+                bestPet = WarlockPet.Felhunter;
+            else if (SingularRoutine.CurrentWoWContext != WoWContext.Instances && Spell.CanCastHack("Summon Voidwalker"))
+                bestPet = WarlockPet.Voidwalker;
+            else
+                bestPet = WarlockPet.Imp;
 
             return bestPet;
         }
@@ -893,7 +884,7 @@ namespace Singular.ClassSpecific.Warlock
                                              181621
                                          };
 
-        static public WoWGameObject Soulwell
+        public static WoWGameObject Soulwell
         {
             get
             {
@@ -922,7 +913,7 @@ namespace Singular.ClassSpecific.Warlock
             }
         }
 
-            const string BURNING_RUSH = "Burning Rush";
+        const string BURNING_RUSH = "Burning Rush";
         private static DateTime timeNextBurningRush = DateTime.MinValue;
         private static DateTime lastCancelBurningRush = DateTime.MinValue;
         private static DateTime lastStopInitiated = DateTime.MaxValue;
@@ -964,27 +955,19 @@ namespace Singular.ClassSpecific.Warlock
                 return true;
 
             WoWUnit tank = HealerManager.TankToStayNear;
-            if (tank != null)
-            {
-                double distToAllow = SingularSettings.Instance.StayNearTankRangeCombat;
-                if (Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Rest
-                    || Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.PreCombatBuffs)
-                    distToAllow = SingularSettings.Instance.StayNearTankRangeRest;
+            if (tank == null) return false;
 
-                if (tank.SpellDistance() > distToAllow && tank.IsMovingAway())
-                {
-                    if (tank.SpellDistance() > (distToAllow * 2))
-                    {
-                        return true;
-                    }
-                    if (tank.MovementInfo.CurrentSpeed > Me.MovementInfo.CurrentSpeed)
-                    {
-                        return true;
-                    }
-                }
-            }
+            double distToAllow = SingularSettings.Instance.StayNearTankRangeCombat;
+            if (Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Rest
+                || Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.PreCombatBuffs)
+                distToAllow = SingularSettings.Instance.StayNearTankRangeRest;
 
-            return false;
+            if (!(tank.SpellDistance() > distToAllow) || !tank.IsMovingAway()) return false;
+
+            if (tank.SpellDistance() > (distToAllow * 2))
+                return true;
+
+            return tank.MovementInfo.CurrentSpeed > Me.MovementInfo.CurrentSpeed;
         }
 
         public static Composite CreateCancelBurningRushIfNeeded()
@@ -1003,70 +986,61 @@ namespace Singular.ClassSpecific.Warlock
 
         public static bool CancelBurningRushIfNeeded( bool fromPulse = false)
         {
-            if (ShouldWeCancelBurningRush())
-            {
-                if ((DateTime.UtcNow - lastCancelBurningRush).TotalSeconds > 1)
-                {
-                    lastCancelBurningRush = DateTime.UtcNow;
-                    int range = WarlockSettings.BurningRushMaxSuspend - WarlockSettings.BurningRushMinSuspend;
-                    TimeSpan delay = TimeSpan.FromMilliseconds( new Random().NextDouble() * range + WarlockSettings.BurningRushMinSuspend);
-                    timeNextBurningRush = DateTime.UtcNow + delay;
+            if (!ShouldWeCancelBurningRush()) return false;
+            if (!((DateTime.UtcNow - lastCancelBurningRush).TotalSeconds > 1)) return false;
 
-                    Logger.Write(
-                        LogColor.Hilite,
-                        "^Burning Rush: cancel since {0}, suppress for {1:F3} seconds",
-                        reasonCancelBurningRush,
-                        delay.TotalSeconds
-                        );
-                    Me.CancelAura(BURNING_RUSH);
-                    return true;
-                }
-            }
+            lastCancelBurningRush = DateTime.UtcNow;
+            int range = WarlockSettings.BurningRushMaxSuspend - WarlockSettings.BurningRushMinSuspend;
+            TimeSpan delay = TimeSpan.FromMilliseconds( new Random().NextDouble() * range + WarlockSettings.BurningRushMinSuspend);
+            timeNextBurningRush = DateTime.UtcNow + delay;
 
-            return false;
+            Logger.Write(
+                LogColor.Hilite,
+                "^Burning Rush: cancel since {0}, suppress for {1:F3} seconds",
+                reasonCancelBurningRush,
+                delay.TotalSeconds
+            );
+            Me.CancelAura(BURNING_RUSH);
+            return true;
         }
 
         private static bool ShouldWeCancelBurningRush()
         {
-            if (Me.HasAura(BURNING_RUSH))
-            {
-                if (Me.IsMoving)
-                {
-                    lastStopInitiated = DateTime.MaxValue;
-                }
-                else if (lastStopInitiated == DateTime.MaxValue)
-                {
-                    lastStopInitiated = DateTime.UtcNow;
-                }
-                else if ((DateTime.UtcNow - lastStopInitiated).TotalMilliseconds >= WarlockSettings.BurningRushStopTimeCancel)
-                {
-                    reasonCancelBurningRush = "Not Moving";
-                    return true;
-                }
+            if (!Me.HasAura(BURNING_RUSH)) return false;
 
-                if (Me.InVehicle)
-                {
-                    reasonCancelBurningRush = "in Quest Vehicle";
-                    return true;
-                }
-                if (Me.Mounted)
-                {
-                    reasonCancelBurningRush = "Mounted";
-                    return true;
-                }
-                if (Me.IsFlying)
-                {
-                    reasonCancelBurningRush = "Flying";
-                    return true;
-                }
-                if (Me.HealthPercent < WarlockSettings.BurningRushHealthCancel)
-                {
-                    reasonCancelBurningRush = string.Format("Health @ {0:F1}%", Me.HealthPercent);
-                    return true;
-                }
+            if (Me.IsMoving)
+            {
+                lastStopInitiated = DateTime.MaxValue;
+            }
+            else if (lastStopInitiated == DateTime.MaxValue)
+            {
+                lastStopInitiated = DateTime.UtcNow;
+            }
+            else if ((DateTime.UtcNow - lastStopInitiated).TotalMilliseconds >= WarlockSettings.BurningRushStopTimeCancel)
+            {
+                reasonCancelBurningRush = "Not Moving";
+                return true;
             }
 
-            return false;
+            if (Me.InVehicle)
+            {
+                reasonCancelBurningRush = "in Quest Vehicle";
+                return true;
+            }
+            if (Me.Mounted)
+            {
+                reasonCancelBurningRush = "Mounted";
+                return true;
+            }
+            if (Me.IsFlying)
+            {
+                reasonCancelBurningRush = "Flying";
+                return true;
+            }
+            if (!(Me.HealthPercent < WarlockSettings.BurningRushHealthCancel)) return false;
+            reasonCancelBurningRush = $"Health @ {Me.HealthPercent:F1}%";
+
+            return true;
         }
 
         public static bool NeedSoulwellForThisContext
@@ -1078,19 +1052,12 @@ namespace Singular.ClassSpecific.Warlock
                     return PVP.PrepTimeLeft < RandomNumberOfSecondsBeforeBattleStarts && Me.HasAnyAura("Preparation", "Arena Preparation");
 
                 // otherwise, while group members nearby, no hostiles, and I need some stones
-                if (Me.IsInGroup() && !HaveHealthStone)
-                {
-                    // if no players nearby, soulwell not needed
-                    if (!Unit.NearbyGroupMembers.Any(g => g.IsAlive && !g.IsMe))
-                        return false;
+                if (!Me.IsInGroup() || HaveHealthStone) return false;
+                // if no players nearby, soulwell not needed
+                if (!Unit.NearbyGroupMembers.Any(g => g.IsAlive && !g.IsMe))
+                    return false;
 
-                    if (Unit.UnfriendlyUnits(55).Any(u => u.IsAlive))
-                        return false;
-
-                    return true;
-                }
-
-                return false;
+                return !Unit.UnfriendlyUnits(55).Any(u => u.IsAlive);
             }
         }
         }
@@ -1100,8 +1067,8 @@ namespace Singular.ClassSpecific.Warlock
 
     public static class target
     {
-        public static double health_pct { get { return StyxWoW.Me.CurrentTarget.HealthPercent; } }
-        public static long time_to_die { get { return StyxWoW.Me.CurrentTarget.TimeToDeath(); } }
+        public static double health_pct => StyxWoW.Me.CurrentTarget.HealthPercent;
+        public static long time_to_die => StyxWoW.Me.CurrentTarget.TimeToDeath();
     }
 
     class action

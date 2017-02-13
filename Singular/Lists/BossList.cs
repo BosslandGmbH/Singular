@@ -13,7 +13,6 @@ namespace Singular.Lists
 
         public static HashSet<string> CurrentMapBosses { get; private set; }
 
-
         static BossList()
         {
             // contains the list of all the 5 man and raid bosses.
@@ -24,90 +23,77 @@ namespace Singular.Lists
                 (sender, arg) => Init();
             */
 
-            foreach (var bossId in _dummies)
+            foreach (var bossId in TrainingDummies)
             {
-                _bosses.Add(bossId);
+                BossIds.Add(bossId);
             }
 
         }
 
         public static void Init()
         {
-            CurrentMapBosses = new HashSet<string>(StyxWoW.Db[ClientDb.DungeonEncounter].Where(r => r.GetField<ushort>(2) == StyxWoW.Me.MapId).Select(r => r.GetStringField(0)));
+            CurrentMapBosses = new HashSet<string>(StyxWoW.Db[ClientDb.DungeonEncounter].Where(r => r.GetField<ushort>(3) == StyxWoW.Me.MapId).Select(r => r.GetStringField(1)));
 
             // output list of bosses
             Logger.WriteFile("BossList: for {0}", StyxWoW.Me.CurrentMap.Name); // + " - " + StyxWoW.Me.CurrentMap.MapDescription);
-            foreach (var s in Singular.Lists.BossList.CurrentMapBosses)
+            foreach (var s in CurrentMapBosses)
             {
                 Logger.WriteFile("- boss {0}", s);
             }
-            Logger.WriteFile("BossList: contains {0} entries", Singular.Lists.BossList.CurrentMapBosses.Count());
+            Logger.WriteFile("BossList: contains {0} entries", CurrentMapBosses.Count);
         }
 
-        public static HashSet<uint> BossIds
+        public static HashSet<uint> TrainingDummies { get; } = new HashSet<uint>
         {
-            get { return _bosses; }
-        }
+            31146, // Raider's
+            46647, // 81-85
+            32546, // Ebon Knight's (DK)
+            31144, // 79-80
+            32543, // Veteran's (Eastern Plaguelands)
+            32667, // 70
+            32542, // 65 EPL
+            32666, // 60
+            30527 // ?? Boss one (no idea?)
+        };
 
-        public static HashSet<uint> TrainingDummies { get { return _dummies; } }
+        public static HashSet<uint> CanShredBoss { get; } = new HashSet<uint>
+        {
+            56846, // Arm Tentacle -- Madness of DW
+            56167, // Arm Tentacle -- Madness of DW
+            56168, // Wing Tentacle - Madness of DW
+            57962, // Deathwing ----- Madness of DW (his head)
+            56471 // Mutated Corruption
+        };
 
-        public static HashSet<uint> CanShredBoss { get { return _shred; } }
+        public static HashSet<uint> AvoidRearBosses { get; } = new HashSet<uint>
+        {
+            10184, // Onyxia in Onyxia's Lair
+            18105, // Ghaz'an in Underbog.
+            26723, // Keristrasza in Nexus
+            28859, // Malygos in The Eye of Eternity
+            28860, // Sartharion in The Obsidian Sanctum
+            31134, // Cyanigosa in Voilet Hold
+            43214, // Slabhide in The Stonecore,
+            43614, // Lockmaw in Lost City of the Tol'vir
+            43875, // Asaad in Vortext Pinnacle
+            54432, // Murozond in End Time
+            56895, // Weak Spot in Gate of the Setting Sun
+            63191, // Garalon in Heart of Fear This boss is riding an invisible vehicle and facing is relative to vehicle's facing.
+            68036, // Durumu the Forgotten. Boss in Halls of Flesh-Shaping LFR
+            68476, // Horridon in Throne of Thunder
+            69465, // Jin'rokh the Breaker in Throne of Thunder
+            70212, // Forgotten Depths: Flaming Head
+            70235, // Forgotten Depths: Frozen Head
+            70247, // Forgotten Depths: Venemous Head
+            71454, // Malkorok, a boss in 'The Underhold' LFR. Everyone needs to stack in front of boss during 2nd phase
+            71529, // Thok the Bloodthirsty, a big dinosaur with tail lash The UnderHold
+            72276, // Amalgam of Corruption, boss in Vale of Eternal Sorrows LFR
+            72661 // Zeal. mini-boss in Vale of Eternal Sorrows LFR.
+        };
 
-        public static HashSet<uint> AvoidRearBosses { get { return _avoidRear; } }
-
-
-        private static HashSet<uint> _dummies = new HashSet<uint>
-            {
-                31146, // Raider's
-                46647, // 81-85
-                32546, // Ebon Knight's (DK)
-                31144, // 79-80
-                32543, // Veteran's (Eastern Plaguelands)
-                32667, // 70
-                32542, // 65 EPL
-                32666, // 60
-                30527, // ?? Boss one (no idea?)
-            };
-
-        private static readonly HashSet<uint> _shred = new HashSet<uint>
-            {
-                56846, // Arm Tentacle -- Madness of DW
-                56167, // Arm Tentacle -- Madness of DW
-                56168, // Wing Tentacle - Madness of DW
-                57962, // Deathwing ----- Madness of DW (his head)
-                56471, // Mutated Corruption 
-            };
-
-        private static readonly HashSet<uint> _avoidRear = new HashSet<uint>
-            {
-                10184, // Onyxia in Onyxia's Lair
-                18105, // Ghaz'an in Underbog.
-                26723, // Keristrasza in Nexus
-                28859, // Malygos in The Eye of Eternity
-                28860, // Sartharion in The Obsidian Sanctum
-                31134, // Cyanigosa in Voilet Hold
-                43214, // Slabhide in The Stonecore,
-                43614, // Lockmaw in Lost City of the Tol'vir
-                43875, // Asaad in Vortext Pinnacle
-                54432, // Murozond in End Time
-                56895, // Weak Spot in Gate of the Setting Sun
-                63191, // Garalon in Heart of Fear This boss is riding an invisible vehicle and facing is relative to vehicle's facing.
-				68036, // Durumu the Forgotten. Boss in Halls of Flesh-Shaping LFR
-                68476, // Horridon in Throne of Thunder
-                69465, // Jin'rokh the Breaker in Throne of Thunder
-                70212, // Forgotten Depths: Flaming Head
-                70235, // Forgotten Depths: Frozen Head 
-                70247, // Forgotten Depths: Venemous Head
-				71454, // Malkorok, a boss in 'The Underhold' LFR. Everyone needs to stack in front of boss during 2nd phase
-				71529, // Thok the Bloodthirsty, a big dinosaur with tail lash The UnderHold
-				72276, // Amalgam of Corruption, boss in Vale of Eternal Sorrows LFR
-				72661, // Zeal. mini-boss in Vale of Eternal Sorrows LFR.
-            };
-
-        // this list should only contain bosses that are not found in 5 mans and raids.
-        private static HashSet<uint> _bosses = new HashSet<uint>
-                    {
-                        /*
+        public static HashSet<uint> BossIds { get; } = new HashSet<uint>
+        {
+            /*
                         //Ragefire Chasm
                         11517, //Oggleflint
                         11520, //Taragaman the Hungerer
@@ -1033,7 +1019,7 @@ namespace Singular.Lists
                         36791, //Blazing Skeleton, Valithria Add
                         37934, //Blistering Zombie, Valithria Add
                         37886, //Gluttonous Abomination, Valithria Add
-                        37985, //Dream Cloud , Valithria "Add" 
+                        37985, //Dream Cloud , Valithria "Add"
                         36853, //Sindragosa
                         36597, //The Lich King (Icecrown Citadel)
                         37217, //Precious
@@ -1210,23 +1196,27 @@ namespace Singular.Lists
                         57962, // Deathwing ----- Madness of DW (his head)
 
                         // === Pandaria 5-man Dungeons
-                        // Gate of the Setting Sun	      
-                        // Mogu'shan Palace	          
-                        // Scarlet Halls	              
-                        // Scarlet Monastery	          
-                        // Scholomance	                  
-                        // Shado-Pan Monastery	          
-                        // Siege of Niuzao Temple	      
-                        // SM Cathedral/GY               
-                        // Stormstout Brewery	          
+                        // Gate of the Setting Sun
+                        // Mogu'shan Palace
+                        // Scarlet Halls
+                        // Scarlet Monastery
+                        // Scholomance
+                        // Shado-Pan Monastery
+                        // Siege of Niuzao Temple
+                        // SM Cathedral/GY
+                        // Stormstout Brewery
                         // Temple of the Jade Serpent
 
                         // === Pandaria Raids
-                        // Heart of Fear	            
-                        // Mogu'shan Vaults	        
+                        // Heart of Fear
+                        // Mogu'shan Vaults
                         // Terrace of Endless Spring
                          */
-                    };
+        };
+
+
+
+        // this list should only contain bosses that are not found in 5 mans and raids.
 
         #endregion
     }

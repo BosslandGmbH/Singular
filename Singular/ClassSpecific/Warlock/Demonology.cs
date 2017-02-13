@@ -17,13 +17,13 @@ namespace Singular.ClassSpecific.Warlock
     public class Demonology
     {
 
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static WarlockSettings WarlockSettings { get { return SingularSettings.Instance.Warlock(); } }
+        private static LocalPlayer Me => StyxWoW.Me;
+        private static WarlockSettings WarlockSettings => SingularSettings.Instance.Warlock();
 
         private static int _mobCount;
         public static readonly WaitTimer demonFormRestTimer = new WaitTimer(TimeSpan.FromSeconds(3));
 
-        private static uint SoulShardCount {  get { return Me.GetPowerInfo(WoWPowerType.SoulShards).Current; } }
+        private static uint SoulShardCount => Me.GetPowerInfo(WoWPowerType.SoulShards).Current;
 
         private static DateTime _lastSoulFire = DateTime.MinValue;
 
@@ -66,32 +66,30 @@ namespace Singular.ClassSpecific.Warlock
                                     ctx =>
                                     {
                                         int mobCount = Unit.UnfriendlyUnits().Count(t => Me.Pet.SpellDistance(t) < 8f);
-                                        if (mobCount > 0)
+                                        if (mobCount <= 0) return mobCount;
+                                        // try not to waste Felstorm if mob will die soon anyway
+                                        if (mobCount == 1)
                                         {
-                                            // try not to waste Felstorm if mob will die soon anyway
-                                            if (mobCount == 1)
+                                            if (Me.Pet.CurrentTargetGuid == Me.CurrentTargetGuid &&
+                                                !Me.CurrentTarget.IsPlayer && Me.CurrentTarget.TimeToDeath() < 6)
                                             {
-                                                if (Me.Pet.CurrentTargetGuid == Me.CurrentTargetGuid &&
-                                                    !Me.CurrentTarget.IsPlayer && Me.CurrentTarget.TimeToDeath() < 6)
-                                                {
-                                                    Logger.WriteDebug(
-                                                        "Felstorm: found {0} mobs within 8 yds of Pet, but saving Felstorm since it will die soon",
-                                                        mobCount,
-                                                        !Me.Pet.GotTarget()
-                                                            ? -1f
-                                                            : Me.Pet.SpellDistance(Me.Pet.CurrentTarget));
-                                                    return 0;
-                                                }
-                                            }
-
-                                            if (SingularSettings.Debug)
                                                 Logger.WriteDebug(
-                                                    "Felstorm: found {0} mobs within 8 yds of Pet; Pet is {1:F1} yds from its target",
+                                                    "Felstorm: found {0} mobs within 8 yds of Pet, but saving Felstorm since it will die soon",
                                                     mobCount,
                                                     !Me.Pet.GotTarget()
                                                         ? -1f
                                                         : Me.Pet.SpellDistance(Me.Pet.CurrentTarget));
+                                                return 0;
+                                            }
                                         }
+
+                                        if (SingularSettings.Debug)
+                                            Logger.WriteDebug(
+                                                "Felstorm: found {0} mobs within 8 yds of Pet; Pet is {1:F1} yds from its target",
+                                                mobCount,
+                                                !Me.Pet.GotTarget()
+                                                    ? -1f
+                                                    : Me.Pet.SpellDistance(Me.Pet.CurrentTarget));
                                         return mobCount;
                                     },
                                     Spell.Cast("Wrathstorm", req => ((int) req) >= WarlockSettings.FelstormMobCount),
@@ -216,16 +214,8 @@ namespace Singular.ClassSpecific.Warlock
 
                         if (target != null)
                         {
-                            msg += string.Format(", enemy={0}% @ {1:F1} yds, face={2}, loss={3}, corrupt={4}, doom={5}, shdwflm={6}, ttd={7}",
-                                (int)target.HealthPercent,
-                                target.Distance,
-                                Me.IsSafelyFacing(target).ToYN(),
-                                target.InLineOfSpellSight.ToYN(),
-                                (long)target.GetAuraTimeLeft("Corruption", true).TotalMilliseconds,
-                                (long)target.GetAuraTimeLeft("Doom", true).TotalMilliseconds,
-                                (long)target.GetAuraTimeLeft("Shadowflame", true).TotalMilliseconds,
-                                target.TimeToDeath()
-                                );
+                            msg +=
+                                $", enemy={(int) target.HealthPercent}% @ {target.Distance:F1} yds, face={Me.IsSafelyFacing(target).ToYN()}, loss={target.InLineOfSpellSight.ToYN()}, corrupt={(long) target.GetAuraTimeLeft("Corruption", true).TotalMilliseconds}, doom={(long) target.GetAuraTimeLeft("Doom", true).TotalMilliseconds}, shdwflm={(long) target.GetAuraTimeLeft("Shadowflame", true).TotalMilliseconds}, ttd={target.TimeToDeath()}";
                         }
 
                         Logger.WriteDebug(Color.Wheat, msg);

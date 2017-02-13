@@ -1,20 +1,16 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 
 using Singular.Dynamics;
 using Singular.Helpers;
-using Singular.Managers;
 
 using Styx;
 
-using Styx.CommonBot;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using Singular.Settings;
 
 using Action = Styx.TreeSharp.Action;
-using Rest = Singular.Helpers.Rest;
 using Styx.Common;
 using System.Collections.Generic;
 using CommonBehaviors.Actions;
@@ -23,11 +19,10 @@ using System.Drawing;
 
 namespace Singular.ClassSpecific.Warlock
 {
-    // wowraids.org
     public class Destruction
     {
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static WarlockSettings WarlockSettings { get { return SingularSettings.Instance.Warlock(); } }
+        private static LocalPlayer Me => StyxWoW.Me;
+        private static WarlockSettings WarlockSettings => SingularSettings.Instance.Warlock();
 
         private static int _mobCount;
 
@@ -207,13 +202,7 @@ namespace Singular.ClassSpecific.Warlock
             }
         }
 
-        static int BackdraftStacks
-        {
-            get
-            {
-                return (int) Me.GetAuraStacks("Backdraft");
-            }
-        }
+        static int BackdraftStacks => (int) Me.GetAuraStacks("Backdraft");
 
         private static Composite CreateWarlockDiagnosticOutputBehavior(string s)
         {
@@ -223,24 +212,12 @@ namespace Singular.ClassSpecific.Warlock
             return new ThrottlePasses(1, 1,
                 new Action(ret =>
                 {
-                    string msg;
-                    msg =
-	                    $".... [{s}] h={Me.HealthPercent:F1}%/m={Me.ManaPercent:F1}%, backdraft={BackdraftStacks}, conflag={Spell.GetCharges("Conflagrate")}, aoe={_mobCount}";
+                    string msg = $".... [{s}] h={Me.HealthPercent:F1}%/m={Me.ManaPercent:F1}%, backdraft={BackdraftStacks}, conflag={Spell.GetCharges("Conflagrate")}, aoe={_mobCount}";
 
                     WoWUnit target = Me.CurrentTarget;
                     if (target != null)
                     {
-                        msg += string.Format(
-                            ", {0}, {1:F1}%, dies={2} secs, {3:F1} yds, loss={4}, face={5}, immolate={6}, rainfire={7}",
-                            target.SafeName(),
-                            target.HealthPercent,
-                            target.TimeToDeath(),
-                            target.Distance,
-                            target.InLineOfSpellSight.ToYN(),
-                            Me.IsSafelyFacing(target).ToYN(),
-                            (long)target.GetAuraTimeLeft("Immolate", true).TotalMilliseconds,
-                            target.HasMyAura("Rain of Fire").ToYN()
-                            );
+                        msg += $", {target.SafeName()}, {target.HealthPercent:F1}%, dies={target.TimeToDeath()} secs, {target.Distance:F1} yds, loss={target.InLineOfSpellSight.ToYN()}, face={Me.IsSafelyFacing(target).ToYN()}, immolate={(long) target.GetAuraTimeLeft("Immolate", true).TotalMilliseconds}, rainfire={target.HasMyAura("Rain of Fire").ToYN()}";
                     }
 
                     Logger.WriteDebug(Color.LightYellow, msg);

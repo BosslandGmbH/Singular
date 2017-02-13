@@ -334,7 +334,7 @@ namespace Singular.ClassSpecific.Druid
                                        .Count(
                                            p =>
                                                p.IsAlive && p.HealthPercent <= DruidSettings.OffHealSettings.HeartOfTheWild &&
-                                               p.Location.DistanceSqr(((WoWUnit)req).Location) <= 30*30)
+                                               p.Location.DistanceSquared(((WoWUnit)req).Location) <= 30*30)
                             )
                         )
                     );

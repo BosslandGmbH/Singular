@@ -63,8 +63,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-
-                Spell.WaitForCast(),
+                Spell.WaitForCastOrChannel(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

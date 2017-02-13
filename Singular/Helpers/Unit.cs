@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using Styx;
@@ -12,7 +11,6 @@ using Styx.CommonBot;
 using Styx.CommonBot.Profiles;
 using Styx.TreeSharp;
 using Styx.WoWInternals;
-using Styx.WoWInternals.DBC;
 using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
 using Singular.Dynamics;
@@ -27,7 +25,6 @@ namespace Singular.Helpers
     {
         public static int TrivialLevel { get; set; }
         public static int TrivialElite { get; set; }
-        public static uint SeriousHealth { get; set; }
 
 
         [Behavior(BehaviorType.Initialize, priority: int.MaxValue)]
@@ -43,7 +40,7 @@ namespace Singular.Helpers
             return null;
         }
 
-        public static HashSet<uint> IgnoreMobs = new HashSet<uint>
+        public static readonly HashSet<uint> IgnoreMobs = new HashSet<uint>
             {
                 52288, // Venomous Effusion (NPC near the snake boss in ZG. Its the green lines on the ground. We want to ignore them.)
                 52302, // Venomous Effusion Stalker (Same as above. A dummy unit)
@@ -125,8 +122,7 @@ namespace Singular.Helpers
         {
             get
             {
-                HashSet<WoWGuid> guids = new HashSet<WoWGuid>( StyxWoW.Me.GroupInfo.RaidMemberGuids);
-                guids.Add(StyxWoW.Me.Guid);
+                HashSet<WoWGuid> guids = new HashSet<WoWGuid>(StyxWoW.Me.GroupInfo.RaidMemberGuids) {StyxWoW.Me.Guid};
                 List<WoWUnit> list = ObjectManager.ObjectList
                     .Where(o => IsUnit(o) && guids.Contains(o.Guid))
                     .Select(o => o.ToUnit())
@@ -168,10 +164,7 @@ namespace Singular.Helpers
         /// <summary>
         /// List of WoWPartyMember in your Group. Deals with Party / Raid in a list independent manner and does not restrict distance
         /// </summary>
-        public static IEnumerable<WoWPartyMember> GroupMemberInfos
-        {
-            get { return StyxWoW.Me.GroupInfo.RaidMembers.Union(StyxWoW.Me.GroupInfo.PartyMembers).Distinct(); }
-        }
+        public static IEnumerable<WoWPartyMember> GroupMemberInfos => StyxWoW.Me.GroupInfo.RaidMembers.Union(StyxWoW.Me.GroupInfo.PartyMembers).Distinct();
 
         public static IEnumerable<WoWUnit> NearbyGroupMembers
         {
@@ -219,13 +212,7 @@ namespace Singular.Helpers
         ///   Gets the nearby friendly players within 40 yards.
         /// </summary>
         /// <value>The nearby friendly players.</value>
-        public static IEnumerable<WoWPlayer> NearbyFriendlyPlayers
-        {
-            get
-            {
-                return FriendlyPlayers(40);
-            }
-        }
+        public static IEnumerable<WoWPlayer> NearbyFriendlyPlayers => FriendlyPlayers(40);
 
         /// <summary>
         ///   Gets the nearby unfriendly units within specified range.  if no range specified,
@@ -246,36 +233,17 @@ namespace Singular.Helpers
                 return Targeting.Instance.TargetList.Where(u => u != null && ValidUnit(u) && origin.SpellDistance(u) < maxSpellDist);
             }
 
-            List<WoWUnit> list = new List<WoWUnit>();
-            List<WoWObject> objectList = ObjectManager.ObjectList;
+            List<WoWUnit> objectList = ObjectManager.GetObjectsOfType<WoWUnit>(true);
 
-            for (int i = 0; i < objectList.Count; i++)
-            {
-                Type type = objectList[i].GetType();
-                if (type == typeof(WoWUnit) || type == typeof(WoWPlayer))
-                {
-                    WoWUnit t = objectList[i] as WoWUnit;
-                    if (t != null && ValidUnit(t) && (maxSpellDist == -1 || origin.SpellDistance(t) < maxSpellDist ))
-                    {
-                        list.Add(t);
-                    }
-                }
-            }
-
-            return list;
+            return (from t in objectList
+                    where t != null && ValidUnit(t) && (maxSpellDist == -1 || origin.SpellDistance(t) < maxSpellDist) select t).ToList();
         }
 
         /// <summary>
         ///   Gets the nearby unfriendly units within 40 yards.
         /// </summary>
         /// <value>The nearby unfriendly units.</value>
-        public static IEnumerable<WoWUnit> NearbyUnfriendlyUnits
-        {
-            get
-            {
-                return UnfriendlyUnits(40);
-            }
-        }
+        public static IEnumerable<WoWUnit> NearbyUnfriendlyUnits => UnfriendlyUnits(40);
 
         public static IEnumerable<WoWUnit> UnitsInCombatWithMe(int maxSpellDist = -1)
         {
@@ -324,10 +292,7 @@ namespace Singular.Helpers
                     );
         }
 
-        public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithUsOrOurStuff
-        {
-            get { return UnitsInCombatWithUsOrOurStuff(40); }
-        }
+        public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithUsOrOurStuff => UnitsInCombatWithUsOrOurStuff(40);
 
 
         private static Color invalidColor = Color.LightCoral;
@@ -643,7 +608,7 @@ namespace Singular.Helpers
 
         public static bool HasAllMyAuras(this WoWUnit unit, params string[] auras)
         {
-            return !auras.Any( a => !unit.HasMyAura(a));
+            return auras.All(unit.HasMyAura);
         }
 
         /// <summary>
@@ -844,10 +809,7 @@ namespace Singular.Helpers
             // be aware: test previously was <= and vague recollection that was needed
             // .. but no comment and need a way to consider passive ones found with timeleft of 0 as not expired if
             // .. if we pass 0 in as the timespan
-            if (wantedAura.TimeLeft < tm)
-                return true;
-
-            return false;
+            return wantedAura.TimeLeft < tm;
         }
 
 
@@ -867,9 +829,9 @@ namespace Singular.Helpers
             if (!SpellManager.HasSpell(spell))
                 return false;
 
-            WoWAura wantedAura = u.GetAllAuras()
-                .Where(a => a != null && string.Compare(a.Name, auraName, false) == 0 && a.TimeLeft > TimeSpan.Zero && (!myAura || a.CreatorGuid == StyxWoW.Me.Guid))
-                .FirstOrDefault();
+            WoWAura wantedAura = u
+                .GetAllAuras()
+                .FirstOrDefault(a => a != null && string.Compare(a.Name, auraName, false) == 0 && a.TimeLeft > TimeSpan.Zero && (!myAura || a.CreatorGuid == StyxWoW.Me.Guid));
 
             if (wantedAura == null)
                 return true;
@@ -877,11 +839,7 @@ namespace Singular.Helpers
             if (wantedAura.TimeLeft < tm)
                 return true;
 
-            if (Math.Max(1, wantedAura.StackCount) < stackCount)
-                return true;
-
-            return false;
-
+            return Math.Max(1, wantedAura.StackCount) < stackCount;
         }
 
 
@@ -978,7 +936,7 @@ namespace Singular.Helpers
                 return TimeSpan.Zero;
 
             WoWAura wantedAura =
-                onUnit.GetAllAuras().Where(a => a != null && a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
+                onUnit.GetAllAuras().FirstOrDefault(a => a != null && a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid));
 
             return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
         }
@@ -992,7 +950,7 @@ namespace Singular.Helpers
             }
 
             WoWAura wantedAura =
-                onUnit.GetAllAuras().Where(a => a != null && a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
+                onUnit.GetAllAuras().FirstOrDefault(a => a != null && a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid));
 
             if (wantedAura == null)
             {
@@ -1010,7 +968,7 @@ namespace Singular.Helpers
                 return TimeSpan.Zero;
 
             WoWAura wantedAura = onUnit.GetAllAuras()
-                .Where(a => a.SpellId == auraID && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
+                .FirstOrDefault(a => a.SpellId == auraID && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid));
 
             return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
         }
@@ -1034,7 +992,7 @@ namespace Singular.Helpers
                 return 0;
 
             WoWAura wantedAura =
-                onUnit.GetAllAuras().Where(a => a.SpellId == spellId && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
+                onUnit.GetAllAuras().FirstOrDefault(a => a.SpellId == spellId && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid));
 
             if (wantedAura == null)
                 return 0;
@@ -1061,9 +1019,9 @@ namespace Singular.Helpers
 
         public static bool HasShapeshiftAura(this WoWUnit unit, string auraName)
         {
-            WoWAura aura = unit.GetAllAuras()
-                .Where(a => a.ApplyAuraType == WoWApplyAuraType.ModShapeshift && a.Name == auraName)
-                .FirstOrDefault();
+            WoWAura aura = unit
+                .GetAllAuras()
+                .FirstOrDefault(a => a.ApplyAuraType == WoWApplyAuraType.ModShapeshift && a.Name == auraName);
             return aura != null;
         }
 

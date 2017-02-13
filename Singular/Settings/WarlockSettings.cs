@@ -1,20 +1,14 @@
-﻿
-using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.IO;
 using Styx.Helpers;
 
 using DefaultValue = Styx.Helpers.DefaultValueAttribute;
-using Styx;
-using Styx.CommonBot;
-using Singular.Managers;
-
 
 namespace Singular.Settings
 {
     public enum WarlockPet
     {
-        None        = 0,        
+        None        = 0,
         Auto        = 1,
         Imp         = 23,       // Pet.CreatureFamily.Id
         Voidwalker  = 16,
@@ -108,25 +102,18 @@ namespace Singular.Settings
         public bool UseDisarm { get; set; }
 
         [Setting]
+        [DefaultValue(70)]
+        [Category("Common")]
+        [DisplayName("Mortal Coil at Health %")]
+        [Description("Will use Mortal Coil to heal, will not cast if Use Fear is set to False.")]
+        public int MortalCoilHealth { get; set; }
+
+        [Setting]
         [DefaultValue(true)]
         [Category("Common")]
         [DisplayName("Create Soulwell If In Group")]
         [Description("Creates a Soulwell if in a Group at certain point (Battlefield start, etc)")]
         public bool CreateSoulwell { get; set; }
-
-        [Setting]
-        [DefaultValue(20)]
-        [Category("Common")]
-        [DisplayName("Drain Life%")]
-        [Description("Health % which we should Drain Life")]
-        public int DrainLifeCastPct { get; set; }
-
-        [Setting]
-        [DefaultValue(30)]
-        [Category("Common")]
-        [DisplayName("Drain Life Cancel %")]
-        [Description("Health % which we should /cancel Drain Life")]
-        public int DrainLifeCancelPct { get; set; }
 
         [Setting]
         [DefaultValue(true)]
@@ -183,20 +170,6 @@ namespace Singular.Settings
         [DisplayName("Burning Rush Suspend Min (ms)")]
         [Description("Will prevent Burning Rush cast for min time (ms) after cancelling")]
         public int BurningRushMinSuspend { get; set; }
-
-        [Setting]
-        [DefaultValue(750)]
-        [Category("Demonology")]
-        [DisplayName("Switch to Caster Fury Level")]
-        [Description("Go Caster at this Demonic Fury value (0 - 1000)")]
-        public int FurySwitchToCaster { get; set; }
-
-        [Setting]
-        [DefaultValue(900)]
-        [Category("Demonology")]
-        [DisplayName("Switch to Demon Fury Level")]
-        [Description("Go Demon above this Demonic Fury value (0 - 1000)")]
-        public int FurySwitchToDemon { get; set; }
 
         [Setting]
         [DefaultValue(1)]

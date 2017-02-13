@@ -3,20 +3,15 @@ using System.Linq;
 
 using Singular.Dynamics;
 using Singular.Helpers;
-using Singular.Managers;
 
 using Styx;
 
 using Styx.CommonBot;
-using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using Singular.Settings;
 
 using Action = Styx.TreeSharp.Action;
-using Rest = Singular.Helpers.Rest;
-using Styx.Common;
-using System.Collections.Generic;
 using CommonBehaviors.Actions;
 using System.Drawing;
 
@@ -25,8 +20,8 @@ namespace Singular.ClassSpecific.Warlock
 {
     public static class Affliction
     {
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static WarlockSettings WarlockSettings { get { return SingularSettings.Instance.Warlock(); } }
+        private static LocalPlayer Me => StyxWoW.Me;
+        private static WarlockSettings WarlockSettings => SingularSettings.Instance.Warlock();
 
         private static int _mobCount;
 
@@ -117,10 +112,12 @@ namespace Singular.ClassSpecific.Warlock
                         new Decorator(
                             ret => WarlockSettings.UseArtifactOnlyInAoE && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1,
                             new PrioritySelector(
-                                Spell.Cast("Reap Souls", ret => WarlockSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && Me.GetAuraStacks("Tormented Souls") >= WarlockSettings.ArtifactTormentedSoulCount)
+                                Spell.Cast("Reap Souls", ret => WarlockSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && Me.GetAuraByName("Tormented Souls")?.StackCount >= WarlockSettings.ArtifactTormentedSoulCount)
                             )
                         ),
-                        Spell.Cast("Reap Souls", ret => !WarlockSettings.UseArtifactOnlyInAoE && WarlockSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && Me.GetAuraStacks("Tormented Souls") >= WarlockSettings.ArtifactTormentedSoulCount),
+                        Spell.Cast("Reap Souls", ret => !WarlockSettings.UseArtifactOnlyInAoE && WarlockSettings.UseDPSArtifactWeaponWhen != UseDPSArtifactWeaponWhen.None && Me.GetAuraByName("Tormented Souls")?.StackCount >= WarlockSettings.ArtifactTormentedSoulCount),
+
+                        Spell.BuffSelf("Soul Harvest", when => Me.Level < 100 || Me.HasAura("Deadwind Harvester") || Me.GetAuraStacks("Wrath of Consumption") > 2),
 
                         CreateAoeBehavior(),
 
@@ -131,7 +128,6 @@ namespace Singular.ClassSpecific.Warlock
                         Spell.Cast("Haunt"),
                         Spell.Cast("Grimoire: Felhunter"),
                         Spell.Buff("Life Tap", when => Me.ManaPercent < 50),
-                        Spell.Cast("Drain Life"),
                         Spell.Cast("Drain Soul"),
                         Spell.Cast("Shadow Bolt")
                         )
@@ -178,12 +174,6 @@ namespace Singular.ClassSpecific.Warlock
 
             if (spellName == null)
                 return false;
-
-            if (spellName == "Drain Life" && Me.HealthPercent >= WarlockSettings.DrainLifeCancelPct && SpellManager.HasSpell("Drain Soul"))
-            {
-                Logger.Write(LogColor.Cancel, "/cancel {0}: health has reached {1:F1}%", spellName, Me.HealthPercent);
-                return true;
-            }
 
             int dotsNeeded = GetDotsMissing(Me.CurrentTarget);
             if (dotsNeeded > (MaxDotCount - 1) && Me.CurrentTarget.IsPlayer)
@@ -263,8 +253,11 @@ namespace Singular.ClassSpecific.Warlock
                                 Spell.Buff("Agony", 3, on => (WoWUnit)on, ret => true),
                                 Spell.Buff("Corruption", 3, on => (WoWUnit) on, ret => !Common.HasTalent(WarlockTalents.AbsoluteCorruption)),
                                 Spell.Buff("Corruption", ret => Common.HasTalent(WarlockTalents.AbsoluteCorruption)),
-                                Spell.Buff("Unstable Affliction", 3, on => (WoWUnit) on, req => Me.GetPowerInfo(WoWPowerType.SoulShards).Current >= 5),
                                 Spell.Buff("Siphon Life"),
+                                Spell.Cast("Unstable Affliction", req =>
+                                    !((WoWUnit)req).HasAura("Unstable Affliction")
+                                    || (((WoWUnit)req).GetAuraStacks("Unstable Affliciton") <= 2 && Me.GetPowerInfo(WoWPowerType.SoulShards).Current >= 3 && ((WoWUnit)req).TimeToDeath() > 4)
+                                ),
                                 new Action(r => {
                                     Logger.WriteDebug("ApplyDots: no DoTs needed on {0}", ((WoWUnit)r).SafeName());
                                     return RunStatus.Failure;
@@ -357,7 +350,8 @@ namespace Singular.ClassSpecific.Warlock
                     Common.CreateCastSoulburn(req => true),
                     new Action(ret =>
                     {
-                        Logger.Write(LogColor.SpellNonHeal, string.Format("*Soul Swap on {0} @ {1:F1}% at {2:F1} yds", ((WoWUnit)ret).SafeName(), ((WoWUnit)ret).HealthPercent, ((WoWUnit)ret).SpellDistance()));
+                        Logger.Write(LogColor.SpellNonHeal,
+                            $"*Soul Swap on {((WoWUnit) ret).SafeName()} @ {((WoWUnit) ret).HealthPercent:F1}% at {((WoWUnit) ret).SpellDistance():F1} yds");
                         if (!Spell.CastPrimative("Soul Swap", onUnit(ret)))
                             return RunStatus.Failure;
                         return RunStatus.Success;
@@ -377,10 +371,7 @@ namespace Singular.ClassSpecific.Warlock
             if (unit.SpellDistance() > 40)
                 return false;
 
-            if (!unit.InLineOfSpellSight)
-                return false;
-
-            return true;
+            return unit.InLineOfSpellSight;
         }
 
         private static bool NeedSoulburnHauntNormal(WoWUnit unit)
@@ -388,13 +379,7 @@ namespace Singular.ClassSpecific.Warlock
             if (!unit.IsAlive)
                 return false;
 
-            if (unit.SpellDistance() > 40)
-                return false;
-
-            if (!unit.InLineOfSpellSight)
-                return false;
-
-            return true;
+            return !(unit.SpellDistance() > 40) && unit.InLineOfSpellSight;
         }
 
         private static int GetSoulSwapDotsNeeded(WoWUnit unit)
@@ -437,41 +422,20 @@ namespace Singular.ClassSpecific.Warlock
         private static Composite CreateWarlockDiagnosticOutputBehavior(string sState = null)
         {
             if (!SingularSettings.Debug)
-                return new Action(ret => { return RunStatus.Failure; });
+                return new Action(ret => RunStatus.Failure);
 
             return new ThrottlePasses(1,
                 new Action(ret =>
                 {
                     string sMsg;
-                    sMsg = string.Format(".... [{0}] h={1:F1}%, m={2:F1}%, moving={3}, pet={4:F0}% @ {5:F0} yds, soulburn={6}",
-                        sState,
-                        Me.HealthPercent,
-                        Me.ManaPercent,
-                        Me.IsMoving.ToYN(),
-                        Me.GotAlivePet ? Me.Pet.HealthPercent : 0,
-                        Me.GotAlivePet ? Me.Pet.Distance : 0,
-                        (long)Me.GetAuraTimeLeft("Soulburn", true).TotalMilliseconds
-
-                        );
+                    sMsg =
+                        $".... [{sState}] h={Me.HealthPercent:F1}%, m={Me.ManaPercent:F1}%, moving={Me.IsMoving.ToYN()}, pet={(Me.GotAlivePet ? Me.Pet.HealthPercent : 0):F0}% @ {(Me.GotAlivePet ? Me.Pet.Distance : 0):F0} yds, soulburn={(long) Me.GetAuraTimeLeft("Soulburn", true).TotalMilliseconds}";
 
                     WoWUnit target = Me.CurrentTarget;
                     if (target != null)
                     {
-                        sMsg += string.Format(
-                            ", {0}, {1:F1}%, dies={2} secs, {3:F1} yds, loss={4}, face={5}, agony={6}, corr={7}, ua={8}, haunt={9}, seed={10}, aoe={11}",
-                            target.SafeName(),
-                            target.HealthPercent,
-                            target.TimeToDeath(),
-                            target.Distance,
-                            target.InLineOfSpellSight.ToYN(),
-                            Me.IsSafelyFacing(target).ToYN(),
-                            (long)target.GetAuraTimeLeft("Agony", true).TotalMilliseconds,
-                            (long)target.GetAuraTimeLeft("Corruption", true).TotalMilliseconds,
-                            (long)target.GetAuraTimeLeft("Unstable Affliction", true).TotalMilliseconds,
-                            (long)target.GetAuraTimeLeft("Haunt", true).TotalMilliseconds,
-                            (long)target.GetAuraTimeLeft("Seed of Corruption", true).TotalMilliseconds,
-                            _mobCount
-                            );
+                        sMsg +=
+                            $", {target.SafeName()}, {target.HealthPercent:F1}%, dies={target.TimeToDeath()} secs, {target.Distance:F1} yds, loss={target.InLineOfSpellSight.ToYN()}, face={Me.IsSafelyFacing(target).ToYN()}, agony={(long) target.GetAuraTimeLeft("Agony", true).TotalMilliseconds}, corr={(long) target.GetAuraTimeLeft("Corruption", true).TotalMilliseconds}, ua={(long) target.GetAuraTimeLeft("Unstable Affliction", true).TotalMilliseconds}, haunt={(long) target.GetAuraTimeLeft("Haunt", true).TotalMilliseconds}, seed={(long) target.GetAuraTimeLeft("Seed of Corruption", true).TotalMilliseconds}, aoe={_mobCount}";
                     }
 
                     Logger.WriteDebug(Color.LightYellow, sMsg);

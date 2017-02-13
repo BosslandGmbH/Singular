@@ -1,25 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using Styx;
-using Styx.Common.Helpers;
-using Styx.CommonBot;
-using Styx.CommonBot.Profiles;
+﻿using Styx;
 using Styx.TreeSharp;
-using Styx.WoWInternals;
-using Styx.WoWInternals.DBC;
 using Styx.WoWInternals.WoWObjects;
-using Action = Styx.TreeSharp.Action;
 using Singular.Dynamics;
 using Singular.Settings;
 using Styx.Pathing;
-using System.IO;
 using System.Numerics;
-using System.Threading.Tasks;
+using Styx.Pathing.Avoidance;
 
 
 namespace Singular.Managers
@@ -45,6 +31,9 @@ namespace Singular.Managers
         {
             get
             {
+                if (AvoidanceManager.IsRunningOutOfAvoid)
+                    return true;
+
                 if (IsBotMovementDisabled)
                     return true;
 
@@ -67,6 +56,9 @@ namespace Singular.Managers
         {
             get
             {
+                if (AvoidanceManager.IsRunningOutOfAvoid)
+                    return true;
+
                 if (IsBotMovementDisabled)
                     return true;
 
@@ -104,6 +96,9 @@ namespace Singular.Managers
         {
             get
             {
+                if (AvoidanceManager.IsRunningOutOfAvoid)
+                    return false;
+
                 if (IsBotMovementDisabled)
                     return false;
 
@@ -122,6 +117,9 @@ namespace Singular.Managers
         {
             get
             {
+                if (AvoidanceManager.IsRunningOutOfAvoid)
+                    return false;
+
                 if (IsBotMovementDisabled)
                     return false;
 
@@ -138,8 +136,8 @@ namespace Singular.Managers
 
         /// <summary>
         /// we determine this value locally at present to avoid possible botevent sequence errors
-        /// which would occur if this depended on the SingularRoutine value but this event 
-        /// handler were called before 
+        /// which would occur if this depended on the SingularRoutine value but this event
+        /// handler were called before
         /// </summary>
         /// <remarks>
         /// query the active bot only on a bot event and then cache the result.  we don't
@@ -187,7 +185,7 @@ namespace Singular.Managers
 
         private static void Stop()
         {
-            // restore in case we had taken over 
+            // restore in case we had taken over
             AllowMovement();
         }
 

@@ -112,12 +112,10 @@ namespace Singular.ClassSpecific.Priest
 
             Logger.WriteDebugInBehaviorCreate("Priest Healing: will cancel cast of direct heal if health reaches {0:F1}%", cancelHeal);
 
-            string cmt = "";
             int flashHealHealth = PriestSettings.DiscHeal.FlashHeal;
             if (!SpellManager.HasSpell("Heal"))
             {
                 flashHealHealth = Math.Max(flashHealHealth, PriestSettings.DiscHeal.Heal);
-                cmt = "(Adjusted for Heal)";
             }
 
 
@@ -712,7 +710,7 @@ namespace Singular.ClassSpecific.Priest
                 {
                     Player = p,
                     Count = coveredTargets
-                        .Count(pp => pp.IsAlive && pp.Location.DistanceSqr(p.Location) < 7 * 7)
+                        .Count(pp => pp.IsAlive && pp.Location.DistanceSquared(p.Location) < 7 * 7)
                 })
                 .OrderByDescending(v => v.Count)
                 .DefaultIfEmpty(null)

@@ -432,7 +432,7 @@ namespace Singular.Utilities
                         if (unit != null && !unit.IsPlayer)
                         {
                             Logger.WriteDebug("{0} is immune to Physical spell school", unit.Name);
-                            SpellImmunityManager.Add(unit.Entry, WoWSpellSchool.Physical );
+                            SpellImmunityManager.Add(unit.Entry, WoWSpellSchool.Physical, e.Spell);
                         }
                     }
                     break;
@@ -464,7 +464,7 @@ namespace Singular.Utilities
                         if (unit != null && !unit.IsPlayer)
                         {
                             Logger.WriteDebug("{0} is immune to {1} spell school", unit.Name, e.SpellSchool);
-                            SpellImmunityManager.Add(unit.Entry, e.SpellSchool);
+                            SpellImmunityManager.Add(unit.Entry, e.SpellSchool, e.Spell);
                         }
 
                         if (StyxWoW.Me.Class == WoWClass.Rogue && e.SpellId == 6770)

@@ -347,7 +347,18 @@ VoidShift               Void Shift
         [Behavior(BehaviorType.Heal, WoWClass.Priest, WoWSpec.PriestHoly)]
         public static Composite CreateHolyHeal()
         {
-            return new Decorator(
+            return new PrioritySelector(
+                CreateHolyDiagnosticOutputBehavior("HEAL"),
+
+                HealerManager.CreateStayNearTankBehavior(),
+                // Group heals
+                new Decorator(
+                    ret => Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+                    CreateHolyHealOnlyBehavior(false, true)
+                    ),
+
+                // Solo heals
+                new Decorator(
                 ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
                 new PrioritySelector(
                     Spell.Cast("Desperate Prayer", ret => Me, ret => Me.Combat && Me.HealthPercent < PriestSettings.DesperatePrayerHealth),
@@ -366,7 +377,7 @@ VoidShift               Void Shift
                         ctx => Me,
                         ret => !Me.Combat && Me.PredictedHealthPercent(includeMyHeals: true) <= 90)
                     )
-                );
+                ));
         }
 
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Priest, WoWSpec.PriestHoly)]
@@ -396,16 +407,6 @@ VoidShift               Void Shift
         public static Composite CreateHolyCombat()
         {
             return new PrioritySelector(
-
-                CreateHolyDiagnosticOutputBehavior("COMBAT"),
-
-                HealerManager.CreateStayNearTankBehavior(),
-
-                new Decorator(
-                    ret => Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
-                    CreateHolyHealOnlyBehavior(false, true)
-                    ),
-
                 new Decorator(
                     ret => HealerManager.AllowHealerDPS(),
                     new PrioritySelector(

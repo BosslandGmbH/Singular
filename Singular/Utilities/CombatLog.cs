@@ -57,7 +57,7 @@ namespace Singular.Utilities
 
         public int DestFlags => (int)(double)Args[9];
 
-        public int SpellId => (int)(double)Args[11];
+        public int SpellId => Args[11] is double ? (int)(double)Args[11] : 0;
 
         public WoWSpell Spell => WoWSpell.FromId(SpellId);
 

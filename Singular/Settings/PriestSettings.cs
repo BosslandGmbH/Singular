@@ -458,6 +458,17 @@ namespace Singular.Settings
         public bool UseArtifactOnlyInAoE { get; set; }
         #endregion
 
+        #region Category: Artifact Weapon (Holy)
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Artifact Weapon Usage (Holy)")]
+        [DisplayName("Light of T'uure %")]
+        [Description("Health % to cast this ability at on tank. Set to 0 to disable.")]
+        public int LightOfTuure { get; set; }
+
+        #endregion
+
     }
 
     internal class HolyPriestHealSettings : Singular.Settings.HealerSettings

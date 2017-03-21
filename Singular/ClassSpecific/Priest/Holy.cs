@@ -83,15 +83,24 @@ namespace Singular.ClassSpecific.Priest
                     )
                 );
 
-            if (PriestSettings.HolyHeal.GuardianSpirit  != 0 )
-            behavs.AddBehavior(HealthToPriority(PriestSettings.HolyHeal.GuardianSpirit) + 300, "Guardian Spirit @ " + PriestSettings.HolyHeal.GuardianSpirit + "%", "Guardian Spirit",
-                Spell.Cast("Guardian Spirit",
+            if (PriestSettings.HolyHeal.GuardianSpirit != 0 )
+                behavs.AddBehavior(HealthToPriority(PriestSettings.HolyHeal.GuardianSpirit) + 300, "Guardian Spirit @ " + PriestSettings.HolyHeal.GuardianSpirit + "%", "Guardian Spirit",
+                    Spell.Cast("Guardian Spirit",
+                        mov => false,
+                        on => (WoWUnit)on,
+                        req => ((WoWUnit)req).HealthPercent < PriestSettings.HolyHeal.GuardianSpirit
+                        )
+                    );
+
+            if (PriestSettings.LightOfTuure != 0)
+                behavs.AddBehavior(HealthToPriority(PriestSettings.LightOfTuure) + 300, "Light of T'uure @ " + PriestSettings.LightOfTuure + "%", "Light of T'uure",
+                Spell.Cast("Light of T'uure",
                     mov => false,
                     on => (WoWUnit)on,
-                    req => ((WoWUnit)req).HealthPercent < PriestSettings.HolyHeal.GuardianSpirit
+                    req => ((WoWUnit)req).HealthPercent < PriestSettings.LightOfTuure && !((WoWUnit)req).HasAura("Light of T'uure")
+                            && Group.Tanks.Contains(((WoWUnit)req))
                     )
                 );
-
 
             #endregion
 

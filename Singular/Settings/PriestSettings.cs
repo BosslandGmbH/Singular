@@ -739,12 +739,12 @@ namespace Singular.Settings
                     PrayerOfMending = 90;
                     Heal = 0;
                     FlashHeal = 80;
-                    PrayerOfHealing = 90;
+                    PowerWordRadiance = 90;
                     PainSuppression = 0;
                     DiscLevel90Talent = 85;
                     PowerWordBarrier = 40;
                     CountLevel90Talent = 3;
-                    CountPrayerOfHealing = 3;
+                    CountPowerWordRadiance = 3;
                     CountPrayerOfMending = 2;
                     CountPowerWordBarrier = 3;
                     AtonementAbovePercent = 90;
@@ -757,12 +757,12 @@ namespace Singular.Settings
                     PrayerOfMending = 90;
                     Heal = 60;
                     FlashHeal = 90;
-                    PrayerOfHealing = 90;
+                    PowerWordRadiance = 90;
                     PainSuppression = 0;
                     DiscLevel90Talent = 85;
                     PowerWordBarrier = 0;
                     CountLevel90Talent = 3;
-                    CountPrayerOfHealing = 3;
+                    CountPowerWordRadiance = 3;
                     CountPrayerOfMending = 2;
                     CountPowerWordBarrier = 3;
                     AtonementAbovePercent = 90;
@@ -775,12 +775,12 @@ namespace Singular.Settings
                     PrayerOfMending = 90;
                     Heal = 50;
                     FlashHeal = 70;
-                    PrayerOfHealing = 89;
+                    PowerWordRadiance = 89;
                     PainSuppression = 49;
                     DiscLevel90Talent = 89;
                     PowerWordBarrier = 80;
                     CountLevel90Talent = 3;
-                    CountPrayerOfHealing = 3;
+                    CountPowerWordRadiance = 3;
                     CountPrayerOfMending = 3;
                     CountPowerWordBarrier = 3;
                     AtonementAbovePercent = 90;
@@ -842,9 +842,9 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(89)]
         [Category("Healing")]
-        [DisplayName("% Prayer of Healing")]
+        [DisplayName("% Power Word Radiance")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int PrayerOfHealing { get; set; }
+        public int PowerWordRadiance { get; set; }
 
         [Setting]
         [DefaultValue(89)]
@@ -882,11 +882,11 @@ namespace Singular.Settings
         public int SpiritShell { get; set; }
 
         [Setting]
-        [DefaultValue(15)]
+        [DefaultValue(50)]
         [Category("Health %")]
-        [DisplayName("% Saving Grace")]
+        [DisplayName("% Shadow Mend")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int SavingGrace { get; set; }
+        public int ShadowMend { get; set; }
 
         [Setting]
         [DefaultValue(3)]
@@ -896,11 +896,11 @@ namespace Singular.Settings
         public int CountLevel90Talent { get; set; }
 
         [Setting]
-        [DefaultValue(3)]
+        [DefaultValue(2)]
         [Category("Target Minimum")]
-        [DisplayName("Count Prayer of Healing")]
+        [DisplayName("Count Power Word Radiance")]
         [Description("Min number of players healed")]
-        public int CountPrayerOfHealing { get; set; }
+        public int CountPowerWordRadiance { get; set; }
 
         [Setting]
         [DefaultValue(2)]

@@ -404,31 +404,7 @@ namespace Singular.Managers
         /// <returns></returns>
         public static WoWUnit FindLowestHealthTarget()
         {
-#if LOWEST_IS_FIRSTUNIT
-            return HealerManager.Instance.FirstUnit;
-#else
-            double minHealth = 999;
-            WoWUnit minUnit = null;
-
-            // iterate the list so we make a single pass through it
-            foreach (WoWUnit unit in HealerManager.Instance.TargetList)
-            {
-                try
-                {
-                    if (unit.HealthPercent < minHealth)
-                    {
-                        minHealth = unit.HealthPercent;
-                        minUnit = unit;
-                    }
-                }
-                catch
-                {
-                    // simply eat the exception here
-                }
-            }
-
-            return minUnit;
-#endif
+            return HealerManager.Instance.TargetList.OrderBy(unit => unit.HealthPercent).FirstOrDefault();
         }
 
         /// <summary>
@@ -577,8 +553,7 @@ namespace Singular.Managers
                 {
                     Player = p,
                     Count = coveredTargets
-                        .Where(pp => pp.IsAlive && pp.SpellDistance(p) < radius)
-                        .Count()
+                        .Count(pp => pp.IsAlive && pp.SpellDistance(p) < radius)
                 })
                 .OrderByDescending(v => v.Count)
                 .DefaultIfEmpty(null)

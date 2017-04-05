@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>03.28.2017 12:40:34</ScanTime>
+  <ScanTime>04.05.2017 16:49:58</ScanTime>
   <FileList>
     <File Hash="9721" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="7693" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -84,7 +84,7 @@
     <File Hash="6921" Name="Helpers\PVP.cs" />
     <File Hash="19223" Name="Helpers\Rest.cs" />
     <File Hash="38344" Name="Helpers\Safers.cs" />
-    <File Hash="127683" Name="Helpers\Spell.cs" />
+    <File Hash="127696" Name="Helpers\Spell.cs" />
     <File Hash="19373" Name="Helpers\Throttle.cs" />
     <File Hash="79883" Name="Helpers\Unit.cs" />
     <File Hash="53540" Name="Lists\BossList.cs" />

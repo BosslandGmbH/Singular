@@ -2515,7 +2515,7 @@ namespace Singular.Helpers
                 if (StyxWoW.Me.IsCasting && Me.CurrentCastTimeLeft.TotalMilliseconds > lat)
                 {
                     if (SingularSettings.DebugSpellCasting)
-                        Logger.WriteFile("CanCast[{0}]: current cast of {1} has {2:F0} ms left", spell.Name, Me.CurrentCastId, Me.CurrentCastTimeLeft.TotalMilliseconds - lat);
+                        Logger.WriteFile("CanCast[{0}]: current cast of {1} has {2:F0} ms left", spell.Name, Me.NonChanneledCastingSpellId, Me.CurrentCastTimeLeft.TotalMilliseconds - lat);
                     return true;
                 }
 

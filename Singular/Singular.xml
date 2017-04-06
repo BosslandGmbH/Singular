@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>04.05.2017 16:49:58</ScanTime>
+  <ScanTime>04.06.2017 08:38:09</ScanTime>
   <FileList>
     <File Hash="9721" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="7693" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -47,7 +47,7 @@
     <File Hash="60860" Name="ClassSpecific\Rogue\Common.cs" />
     <File Hash="1077" Name="ClassSpecific\Rogue\Lowbie.cs" />
     <File Hash="11619" Name="ClassSpecific\Rogue\Outlaw.cs" />
-    <File Hash="4696" Name="ClassSpecific\Rogue\Poisons.cs" />
+    <File Hash="4694" Name="ClassSpecific\Rogue\Poisons.cs" />
     <File Hash="6943" Name="ClassSpecific\Rogue\Subtlety.cs" />
     <File Hash="32533" Name="ClassSpecific\Shaman\Common.cs" />
     <File Hash="15126" Name="ClassSpecific\Shaman\Elemental.cs" />

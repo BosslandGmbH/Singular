@@ -79,7 +79,7 @@ namespace Singular.ClassSpecific.Rogue
                 else if (SpellManager.HasSpell((int)LethalPoisonType.Deadly))
                     poison = LethalPoisonType.Deadly;
                 else
-                    poison = LethalPoisonType.None;
+                    return LethalPoisonType.None;
             }
 
             // validate spell is known.  if it is but an override exists, switch to the override id

@@ -196,7 +196,7 @@ namespace Singular.ClassSpecific.Monk
 
                     CancelSoothingMistAsNeeded(),
 
-                    CreateMistweaverMoveToEnemyTarget(),
+                    Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                     new Decorator(
                         req => Me.GotTarget() && Me.CurrentTarget.IsWithinMeleeRange,

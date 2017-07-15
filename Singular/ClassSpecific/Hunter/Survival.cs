@@ -25,10 +25,6 @@ namespace Singular.ClassSpecific.Hunter
         [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterSurvival)]
         public static Composite CreateHunterSurvivalPullAndCombat()
 		{
-	        SpellFindResults sfr;
-	        SpellManager.FindSpell("Mongoose Bite", out sfr);
-	        SpellChargeInfo mongooseBiteChargeInfo = (sfr.Override ?? sfr.Original)?.GetChargeInfo();
-
 			return new PrioritySelector(
 				Helpers.Common.EnsureReadyToAttackFromMelee(),
 
@@ -63,16 +59,16 @@ namespace Singular.ClassSpecific.Hunter
 
                         Spell.BuffSelf("Aspect of the Eagle", ret => Me.GetAuraTimeLeft("Mongoose Fury", false).TotalSeconds > 10),
 						Spell.Cast("Mongoose Bite", req => SpellManager.HasSpell("Aspect of the Eagle") && Spell.GetSpellCooldown("Aspect of the Eagle").TotalSeconds <= 0 && !Me.HasActiveAura("Mongoose Fury")),
-						Spell.BuffSelf("Snake Hunter", ret => Me.HasAura("Aspect of the Eagle") && mongooseBiteChargeInfo?.ChargesLeft <= 0),
+						Spell.BuffSelf("Snake Hunter", ret => Me.HasAura("Aspect of the Eagle") && Spell.GetCharges("Mongoose Bite") <= 0),
 						Spell.Cast("Butchery", ret => Unit.UnfriendlyUnits(8).Count() >= 2),
-						Spell.Cast("Explosive Trap"),
+						Spell.CastOnGround("Explosive Trap", on => Me.CurrentTarget.Location),
 						Spell.Cast("Dragonsfire Grenade"),
 						Spell.CastOnGround("Steel Trap", on => Me.CurrentTarget.Location, ret => Me.CurrentTarget.TimeToDeath() > 5),
-						Spell.Cast("Raptor Strike", 
+						Spell.Cast("Raptor Strike",
 							ret => Common.HasTalent(HunterTalents.WayOfTheMokNathal) && (Me.GetAuraTimeLeft("Mok'Nathal Tactics").TotalSeconds < 1.8 || Me.GetAuraStacks("Mok'Nathal Tactics") < 4)),
 						Spell.Cast("Lacerate"),
-						Spell.Cast("Mongoose Bite", 
-							ret => mongooseBiteChargeInfo != null && mongooseBiteChargeInfo.ChargesLeft == 2 && mongooseBiteChargeInfo.TimeUntilNextCharge.TotalSeconds < 1.8),
+						Spell.Cast("Mongoose Bite",
+							ret => Spell.GetCharges("Mongoose Bite") == 2 && Spell.TimeUntilNextCharge("Mongoose Bite").TotalSeconds < 1.8),
 						Spell.Cast("Throwing Axes"),
 						Spell.CastOnGround("Caltrops", on => Me.CurrentTarget.Location),
 						Spell.Cast("Spitting Cobra"),

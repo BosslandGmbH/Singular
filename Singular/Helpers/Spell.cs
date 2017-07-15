@@ -2757,15 +2757,10 @@ namespace Singular.Helpers
 
         public static int GetCharges(string name)
         {
-            SpellFindResults sfr;
-            if ( SpellManager.FindSpell(name, out sfr))
-            {
-                WoWSpell spell = sfr.Override ?? sfr.Original;
-                return GetCharges(spell);
-            }
-            return 0;
+            if (!SpellManager.FindSpell(name, out SpellFindResults sfr)) return 0;
+            WoWSpell spell = sfr.Override ?? sfr.Original;
+            return GetCharges(spell);
         }
-
 
 
         public static int GetCharges(WoWSpell spell)
@@ -2831,6 +2826,15 @@ namespace Singular.Helpers
             {
                 Logger.WriteDebug("   {0}  {1}", v.Key.AlignRight(25), v.Value.ToString().AlignRight(7));
             }
+        }
+
+        /// <summary>
+        /// Gets the current cooldown as TimeSpan of a spells charge.
+        /// If a spell doesn't have charges or if all charges are off cooldown, then this will simply return TimeSpan.Zero.
+        /// </summary>
+        public static TimeSpan TimeUntilNextCharge(string name)
+        {
+            return !SpellManager.FindSpell(name, out SpellFindResults sfr) ? TimeSpan.Zero : (sfr.Override ?? sfr.Original).GetChargeInfo().TimeUntilNextCharge;
         }
     }
 

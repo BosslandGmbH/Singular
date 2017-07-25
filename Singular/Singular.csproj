@@ -258,32 +258,12 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>if $(ConfigurationName) == Jim (
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "G:\Code\WoW\Honorbuddy 2\trunk\Honorbuddy\bin\Debug\CustomClasses\Singular v2\" /i /f /s /v /y
-)
-if $(ConfigurationName) == Raphus (
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\Buddy\Honorbuddy\Source\Honorbuddy\bin\Debug\Routines\Singular\" /i /f /s /v /y
-)
-
-if $(ConfigurationName) == Bobby53 (
-rd /s /q "c:\HB\Routines\Singular"
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "c:\HB\Routines\Singular\" /i /f /s /v /y
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "c:\HB\Routines\Singular\" /i /f /v /y
-)
-
-if $(ConfigurationName) == HighVoltz (
- if not exist excludes.txt echo _ReSharper.Singular &gt; excludes.txt
-   xcopy.exe "$(ProjectDir)*.cs" "C:\Buddy\Honorbuddy\Routines\Singular\" /v /i /f  /s /y /EXCLUDE:excludes.txt
-)
-
-
-ECHO Copied</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PreBuildEvent>if $(ConfigurationName) == Raphus (
-SubWCRev.exe "$(ProjectDir)" "$(ProjectDir)SingularRoutine.Version.tmpl" "$(ProjectDir)SingularRoutine.Version.cs"
-"$(SolutionDir)FilecheckGenerator\bin\Debug\FileCheckListGenerator.exe"
-)</PreBuildEvent>
+    <PreBuildEvent>
+    </PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.

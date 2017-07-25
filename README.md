@@ -6,7 +6,7 @@ This repository contains the source code for [Honorbuddy](http://www.honorbuddy.
 
 Whenever a new version of Honorbuddy is released, the latest version of Singular is pulled from this repository, and included in the release automatically. 
 
-If you want to obtain a copy of Singular manually, you can either download the contents of the repository as a .zip file, using the `Clone or download` -> `Download ZIP` buttons. Then delete the `Singular` directory inside Honorbuddy's `Routines` folder, and then extract the contents of the ZIP so that `C:\Path\to\HB\Routines\Singular\Singular.xml` is valid.
+If you want to obtain a copy of Singular manually, you can download the contents of the repository as a .zip file, using the `Clone or download` -> `Download ZIP` buttons. Then delete the `Singular` directory inside Honorbuddy's `Routines` folder, and then extract the contents of the ZIP so that `C:\Path\to\HB\Routines\Singular\Singular.xml` is valid.
 
 ## Developing Singular
 

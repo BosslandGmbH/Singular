@@ -499,7 +499,8 @@ namespace Singular.ClassSpecific.Warlock
                 ret => PetManager.IsPetSummonAllowed
                     && !Me.HasAura( "Demonic Power")        // don't summon pet if this buff active
                     && GetBestPet() != GetCurrentPet()
-                    && Spell.CanCastHack( "Summon " + GetBestPet()),
+                    && Spell.CanCastHack( "Summon " + GetBestPet())
+                    && !Me.InVehicle,
 
                 new Sequence(
                     // wait for possible auto-spawn if supposed to have a pet and none present

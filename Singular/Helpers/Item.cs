@@ -170,10 +170,13 @@ namespace Singular.Helpers
 
             return (from i in carried
                     let spells = i.Effects
-                    where IsUsableItemBySpell( i, spellNameHashes)
+                    where i.ItemInfo != null &&
+                          i.ItemInfo.RequiredLevel <= StyxWoW.Me.Level &&
+                          spells != null && spells.Any(s => s.Spell != null && spellNameHashes.Contains(s.Spell.Name)) &&
+                          i.Usable &&
+                          i.Cooldown == 0
                     orderby i.ItemInfo.Level descending
-                    select i)
-                    .FirstOrDefault();
+                    select i).FirstOrDefault();
         }
 
         public static bool IsUsableItemBySpell(WoWItem i, HashSet<string> spellNameHashes)

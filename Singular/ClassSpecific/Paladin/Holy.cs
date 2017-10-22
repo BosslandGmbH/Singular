@@ -73,7 +73,7 @@ namespace Singular.ClassSpecific.Paladin
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+                    ret => HealerManager.AllowHealerDPS(),
                     new PrioritySelector(
                         Helpers.Common.EnsureReadyToAttackFromMelee(),
                         Spell.WaitForCastOrChannel(),
